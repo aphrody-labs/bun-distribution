@@ -9,7 +9,6 @@ import {
   selectedSourceClean,
   selectedSourcePrelude,
   selectedSourceSetup,
-  selectedSourceUpdate,
   selectedSourceVerify,
 } from "./build-factory-source.ts";
 
@@ -207,6 +206,8 @@ export interface FactorySource {
   remote: string;
   url: string;
   owners: readonly string[];
+  repositoryName: string;
+  branch: string;
 }
 
 /** Keep credentials out of plans and reject undeclared Git hosts, aliases and repositories. */
@@ -228,132 +229,83 @@ function factoryDirectory(path: string): string {
   return `test "$(realpath -m -- ${quoted})" = ${quoted} || { echo 'Factory path resolves outside its declared location; preserved' >&2; exit 2; }; if [ ! -e ${quoted} ]; then install -d -- ${quoted} 2>/dev/null || sudo -n install -d -o "$(id -un)" -g "$(id -gn)" -- ${quoted}; fi; test -d ${quoted} || { echo 'Factory path is not a directory; preserved' >&2; exit 2; }`;
 }
 
-/** Prepare declared first-party sources. No build starts and authentication remains local. */
+/** Verify the declared canonical checkout without changing its branch, files or gitlinks. */
 export function buildFactoryPreparePlan(
   config: BuildFactoryConfig,
   repository: string,
   revision: string,
   source: FactorySource,
-  options: {
-    initializeSubmodules?: boolean;
-    submodules?: readonly string[];
-  } = {},
+  options: { initializeSubmodules?: boolean; submodules?: readonly string[] } = {},
 ) {
   const sourceScope = factorySourceScope(options.submodules);
   if (sourceScope.kind === "gitlinks" && options.initializeSubmodules === false)
     throw new Error("Selected submodules cannot be combined with --no-submodules");
-  if (!["yolo", "aphrody", "bun-os"].includes(repository)) {
-    throw new Error("Factory preparation is limited to yolo, aphrody and bun-os");
-  }
-  const validation = buildFactoryPlan(config, repository, revision, ["git", "checkout"], options);
-  const repositoryName = repository === "bun-os" ? "bun" : repository;
-  const base =
-    repository === "bun-os"
-      ? posix.dirname(validation.workspace)
-      : posix.dirname(absolutePath(config.repositories.aphrody!, "aphrody repository"));
-  if (validation.workspace !== posix.join(base, repositoryName) || base === "/") {
-    throw new Error("Factory repository must stay in its declared sibling workspace");
-  }
+  const validation = buildFactoryPlan(config, repository, revision, ["git", "status"], options);
+  if (validation.workspace === "/") throw new Error("Factory repository cannot be the filesystem root");
   for (const path of [config.cacheRoot, config.artifactRoot, config.lockPath]) {
-    if (path === validation.workspace || path.startsWith(`${validation.workspace}/`)) {
+    if (path === validation.workspace || path.startsWith(`${validation.workspace}/`))
       throw new Error("Factory caches, artifacts and locks must stay outside source checkouts");
-    }
   }
-  if (!source.path || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.remote) || source.remote === "legacy-aphrody") {
+  if (!source.path || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.remote) || source.remote === "legacy-aphrody")
     throw new Error("Invalid declared factory source path or remote");
-  }
-  const remote = factoryRemoteUrl(source.url, repositoryName, source.owners);
-  const normalizedExisting = [
-    remote,
-    remote.replace(/\.git$/, ""),
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.repositoryName) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(source.branch) || source.branch.includes("..") ||
+      source.branch.endsWith("/") || source.branch.includes("//"))
+    throw new Error("Invalid declared factory repository name or branch");
+  const remote = factoryRemoteUrl(source.url, source.repositoryName, source.owners);
+  const normalizedExisting = [remote, remote.replace(/\.git$/, ""),
     remote.replace("https://github.com/", "git@github-dev:"),
     remote.replace("https://github.com/", "git@github.com:"),
     remote.replace("https://github.com/", "ssh://git@github-dev/"),
-    remote.replace("https://github.com/", "ssh://git@github.com/"),
-  ];
+    remote.replace("https://github.com/", "ssh://git@github.com/")];
   const clean = `test -z "$(git status --porcelain --untracked-files=all --ignore-submodules=none)" || { echo 'Factory source checkout is dirty; preserved' >&2; exit 2; }`;
-  const guardedSubmodules = [
-    FACTORY_GIT,
-    clean,
-    'git fetch --filter=blob:none origin "$sha1"',
-    'git checkout --detach --no-overwrite-ignore "$sha1"',
-  ].join("\n");
+  const pinnedChild = `${clean}\ntest "$(git rev-parse HEAD)" = "$sha1" || { echo 'Factory submodule revision differs from its gitlink; preserved' >&2; exit 2; }`;
+  const remoteRef = `refs/remotes/${source.remote}/${source.branch}`;
   const body = [
     "set -euo pipefail",
     'export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH" GIT_TERMINAL_PROMPT=0',
     FACTORY_GIT,
     `root=${shellQuote(validation.workspace)}`,
     `test "$(realpath -m -- "$root")" = "$root" || { echo 'Factory source path resolves elsewhere; preserved' >&2; exit 2; }`,
-    'if [ ! -e "$root" ]; then',
-    `  git clone --filter=blob:none --no-checkout ${shellQuote(remote)} "$root"`,
-    'elif [ ! -d "$root" ] || { [ ! -d "$root/.git" ] && [ ! -f "$root/.git" ]; }; then',
-    "  echo 'Existing factory source is not a Git checkout; preserved' >&2; exit 2",
-    "fi",
+    'test -d "$root" && { [ -d "$root/.git" ] || [ -f "$root/.git" ]; } || { echo "Canonical factory checkout is absent; synchronize its owner first" >&2; exit 2; }',
     'cd -- "$root"',
     `test "$(git rev-parse --show-toplevel)" = "$root" || { echo 'Factory source is not its declared Git root; preserved' >&2; exit 2; }`,
-    "origin=$(git config --get-all remote.origin.url)",
+    `origin=$(git config --get-all ${shellQuote(`remote.${source.remote}.url`)})`,
     `case "$origin" in ${normalizedExisting.map(shellQuote).join("|")}) ;; *) echo 'Existing factory origin differs from the declared private repository; preserved' >&2; exit 2 ;; esac`,
-    ...(sourceScope.kind === "gitlinks" ? selectedSourceSetup(sourceScope, revision) : []),
-    'if [ -f "$(git rev-parse --git-path index)" ]; then',
-    ...(sourceScope.kind === "gitlinks" ? selectedSourceClean() : [`  ${clean}`]),
-    "else",
-    '  test -z "$(find . -mindepth 1 -maxdepth 1 ! -name .git -print -quit)" || { echo "Uninitialized factory checkout contains unowned files; preserved" >&2; exit 2; }',
-    "fi",
-    ...(sourceScope.kind === "gitlinks" ? [] : [`git submodule foreach --quiet --recursive ${shellQuote(clean)}`]),
-    "git fetch --prune --tags --filter=blob:none origin refs/heads/main:refs/remotes/origin/main",
-    `git cat-file -e ${shellQuote(`${revision}^{commit}`)} 2>/dev/null || git fetch --filter=blob:none origin ${shellQuote(revision)}`,
-    `git cat-file -e ${shellQuote(`${revision}^{commit}`)}`,
-    `git merge-base --is-ancestor ${shellQuote(revision)} refs/remotes/origin/main || { echo 'Requested source revision is not on the declared remote main history' >&2; exit 2; }`,
-    ...(sourceScope.kind === "gitlinks" ? selectedSourcePrelude(sourceScope, revision) : []),
-    `git${sourceScope.kind === "gitlinks" ? " -c submodule.recurse=false" : ""} checkout --detach --no-overwrite-ignore ${shellQuote(revision)}`,
-    ...(sourceScope.kind === "gitlinks"
-      ? selectedSourceUpdate(FACTORY_GIT)
-      : [
-          "git submodule sync --recursive",
-          `git submodule foreach --quiet --recursive ${shellQuote(guardedSubmodules)}`,
-          ...(options.initializeSubmodules === false
-            ? []
-            : ["git submodule update --init --recursive --jobs 4 --filter=blob:none"]),
-        ]),
+    `test "$(git symbolic-ref --quiet --short HEAD)" = ${shellQuote(source.branch)} || { echo 'Canonical factory branch differs from its declaration; preserved' >&2; exit 2; }`,
+    `test "$(git rev-parse HEAD)" = ${shellQuote(revision)} || { echo 'Canonical factory HEAD differs from requested pin; synchronize its owner first; preserved' >&2; exit 2; }`,
+    ...(sourceScope.kind === "gitlinks" ? [...selectedSourceSetup(sourceScope, revision), ...selectedSourceClean()] : [clean]),
+    `git fetch --prune --tags --filter=blob:none ${shellQuote(source.remote)} ${shellQuote(`refs/heads/${source.branch}:${remoteRef}`)}`,
+    `git merge-base --is-ancestor ${shellQuote(revision)} ${shellQuote(remoteRef)} || { echo 'Requested source revision is not on the declared remote branch history' >&2; exit 2; }`,
+    ...(sourceScope.kind === "gitlinks" ? selectedSourceVerify() : [
+      `git submodule foreach --quiet --recursive ${shellQuote(pinnedChild)}`,
+      'factory_module_status=$(git submodule status --recursive)',
+      ...(options.initializeSubmodules === false ? [] : [
+        'while IFS= read -r line; do case "$line" in [-+U]*) echo "Factory closure contains an uninitialized or mismatched submodule; preserved" >&2; exit 2 ;; esac; done <<< "$factory_module_status"',
+      ]),
+    ]),
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)}`,
-    ...(sourceScope.kind === "gitlinks"
-      ? [...selectedSourceClean(), ...selectedSourceVerify()]
-      : [clean, `git submodule foreach --quiet --recursive ${shellQuote(clean)}`]),
-    sourceScope.kind === "gitlinks"
-      ? "echo 'Factory selected gitlink closure prepared; whole repository cleanliness not asserted; no build started'"
-      : "echo 'Factory source prepared; no build started'",
+    `test "$(git symbolic-ref --quiet --short HEAD)" = ${shellQuote(source.branch)}`,
+    ...(sourceScope.kind === "gitlinks" ? selectedSourceClean() : [clean]),
+    "echo 'Canonical factory source verified; no checkout or build started'",
   ].join("\n");
-  const directoryCommands = [base, posix.dirname(config.lockPath), config.cacheRoot, config.artifactRoot]
-    .map(factoryDirectory)
-    .join("\n");
   const lockPath = sourceLockPath(config, repository);
-  const lock = shellQuote(lockPath);
-  // Existing checkouts also retain the global lock while legacy workers drain.
-  // The fresh-source probe releases the source lock before taking heavy -> source, so lock order stays acyclic.
-  const freshBody = `if [ -e ${shellQuote(validation.workspace)} ]; then exit 75; fi\n${body}`;
-  const remoteCommand = `${directoryCommands}\ntest "$(realpath -m -- ${lock})" = ${lock} || { echo 'Factory lock resolves elsewhere; preserved' >&2; exit 2; }\nflock --close -- ${lock} bash -c ${shellQuote(freshBody)}\nresult=$?\nif [ "$result" -eq 75 ]; then\n  flock --close -- ${shellQuote(config.lockPath)} flock --close -- ${lock} bash -c ${shellQuote(body)}\nelse\n  exit "$result"\nfi`;
+  const remoteCommand = `set -euo pipefail\n${factoryDirectory(posix.dirname(lockPath))}\nflock --close -- ${shellQuote(lockPath)} bash -c ${shellQuote(body)}`;
   return {
     operation: "prepare" as const,
-    initializesSubmodules: options.initializeSubmodules !== false,
-    sourceScope,
-    lockPath,
-    repository,
-    revision,
-    target: validation.target,
+    initializesSubmodules: false,
+    sourceScope, lockPath, repository, revision, target: validation.target,
     workspace: validation.workspace,
-    source: { path: resolve(source.path), remote: source.remote, url: remote },
-    serialized: true,
-    commandTimeoutSeconds: validation.commandTimeoutSeconds,
+    source: { path: resolve(source.path), remote: source.remote, url: remote, repositoryName: source.repositoryName, branch: source.branch },
+    serialized: true, commandTimeoutSeconds: validation.commandTimeoutSeconds,
     transport: ["ssh", "exec", "--host", validation.target, "--cmd", remoteCommand],
   };
 }
-
 async function declaredFactorySource(root: string, repository: string, revision: string): Promise<FactorySource> {
   const { loadSourceSyncConfig } = await import("./source-sync.ts");
   const config = await loadSourceSyncConfig(root);
   const source = config.repositories.find(entry => entry.id === repository);
-  if (!source || source.destinationBranch !== "main")
-    throw new Error("Factory source must be a declared main repository");
+  if (!source) throw new Error("Factory source must be a declared repository");
   const git = async (args: string[]): Promise<string> => {
     const child = Bun.spawn(["git", ...args], {
       windowsHide: true,
@@ -377,6 +329,8 @@ async function declaredFactorySource(root: string, repository: string, revision:
     remote: source.remote,
     url: urls[0]!,
     owners: config.owners,
+    repositoryName: source.repositoryName ?? source.id,
+    branch: source.destinationBranch,
   };
 }
 
@@ -391,7 +345,7 @@ export interface BuildFactoryStatus {
 }
 
 export async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
-  const file = Bun.file(join(root, "tools/config/build-factory.json"));
+  const file = Bun.file(join(root, "tools/aphrody/config/build-factory.json"));
   return (await file.exists()) ? ((await file.json()) as BuildFactoryConfig) : null;
 }
 
@@ -415,7 +369,7 @@ export function heavyBuildStatus(
     route: "local" as const,
     reason,
   });
-  if (!config) return local("tools/config/build-factory.json is absent");
+  if (!config) return local("tools/aphrody/config/build-factory.json is absent");
   if (env.CLAUDE_CODE_REMOTE === "true") return local("Claude Code cloud session: builds run in the session");
   if (env.APHRODY_CLOUD === "1") return local("APHRODY_CLOUD=1 (cloud session or container): builds run in place");
   if (env.GITHUB_ACTIONS === "true" || env.CI === "true") return local("CI/GitHub Actions runner: builds run in place");
@@ -665,7 +619,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
   const options = separator === -1 ? args : args.slice(0, separator);
   if (options.includes("--help") || options.includes("-h")) {
     console.log(
-      "Usage: yolo ops build-factory <plan|run> --repo <aphrody|yolo|iecode> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       yolo ops build-factory prepare --repo <aphrody|yolo> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       yolo ops build-factory cleanup [--apply]\n       yolo ops build-factory status [--route]\n       yolo ops build-factory status --job <stable-id> [--tail <0..200>]\n       yolo ops build-factory run ... --install [--bin a,b] -- <cargo build command>\n       yolo ops build-factory install --repo <repo> --revision <sha> [--job <id>] [--bin a,b] -- <cargo build command>\n--install (run, including --detach which then waits for the job) and install download each derived binary over SFTP, verify its SHA-256 against the factory copy, refuse it unless `<bin> --version` runs on this host (glibc/ABI), then atomically relink it in install.binDir (default ~/.local/bin, on PATH) from install.libRoot/factory-<rev12>/. Previous links are recorded in install.stateFile for rollback.\nPreparation prints a plan by default; --apply fetches and prepares the declared remote main revision under its repository source lock. Absent disjoint source checkouts can prepare in parallel; existing checkouts and builds also hold the shared heavy lock. --no-submodules leaves uninitialized modules untouched (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules prepares/verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
+      "Usage: yolo ops build-factory <plan|run> --repo <aphrody|yolo|iecode> --revision <full-git-sha> [--submodules <gitlink[,gitlink]>] [--detach --job <stable-id>] -- <owner command> [arguments...]\n       yolo ops build-factory prepare --repo <aphrody|yolo> --revision <full-git-sha> [--apply] [--no-submodules | --submodules <gitlink[,gitlink]>]\n       yolo ops build-factory cleanup [--apply]\n       yolo ops build-factory status [--route]\n       yolo ops build-factory status --job <stable-id> [--tail <0..200>]\n       yolo ops build-factory run ... --install [--bin a,b] -- <cargo build command>\n       yolo ops build-factory install --repo <repo> --revision <sha> [--job <id>] [--bin a,b] -- <cargo build command>\n--install (run, including --detach which then waits for the job) and install download each derived binary over SFTP, verify its SHA-256 against the factory copy, refuse it unless `<bin> --version` runs on this host (glibc/ABI), then atomically relink it in install.binDir (default ~/.local/bin, on PATH) from install.libRoot/factory-<rev12>/. Previous links are recorded in install.stateFile for rollback.\nPreparation prints a plan by default; --apply verifies the existing canonical checkout at its declared remote branch and requested revision under its source lock. It never clones, switches branches, detaches HEAD or updates gitlinks; synchronize the owner first. Verification of disjoint sources can run concurrently; builds retain their shared heavy lock. --no-submodules permits uninitialized modules (initialized modules remain checked and pinned). It starts no build and preserves dirty, unowned and ignored files.\n--submodules verifies only selected root-tree gitlinks and their recursive descendants, plus parent source files/index. Unselected gitlinks are preserved; whole repository cleanliness is not asserted. Combine the same scope with plan/run. Selected scope cannot be combined with --no-submodules. Detached jobs retain the selected source scope in their request fingerprint.\nDetached jobs retain all owner locks and the requested pin, survive client disconnects and enforce the command timeout on the host including lease wait. Use an explicit stable id; the same id/request is idempotent, a conflicting request is refused. Status is read-only; active includes lease wait. Transport failure requires status reconciliation and never automatically replays a job.",
     );
     return 0;
   }
@@ -710,7 +664,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       }
     }
     const config = await readFactoryConfig(root);
-    if (!config) throw new Error("tools/config/build-factory.json is absent");
+    if (!config) throw new Error("tools/aphrody/config/build-factory.json is absent");
     const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
     return runFactoryJobTransport(factoryJobStatusPlan(config, jobId, { tailLines }), root);
   }
@@ -778,7 +732,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
   if (only.length && !install) throw new Error("--bin selects binaries for --install");
   const config = await readFactoryConfig(root);
-  if (!config) throw new Error("tools/config/build-factory.json is absent");
+  if (!config) throw new Error("tools/aphrody/config/build-factory.json is absent");
   if (action === "prepare") {
     if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
     const source = await declaredFactorySource(root, repository, revision);

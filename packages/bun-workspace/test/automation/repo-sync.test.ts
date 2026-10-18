@@ -87,14 +87,14 @@ async function fixture() {
 }
 
 // Yolo is fused into the monorepo (cf2fa3f4b): only Aphrody and its Python sibling synchronize.
-test("declaration uses existing owner remotes and explicit main destinations", async () => {
+test("declaration synchronizes the canonical distribution and runtime branches", async () => {
   const config = await loadSourceSyncConfig();
   expect(config.repositories.map(repo => [repo.id, repo.remote, repo.sourceBranch, repo.destinationBranch])).toEqual([
-    ["aphrody", "workspace", "main", "main"],
-    ["bun-os", "origin", "main", "main"],
+    ["bun-os", "github", "os", "os"],
+    ["bun-runtime", "origin", "main", "main"],
   ]);
   const bun = config.repositories.find(repository => repository.id === "bun-os")!;
-  expect(bun.repositoryName).toBe("bun");
+  expect(bun.repositoryName).toBe("bun-distribution");
   expect(bun.buildEnabled).toBe(false);
 });
 test("plan does not fetch or push and dirty source commits synchronize without staging private files", async () => {
@@ -545,8 +545,8 @@ test("native factory worker prepares the exact pin before its declared build and
   const value = await fixture();
   value.repository.id = "yolo";
   value.repository.buildCommand = ["bash", "owned-build.sh"];
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
-  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+  await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(value.config));
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
   const path = join(state, "builds", "yolo.json");
@@ -629,19 +629,19 @@ test("native factory worker prepares the exact pin before its declared build and
 test("Bun native CI worker binds the protected revision and stable receipt id to the existing factory", async () => {
   const value = await fixture();
   Object.assign(value.repository, {
-    id: "bun-os",
+    id: "bun-runtime",
     repositoryName: "bun",
     buildEnabled: true,
     buildCommand: ["bun", "scripts/aphrody/native-ci.ts", "worker"],
   });
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
-  const configPath = join(value.root, "tools", "config", "commit-sync.json");
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+  const configPath = join(value.root, "tools", "aphrody", "config", "commit-sync.json");
   await writeFile(configPath, JSON.stringify(value.config));
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
-  const path = join(state, "builds", "bun-os.json");
+  const path = join(state, "builds", "bun-runtime.json");
   const job: FactoryJob = {
-    repo: "bun-os",
+    repo: "bun-runtime",
     revision: "a".repeat(40),
     token: crypto.randomUUID(),
     status: "starting",
@@ -664,14 +664,14 @@ test("Bun native CI worker binds the protected revision and stable receipt id to
   ).toBe(0);
   const command = factoryBuildCommand(value.repository, job);
   expect(calls).toEqual([
-    ["prepare", "--repo", "bun-os", "--revision", job.revision, "--apply"],
-    ["run", "--repo", "bun-os", "--revision", job.revision, "--", ...command],
+    ["prepare", "--repo", "bun-runtime", "--revision", job.revision, "--apply"],
+    ["run", "--repo", "bun-runtime", "--revision", job.revision, "--", ...command],
   ]);
   expect(command.slice(0, 5)).toEqual(["bun", "scripts/aphrody/native-ci.ts", "worker", "--revision", job.revision]);
   expect(command[5]).toBe("--id");
   expect(command[6]).toMatch(/^native-aaaaaaaaaaaa-[a-f0-9]{12}$/);
   const factory = await readFactoryConfig(join(import.meta.dir, "../../../.."));
-  const plan = buildFactoryPlan(factory!, "bun-os", job.revision, command);
+  const plan = buildFactoryPlan(factory!, "bun-runtime", job.revision, command);
   expect(plan.revision).toBe(job.revision);
   expect(plan.command).toEqual(calls[1]!.slice(calls[1]!.indexOf("--") + 1));
   expect(plan.transport[5]).toContain(command[6]!);
@@ -710,7 +710,7 @@ test("Bun native CI worker binds the protected revision and stable receipt id to
 test("disabled Bun builds do not queue and native commands cannot replace their protected pin", async () => {
   const value = await fixture();
   Object.assign(value.repository, {
-    id: "bun-os",
+    id: "bun-runtime",
     buildEnabled: false,
     buildCommand: ["bun", "scripts/aphrody/native-ci.ts", "worker"],
   });
@@ -721,7 +721,7 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
     throw Error("disabled");
   });
   try {
-    queue.enqueue(factoryReport("bun-os", "a".repeat(40)));
+    queue.enqueue(factoryReport("bun-runtime", "a".repeat(40)));
     expect(launched).toBe(false);
     expect(JSON.parse(await readFile(join(directory, "pending.json"), "utf8"))).toEqual({});
   } finally {
@@ -729,7 +729,7 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
   }
   value.repository.buildEnabled = true;
   const job: FactoryJob = {
-    repo: "bun-os",
+    repo: "bun-runtime",
     revision: "a".repeat(40),
     status: "starting",
     phase: "prepare",
@@ -738,9 +738,9 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
   expect(() => factoryBuildCommand(value.repository, { ...job, revision: "main" })).toThrow();
   value.repository.buildCommand = ["bun", "scripts/aphrody/native-ci.ts", "worker", "--revision", "b".repeat(40)];
   expect(() => factoryBuildCommand(value.repository, job)).toThrow();
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
   await writeFile(
-    join(value.root, "tools", "config", "commit-sync.json"),
+    join(value.root, "tools", "aphrody", "config", "commit-sync.json"),
     JSON.stringify({
       ...value.config,
       repositories: [{ ...value.repository, buildEnabled: "false" }],
@@ -751,12 +751,12 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
 
 test("repo-sync status reads live receipts and pending metadata without exposing tokens or changing state", async () => {
   const value = await fixture();
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
   const config = {
     ...value.config,
     repositories: ["yolo", "aphrody"].map(id => Object.assign({}, value.repository, { id, buildCommand: ["fixture"] })),
   };
-  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(config));
+  await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(config));
   const state = join(value.root, "protected-state");
   const absent = await readRepoSyncStatus(value.root, state);
   expect(absent.state).toBe("absent");
@@ -853,8 +853,8 @@ test.skipIf(process.platform === "win32")(
   "SIGTERM ends CLI watch and releases protected lock",
   async () => {
     const value = await fixture();
-    await mkdir(join(value.root, "tools", "config"), { recursive: true });
-    await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+    await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+    await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(value.config));
     const entry = join(value.root, "watch.ts");
     await writeFile(
       entry,

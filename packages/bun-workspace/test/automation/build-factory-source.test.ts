@@ -99,6 +99,7 @@ async function fixture() {
     path: source,
     remote: "origin",
     url: remoteUrl,
+    repositoryName: "yolo", branch: "main",
     owners: ["aphrody-labs"],
   };
   const execute = async (command: string) => {
@@ -116,6 +117,8 @@ async function fixture() {
     ]);
     return { output, error, exitCode };
   };
+  await git(root, "clone", "--quiet", remoteUrl, checkout);
+  await git(checkout, "submodule", "update", "--init", "--recursive", "--", "vendor/bun");
   const prepare = (parent = revision, paths: readonly string[] | null = ["vendor/bun"]) =>
     execute(
       buildFactoryPreparePlan(config, "yolo", parent, pin, {
@@ -166,11 +169,13 @@ test("selection accepts normalized exact paths and refuses ambiguous or escaping
 });
 
 test.skipIf(process.platform === "win32")(
-  "selected preparation hydrates only the pinned recursive closure and ignores an unreachable sibling",
+  "selected verification reads the existing pinned closure and ignores an unreachable sibling",
   async () => {
     const f = await fixture();
     await f.git(f.source, "config", "-f", ".gitmodules", "submodule.design/m3.url", `file://${f.root}/unreachable.git`);
     const revision = await f.commit("unreachable unrelated provider");
+    await f.git(f.checkout, "fetch", "origin");
+    await f.git(f.checkout, "merge", "--ff-only", revision);
     const result = await f.prepare(revision);
     expect(result.exitCode).toBe(0);
     expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(revision);
@@ -194,6 +199,7 @@ test.skipIf(process.platform === "win32")(
   "dirty unrelated sources survive selected preparation/build while exhaustive preparation still refuses them",
   async () => {
     const f = await fixture();
+    await f.git(f.checkout, "submodule", "update", "--init", "--recursive");
     expect((await f.prepare(f.revision, null)).exitCode).toBe(0);
     const sibling = join(f.checkout, "design/m3");
     await writeFile(join(sibling, "source.txt"), "concurrent unrelated work\n");
@@ -325,6 +331,7 @@ test("CLI selection rejects an incompatible --no-submodules combination before d
         path: "/source",
         remote: "origin",
         url: "https://github.com/aphrody-labs/yolo.git",
+        repositoryName: "yolo", branch: "main",
         owners: ["aphrody-labs"],
       },
       { submodules: ["vendor/bun"], initializeSubmodules: false },
@@ -337,10 +344,10 @@ test.skipIf(process.platform === "win32")(
   async () => {
     const f = await fixture();
     const root = join(f.root, "owner-config");
-    await mkdir(join(root, "tools", "config"), { recursive: true });
-    await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.config));
+    await mkdir(join(root, "tools", "aphrody", "config"), { recursive: true });
+    await writeFile(join(root, "tools/aphrody/config/build-factory.json"), JSON.stringify(f.config));
     await writeFile(
-      join(root, "tools/config/commit-sync.json"),
+      join(root, "tools/aphrody/config/commit-sync.json"),
       JSON.stringify({
         schemaVersion: 1,
         owners: ["aphrody-labs"],
@@ -382,7 +389,8 @@ test.skipIf(process.platform === "win32")(
         paths: ["vendor/bun"],
       });
       expect(job.fingerprint).toMatch(/^[a-f0-9]{64}$/u);
-      expect(await Bun.file(join(f.checkout, ".git/HEAD")).exists()).toBe(false);
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.revision);
+      expect(await f.git(f.checkout, "symbolic-ref", "--short", "HEAD")).toBe("main");
       expect(await runBuildFactory(["prepare", ...args, "--no-submodules"], root)).toBe(2);
       expect(JSON.parse(logs.at(-1)!).error).toContain("cannot be combined");
     } finally {

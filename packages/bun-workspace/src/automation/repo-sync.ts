@@ -39,7 +39,7 @@ export interface FactoryJob {
 export function factoryBuildCommand(repository: SyncRepository, job: FactoryJob): string[] {
   if (!repository.buildCommand?.length || repository.buildEnabled === false)
     throw new Error("Factory job has no enabled owner build command");
-  if (repository.id !== "bun-os") return [...repository.buildCommand];
+  if (repository.id !== "bun-runtime") return [...repository.buildCommand];
   if (
     repository.buildCommand.join("\0") !== ["bun", "scripts/aphrody/native-ci.ts", "worker"].join("\0") ||
     !/^[a-f0-9]{40}$/u.test(job.revision) ||
@@ -336,7 +336,7 @@ export async function runFactoryWorker(
     !validToken(job.token) ||
     job.token !== expectedToken ||
     !/^[a-f0-9]{40}$/u.test(job.revision) ||
-    !["yolo", "aphrody", "bun-os"].includes(job.repo) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(job.repo) ||
     resolve(path) !== join(expectedStateRoot, "builds", `${job.repo}.json`)
   )
     throw new Error("Invalid protected factory job");

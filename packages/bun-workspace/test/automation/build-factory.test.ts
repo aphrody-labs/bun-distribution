@@ -24,121 +24,30 @@ const config: BuildFactoryConfig = {
 };
 const revision = "a".repeat(40);
 
-test("preparation plans restrict source owners, aliases, revisions and sibling workspaces", () => {
-  const declared = {
-    ...config,
-    repositories: {
-      aphrody: "/home/ubuntu/src/aphrody",
-      yolo: "/home/ubuntu/src/yolo",
-    },
-  };
-  for (const repository of ["yolo", "aphrody"]) {
-    const source = {
-      path: `/source/${repository}`,
-      remote: repository === "aphrody" ? "workspace" : "origin",
-      url: `git@github-dev:aphrody-labs/${repository}.git`,
-      owners: ["aphrody-labs"],
-    };
-    const plan = buildFactoryPreparePlan(declared, repository, revision, source);
-    expect(plan.operation).toBe("prepare");
-    expect(plan.source.url).toBe(`https://github.com/aphrody-labs/${repository}.git`);
-    expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
-    expect(plan.transport[5]).toContain("flock --close");
-    expect(plan.transport[5]).toContain("--no-overwrite-ignore");
-    expect(plan.transport[5]).toContain("refs/remotes/origin/main");
-    expect(plan.transport[5]).not.toContain("git reset");
-    expect(plan.transport[5]).not.toContain("git clean");
+test("declared source names and branches drive canonical OS and runtime verification", () => {
+  const declared = { ...config, repositories: { "bun-os": "/home/ubuntu/src/bun-os", "bun-runtime": "/home/ubuntu/src/bun" } };
+  for (const [id, repositoryName, branch, remote] of [
+    ["bun-os", "bun-distribution", "os", "github"],
+    ["bun-runtime", "bun", "main", "origin"],
+  ] as const) {
+    const source = { path: `/source/${id}`, repositoryName, branch, remote,
+      url: `git@github-dev:aphrody-labs/${repositoryName}.git`, owners: ["aphrody-labs"] };
+    const plan = buildFactoryPreparePlan(declared, id, revision, source);
+    expect(plan.workspace).toBe(declared.repositories[id]);
+    expect(plan.source.branch).toBe(branch);
+    expect(plan.source.repositoryName).toBe(repositoryName);
+    expect(plan.transport[5]).toContain(`refs/remotes/${remote}/${branch}`);
+    expect(plan.transport[5]).toContain("git symbolic-ref --quiet --short HEAD");
+    for (const mutation of ["git checkout", "git clone", "git reset", "git clean", "submodule update", "--detach"])
+      expect(plan.transport[5]).not.toContain(mutation);
+    expect(plan.initializesSubmodules).toBe(false);
+    expect(() => buildFactoryPreparePlan(declared, id, revision, { ...source, branch: "../bad" })).toThrow("branch");
+    expect(() => buildFactoryPreparePlan(declared, id, revision, { ...source, url: "https://github.com/unowned/bun.git" })).toThrow("declared private");
+    expect(() => buildFactoryPreparePlan(declared, id, "main", source)).toThrow("pinned");
   }
-  const source = {
-    path: "/source/yolo",
-    remote: "origin",
-    url: "git@github-dev:aphrody-labs/yolo.git",
-    owners: ["aphrody-labs"],
-  };
-  expect(() => buildFactoryPreparePlan(declared, "iecode", revision, source)).toThrow("limited");
-  expect(() => buildFactoryPreparePlan(declared, "yolo", "main", source)).toThrow("pinned");
-  expect(() => buildFactoryPreparePlan({ ...declared, target: "dbfr" }, "yolo", revision, source)).toThrow("canonical");
-  expect(() =>
-    buildFactoryPreparePlan({ ...declared, executionOnlyTargets: ["vps"] }, "yolo", revision, source),
-  ).toThrow("execution-only");
-  expect(() =>
-    buildFactoryPreparePlan(
-      {
-        ...declared,
-        repositories: {
-          ...declared.repositories,
-          yolo: "/home/ubuntu/apps/unowned/yolo",
-        },
-      },
-      "yolo",
-      revision,
-      source,
-    ),
-  ).toThrow("sibling");
-  for (const url of [
-    "git@wrong-alias:aphrody-labs/yolo.git",
-    "https://unowned.invalid/aphrody-labs/yolo.git",
-    "https://fixture:secret@github.com/aphrody-labs/yolo.git",
-    "git@github-dev:unowned/yolo.git",
-    "git@github-dev:aphrody-labs/other.git",
-  ]) {
-    expect(() => factoryRemoteUrl(url, "yolo", ["aphrody-labs"])).toThrow("declared private");
-  }
+  for (const url of ["git@wrong-alias:aphrody-labs/bun.git", "https://fixture:secret@github.com/aphrody-labs/bun.git", "https://github.com/unowned/bun.git"])
+    expect(() => factoryRemoteUrl(url, "bun", ["aphrody-labs"])).toThrow("declared private");
 });
-
-test("Bun preparation uses its declared factory allocation and canonical Git repository name", () => {
-  const declared = {
-    ...config,
-    repositories: {
-      ...config.repositories,
-      "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/bun",
-    },
-  };
-  const source = {
-    path: "/source/bun",
-    remote: "origin",
-    url: "https://github.com/aphrody-labs/bun.git",
-    owners: ["aphrody-labs"],
-  };
-  const plan = buildFactoryPreparePlan(declared, "bun-os", revision, source, {
-    initializeSubmodules: false,
-  });
-  expect(plan.repository).toBe("bun-os");
-  expect(plan.workspace).toBe(declared.repositories["bun-os"]);
-  expect(plan.source.url).toBe(source.url);
-  expect(plan.transport[5]).toContain("bun-os.source.lock");
-  expect(plan.transport[5]).toContain("heavy.lock");
-  expect(plan.transport[5]).toContain("Factory source checkout is dirty; preserved");
-  expect(plan.transport[5]).not.toContain("git reset");
-  expect(plan.transport[5]).not.toContain("git clean");
-  expect(() =>
-    buildFactoryPreparePlan(declared, "bun-os", revision, {
-      ...source,
-      url: "https://github.com/aphrody-labs/bun-os.git",
-    }),
-  ).toThrow("declared private");
-  expect(() =>
-    buildFactoryPreparePlan(declared, "bun-os", revision, {
-      ...source,
-      url: "https://github.com/unowned/bun.git",
-    }),
-  ).toThrow("declared private");
-  expect(() =>
-    buildFactoryPreparePlan(
-      {
-        ...declared,
-        repositories: {
-          ...declared.repositories,
-          "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/other",
-        },
-      },
-      "bun-os",
-      revision,
-      source,
-    ),
-  ).toThrow("sibling");
-});
-
 async function preparationFixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-prepare-"));
   const source = join(root, "source");
@@ -196,8 +105,10 @@ async function preparationFixture() {
     path: source,
     remote: "origin",
     url: remoteUrl,
+    repositoryName: "yolo", branch: "main",
     owners: ["aphrody-labs"],
   };
+  await git(root, "clone", "--quiet", remoteUrl, checkout);
   const prepare = async (pinnedRevision: string) => {
     const plan = buildFactoryPreparePlan(declared, "yolo", pinnedRevision, pin);
     // Execute the planned remote body against tiny local Git fixtures; no host or source repository is touched.
@@ -237,7 +148,7 @@ async function preparationFixture() {
 }
 
 test.skipIf(process.platform === "win32")(
-  "preparation creates an absent declared checkout and reuses it without rewriting auth or directories",
+  "verification reuses the canonical branch and refuses to move it to another requested pin",
   async () => {
     const f = await preparationFixture();
     try {
@@ -252,8 +163,8 @@ test.skipIf(process.platform === "win32")(
       const inode = (await stat(join(f.checkout, ".git"))).ino;
       await writeFile(join(f.source, "source.txt"), "next source\n");
       const next = await f.commit("next");
-      expect((await f.prepare(next)).exitCode).toBe(0);
-      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(next);
+      expect((await f.prepare(next)).exitCode).toBe(2);
+      expect(await f.git(f.checkout, "rev-parse", "HEAD")).toBe(f.initial);
       expect((await stat(join(f.checkout, ".git"))).ino).toBe(inode);
       const cacheAfter = await stat(f.declared.cacheRoot);
       expect(cacheAfter.mode).toBe(cacheBefore.mode);
@@ -299,7 +210,7 @@ test.skipIf(process.platform === "win32")(
       await f.git(f.source, "push", "--quiet", "origin", "unpublished");
       const denied = await f.prepare(offMain);
       expect(denied.exitCode).toBe(2);
-      expect(denied.error).toContain("not on the declared remote main");
+      expect(denied.error).toContain("HEAD differs from requested pin");
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
@@ -311,11 +222,12 @@ test.skipIf(process.platform === "win32")(
   async () => {
     const f = await preparationFixture();
     try {
+      await rm(f.checkout, { recursive: true });
       await mkdir(f.checkout, { recursive: true });
       await writeFile(join(f.checkout, "unowned.txt"), "preserve me");
       const rejected = await f.prepare(f.initial);
       expect(rejected.exitCode).toBe(2);
-      expect(rejected.error).toContain("not a Git checkout; preserved");
+      expect(rejected.error).toContain("Canonical factory checkout is absent");
       expect(await readFile(join(f.checkout, "unowned.txt"), "utf8")).toBe("preserve me");
       await rm(f.checkout, { recursive: true });
       const outside = join(f.root, "outside");
@@ -368,6 +280,9 @@ test.skipIf(process.platform === "win32")(
       await f.git(childSource, "push", "--quiet", "origin", "main");
       await f.git(f.source, "submodule", "add", "--quiet", `file://${childRemote}`, "child");
       const parent = await f.commit("add child");
+      await f.git(f.checkout, "fetch", "origin");
+      await f.git(f.checkout, "merge", "--ff-only", parent);
+      await f.git(f.checkout, "submodule", "update", "--init", "--recursive");
       expect((await f.prepare(parent)).exitCode).toBe(0);
       const childCheckout = join(f.checkout, "child");
       await f.git(f.checkout, "config", "submodule.child.ignore", "all");
@@ -404,10 +319,10 @@ test.skipIf(process.platform === "win32")(
     const f = await preparationFixture();
     try {
       const root = join(f.root, "owner-config");
-      await mkdir(join(root, "tools", "config"), { recursive: true });
-      await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.declared));
+      await mkdir(join(root, "tools", "aphrody", "config"), { recursive: true });
+      await writeFile(join(root, "tools/aphrody/config/build-factory.json"), JSON.stringify(f.declared));
       await writeFile(
-        join(root, "tools/config/commit-sync.json"),
+        join(root, "tools/aphrody/config/commit-sync.json"),
         JSON.stringify({
           schemaVersion: 1,
           owners: ["aphrody-labs"],
@@ -671,14 +586,15 @@ test("source preparations use disjoint locks and builds also protect their pinne
     path: "/source/aphrody",
     remote: "workspace",
     url: "git@github-dev:aphrody-labs/aphrody.git",
+    repositoryName: "aphrody", branch: "main",
     owners: ["aphrody-labs"],
   };
   const first = buildFactoryPreparePlan(config, "aphrody", revision, source, {
     initializeSubmodules: false,
   });
   expect(first.lockPath).toBe("/home/ubuntu/build/locks/aphrody.source.lock");
-  expect(first.transport[5]).toContain("heavy.lock");
-  expect(first.transport[5]).toContain('if [ "$result" -eq 75 ]');
+  expect(first.transport[5]).toContain("aphrody.source.lock");
+  expect(first.transport[5]).not.toContain("--detach");
   expect(first.transport[5]).not.toContain("submodule update --init");
   expect(first.transport[5]).toContain("submodule foreach --quiet --recursive");
   expect(first.initializesSubmodules).toBe(false);
@@ -691,9 +607,10 @@ test("source preparations use disjoint locks and builds also protect their pinne
     path: "/source/yolo",
     remote: "origin",
     url: "git@github-dev:aphrody-labs/yolo.git",
+    repositoryName: "yolo", branch: "main",
   });
   expect(other.lockPath).not.toBe(first.lockPath);
-  expect(other.initializesSubmodules).toBe(true);
+  expect(other.initializesSubmodules).toBe(false);
   const build = buildFactoryPlan(config, "aphrody", revision, ["scripts/build/rust/cargo-serial.sh", "check"]);
   expect(build.transport[5]).toContain(
     "flock --close -- /home/ubuntu/build/locks/heavy.lock flock --close -- /home/ubuntu/build/locks/aphrody.source.lock",
