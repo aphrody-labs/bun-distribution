@@ -3,6 +3,7 @@
 // Zero AI slop, zero dead routes, zero mock data.
 
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { appBasePath } from "./app-base";
 import { legacyRouteRedirects } from "./desktop-navigation";
 import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
@@ -14,7 +15,11 @@ import { CreatorRoute } from "./routes/creator";
 import { ExplorerView } from "./routes/explorer";
 import { RecentsView } from "./routes/explorer/views/RecentsView";
 import { FileKindsView, FileKindResultsView } from "./routes/file-kinds";
-import { AtRiskFiles, CompareVolumes, RedundancyDashboard } from "./routes/redundancy";
+import {
+  AtRiskFiles,
+  CompareVolumes,
+  RedundancyDashboard,
+} from "./routes/redundancy";
 import { Settings } from "./routes/settings";
 import { SourcesHome } from "./routes/sources";
 import { SourceDetail } from "./routes/sources/SourceDetail";
@@ -177,5 +182,5 @@ export const explorerRoutes = [
  * Router instance for the main desktop interface
  */
 export function createExplorerRouter(): ReturnType<typeof createBrowserRouter> {
-  return createBrowserRouter(explorerRoutes);
+  return createBrowserRouter(explorerRoutes, { basename: appBasePath() });
 }
