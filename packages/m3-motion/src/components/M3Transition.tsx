@@ -6,12 +6,7 @@ import { m3Easings, m3Durations } from "../easings";
 import { motionVariants, useM3ReducedMotion } from "../hooks/useM3ReducedMotion";
 
 export type M3TransitionPattern =
-  | "fade"
-  | "fade-through"
-  | "shared-axis-x"
-  | "shared-axis-y"
-  | "shared-axis-z"
-  | "collapse";
+  "fade" | "fade-through" | "shared-axis-x" | "shared-axis-y" | "shared-axis-z" | "collapse";
 
 export interface M3TransitionProps extends Omit<HTMLMotionProps<"div">, "variants" | "style"> {
   style?: MotionStyle;

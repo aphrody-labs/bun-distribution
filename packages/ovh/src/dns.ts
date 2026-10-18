@@ -9,20 +9,7 @@
 import { OvhClient } from "./client.js";
 
 export type DnsRecordType =
-  | "A"
-  | "AAAA"
-  | "CNAME"
-  | "MX"
-  | "TXT"
-  | "SRV"
-  | "SPF"
-  | "CAA"
-  | "NS"
-  | "PTR"
-  | "DKIM"
-  | "DMARC"
-  | "LOC"
-  | "SSHFP";
+  "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "SRV" | "SPF" | "CAA" | "NS" | "PTR" | "DKIM" | "DMARC" | "LOC" | "SSHFP";
 
 export interface DnsZoneInfo {
   name: string;

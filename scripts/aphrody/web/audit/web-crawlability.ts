@@ -343,14 +343,7 @@ export function accessibleName(node: HtmlNode, index: DocIndex): string {
 }
 
 export type LandmarkName =
-  | "banner"
-  | "navigation"
-  | "main"
-  | "contentinfo"
-  | "complementary"
-  | "region"
-  | "search"
-  | "form";
+  "banner" | "navigation" | "main" | "contentinfo" | "complementary" | "region" | "search" | "form";
 export const LANDMARKS: readonly LandmarkName[] = [
   "banner",
   "navigation",

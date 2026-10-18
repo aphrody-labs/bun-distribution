@@ -33,8 +33,7 @@ export class ToggleSourceAudioSeparationCommand extends Command {
       return;
     }
     const sourceElement = sourceTrack.elements.find(element => element.id === this.params.elementId) as
-      | TimelineElement
-      | undefined;
+      TimelineElement | undefined;
     if (!sourceElement || sourceElement.type !== "video") {
       return;
     }

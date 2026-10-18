@@ -70,8 +70,7 @@ interface SkillLike {
 /** Résout un identifiant dans les trois familles, dans l'ordre historique. */
 function lookupSkill(svc: InagleService, skillId: string): SkillLike | undefined {
   return (svc.skills.get(skillId) || svc.skills.passiveGet(skillId) || svc.skills.auraGet(skillId)) as
-    | SkillLike
-    | undefined;
+    SkillLike | undefined;
 }
 
 /** Nom affichable d'une technique à partir de son identifiant. */

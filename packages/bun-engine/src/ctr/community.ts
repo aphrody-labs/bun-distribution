@@ -262,7 +262,8 @@ export async function communityMain(group: "patches" | "addons" | "homebrew", ar
       print(result);
       return result.ok ? 0 : 1;
     } else if (group === "homebrew" && action === "install") print(homebrewInstall(a));
-    else if (group === "homebrew" && action === "run") return await homebrewRun(a, argv.slice(argv.indexOf(a ?? "") + 1));
+    else if (group === "homebrew" && action === "run")
+      return await homebrewRun(a, argv.slice(argv.indexOf(a ?? "") + 1));
     else {
       console.error(
         "usage: 3ds patches list [tid] | patches apply <tid> <file.ips|bps|txt> [--romfs <path>] [--force|--append] | addons list | addons install <id> [--force] | homebrew build [dir] | homebrew install <app.3dsx> | homebrew run <app> [--azahar]",

@@ -31,9 +31,7 @@ export type JsxAttrValue =
   | { kind: "element"; start: number; end: number };
 
 export type JsxChild =
-  | { kind: "text"; start: number; end: number }
-  | { kind: "expr"; start: number; end: number }
-  | JsxNode;
+  { kind: "text"; start: number; end: number } | { kind: "expr"; start: number; end: number } | JsxNode;
 
 export interface JsxNode {
   kind: "element" | "fragment";
@@ -106,11 +104,7 @@ const JSX_KEYWORDS = new Set([
 const REGEX_KEYWORDS = new Set([...JSX_KEYWORDS, "instanceof", "new"]);
 
 type Prev =
-  | { t: "start" }
-  | { t: "punct"; v: string }
-  | { t: "word"; v: string }
-  | { t: "close"; v: string }
-  | { t: "value" };
+  { t: "start" } | { t: "punct"; v: string } | { t: "word"; v: string } | { t: "close"; v: string } | { t: "value" };
 
 class Scanner {
   readonly nodes: JsxNode[] = [];

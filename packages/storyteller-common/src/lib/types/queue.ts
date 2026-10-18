@@ -5,14 +5,7 @@ import { ToastDataType } from "./toast";
 export type UnionedActionTypes = fromEngineActions | toEngineActions | toTimelineActions;
 
 export type UnionedDataTypes =
-  | QueueClip
-  | UpdateTime
-  | QueueKeyframe
-  | MediaItem
-  | ToastDataType
-  | IGenerationOptions
-  | CameraAspectRatio
-  | null;
+  QueueClip | UpdateTime | QueueKeyframe | MediaItem | ToastDataType | IGenerationOptions | CameraAspectRatio | null;
 
 export type QueueSubscribeType = {
   action: UnionedActionTypes;

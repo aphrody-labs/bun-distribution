@@ -13,13 +13,7 @@
 import { createHash } from "node:crypto";
 
 export type OvhEndpoint =
-  | "ovh-eu"
-  | "ovh-ca"
-  | "ovh-us"
-  | "kimsufi-eu"
-  | "kimsufi-ca"
-  | "soyoustart-eu"
-  | "soyoustart-ca";
+  "ovh-eu" | "ovh-ca" | "ovh-us" | "kimsufi-eu" | "kimsufi-ca" | "soyoustart-eu" | "soyoustart-ca";
 
 export const ENDPOINT_URLS: Record<OvhEndpoint, string> = {
   "ovh-eu": "https://eu.api.ovh.com/1.0",

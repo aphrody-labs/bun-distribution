@@ -1601,8 +1601,7 @@ export const PaintSurface = ({
                   listening={false}
                   globalCompositeOperation={
                     (currentLinePendingRef.current.globalCompositeOperation ?? "source-over") as
-                      | "source-over"
-                      | "destination-out"
+                      "source-over" | "destination-out"
                   }
                 />
               )}
@@ -1662,8 +1661,7 @@ export const PaintSurface = ({
                   listening={false}
                   globalCompositeOperation={
                     (currentLinePendingRef.current.globalCompositeOperation ?? "source-over") as
-                      | "source-over"
-                      | "destination-out"
+                      "source-over" | "destination-out"
                   }
                 />
               )}

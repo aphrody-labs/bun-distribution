@@ -142,9 +142,7 @@ export type SeriesMatch = {
 };
 
 export type SeriesOutcome =
-  | { status: "pending" }
-  | { status: "tie" }
-  | { status: "decided"; winner: TeamSide; scoreT1: number; scoreT2: number };
+  { status: "pending" } | { status: "tie" } | { status: "decided"; winner: TeamSide; scoreT1: number; scoreT2: number };
 
 /**
  * Résout l'issue d'une série (lobby) en fonction du format.

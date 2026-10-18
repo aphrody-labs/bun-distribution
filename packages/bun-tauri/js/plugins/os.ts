@@ -29,16 +29,7 @@ declare global {
  * A string describing the specific operating system in use, as returned by {@link platform}.
  */
 type Platform =
-  | "linux"
-  | "macos"
-  | "ios"
-  | "freebsd"
-  | "dragonfly"
-  | "netbsd"
-  | "openbsd"
-  | "solaris"
-  | "android"
-  | "windows";
+  "linux" | "macos" | "ios" | "freebsd" | "dragonfly" | "netbsd" | "openbsd" | "solaris" | "android" | "windows";
 
 /**
  * A coarse-grained operating system category, as returned by {@link type}.
@@ -49,17 +40,7 @@ type OsType = "linux" | "windows" | "macos" | "ios" | "android";
  * A string describing the specific operating system architecture in use, as returned by {@link arch}.
  */
 type Arch =
-  | "x86"
-  | "x86_64"
-  | "arm"
-  | "aarch64"
-  | "mips"
-  | "mips64"
-  | "powerpc"
-  | "powerpc64"
-  | "riscv64"
-  | "s390x"
-  | "sparc64";
+  "x86" | "x86_64" | "arm" | "aarch64" | "mips" | "mips64" | "powerpc" | "powerpc64" | "riscv64" | "s390x" | "sparc64";
 
 /**
  * Returns the operating system-specific end-of-line marker.

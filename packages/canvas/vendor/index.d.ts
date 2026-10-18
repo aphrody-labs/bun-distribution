@@ -196,13 +196,7 @@ type CanvasFontStretch =
   | "ultra-condensed"
   | "ultra-expanded";
 type CanvasFontVariantCaps =
-  | "all-petite-caps"
-  | "all-small-caps"
-  | "normal"
-  | "petite-caps"
-  | "small-caps"
-  | "titling-caps"
-  | "unicase";
+  "all-petite-caps" | "all-small-caps" | "normal" | "petite-caps" | "small-caps" | "titling-caps" | "unicase";
 type CanvasTextAlign = "center" | "end" | "left" | "right" | "start";
 type CanvasTextBaseline = "alphabetic" | "bottom" | "hanging" | "ideographic" | "middle" | "top";
 type CanvasTextRendering = "auto" | "geometricPrecision" | "optimizeLegibility" | "optimizeSpeed";

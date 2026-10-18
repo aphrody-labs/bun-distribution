@@ -97,16 +97,7 @@ export interface NativeVideoRectangle {
 
 export interface NativeVideoResizeOptions {
   filter?:
-    | "nearest"
-    | "box"
-    | "bilinear"
-    | "linear"
-    | "cubic"
-    | "mitchell"
-    | "lanczos2"
-    | "lanczos3"
-    | "mks2013"
-    | "mks2021";
+    "nearest" | "box" | "bilinear" | "linear" | "cubic" | "mitchell" | "lanczos2" | "lanczos3" | "mks2013" | "mks2021";
   fit?: "fill" | "inside";
   withoutEnlargement?: boolean;
 }

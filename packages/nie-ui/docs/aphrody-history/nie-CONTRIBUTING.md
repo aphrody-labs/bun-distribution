@@ -104,7 +104,7 @@ right lane by itself and no hand-written list can drift.
   no `rustfmt.toml` describing the real style). Adopting a style is a deliberate commit, not a
   side effect of a gate.
 - **`cargo test --workspace`.** Linking ~100 test binaries fills the VPS disk. `clippy
-  --all-targets` type-checks the same targets without producing an executable. The tests that do
+--all-targets` type-checks the same targets without producing an executable. The tests that do
   run are the four copyright-free crates: `nie-core`, `nie-pe`, `nie-asm`, `nie-forge`.
 - **Anything a compiler cannot see.** A resource that is never read, a table that comes back
   empty, a page that renders blank — clippy and `tsc` are both happy. Run the thing.
@@ -136,7 +136,7 @@ docs(re): re-anchor the knowledge base on nie.exe
 Two rules with scars behind them:
 
 - **Never put a gate and a `git commit` in the same shell invocation.** `cargo test … ; git commit
-  …` runs the gate, prints its failure, and commits anyway — the output arrives after the commit
+…` runs the gate, prints its failure, and commits anyway — the output arrives after the commit
   has already happened. Run the gate, _read_ it, then commit separately. There is no commit hook
   to catch this for you.
 - **No AI watermarks.** No `Co-authored-by: Claude`, no `Generated-by`. A change made on a peer

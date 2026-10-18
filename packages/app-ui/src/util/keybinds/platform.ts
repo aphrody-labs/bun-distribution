@@ -114,15 +114,23 @@ export function toDisplayString(combo: KeyCombo, platform: Platform): string {
 
   // Format key for display
   let displayKey = combo.key;
-  if (displayKey === "ArrowUp") displayKey = "\u2191" as typeof displayKey; // ↑
-  else if (displayKey === "ArrowDown") displayKey = "\u2193" as typeof displayKey; // ↓
-  else if (displayKey === "ArrowLeft") displayKey = "\u2190" as typeof displayKey; // ←
-  else if (displayKey === "ArrowRight") displayKey = "\u2192" as typeof displayKey; // →
-  else if (displayKey === "Backspace") displayKey = "\u232B" as typeof displayKey; // ⌫
-  else if (displayKey === "Delete") displayKey = "\u2326" as typeof displayKey; // ⌦
-  else if (displayKey === "Enter") displayKey = "\u23CE" as typeof displayKey; // ⏎
+  if (displayKey === "ArrowUp")
+    displayKey = "\u2191" as typeof displayKey; // ↑
+  else if (displayKey === "ArrowDown")
+    displayKey = "\u2193" as typeof displayKey; // ↓
+  else if (displayKey === "ArrowLeft")
+    displayKey = "\u2190" as typeof displayKey; // ←
+  else if (displayKey === "ArrowRight")
+    displayKey = "\u2192" as typeof displayKey; // →
+  else if (displayKey === "Backspace")
+    displayKey = "\u232B" as typeof displayKey; // ⌫
+  else if (displayKey === "Delete")
+    displayKey = "\u2326" as typeof displayKey; // ⌦
+  else if (displayKey === "Enter")
+    displayKey = "\u23CE" as typeof displayKey; // ⏎
   else if (displayKey === "Escape") displayKey = "Esc" as typeof displayKey;
-  else if (displayKey === "Tab") displayKey = "\u21E5" as typeof displayKey; // ⇥
+  else if (displayKey === "Tab")
+    displayKey = "\u21E5" as typeof displayKey; // ⇥
   else if (displayKey === "Space") displayKey = "Space" as typeof displayKey;
   else {
     // Capitalize single letters

@@ -3,16 +3,7 @@
 import React from "react";
 
 export type AuraForm =
-  | "base"
-  | "kaioken"
-  | "ssj"
-  | "ssj2"
-  | "ssj3"
-  | "god"
-  | "blue"
-  | "ultra-instinct"
-  | "beast"
-  | "broly-fp";
+  "base" | "kaioken" | "ssj" | "ssj2" | "ssj3" | "god" | "blue" | "ultra-instinct" | "beast" | "broly-fp";
 
 export interface AnimeMomentCardProps {
   title: string;

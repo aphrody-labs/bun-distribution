@@ -12,13 +12,7 @@ import type { KitPaths } from "./paths.ts";
 import type { System } from "./system.ts";
 
 export type TrainType =
-  | "test"
-  | "embeddings"
-  | "reranker"
-  | "lora"
-  | "donnees-triplets"
-  | "donnees-rollouts"
-  | "donnees-dpo";
+  "test" | "embeddings" | "reranker" | "lora" | "donnees-triplets" | "donnees-rollouts" | "donnees-dpo";
 
 export interface TrainTypeInfo {
   /** Value of `aphrody train run --kind`. */

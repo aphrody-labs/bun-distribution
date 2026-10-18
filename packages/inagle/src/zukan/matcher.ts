@@ -298,9 +298,12 @@ export function matchScore(z: ZukanMatchEntry, db: ZukanMatchDbChar): number {
     if (isHero) {
       // Heroes use original character designs — prefer EARLIEST era portrait
       const zOrder = ERA_ORDER[zEra || ""] || 0;
-      if (zOrder === 1) score += 60; // OG era = best for heroes
-      else if (zSeries === db.series) score += 40; // Same series = ok fallback
-      else if (zEra === dbEra) score += 30; // Same era = ok
+      if (zOrder === 1)
+        score += 60; // OG era = best for heroes
+      else if (zSeries === db.series)
+        score += 40; // Same series = ok fallback
+      else if (zEra === dbEra)
+        score += 30; // Same era = ok
       else score += 5; // Other = last resort
     } else {
       if (dbEra && zEra && dbEra !== zEra) return -1; // Hard block cross-era

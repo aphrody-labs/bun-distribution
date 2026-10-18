@@ -272,7 +272,7 @@ Hypothèse « splash promo » → **REJETÉE**. Ces bannières sont des panneaux
 > **MISE À JOUR — DÉFINITION D'ÉCRAN (menu_setting, 2026-06-16).** L'écran « menu principal » n'est PAS
 > « tous les objbin `mainmenu01_*` ». Sa composition exacte se lit dans **`gamedata/menu/cfg/main_menu_setting.cfg.bin`**
 > → liste `MENU_LAYER_INFO` (13 layers), portée `aphrody-nie-data/src/menu_setting.rs` (`{layer_id=CRC32(name), name, objbin_path,
-> params}`, validé end-to-end `layer_id==CRC32(name)` sur 4 écrans). **Les 13 layers de `main_menu` mêlent
+params}`, validé end-to-end `layer_id==CRC32(name)` sur 4 écrans). **Les 13 layers de `main_menu` mêlent
 > `mainmenu90_*` (fond/en-tête/onglets), `cmn01_*` (icônes new/list), `mainmenu01_06/07/10/11` (button-guides) et
 > `rpg00_07` (guide timezone)** — PAS la série complète `mainmenu01_00..19`. ⇒ Le filtre `basename.starts_with("mainmenu01")`
 > de `build_sprite_list` est À LA FOIS trop large (prend `mainmenu01_00..19` dont beaucoup ne sont pas dans l'écran)
@@ -467,7 +467,7 @@ par `resolve_vfs_basename` + `vfs.read` puis `g4pkm::parse`
 - Aucun module `g4pkm_motion`/`g4ma`/`g4mt` (`ls crates/nie/aphrody-nie-formats/src/` : pas de `g4ma.rs`/`g4mt.rs`;
   `mevbin.rs` est sans rapport — c'est le _Motion Event Binary_ des personnages, `mevbin.rs:1`).
 - Aucun port de `GetMotionFinalPose` / `FindPlacementBoneIndex` (recherche `GetMotionFinalPose|ancestor|
-  fallback` dans `aphrody-nie-formats/src/` = 0 hit hors `mevbin`).
+fallback` dans `aphrody-nie-formats/src/` = 0 hit hors `mevbin`).
 - Aucun test golden adossé à `G4pkmMotionTests.cs`.
 
 ### Travail de portage (précis)
@@ -507,7 +507,7 @@ hors chemin critique pixel-perfect du placement.
   `obj.components` → `AnimationComponent.mot_open_hash != 0` et le passe à `place_on_canvas` ;
 - dans `place_on_canvas` : remplacer la sélection de base actuelle (`:81-87`) par
   `let mp = motion_final_pose(layout, has_open_motion); let pose = pick_best_pose_for_sprite(layout,
-  mp.pose, w, h);` — c'est-à-dire **d'abord** le fallback d'ancêtre, **ensuite** le scale-matching
+mp.pose, w, h);` — c'est-à-dire **d'abord** le fallback d'ancêtre, **ensuite** le scale-matching
   existant (renommer `pick_best_pose` → `pick_best_pose_for_sprite`, prenant la pose de placement en
   entrée au lieu de la recalculer). Conserver le calcul de scale `:61-72` (déjà conforme à
   `MenuLayoutExporter.cs:245-247`).
@@ -537,8 +537,8 @@ Critère de sortie : title02 ne doit plus avoir d'objbin placé hors-écran ; le
 > Les métriques vivent dans **`data/common/font/font/font_def/font.cfg.bin`** — un **T2B** que
 > `cfgbin::parse_t2b` décode déjà. **PORTÉ + VALIDÉ** : `aphrody-nie-formats/src/font.rs`
 > (`parse_metrics` → `FontMetrics{atlas 4096×2048, glyphs: BTreeMap<cp, GlyphMetric{x,y,width,
-> bearing_x,advance,page,font,base}>}`, 2 polices, 7638 glyphes). Layout `CHR =
-> [font, base, codepoint, atlasX, atlasY, width, bearingX, advance, page]` — **le codepoint est
+bearing_x,advance,page,font,base}>}`, 2 polices, 7638 glyphes). Layout `CHR =
+[font, base, codepoint, atlasX, atlasY, width, bearingX, advance, page]` — **le codepoint est
 > col[2]**, pas col[1]. Golden gated `font::tests::real_font_metrics_match` (A=1157,1,38,39 ;
 > W=47/48 ; i=7/12 ; tout l'ASCII imprimable). Le `g4.rs` calcule bien un chemin `"%s.g4tg"`,
 > mais c'est un format de **texture-group d'effets**, sans rapport avec la police.

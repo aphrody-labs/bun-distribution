@@ -148,7 +148,7 @@ auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconci
 ### Persistence + undo (timeline & split camera)
 
 - **Timeline persists in scene JSON**: `save_manager.getSceneJson` now writes `timeline:
-  getTimeline() ?? null` (was a `""` stub); `loadFromJson` restores via `loadTimeline` (guards
+getTimeline() ?? null` (was a `""` stub); `loadFromJson` restores via `loadTimeline` (guards
   legacy `""`/null). Flows through both backend save and the unmount→cache→remount roundtrip.
   Loaded objects keep their saved `object_uuid` (proxy load, `obj.uuid = json_object.object_uuid`),
   so timeline tracks (keyed by uuid) resolve.

@@ -28,7 +28,7 @@ jobs:
       - name: Lint
         run: bun run lint
       - name: Format
-        run: bun fmt --check --config bun-format.json src container factory infra packages apps scripts
+        run: bun run format:check
       - name: Workspace manifests
         run: bun install --frozen-lockfile --lockfile-only
 

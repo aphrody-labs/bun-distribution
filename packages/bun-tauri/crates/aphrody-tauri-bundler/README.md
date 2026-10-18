@@ -70,7 +70,7 @@ These settings are used only when bundling `app` and `dmg` packages.
   emitting lines like `cargo:rustc-link-lib=framework=SDL2` from your
   `build.rs` script), and (2) embedding the correct rpath in your binary
   (e.g. by running `install_name_tool -add_rpath
-  "@executable_path/../Frameworks" path/to/binary` after compiling).
+"@executable_path/../Frameworks" path/to/binary` after compiling).
 - `minimum_system_version`: A version string indicating the minimum Mac OS
   X version that the bundled app supports (e.g. `"10.11"`). If you are using
   this config field, you may also want have your `build.rs` script emit

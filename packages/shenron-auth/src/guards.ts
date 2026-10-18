@@ -29,16 +29,10 @@ export type Principal =
   | { kind: "service"; name: string };
 
 export type AuthErrorCode =
-  | "unauthenticated"
-  | "invalid_token"
-  | "forbidden"
-  | "scope_missing"
-  | "not_configured"
-  | "cross_origin";
+  "unauthenticated" | "invalid_token" | "forbidden" | "scope_missing" | "not_configured" | "cross_origin";
 
 export type AuthDecision =
-  | { ok: true; principal: Principal }
-  | { ok: false; status: 401 | 403 | 404 | 503; code: AuthErrorCode };
+  { ok: true; principal: Principal } | { ok: false; status: 401 | 403 | 404 | 503; code: AuthErrorCode };
 
 export type AuthFailure = Extract<AuthDecision, { ok: false }>;
 

@@ -16,8 +16,7 @@ import {
 import { roundMediaTime } from "../../../wasm";
 
 type InsertElementPlacement =
-  | { mode: "explicit"; trackId: string }
-  | { mode: "auto"; trackType?: TrackType; insertIndex?: number };
+  { mode: "explicit"; trackId: string } | { mode: "auto"; trackType?: TrackType; insertIndex?: number };
 
 export interface InsertElementParams {
   element: CreateTimelineElement;

@@ -269,16 +269,7 @@ export type AudioMediaData = {
  * Cloud service type identifier
  */
 export type CloudServiceType =
-  | "s3"
-  | "gdrive"
-  | "dropbox"
-  | "onedrive"
-  | "gcs"
-  | "azblob"
-  | "b2"
-  | "wasabi"
-  | "spaces"
-  | "cloud";
+  "s3" | "gdrive" | "dropbox" | "onedrive" | "gcs" | "azblob" | "b2" | "wasabi" | "spaces" | "cloud";
 
 export type CloudStorageConfig =
   | {

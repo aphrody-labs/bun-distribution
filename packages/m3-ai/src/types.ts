@@ -19,8 +19,7 @@ export interface ToolCallPair {
 // Transcript step types — discriminated union matching the real API schema
 
 export type ActionContent =
-  | { type: "text"; text: string }
-  | { type: "tool_call"; id: string; name: string; args: string };
+  { type: "text"; text: string } | { type: "tool_call"; id: string; name: string; args: string };
 
 export type TranscriptStep =
   | { type: "action"; content: ActionContent[] }

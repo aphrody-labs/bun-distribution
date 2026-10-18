@@ -30,14 +30,7 @@ export interface FreeformPathPoint {
 }
 
 export type BuiltinMaskType =
-  | "split"
-  | "cinematic-bars"
-  | "rectangle"
-  | "ellipse"
-  | "heart"
-  | "diamond"
-  | "star"
-  | "text";
+  "split" | "cinematic-bars" | "rectangle" | "ellipse" | "heart" | "diamond" | "star" | "text";
 
 export type MaskType = BuiltinMaskType | "freeform";
 
@@ -137,14 +130,7 @@ export interface TextMask {
 }
 
 export type BuiltinShapeMask =
-  | SplitMask
-  | CinematicBarsMask
-  | RectangleMask
-  | EllipseMask
-  | HeartMask
-  | DiamondMask
-  | StarMask
-  | TextMask;
+  SplitMask | CinematicBarsMask | RectangleMask | EllipseMask | HeartMask | DiamondMask | StarMask | TextMask;
 
 export interface FreeformPathMask {
   id: string;

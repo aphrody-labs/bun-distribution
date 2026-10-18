@@ -39,11 +39,7 @@ const TABLES: { name: string; label: string }[] = [
 ];
 
 const client = apiAt("/api/wiki-admin");
-const norm = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export function VisibilityManager() {
   const [table, setTable] = useState(TABLES[0]!.name);

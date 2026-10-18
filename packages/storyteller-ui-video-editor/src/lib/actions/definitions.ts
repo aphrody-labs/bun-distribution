@@ -2,14 +2,7 @@ import type { ShortcutKey } from "./keybinding";
 import type { TActionWithOptionalArgs } from "./types";
 
 export type TActionCategory =
-  | "playback"
-  | "navigation"
-  | "editing"
-  | "selection"
-  | "history"
-  | "timeline"
-  | "controls"
-  | "assets";
+  "playback" | "navigation" | "editing" | "selection" | "history" | "timeline" | "controls" | "assets";
 
 export interface TActionBaseDefinition {
   description: string;

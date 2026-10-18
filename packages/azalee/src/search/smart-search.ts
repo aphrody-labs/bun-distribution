@@ -54,16 +54,7 @@ export interface SmartSearchResult extends GlobalSearchResult {
 
 /** Search context for prioritization */
 export type SearchContext =
-  | "chara"
-  | "skill"
-  | "team"
-  | "aura"
-  | "passive"
-  | "tactic"
-  | "global"
-  | "item"
-  | "news"
-  | "patchnotes";
+  "chara" | "skill" | "team" | "aura" | "passive" | "tactic" | "global" | "item" | "news" | "patchnotes";
 
 /** Search configuration */
 export interface SmartSearchConfig {

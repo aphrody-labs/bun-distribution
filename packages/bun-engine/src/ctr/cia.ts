@@ -134,8 +134,7 @@ export async function readCiaInfo(file: string): Promise<CiaInfo> {
   const tikOffset = align(certOffset + certSize);
   const tmdOffset = align(tikOffset + tikSize);
   const contentOffset = align(tmdOffset + tmdSize);
-  if (contentOffset + contentSize > fileSize)
-    throw new Error("not a CIA: content area exceeds the file");
+  if (contentOffset + contentSize > fileSize) throw new Error("not a CIA: content area exceeds the file");
 
   const tik = await readRange(file, tikOffset, tikOffset + tikSize);
   const tikBody = signatureBodyOffset[tik.getUint32(0)];
@@ -236,8 +235,7 @@ export function requiredKeys(info: CiaInfo): KeyEntry[] {
     const slot = secondary[content.ncchSecondarySlot ?? 0];
     if (slot) add(keys, slotEntry(slot), why);
     add(keys, "generatorConstant", why);
-    if (content.ncchSeed)
-      add(`sysdata/${keyFiles.seeds}`, `seed for program ${content.programId}`, why);
+    if (content.ncchSeed) add(`sysdata/${keyFiles.seeds}`, `seed for program ${content.programId}`, why);
   }
   return [...out.values()];
 }
@@ -261,9 +259,7 @@ export function installedKeyNames(userDir = ciaUserDir()): Set<string> {
 export function missingKeys(required: KeyEntry[], userDir = ciaUserDir()): KeyEntry[] {
   const names = installedKeyNames(userDir);
   return required.filter(key =>
-    key.file.endsWith(keyFiles.seeds)
-      ? !existsSync(join(userDir, "sysdata", keyFiles.seeds))
-      : !names.has(key.entry),
+    key.file.endsWith(keyFiles.seeds) ? !existsSync(join(userDir, "sysdata", keyFiles.seeds)) : !names.has(key.entry),
   );
 }
 

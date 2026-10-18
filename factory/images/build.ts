@@ -266,7 +266,9 @@ function remoteScript(name: string, image: ImageSpec, targets: string[], args: R
       image.targets[target] === "rootfs"
         ? ` && { ${base} --output type=tar,dest=out/${name}-${target}-rootfs.tar && zstd -T0 -19 --long --rm -f out/${name}-${target}-rootfs.tar && echo "${name}-${target}-rootfs.tar.zst ok" >>status || echo "${name}-${target}-rootfs failed" >>status; }`
         : "";
-    lines.push(`${base} --output type=image,name=docker.io/library/${tag},compression=zstd,compression-level=19,force-compression=true,oci-mediatypes=true && echo "${tag} ok" >>status${rootfs} || echo "${tag} failed" >>status`);
+    lines.push(
+      `${base} --output type=image,name=docker.io/library/${tag},compression=zstd,compression-level=19,force-compression=true,oci-mediatypes=true && echo "${tag} ok" >>status${rootfs} || echo "${tag} failed" >>status`,
+    );
   }
   lines.push(
     "docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep '^" + name + ":' >>status",

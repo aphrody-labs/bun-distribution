@@ -33,7 +33,7 @@ process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 try {
-  await child.waitForHttp({ port, path: "/health", timeoutMs: 15_000, accept: (s) => s === 200 });
+  await child.waitForHttp({ port, path: "/health", timeoutMs: 15_000, accept: s => s === 200 });
   console.log(`ready: http://127.0.0.1:${port}`);
 } catch (error) {
   if (error instanceof ProcessExitedError) console.error(child.stderrTail());

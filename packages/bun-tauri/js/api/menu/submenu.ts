@@ -16,11 +16,7 @@ import { transformImage, type MenuIcon } from "../image";
 
 /** @ignore */
 export function itemFromKind([rid, id, kind]: [number, string, ItemKind]):
-  | Submenu
-  | MenuItem
-  | PredefinedMenuItem
-  | CheckMenuItem
-  | IconMenuItem {
+  Submenu | MenuItem | PredefinedMenuItem | CheckMenuItem | IconMenuItem {
   /* eslint-disable @typescript-eslint/no-unsafe-return */
   switch (kind) {
     case "Submenu":

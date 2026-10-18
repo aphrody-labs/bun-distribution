@@ -5,8 +5,7 @@ import { EIntermediateFile } from "./enums/EIntermediateFile.js";
 import { UploaderStates, UploaderState } from "@storyteller/common";
 
 type GetSessionTokenForUploadStuioShotResult =
-  | { success: true; data?: string }
-  | { success: false; errorMessage?: any };
+  { success: true; data?: string } | { success: false; errorMessage?: any };
 
 export class MediaUploadApi extends ApiManager {
   private sessionToken = "";

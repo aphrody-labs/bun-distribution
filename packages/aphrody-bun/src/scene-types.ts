@@ -84,13 +84,7 @@ export type SceneNode =
 
 /** M3 dynamic-scheme variant name (`aphrody_m3_tokens::scheme::Variant::name()`). */
 export type SchemeVariant =
-  | "monochrome"
-  | "neutral"
-  | "tonal-spot"
-  | "vibrant"
-  | "expressive"
-  | "rainbow"
-  | "fruit-salad";
+  "monochrome" | "neutral" | "tonal-spot" | "vibrant" | "expressive" | "rainbow" | "fruit-salad";
 
 /** Mirrors `aphrody_render::scene::Scene`. */
 export type Scene = {

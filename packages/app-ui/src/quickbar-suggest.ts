@@ -58,11 +58,7 @@ export type FileSuggestion = {
 };
 
 export type Suggestion =
-  | CalculatorSuggestion
-  | ThreadSuggestion
-  | NavigationSuggestion
-  | CommandSuggestion
-  | FileSuggestion;
+  CalculatorSuggestion | ThreadSuggestion | NavigationSuggestion | CommandSuggestion | FileSuggestion;
 
 export const CANONICAL_NAVIGATION_TARGETS: NavigationSuggestion[] = [
   {

@@ -207,9 +207,7 @@ export type MessageDialogButtonsOk = {
  * @since 2.4.0
  */
 export type MessageDialogCustomButtons =
-  | MessageDialogButtonsYesNoCancel
-  | MessageDialogButtonsOkCancel
-  | MessageDialogButtonsOk;
+  MessageDialogButtonsYesNoCancel | MessageDialogButtonsOkCancel | MessageDialogButtonsOk;
 
 /**
  * The buttons of a message dialog.

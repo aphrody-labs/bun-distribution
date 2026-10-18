@@ -160,13 +160,7 @@ export interface EffectElement extends BaseTimelineElement {
 export type ElementUpdatePatch = { params?: Partial<ParamValues> };
 
 export type TimelineElement =
-  | AudioElement
-  | VideoElement
-  | ImageElement
-  | TextElement
-  | StickerElement
-  | GraphicElement
-  | EffectElement;
+  AudioElement | VideoElement | ImageElement | TextElement | StickerElement | GraphicElement | EffectElement;
 
 export type ElementType = TimelineElement["type"];
 
