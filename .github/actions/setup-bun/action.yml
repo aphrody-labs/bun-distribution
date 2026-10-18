@@ -26,12 +26,17 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: |
         set -euo pipefail
-        if ! "$HOME/.bun/bin/bun" --version 2>/dev/null | grep -q "^${BUN_VERSION}"; then
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64) asset=bun-linux-x64.zip; exe=bun;;
+          Windows-X64) asset=bun-windows-x64.zip; exe=bun.exe;;
+          *) echo "::error::no published Bun ${BUN_VERSION} runtime for ${RUNNER_OS}-${RUNNER_ARCH}"; exit 1;;
+        esac
+        if ! "$HOME/.bun/bin/$exe" --version 2>/dev/null | grep -q "^${BUN_VERSION}"; then
           tmp="$(mktemp -d)"
-          gh release download "bun-v${BUN_VERSION}" -R aphrody-labs/bun -p bun-linux-x64.zip -D "$tmp"
+          gh release download "bun-v${BUN_VERSION}" -R aphrody-labs/bun -p "$asset" -D "$tmp"
           mkdir -p "$HOME/.bun/bin"
-          unzip -qjo "$tmp/bun-linux-x64.zip" "*/bun" -d "$HOME/.bun/bin"
-          chmod +x "$HOME/.bun/bin/bun"
+          unzip -qjo "$tmp/$asset" "*/$exe" -d "$HOME/.bun/bin"
+          chmod +x "$HOME/.bun/bin/$exe"
         fi
         echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
-        "$HOME/.bun/bin/bun" --version
+        "$HOME/.bun/bin/$exe" --version
