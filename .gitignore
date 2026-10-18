@@ -56,3 +56,18 @@ twitch_secrets.toml
 
 # Bun OS root managed by bep (release binaries, sources junctions, firmware/ROM store)
 /usr/
+
+# Nested build, cache and IDE output
+**/.gradle/
+**/local.properties
+**/dotnet/**/obj/
+**/.cache/
+**/.next/
+**/.vitepress/cache/
+**/*.log
+**/*.tsbuildinfo
+**/*.pdb
+.idea/
+.vs/
+*.user
+Thumbs.db
