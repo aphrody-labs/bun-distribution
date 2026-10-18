@@ -69,13 +69,15 @@ async function bunComponents(root: string, patterns: string[]): Promise<Componen
 
 async function catalogGaps(root: string): Promise<CatalogGap[]> {
   const rootManifest = (await Bun.file(join(root, "package.json")).json()) as {
+    catalog?: Record<string, string>;
+    catalogs?: Record<string, Record<string, string>>;
     workspaces?: {
       catalog?: Record<string, string>;
       catalogs?: Record<string, Record<string, string>>;
     };
   };
-  const defaultCatalog = rootManifest.workspaces?.catalog ?? {};
-  const namedCatalogs = rootManifest.workspaces?.catalogs ?? {};
+  const defaultCatalog = rootManifest.catalog ?? rootManifest.workspaces?.catalog ?? {};
+  const namedCatalogs = rootManifest.catalogs ?? rootManifest.workspaces?.catalogs ?? {};
   const manifests = await firstPartyManifests(root);
   const sections = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const;
   const gaps: CatalogGap[] = [];
@@ -105,6 +107,8 @@ async function catalogGaps(root: string): Promise<CatalogGap[]> {
 
 async function ffiOwners(root: string): Promise<Component[]> {
   const components = await rustComponents(root, [
+    "crates/*/Cargo.toml",
+    "apps/*/Cargo.toml",
     "crates/*/*/Cargo.toml",
     "crates/os/ostd/*/Cargo.toml",
     "crates/os/kernel/*/Cargo.toml",
@@ -123,6 +127,8 @@ async function ffiOwners(root: string): Promise<Component[]> {
 
 async function mcpHosts(root: string): Promise<Component[]> {
   const components = await rustComponents(root, [
+    "crates/*/Cargo.toml",
+    "apps/*/Cargo.toml",
     "crates/*/*/Cargo.toml",
     "crates/os/ostd/*/Cargo.toml",
     "crates/os/kernel/*/Cargo.toml",
@@ -187,10 +193,10 @@ export async function scanWebMigration(sourceRoot: string, targetRoot: string): 
   const source = resolve(sourceRoot);
   const target = resolve(targetRoot);
   const [sourceRust, sourceBun, targetRust, targetBun, gaps, cdylibs, mcp] = await Promise.all([
-    rustComponents(source, ["crates/*/Cargo.toml", "crates/aphrody-obscura/crates/*/Cargo.toml"]),
+    rustComponents(source, ["crates/*/Cargo.toml", "apps/*/Cargo.toml", "crates/aphrody-obscura/crates/*/Cargo.toml"]),
     bunComponents(source, ["packages/*/package.json", "apps/*/package.json"]),
-    rustComponents(target, ["crates/web/*/Cargo.toml", "crates/ai/*/Cargo.toml"]),
-    bunComponents(target, ["packages/web/*/package.json", "packages/ai/*/package.json", "apps/web/*/package.json"]),
+    rustComponents(target, ["crates/*/Cargo.toml", "apps/*/Cargo.toml"]),
+    bunComponents(target, ["packages/*/package.json", "apps/*/package.json"]),
     catalogGaps(target),
     ffiOwners(target),
     mcpHosts(target),
