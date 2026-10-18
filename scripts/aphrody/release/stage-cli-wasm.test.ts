@@ -97,6 +97,7 @@ test("portable stage bundles the existing facade, emits usable declarations and 
     await mkdir(pack);
     await run(["tar", "-xzf", join(out, entry.file), "-C", pack]);
     const metadata = JSON.parse(await readFile(join(pack, "provenance.json"), "utf8"));
+    expect(metadata.packagingSource.facade.path).toBe("packages/cli-wasm/src/index.ts");
     expect(metadata.build).toEqual(f.provenance);
     expect(metadata.files["aphrody_command_wasm_bg.wasm"]).toEqual(f.provenance.wasm);
     const portable = await import(join(pack, "index.js"));

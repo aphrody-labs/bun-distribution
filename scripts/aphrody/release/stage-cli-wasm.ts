@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { buildWasmPackage } from "../build/rust/wasm-package.ts";
 import { run, scanBytes, scanName, loadConfig, sha256File, type StagedEntry } from "./publish-downloads.ts";
 
-const repository = resolve(import.meta.dir, "../../../docs/aphrody");
+const repository = resolve(import.meta.dir, "../../..");
 const wasmName = "aphrody_command_wasm";
 const wasmFile = `${wasmName}_bg.wasm`;
 const generatedFiles = [`${wasmName}.js`, `${wasmName}.d.ts`, `${wasmName}_bg.wasm.d.ts`, wasmFile];
@@ -94,7 +94,7 @@ export async function freezeWasmInput(input: string, provenance: WasmBuildProven
 
 export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEntry[]> {
   const root = options.root ?? repository;
-  const app = join(root, "packages/infra/cli-wasm");
+  const app = join(root, "packages/cli-wasm");
   const pkg = JSON.parse(await readFile(join(app, "package.json"), "utf8"));
   const commit = (await run(["git", "rev-parse", "HEAD"], { cwd: root })).stdout.trim();
   const out = resolve(options.out);
@@ -166,8 +166,6 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
       ],
     });
     if (!bundled.success) throw new Error(`WASM facade bundle failed: ${bundled.logs.join("\n")}`);
-    const compiler = join(root, "node_modules/typescript/bin/tsc");
-    if (!(await Bun.file(compiler).exists())) throw new Error("the locked TypeScript declaration emitter is required");
     const tsconfig = join(work, "tsconfig.json");
     await writeFile(
       tsconfig,
@@ -188,16 +186,31 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         files: [join(app, "src/index.ts")],
       }),
     );
-    await run([process.execPath, compiler, "--project", tsconfig], {
-      cwd: root,
-    });
+    await mkdir(join(work, "declarations"));
+    await run(
+      [
+        process.execPath,
+        "check",
+        "--project",
+        tsconfig,
+        "--emitDeclarationOnly=true",
+        "--declaration=true",
+        "--noEmit=false",
+        "--rootDir",
+        join(app, "src"),
+        "--outDir",
+        join(work, "declarations"),
+        join(app, "src/index.ts"),
+      ],
+      { cwd: root },
+    );
     await copyFile(join(work, "declarations/index.d.ts"), join(pack, "index.d.ts"));
     await copyFile(join(input, `${wasmName}.d.ts`), join(pack, `${wasmName}.d.ts`));
     await copyFile(join(input, wasmFile), join(pack, wasmFile));
     // Verify copied module, not mutable source bytes, before producing distribution metadata.
     if ((await sha256File(join(pack, wasmFile))) !== provenance!.wasm.sha256)
       throw new Error("qualified WASM changed during staging");
-    await copyFile(join(root, "crates/tauri/aphrody-tauri-build/LICENSE-APACHE-2.0"), join(pack, "LICENSE"));
+    await copyFile(join(root, "LICENSE-APACHE"), join(pack, "LICENSE"));
     await writeFile(
       join(pack, "package.json"),
       JSON.stringify(
@@ -241,7 +254,7 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
           packagingRevision: commit,
           packagingSource: {
             facade: {
-              path: "packages/infra/cli-wasm/src/index.ts",
+              path: "packages/cli-wasm/src/index.ts",
               sha256: await sha256File(join(app, "src/index.ts")),
             },
             stage: {

@@ -24,7 +24,7 @@
     "access": "public"
   },
   "scripts": {
-    "build:wasm": "bun ../../scripts/aphrody/build/rust/wasm-package.ts --crate aphrody-command-wasm --out packages/infra/cli-wasm/wasm",
+    "build:wasm": "bun ../../scripts/aphrody/build/rust/wasm-package.ts --crate aphrody-command-wasm --out packages/cli-wasm/wasm",
     "stage": "bun ../../scripts/aphrody/release/stage-cli-wasm.ts",
     "typecheck": "bun check --noEmit",
     "test": "bun test"
