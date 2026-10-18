@@ -24,7 +24,9 @@ const rows = dbx.cpkFind(read, cpk, "ext:emb");
 console.log(`cpkFind ext:emb -> ${rows.length} entries; I/O so far: ${reads} reads, ${bytesRead} bytes`);
 const entry = rows.find(row => row.compressed) ?? rows[0];
 if (!entry) throw new Error("no emb entry");
-console.log(`entry: ${entry.path} size=${entry.size} extract_size=${entry.extract_size} compressed=${entry.compressed}`);
+console.log(
+  `entry: ${entry.path} size=${entry.size} extract_size=${entry.extract_size} compressed=${entry.compressed}`,
+);
 const bytes = dbx.cpkRead(read, cpk, entry.path);
 console.log(`cpkRead -> ${bytes.length} bytes; magic ${Buffer.from(bytes.subarray(0, 4)).toString("latin1")}`);
 console.log(`length == extract_size: ${bytes.length === entry.extract_size}`);

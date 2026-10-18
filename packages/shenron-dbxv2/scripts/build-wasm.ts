@@ -13,11 +13,25 @@ function run(cmd: string[]): void {
 }
 
 run([
-  "cargo", "build", "-p", "shenron-dbxv2", "--lib", "--features", "wasm",
-  "--target", "wasm32-unknown-unknown", "--release",
+  "cargo",
+  "build",
+  "-p",
+  "shenron-dbxv2",
+  "--lib",
+  "--features",
+  "wasm",
+  "--target",
+  "wasm32-unknown-unknown",
+  "--release",
 ]);
 run([
-  "wasm-bindgen", resolve(root, "target/wasm32-unknown-unknown/release/shenron_dbxv2.wasm"),
-  "--target", "web", "--out-dir", out, "--out-name", "shenron_dbxv2",
+  "wasm-bindgen",
+  resolve(root, "target/wasm32-unknown-unknown/release/shenron_dbxv2.wasm"),
+  "--target",
+  "web",
+  "--out-dir",
+  out,
+  "--out-name",
+  "shenron_dbxv2",
 ]);
 console.log(`wasm module written to ${out}`);
