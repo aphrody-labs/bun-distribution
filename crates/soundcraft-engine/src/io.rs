@@ -1264,7 +1264,7 @@ fn read_bundle(bytes: &[u8]) -> Result<(String, std::collections::HashMap<String
         if f.is_dir() {
             continue;
         }
-        let rel = f.name().map_err(zerr)?.to_string();
+        let rel = f.name().to_string();
         let size = f.size();
         total = total.saturating_add(size);
         if total > MAX_BUNDLE_BYTES {
