@@ -292,22 +292,28 @@ impl RendererOpenGL {
         // Initialize the presentation passes after all constructor GL state,
         // as Eden does. The rasterizer is already heap-stable, so layers may
         // retain its non-owning pointer.
-        let blit_screen = BlitScreen::new(
-            Arc::clone(&program_manager),
-            rasterizer_ptr,
-            state_tracker_ptr,
-            device_ptr,
-            Arc::clone(&device_memory_reader),
-            &PRESENT_FILTERS_FOR_DISPLAY,
-        );
-        let blit_applet = BlitScreen::new(
-            Arc::clone(&program_manager),
-            rasterizer_ptr,
-            state_tracker_ptr,
-            device_ptr,
-            Arc::clone(&device_memory_reader),
-            &PRESENT_FILTERS_FOR_APPLET_CAPTURE,
-        );
+        // SAFETY: these boxed renderer members remain heap-stable and outlive the presentation passes.
+        let blit_screen = unsafe {
+            BlitScreen::new(
+                Arc::clone(&program_manager),
+                rasterizer_ptr,
+                state_tracker_ptr,
+                device_ptr,
+                Arc::clone(&device_memory_reader),
+                &PRESENT_FILTERS_FOR_DISPLAY,
+            )
+        };
+        // SAFETY: the applet pass borrows the same renderer-owned members as the display pass.
+        let blit_applet = unsafe {
+            BlitScreen::new(
+                Arc::clone(&program_manager),
+                rasterizer_ptr,
+                state_tracker_ptr,
+                device_ptr,
+                Arc::clone(&device_memory_reader),
+                &PRESENT_FILTERS_FOR_APPLET_CAPTURE,
+            )
+        };
 
         // Create capture framebuffer and renderbuffer for applet capture layer.
         // Port of upstream constructor: capture_framebuffer.Create(); capture_renderbuffer.Create();

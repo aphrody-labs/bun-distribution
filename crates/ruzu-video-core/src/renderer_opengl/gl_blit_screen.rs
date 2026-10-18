@@ -63,7 +63,11 @@ impl BlitScreen {
     /// Create a new BlitScreen.
     ///
     /// Port of `BlitScreen::BlitScreen()`.
-    pub fn new(
+    ///
+    /// # Safety
+    /// The non-null pointers must refer to heap-stable renderer members that outlive this pass.
+    /// Presentation and destruction must occur on their owning OpenGL thread/context.
+    pub unsafe fn new(
         program_manager: ProgramManagerHandle,
         rasterizer: *mut RasterizerOpenGL,
         state_tracker: *mut StateTracker,
