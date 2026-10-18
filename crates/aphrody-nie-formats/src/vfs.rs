@@ -147,7 +147,11 @@ fn is_file_exact(path: &Path) -> bool {
 }
 
 /// Positioned read of `size` bytes at `offset` in a local pack.
-pub(crate) fn read_file_range(path: &Path, offset: u64, size: usize) -> Result<Vec<u8>, FormatError> {
+pub(crate) fn read_file_range(
+    path: &Path,
+    offset: u64,
+    size: usize,
+) -> Result<Vec<u8>, FormatError> {
     use std::io::{Seek, SeekFrom};
     let mut file =
         File::open(path).map_err(|_| FormatError::Corrupt("impossible d'ouvrir le CPK"))?;
@@ -321,7 +325,7 @@ impl Vfs {
             };
             self.index.clear();
             self.index_extra.clear();
-        self.extra_sizes.clear();
+            self.extra_sizes.clear();
             self.cpk_names.clear();
             self.overlays.clear();
             self.vider_cache();
@@ -504,7 +508,11 @@ impl Vfs {
             }
             let path = crate::vfs_manifest::join_canonical(&e.directory, &e.filename);
             if !self.index.contains_key(&path) && !self.index_extra.contains_key(&path) {
-                let size = if e.extract_size == 0 { e.size } else { e.extract_size };
+                let size = if e.extract_size == 0 {
+                    e.size
+                } else {
+                    e.extract_size
+                };
                 self.extra_sizes.insert(path.clone(), size);
                 self.index_extra.insert(path, name.to_string());
                 added += 1;
@@ -703,12 +711,7 @@ impl Vfs {
             let rel = internal_path.strip_prefix("data/").unwrap_or(internal_path);
             return is_file_exact(&self.game_data_dir.join(rel));
         }
-        is_file_exact(
-            &self
-                .game_data_dir
-                .join("packs")
-                .join(&entry.cpk_filename),
-        )
+        is_file_exact(&self.game_data_dir.join("packs").join(&entry.cpk_filename))
     }
 
     /// Chemin disque d'un fichier « loose » — déclaré dans `cpk_list.cfg.bin` avec un CPK vide,

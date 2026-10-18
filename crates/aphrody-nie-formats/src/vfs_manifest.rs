@@ -173,13 +173,27 @@ impl ManifestEntry {
     }
 
     fn from_json(v: &Value) -> Result<Self, FormatError> {
-        let flags = v["flags"].as_str().ok_or(FormatError::Corrupt("manifest row: flags"))?;
+        let flags = v["flags"]
+            .as_str()
+            .ok_or(FormatError::Corrupt("manifest row: flags"))?;
         Ok(Self {
-            path: v["path"].as_str().ok_or(FormatError::Corrupt("manifest row: path"))?.to_string(),
-            source: v["source"].as_str().ok_or(FormatError::Corrupt("manifest row: source"))?.to_string(),
-            offset: v["offset"].as_u64().ok_or(FormatError::Corrupt("manifest row: offset"))?,
-            size: v["size"].as_u64().ok_or(FormatError::Corrupt("manifest row: size"))?,
-            extract_size: v["extractSize"].as_u64().ok_or(FormatError::Corrupt("manifest row: extractSize"))?,
+            path: v["path"]
+                .as_str()
+                .ok_or(FormatError::Corrupt("manifest row: path"))?
+                .to_string(),
+            source: v["source"]
+                .as_str()
+                .ok_or(FormatError::Corrupt("manifest row: source"))?
+                .to_string(),
+            offset: v["offset"]
+                .as_u64()
+                .ok_or(FormatError::Corrupt("manifest row: offset"))?,
+            size: v["size"]
+                .as_u64()
+                .ok_or(FormatError::Corrupt("manifest row: size"))?,
+            extract_size: v["extractSize"]
+                .as_u64()
+                .ok_or(FormatError::Corrupt("manifest row: extractSize"))?,
             compressed: flags.contains('c'),
             extra: flags.contains('e'),
             loose: flags.contains('l'),
@@ -284,8 +298,9 @@ impl Manifest {
     /// Malformed JSON/rows, an unknown version, or a count/digest that does not match the rows.
     pub fn parse_ndjson(text: &str) -> Result<Self, FormatError> {
         let mut lines = text.lines().filter(|l| !l.is_empty());
-        let header: Value = serde_json::from_str(lines.next().ok_or(FormatError::Corrupt("manifest empty"))?)
-            .map_err(|_| FormatError::Corrupt("manifest header is not JSON"))?;
+        let header: Value =
+            serde_json::from_str(lines.next().ok_or(FormatError::Corrupt("manifest empty"))?)
+                .map_err(|_| FormatError::Corrupt("manifest header is not JSON"))?;
         if header["manifest"].as_u64() != Some(MANIFEST_VERSION) {
             return Err(FormatError::Corrupt("unsupported manifest version"));
         }
@@ -298,10 +313,14 @@ impl Manifest {
         }
         let manifest = Self::new(&game, entries);
         if header["count"].as_u64() != Some(manifest.len() as u64) {
-            return Err(FormatError::Corrupt("manifest count does not match its rows"));
+            return Err(FormatError::Corrupt(
+                "manifest count does not match its rows",
+            ));
         }
         if header["digest"].as_str() != Some(manifest.digest().as_str()) {
-            return Err(FormatError::Corrupt("manifest digest does not match its rows"));
+            return Err(FormatError::Corrupt(
+                "manifest digest does not match its rows",
+            ));
         }
         Ok(manifest)
     }
@@ -386,10 +405,7 @@ impl Manifest {
 /// # Errors
 /// The pack cannot be opened, or holds no such path.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn read_pack_entry(
-    pack_path: &std::path::Path,
-    path: &str,
-) -> Result<Vec<u8>, FormatError> {
+pub fn read_pack_entry(pack_path: &std::path::Path, path: &str) -> Result<Vec<u8>, FormatError> {
     let name = pack_path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())

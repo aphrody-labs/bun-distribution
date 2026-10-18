@@ -39,7 +39,8 @@ fn cpk_dir(root: &Path) -> PathBuf {
 }
 
 fn mount_ievr(root: &Path) -> Result<Vfs, String> {
-    let data = local_data_dir(root).ok_or_else(|| format!("{}: no cpk_list.cfg.bin", root.display()))?;
+    let data =
+        local_data_dir(root).ok_or_else(|| format!("{}: no cpk_list.cfg.bin", root.display()))?;
     let mut vfs = Vfs::new();
     vfs.init(&data).map_err(|e| format!("mount: {e}"))?;
     Ok(vfs)
