@@ -90,6 +90,7 @@ async function fixture() {
     enabled: true,
     target: "vps",
     rust: { maxJobs: 1 },
+    resources: { reserveMemoryGiB: 1, reserveDiskGiB: 1, memoryPerJobGiB: 1 },
     cacheRoot: join(root, "cache"),
     artifactRoot: join(root, "artifacts"),
     lockPath: join(root, "locks/heavy.lock"),

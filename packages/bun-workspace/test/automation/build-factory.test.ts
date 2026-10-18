@@ -368,7 +368,7 @@ test.skipIf(process.platform === "win32")(
           ],
           {
             windowsHide: true,
-            env: { ...f.env, APHRODY_ROOT: root, APHRODY_INFRA_BIN: infra },
+            env: { ...f.env, BUN_OS_ROOT: root, APHRODY_INFRA_BIN: infra },
             stdout: "pipe",
             stderr: "pipe",
             timeout: 5_000,

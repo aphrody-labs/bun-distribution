@@ -48,8 +48,8 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-job-cli-"));
   roots.push(root);
-  await mkdir(join(root, "tools", "config"), { recursive: true });
-  await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(config));
+  await mkdir(join(root, "tools", "aphrody", "config"), { recursive: true });
+  await writeFile(join(root, "tools/aphrody/config/build-factory.json"), JSON.stringify(config));
   const marker = join(root, "invocation.json");
   const response = join(root, "response.json");
   const receipt = {
@@ -72,7 +72,7 @@ async function fixture() {
         windowsHide: true,
         env: {
           ...process.env,
-          APHRODY_ROOT: root,
+          BUN_OS_ROOT: root,
           APHRODY_INFRA_BIN: infra,
           INFRA_FIXTURE_MARKER: marker,
           INFRA_FIXTURE_RESPONSE: response,
