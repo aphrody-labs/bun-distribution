@@ -19,6 +19,12 @@ runs:
       env:
         TOKEN: ${{ inputs.token }}
       run: git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+    - name: Skip submodules whose test fixtures use names Windows cannot create
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        git config --global core.longpaths true
+        git config submodule.packages/re/third_party/unblob.update none
     - name: Cache Bun packages
       uses: actions/cache@v4
       with:
