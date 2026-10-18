@@ -18,6 +18,8 @@ import { parseArgs } from "node:util";
 
 const ROOT = resolve(import.meta.dir, "..");
 const USER_AGENT = "aphrody-release (contact@aphrody.com)";
+/** npm scopes the release token can publish to; imported scopes such as @storyteller belong to others. */
+const OWNED_SCOPES = new Set((process.env.RELEASE_NPM_SCOPES ?? "@aphrody,@rosegriffon").split(","));
 
 const { positionals, values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -72,6 +74,7 @@ export async function npmPackages(): Promise<NpmPackage[]> {
   for (const file of new Bun.Glob("{packages,apps}/*/package.json").scanSync({ cwd: ROOT })) {
     const manifest = await Bun.file(join(ROOT, file)).json();
     if (!manifest.name || !manifest.version || manifest.private) continue;
+    if (!OWNED_SCOPES.has(manifest.name.split("/")[0])) continue;
     const deps = Object.keys({
       ...manifest.dependencies,
       ...manifest.optionalDependencies,

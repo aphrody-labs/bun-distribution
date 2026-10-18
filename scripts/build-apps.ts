@@ -87,7 +87,8 @@ async function readJSON(path: string): Promise<unknown> {
 function runtimePin(value: unknown): RuntimePin {
   if (
     !isObject(value) ||
-    value.version !== "1.4.4" ||
+    typeof value.version !== "string" ||
+    !/^\d+\.\d+\.\d+$/.test(value.version) ||
     value.repository !== "aphrody-labs/bun" ||
     typeof value.revision !== "string" ||
     !/^[0-9a-f]{40}$/.test(value.revision)

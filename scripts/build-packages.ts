@@ -433,7 +433,8 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
     const facts = identityInputs.runtime.facts;
     if (
       !sha(identityInputs.runtime.sha256) ||
-      facts.version !== "1.4.4" ||
+      typeof facts.version !== "string" ||
+      !/^\d+\.\d+\.\d+$/.test(facts.version) ||
       typeof facts.revision !== "string" ||
       !/^[a-f0-9]{40}$/.test(facts.revision) ||
       typeof facts.executable !== "string" ||
