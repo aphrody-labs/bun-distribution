@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Steam surface of play.aphrody.app, built only from @aphrody/bun-steam exports (read-only: the
- * client, its session and its configuration are never modified here) and the client's content_log.
+ * Steam surface of play.aphrody.app, built from @aphrody/bun-steam exports and content_log.
+ * Explicit launches use the existing client; sessions and configuration remain in their stores.
  */
 import {
   type AuditReport,
   installedGames,
+  isSteamRunning,
   listCompatTools,
   listLibraries,
   remotePlayState,
+  openSteamUri,
+  rungameidUri,
   resolveSteamRoot,
   runAudit,
 } from "@aphrody/bun-steam";
@@ -16,6 +19,36 @@ import { openSync, readSync, closeSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { libraryCacheFile } from "./art";
 import { config } from "./config";
+import { installedSteamGame, steamAppId } from "../steam-target";
+
+/** Request a launch through the existing client; acceptance does not prove game readiness. */
+export async function launchSteamGame(value: string): Promise<Response> {
+  const appId = steamAppId(value);
+  if (appId === null)
+    return Response.json({ error: "invalid Steam app id" }, { status: 400 });
+  const root = steamRoot();
+  if (!root)
+    return Response.json({ error: "Steam unavailable" }, { status: 503 });
+  const game = installedSteamGame(installedGames(root), appId);
+  if (!game)
+    return Response.json(
+      { error: "game is not fully installed" },
+      { status: 404 },
+    );
+  if (!isSteamRunning())
+    return Response.json(
+      { error: "Steam client is not running" },
+      { status: 409 },
+    );
+  const result = await openSteamUri(rungameidUri(appId));
+  return Response.json(
+    { appId, name: game.name, requested: result.exitCode === 0 },
+    {
+      status: result.exitCode === 0 ? 202 : 502,
+      headers: { "cache-control": "no-store" },
+    },
+  );
+}
 
 function steamRoot(): string | null {
   try {

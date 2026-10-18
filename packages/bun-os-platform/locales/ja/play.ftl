@@ -142,3 +142,7 @@ not-found = このページは存在しません。ライブラリに戻って�
 error-load = { $what } を読み込めませんでした：{ $error }。VPS で play サービスが動作しているか確認してください。
 status-gamepad = ゲームパッド接続済み
 status-no-gamepad = ゲームパッドなし
+stream-launch-note = ゲームホストにインストール済みのゲームを起動し、現在の配信に接続します。
+stream-game-unavailable = このゲームはゲームホストに完全にインストールされていません。
+stream-launch-requested = Steam に起動を要求しました。配信には送信元の現在の映像が表示されます。
+stream-launch-failed = 起動要求に失敗しました。ゲームホストで Steam が動作しているか確認してください。

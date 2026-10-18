@@ -145,3 +145,7 @@ not-found = Diese Seite existiert nicht. Kehre zur Bibliothek zurück.
 error-load = { $what } wurde nicht geladen: { $error }. Prüfe, ob der Play-Dienst auf dem VPS läuft.
 status-gamepad = Gamepad verbunden
 status-no-gamepad = Kein Gamepad
+stream-launch-note = Das installierte Spiel auf dem Spielehost starten und dessen aktuellen Stream öffnen.
+stream-game-unavailable = Dieses Spiel ist auf dem Spielehost nicht vollständig installiert.
+stream-launch-requested = Start bei Steam angefordert. Der Stream zeigt das aktuelle Bild des Senders.
+stream-launch-failed = Die Startanfrage ist fehlgeschlagen. Prüfe, ob Steam auf dem Spielehost läuft.

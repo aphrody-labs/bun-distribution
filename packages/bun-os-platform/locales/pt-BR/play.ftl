@@ -145,3 +145,7 @@ not-found = Esta página não existe. Volte à biblioteca.
 error-load = { $what } não carregou: { $error }. Verifique se o serviço play está em execução no VPS.
 status-gamepad = Controle conectado
 status-no-gamepad = Nenhum controle
+stream-launch-note = Inicie este jogo instalado no servidor e abra a transmissão atual.
+stream-game-unavailable = Este jogo não está totalmente instalado no servidor.
+stream-launch-requested = Inicialização solicitada ao Steam. A transmissão mostra a imagem atual do emissor.
+stream-launch-failed = A solicitação de inicialização falhou. Verifique se o Steam está aberto no servidor.

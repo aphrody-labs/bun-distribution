@@ -142,3 +142,7 @@ not-found = 此頁面不存在。請返回遊戲庫。
 error-load = { $what } 載入失敗：{ $error }。請檢查 VPS 上的 play 服務是否正在執行。
 status-gamepad = 遊戲控制器已連線
 status-no-gamepad = 無遊戲控制器
+stream-launch-note = 在遊戲主機上啟動已安裝的遊戲，然後連線至目前串流。
+stream-game-unavailable = 遊戲尚未在遊戲主機上完整安裝。
+stream-launch-requested = 已向 Steam 請求啟動。串流顯示傳送端目前的畫面。
+stream-launch-failed = 啟動請求失敗。請確認遊戲主機上的 Steam 正在執行。

@@ -11,12 +11,21 @@ import { frontendRoutes } from "../../../../packages/bun-engine/src/frontend/api
 import { runningGames } from "../../../../packages/bun-engine/src/frontend/launch";
 import { assertPublicRoot } from "../../../../packages/bun-engine/src/owned/guard";
 import { ownedRoutes } from "../../../../packages/bun-engine/src/owned/http";
-import { attachTransfers, platformRoutes } from "../../../../packages/bun-os-platform/src/server";
+import {
+  attachTransfers,
+  platformRoutes,
+} from "../../../../packages/bun-os-platform/src/server";
 import { artRoutes } from "./art";
 import { authRoutes, guarded, sessionOf, unauthorized } from "./auth";
 import { config } from "./config";
 import { engineState, reloadEngine } from "./nginx";
-import { ContentLog, lancacheAudit, steamAudit, steamStatus } from "./steam";
+import {
+  ContentLog,
+  lancacheAudit,
+  launchSteamGame,
+  steamAudit,
+  steamStatus,
+} from "./steam";
 import {
   closeRelay,
   gamestreamHealth,
@@ -147,6 +156,17 @@ export function createServer(
       ),
       "/api/emulation": { GET: () => json(emulationCores()) },
       "/api/steam": { GET: guarded(() => json(steamStatus())) },
+      "/api/steam/:appId/launch": {
+        POST: guarded(async (request: Bun.BunRequest) => {
+          try {
+            return await launchSteamGame(
+              (request.params as { appId: string }).appId,
+            );
+          } catch {
+            return json({ error: "Steam launch request failed" }, 502);
+          }
+        }),
+      },
       "/api/steam/downloads": { GET: guarded(() => json(content.snapshot())) },
       "/api/steam/audit": {
         GET: guarded(() => json(steamAudit(false))),
@@ -189,7 +209,12 @@ export function createServer(
       ...Object.fromEntries(
         Object.entries(ownedRoutes()).map(([path, methods]) => [
           path,
-          Object.fromEntries(Object.entries(methods).map(([method, handler]) => [method, guarded(handler)])),
+          Object.fromEntries(
+            Object.entries(methods).map(([method, handler]) => [
+              method,
+              guarded(handler),
+            ]),
+          ),
         ]),
       ),
       "/ws": (request: Request, srv: Server<SocketData>) => {
