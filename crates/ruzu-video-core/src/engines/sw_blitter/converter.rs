@@ -1065,7 +1065,7 @@ mod tests {
         let mut factory = ConverterFactory::new();
         // R32_FLOAT = 0xE5
         let converter = factory.get_format_converter(0xE5);
-        let val: f32 = 3.14159;
+        let val: f32 = std::f32::consts::PI;
         let input = val.to_le_bytes();
         let mut ir = [0.0f32; 4];
         converter.convert_to(&input, &mut ir);

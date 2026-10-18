@@ -3991,7 +3991,7 @@ fn test_call_method_cb_bind() {
 
     // Trigger CB_BIND for stage 0, slot 2, valid.
     // raw_config: valid=1, slot=2 => (2 << 4) | 1 = 0x21
-    let bind_base = (CB_BIND_BASE + 0 * CB_BIND_STRIDE) as usize;
+    let bind_base = CB_BIND_BASE as usize;
     engine.regs[bind_base + 4] = 0x21;
     engine.call_method(CB_BIND_TRIGGER_0, 0x21, true);
 
@@ -4148,7 +4148,7 @@ fn test_cb_bind_forwards_to_rasterizer() {
     engine.call_method(CB_CONFIG_BASE, 0x800, true);
     engine.call_method(CB_CONFIG_BASE + 1, 0x1, true);
     engine.call_method(CB_CONFIG_BASE + 2, 0x2000, true);
-    let bind_base = (CB_BIND_BASE + 0 * CB_BIND_STRIDE) as usize;
+    let bind_base = CB_BIND_BASE as usize;
     engine.regs[bind_base + 4] = 0x21;
     engine.call_method(CB_BIND_TRIGGER_0, 0x21, true);
 
