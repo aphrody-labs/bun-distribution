@@ -98,7 +98,7 @@ async function buildRemote(app: App) {
   const r = await sh(cmd, REMOTE_BUILDER);
   if (r.code !== 0) {
     const lines = `${r.err}\n${r.out}`.split("\n");
-    const tail = lines.filter((l) => /^error/.test(l)).slice(-6).join("\n") || lines.slice(-8).join("\n");
+    const tail = lines.filter((l) => l.startsWith("error")).slice(-6).join("\n") || lines.slice(-8).join("\n");
     failures.push({ app, reason: tail });
     console.error(`SKIP ${app.path}: build failed\n${tail}`);
     return false;
