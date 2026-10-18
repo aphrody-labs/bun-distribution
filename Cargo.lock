@@ -16932,7 +16932,6 @@ dependencies = [
  "filmcraft-bitstream",
  "filmcraft-testkit",
  "rayon",
- "rustix 1.1.5",
  "thiserror 2.0.21",
 ]
 
@@ -17397,7 +17396,6 @@ dependencies = [
  "filmcraft-time",
  "image",
  "rayon",
- "rustix 1.1.5",
  "serde",
  "serde_json",
 ]
@@ -25027,9 +25025,16 @@ dependencies = [
  "lightcraft-sysmem",
  "lightcraft-ui-egui",
  "log",
+ "muda 0.21.2",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
  "pollster 1.0.1",
+ "rfd 0.17.2",
  "serde_json",
+ "winit 0.30.13",
  "winresource",
+ "zbus",
 ]
 
 [[package]]
@@ -26687,6 +26692,25 @@ checksum = "396077b717181ce3f9a6b66739b269b82d756be5ec0f76be0bc40a7c51775830"
 dependencies = [
  "num-traits",
  "pxfm",
+]
+
+[[package]]
+name = "muda"
+version = "0.19.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dd04e60bc0b07438a6771710ee1698f98f6ebbc7f89b61264af1563b8aeb878"
+dependencies = [
+ "crossbeam-channel",
+ "dpi 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "keyboard-types 0.7.0",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.2",
+ "once_cell",
+ "png 0.18.1",
+ "thiserror 2.0.21",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -36712,6 +36736,10 @@ dependencies = [
  "eframe",
  "egui",
  "log",
+ "muda 0.19.3",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "rfd 0.17.2",
  "serde_json",
  "soundcraft-engine",
  "soundcraft-playback",
@@ -46397,7 +46425,6 @@ dependencies = [
  "aes 0.9.3",
  "base64 0.22.1",
  "cfb 0.15.0",
- "getrandom 0.3.4",
  "getrandom 0.4.3",
  "hmac 0.13.0",
  "image",

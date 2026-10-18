@@ -1415,6 +1415,17 @@ strip = true
 incremental = false
 
 # Bevy (crates/bevy): stress tests and the mobile example, as upstream.
+# Craft browser apps (apps/webos/build-craft.ts): smallest download; wasm-bindgen and wasm-opt -Oz run afterwards.
+[profile.web-craft]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = true
+incremental = false
+
 [profile.stress-test]
 inherits = "release"
 lto = "fat"

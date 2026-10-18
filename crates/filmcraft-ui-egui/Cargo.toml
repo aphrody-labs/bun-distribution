@@ -17,7 +17,6 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-rustix = "1"
 craft-ui = { path = "../craft-ui", features = ["serde"] }
 filmcraft-time = { path = "../filmcraft-time" }
 filmcraft-geom = { path = "../filmcraft-geom" }
@@ -54,3 +53,7 @@ egui_kittest = { version = "0.36", features = ["eframe", "wgpu"] }
 [build-dependencies]
 serde_json = "1"
 toml = "1"
+
+# CPU clocks (frames.rs) exist on Unix only; the browser and Windows builds do not link rustix.
+[target.'cfg(all(unix, not(target_arch = "wasm32")))'.dependencies]
+rustix = { version = "1", features = ["time"] }
