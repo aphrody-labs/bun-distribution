@@ -7,7 +7,7 @@
  * camelCase keys below onto the snake_case Rust parameters.
  */
 
-import { invoke as tauriInvoke } from "@aphrody/tauri/api/core";
+import { invoke as tauriInvoke } from "./web-runtime";
 
 export type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
 

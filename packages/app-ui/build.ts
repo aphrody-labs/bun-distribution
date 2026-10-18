@@ -19,7 +19,6 @@ const escape = (value: string) => value.replace(/[&<>"']/g, character => `&#${ch
 if (import.meta.main) {
   const context = productBuildContext(process.env, import.meta.dir);
   const config = await loadM3Config(import.meta.dir);
-  if (!config.tauri) throw new Error("app-ui: m3.config.ts must set tauri.uiDist");
   const dev = process.argv.includes("--dev");
   const { values } = parseArgs({
     args: process.argv.slice(2),
@@ -29,7 +28,7 @@ if (import.meta.main) {
       "public-assets": { type: "boolean" },
     },
   });
-  const tauri = values.out ? { ...config.tauri, uiDist: resolve(values.out) } : config.tauri;
+  const outdir = resolve(values.out ?? join(import.meta.dir, "dist"));
   if (values["public-assets"] && !values.out)
     throw new Error("--public-assets requires an isolated --out artifact directory");
   const assets = values["public-assets"]
@@ -41,7 +40,8 @@ if (import.meta.main) {
     : undefined;
   if (assets && (assets.schemaVersion !== 1 || assets.baseUrl !== "https://assets.aphrody.app"))
     throw new Error("Unqualified public assets configuration");
-  const bunCheckout = context.bunCheckout;
+  // Bun OS is the single source of truth for every input: the revision is this repository HEAD.
+  const bunCheckout = resolve(import.meta.dir, "../..");
   const sourceRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
     cwd: bunCheckout,
   });
@@ -49,7 +49,8 @@ if (import.meta.main) {
   const bunRevision = sourceRevision.stdout.toString().trim();
   if (Bun.env.APP_UI_BUN_REVISION && Bun.env.APP_UI_BUN_REVISION !== bunRevision)
     throw new Error("Selected Bun revision must match the canonical checkout HEAD");
-  const docsFile = canonicalBunInputs(bunCheckout, bunRevision).docsFile;
+  const docsFile = resolve(import.meta.dir, "../../build/docs-catalog.json");
+  if (!(await Bun.file(docsFile).exists())) await import("./scripts/docs-catalog.ts");
   if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
     throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
   // Check both outputs before bundling imports the generated wasm-bindgen glue.
@@ -67,13 +68,12 @@ if (import.meta.main) {
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
-    outdir: config.outdir,
     production: !dev,
     define: config.define,
     drop: config.drop,
     minify: config.minify,
     optimizeImports: config.optimizeImports,
-    tauri,
+    outdir,
     plugin: false,
     plugins: [m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }), undeclaredDependencies],
     cwd: config.dir,
@@ -81,7 +81,14 @@ if (import.meta.main) {
   // The Rust WebAssembly backend ships next to app.js.
   await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
-  let shell = await Bun.file(`${result.outdir}/index.html`).text();
+  // The bundler emits the app as hashed chunks; the page shell is the source HTML with those bundles referenced.
+  const jsChunk = result.outputs.find(o => o.kind === "entry-point" && o.path.endsWith(".js") || (o.path.startsWith("chunk-") && o.path.endsWith(".js")));
+  const cssChunk = result.outputs.find(o => o.path.endsWith(".css"));
+  let shell = (await Bun.file(resolve(import.meta.dir, config.entry)).text())
+    .replace(/<script type="module" src="[^"]*"><\/script>/, "")
+    .replace("</body>", `<script type="module" src="./${jsChunk?.path}"></script></body>`)
+    .replace("</head>", `<link rel="stylesheet" href="./${cssChunk?.path}"></head>`);
+  await Bun.write(join(result.outdir, "index.html"), shell);
   if (values.out) {
     // Web artifacts keep stable file names: version the entry URLs in the no-cache shell so a
     // deployment never pairs a cached app.js (wasm-bindgen glue) with a newer .wasm.

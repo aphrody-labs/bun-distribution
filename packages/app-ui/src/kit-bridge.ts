@@ -4,7 +4,7 @@
 // crates/ui/app/src/kits.rs. The kits own the logic and the catalog; this module only types the
 // events and keeps the state of one run. The protocol source is
 // packages/infra/product/src/shared/desktop.ts (a test checks both stay in step).
-import { Channel, invoke } from "@aphrody/tauri/api/core";
+import { Channel, invoke } from "./web-runtime";
 import { isTauri } from "./tauri-bridge";
 
 export const KIT_PROTOCOL = "aphrody.kit/1";

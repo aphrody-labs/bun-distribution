@@ -21,7 +21,6 @@ default = ["threads"]
 threads = ["dep:rayon"]
 
 [dependencies]
-rustix = "1"
 filmcraft-bitstream = { path = "../filmcraft-bitstream" }
 thiserror = "2"
 rayon = { version = "1", optional = true }

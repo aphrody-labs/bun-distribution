@@ -6,7 +6,7 @@
 import "m3:symbols.css";
 import { type ReactNode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { listen } from "@aphrody/tauri/api/event";
+import { listen } from "./web-runtime";
 import { SpacedriveClient, HttpTransport } from "@aphrody/drive-client";
 import { PlatformProvider, type Platform } from "./contexts/PlatformContext";
 import { Shell } from "./Shell";

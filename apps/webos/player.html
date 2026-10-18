@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Player</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0f0d13; color: #e6e0e9; font: 15px/1.4 system-ui, sans-serif; }
+  #stage { position: absolute; inset: 0; display: none; background: #000; }
+  #stage > canvas, #stage > div { width: 100%; height: 100%; display: block; }
+  #pick { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 24px; }
+  #pick h1 { margin: 0; font-size: 28px; font-weight: 500; }
+  #pick p { margin: 0; color: #cac4d0; max-width: 34em; }
+  label.btn { cursor: pointer; padding: 12px 26px; border-radius: 999px; background: #d0bcff; color: #381e72; font-weight: 600; }
+  input { display: none; }
+  #drop { border: 2px dashed #49454f; border-radius: 24px; padding: 28px 40px; }
+  #drop.over { border-color: #d0bcff; background: #1d1b20; }
+  #msg { min-height: 1.4em; color: #f2b8b5; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="screen" tabindex="0"></canvas></div>
+<div id="pick">
+  <h1 id="title">Game</h1>
+  <p id="hint">Choose a game file from your device. It stays in your browser and is never uploaded.</p>
+  <div id="drop"><label class="btn">Choose a game<input id="file" type="file"></label></div>
+  <div id="msg" role="status"></div>
+</div>
+<script type="module">
+  const $ = id => document.getElementById(id);
+  const msg = $("msg");
+  let manifest, mod, started = false;
+  async function boot() {
+    manifest = await (await fetch("./core/manifest.json")).json();
+    $("title").textContent = manifest.name;
+    $("file").accept = manifest.extensions.join(",");
+    mod = await import(`./core/${manifest.module}`);
+    await mod.default({ module_or_path: `./core/${manifest.wasm}` });
+  }
+  async function run(file) {
+    if (started) return;
+    started = true;
+    try {
+      msg.style.color = "";
+      msg.textContent = "Starting…";
+      const rom = new Uint8Array(await file.arrayBuffer());
+      $("pick").style.display = "none";
+      $("stage").style.display = "block";
+      const canvas = $("screen");
+      const handle = await mod[manifest.start ?? "start"](canvas, rom, { system: manifest.systems[0], audio: true });
+      if (manifest.touch) {
+        const { bindTouch } = await import("./runtime/touch.js");
+        bindTouch(handle.canvas ?? canvas, handle, manifest.systems[0]);
+      }
+      canvas.focus();
+    } catch (error) {
+      started = false;
+      $("pick").style.display = "";
+      $("stage").style.display = "none";
+      msg.style.color = "#f2b8b5";
+      msg.textContent = `Could not start this game: ${error?.message ?? error}`;
+    }
+  }
+  const ready = boot().catch(error => { msg.textContent = `This player could not load: ${error?.message ?? error}`; });
+  $("file").addEventListener("change", async e => { await ready; const f = e.target.files[0]; if (f) run(f); });
+  const drop = $("drop");
+  addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  addEventListener("dragleave", () => drop.classList.remove("over"));
+  addEventListener("drop", async e => { e.preventDefault(); drop.classList.remove("over"); await ready; const f = e.dataTransfer.files[0]; if (f) run(f); });
+  addEventListener("message", async e => {
+    if (e.origin !== location.origin || !(e.data?.rom instanceof ArrayBuffer)) return;
+    await ready;
+    run(new File([e.data.rom], e.data.name ?? "game"));
+  });
+</script>
+</body>
+</html>

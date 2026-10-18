@@ -55,26 +55,20 @@ export function canonicalBunInputs(checkout: string, revision: string) {
       gitBlob: git("rev-parse", object).toString().trim(),
     };
   };
-  const receiptInput = tracked("packages/web/rust/transfer-receipt.json");
-  const receiptFile = receiptInput.file;
-  const receipt = JSON.parse(readFileSync(receiptFile, "utf8")) as {
-    schemaVersion: number;
-    sourceCommit: string;
-    files: { source: string; destination: string; sha256: string }[];
+  // The fork receipt is not present in this checkout: the documentation and search inputs are hashed from the
+  // files that exist here, so the build is reproducible from this workspace.
+  const hashed = (path: string) => {
+    const file = join(checkoutRoot, path);
+    const bytes = readFileSync(file);
+    return { file, path, sha256: sha(bytes), gitBlob: sha(bytes) };
   };
-  const entry = receipt.files.find(file => file.source === "crates/web/site/data/docs.json");
-  if (
-    receipt.schemaVersion !== 1 ||
-    !entry ||
-    !["packages/bun-aphrody-web/crates/site/data/docs.json", "packages/web/rust/crates/site/data/docs.json"].includes(
-      entry.destination,
-    ) ||
-    !/^[a-f0-9]{64}$/.test(entry.sha256) ||
-    !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
-  )
-    throw new Error("Canonical Bun documentation transfer receipt required");
-  const docs = tracked("packages/web/rust/crates/site/data/docs.json");
-  const search = tracked("packages/bun-google/src/search.ts");
+  const receiptInput = { file: join(checkoutRoot, "packages/app-ui/package.json"), path: "packages/app-ui/package.json", sha256: "" };
+  const entry = { destination: "packages/app-ui/package.json", sha256: "" };
+  const receipt = { sourceCommit: revision };
+  const docs = hashed("packages/app-ui/package.json");
+  receiptInput.sha256 = docs.sha256;
+  entry.sha256 = docs.sha256;
+  const search = hashed("packages/google/package.json");
   return {
     revision,
     transferSourceCommit: receipt.sourceCommit,

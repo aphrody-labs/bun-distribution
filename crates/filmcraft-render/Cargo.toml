@@ -17,7 +17,6 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-rustix = "1"
 filmcraft-time = { path = "../filmcraft-time" }
 filmcraft-geom = { path = "../filmcraft-geom" }
 filmcraft-color = { path = "../filmcraft-color" }
