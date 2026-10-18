@@ -68,3 +68,16 @@ attachment. Shared assets and artifacts use their existing R2 custom domains;
 application hosts do not duplicate asset objects.
 
 API owner: [Workers Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+
+## Craft browser frontends
+
+`https://craft.aphrody.app/<app>/` serves the static wasm32 builds of the Craft
+web apps (`/cad/`, `/deck/`, `/design/`, `/fig/`, `/grid/`, `/light/`, `/pdf/`,
+`/photo/`, `/sound/`, `/vector/`, `/word/`) behind a landing page at `/`. The
+Cloudflare record is a proxied `A craft` to the VPS, the TLS certificate is a
+Let's Encrypt ECDSA certificate issued like `play.aphrody.app`, and the vhost is
+`infra/config/host/nginx/craft/craft.aphrody.app.conf`.
+`scripts/aphrody/tools/infra/deploy-craft-frontends.ts` compiles on the VPS,
+content-addresses the bundles, replaces `~/apps/craft-web/current` in place and
+installs the vhost (`nginx -t` before reload). An app whose wasm build fails is
+left out of the landing page and reported by the script.
