@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // aphrody.com edge: static Bun OS shell + /api/health + /api/browse (script-free reader proxy for the Bun Browser).
+import { workspaceResponse } from "./workspace";
 
 interface R2ObjectBodyLike {
   body: ReadableStream;
@@ -13,7 +14,10 @@ interface Env {
   LEGACY: { fetch(request: Request): Promise<Response> };
   /** R2 bucket aphrody-assets; large VM images live under webos/vm/. */
   VM: {
-    get(key: string, options?: { range?: { offset: number; length?: number } }): Promise<R2ObjectBodyLike | null>;
+    get(
+      key: string,
+      options?: { range?: { offset: number; length?: number } },
+    ): Promise<R2ObjectBodyLike | null>;
     head(key: string): Promise<{ size: number; httpEtag: string } | null>;
   };
 }
@@ -31,7 +35,9 @@ async function iso(request: Request, env: Env): Promise<Response> {
     etag: head.httpEtag,
     "cross-origin-resource-policy": "same-origin",
   });
-  const m = /^bytes=([0-9]*)-([0-9]*)$/.exec(request.headers.get("range") ?? "");
+  const m = /^bytes=([0-9]*)-([0-9]*)$/.exec(
+    request.headers.get("range") ?? "",
+  );
   if (request.method === "HEAD") {
     headers.set("content-length", String(head.size));
     return new Response(null, { headers });
@@ -41,12 +47,21 @@ async function iso(request: Request, env: Env): Promise<Response> {
     headers.set("content-length", String(head.size));
     return new Response(full?.body ?? null, { headers });
   }
-  let start = m[1] === "" ? Math.max(0, head.size - Number(m[2])) : Number(m[1]);
-  const end = m[1] === "" || m[2] === "" ? head.size - 1 : Math.min(Number(m[2]), head.size - 1);
+  let start =
+    m[1] === "" ? Math.max(0, head.size - Number(m[2])) : Number(m[1]);
+  const end =
+    m[1] === "" || m[2] === ""
+      ? head.size - 1
+      : Math.min(Number(m[2]), head.size - 1);
   if (start > end || start >= head.size)
-    return new Response(null, { status: 416, headers: { "content-range": `bytes */${head.size}` } });
+    return new Response(null, {
+      status: 416,
+      headers: { "content-range": `bytes */${head.size}` },
+    });
   start = Math.max(0, start);
-  const part = await env.VM.get(ISO_KEY, { range: { offset: start, length: end - start + 1 } });
+  const part = await env.VM.get(ISO_KEY, {
+    range: { offset: start, length: end - start + 1 },
+  });
   headers.set("content-range", `bytes ${start}-${end}/${head.size}`);
   headers.set("content-length", String(end - start + 1));
   return new Response(part?.body ?? null, { status: 206, headers });
@@ -68,17 +83,25 @@ const PAGE_CSP = [
 ].join("; ");
 
 // Installed app packages are hash-verified and same-origin; their pages carry an inline module script.
-const APP_CSP = PAGE_CSP.replace("script-src 'self'", "script-src 'self' 'unsafe-inline'")
+const APP_CSP = PAGE_CSP.replace(
+  "script-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+)
   .replace("connect-src 'self'", "connect-src 'self' blob: data:")
   .replace("img-src", "media-src 'self' blob: data:; img-src");
 // Cross-origin isolation enables the threaded emulators; credentialless keeps third-party images working.
-const ISOLATION = { "cross-origin-opener-policy": "same-origin", "cross-origin-embedder-policy": "credentialless" };
+const ISOLATION = {
+  "cross-origin-opener-policy": "same-origin",
+  "cross-origin-embedder-policy": "credentialless",
+};
 
 const MAX_BYTES = 4_000_000;
-const PRIVATE_HOST = /^(localhost|.*\.(local|internal|localhost|lan|home\.arpa))$/i;
+const PRIVATE_HOST =
+  /^(localhost|.*\.(local|internal|localhost|lan|home\.arpa))$/i;
 
 function blockedHost(host: string): boolean {
-  if (PRIVATE_HOST.test(host) || host.includes(":") || host.startsWith("[")) return true;
+  if (PRIVATE_HOST.test(host) || host.includes(":") || host.startsWith("["))
+    return true;
   const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
   if (m) {
     const [a, b] = [Number(m[1]), Number(m[2])];
@@ -96,7 +119,9 @@ function blockedHost(host: string): boolean {
   return !host.includes(".");
 }
 
-const NAV_SCRIPT = (base: string) => `(()=>{const p=u=>parent.postMessage({aph:"nav",url:u},"*");
+const NAV_SCRIPT = (
+  base: string,
+) => `(()=>{const p=u=>parent.postMessage({aph:"nav",url:u},"*");
 parent.postMessage({aph:"nav",url:${JSON.stringify(base)},title:document.title},"*");
 addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("a[href]");if(!a||e.defaultPrevented||e.ctrlKey||e.metaKey)return;
 if(/^https?:/i.test(a.href)){e.preventDefault();p(a.href)}});
@@ -111,25 +136,34 @@ async function browse(request: Request): Promise<Response> {
   } catch {
     return new Response("Invalid URL", { status: 400 });
   }
-  if (!/^https?:$/.test(url.protocol) || blockedHost(url.hostname) || url.username || url.password) {
+  if (
+    !/^https?:$/.test(url.protocol) ||
+    blockedHost(url.hostname) ||
+    url.username ||
+    url.password
+  ) {
     return new Response("This address cannot be opened here.", { status: 403 });
   }
   const upstream = await fetch(url, {
     method: "GET",
     redirect: "follow",
     headers: {
-      "user-agent": "Mozilla/5.0 (compatible; AphrodyBunBrowser/1.0; +https://aphrody.com)",
+      "user-agent":
+        "Mozilla/5.0 (compatible; AphrodyBunBrowser/1.0; +https://aphrody.com)",
       accept: "text/html,image/*;q=0.8,*/*;q=0.1",
       "accept-language": request.headers.get("accept-language") ?? "en",
     },
     signal: AbortSignal.timeout(10_000),
   }).catch(() => undefined);
-  if (!upstream) return new Response("The page did not answer in time.", { status: 504 });
+  if (!upstream)
+    return new Response("The page did not answer in time.", { status: 504 });
   const finalUrl = new URL(upstream.url);
-  if (blockedHost(finalUrl.hostname)) return new Response("Blocked redirect.", { status: 403 });
+  if (blockedHost(finalUrl.hostname))
+    return new Response("Blocked redirect.", { status: 403 });
   const type = upstream.headers.get("content-type") ?? "";
   const length = Number(upstream.headers.get("content-length") ?? 0);
-  if (length > MAX_BYTES) return new Response("Page too large.", { status: 413 });
+  if (length > MAX_BYTES)
+    return new Response("Page too large.", { status: 413 });
   const headers = new Headers({
     "cross-origin-embedder-policy": "credentialless",
     "cross-origin-resource-policy": "same-origin",
@@ -145,32 +179,47 @@ async function browse(request: Request): Promise<Response> {
   if (!/text\/html|application\/xhtml/i.test(type))
     return new Response("Only web pages can be shown here.", { status: 415 });
 
-  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(12))));
+  const nonce = btoa(
+    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(12))),
+  );
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set(
     "content-security-policy",
     `sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox; default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline' https:; img-src https: data:; font-src https: data:; media-src https:; base-uri 'self'; frame-ancestors 'self'`,
   );
   const rewritten = new HTMLRewriter()
-    .on("script, iframe, frame, object, embed, base, meta[http-equiv], noscript", { element: e => void e.remove() })
+    .on(
+      "script, iframe, frame, object, embed, base, meta[http-equiv], noscript",
+      { element: (e) => void e.remove() },
+    )
     .on("head", {
-      element: e =>
+      element: (e) =>
         void e.prepend(
           `<base href="${finalUrl.href.replaceAll('"', "%22")}"><meta name="referrer" content="no-referrer">`,
           { html: true },
         ),
     })
-    .on("a", { element: e => void e.removeAttribute("target") })
+    .on("a", { element: (e) => void e.removeAttribute("target") })
     .on("*", {
-      element: e => {
-        for (const [name] of e.attributes) if (name.startsWith("on")) e.removeAttribute(name);
+      element: (e) => {
+        for (const [name] of e.attributes)
+          if (name.startsWith("on")) e.removeAttribute(name);
       },
     })
     .on("body", {
-      element: e => void e.append(`<script nonce="${nonce}">${NAV_SCRIPT(finalUrl.href)}</script>`, { html: true }),
+      element: (e) =>
+        void e.append(
+          `<script nonce="${nonce}">${NAV_SCRIPT(finalUrl.href)}</script>`,
+          { html: true },
+        ),
     })
-    .transform(new Response(upstream.body, { headers: { "content-type": type } }));
-  return new Response(rewritten.body, { status: upstream.status === 404 ? 404 : 200, headers });
+    .transform(
+      new Response(upstream.body, { headers: { "content-type": type } }),
+    );
+  return new Response(rewritten.body, {
+    status: upstream.status === 404 ? 404 : 200,
+    headers,
+  });
 }
 
 /** Routes of the former aphrody.app Worker, now served under aphrody.com (same handler, same bindings). */
@@ -213,8 +262,10 @@ const CRAFT_PACKAGE: Record<string, string> = {
 
 function redirectFor(url: URL): string | undefined {
   const host = url.hostname;
-  if (host === "www.aphrody.com") return `https://aphrody.com${url.pathname}${url.search}`;
-  if (host === "aphrody.app" || host === "www.aphrody.app") return "https://aphrody.com/";
+  if (host === "www.aphrody.com")
+    return `https://aphrody.com${url.pathname}${url.search}`;
+  if (host === "aphrody.app" || host === "www.aphrody.app")
+    return "https://aphrody.com/";
   const m = /^(?:app-)?([a-z-]+?)(?:craft)?\.aphrody\.app$/.exec(host);
   if (m) {
     const name = host.startsWith("app-") ? m[1]! : host.split(".")[0]!;
@@ -227,38 +278,73 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const legacyPath = LEGACY_ROUTES.some(
-      prefix => url.pathname === prefix || url.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`),
+      (prefix) =>
+        url.pathname === prefix ||
+        url.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`),
     );
     // API clients of the old hosts keep working (no redirect): the same routes answer on every host.
     const moved = legacyPath ? undefined : redirectFor(url);
     if (moved) return Response.redirect(moved, 301);
     if (legacyPath) {
-      const target = new Request(`${LEGACY_ORIGIN}${url.pathname}${url.search}`, request);
+      const target = new Request(
+        `${LEGACY_ORIGIN}${url.pathname}${url.search}`,
+        request,
+      );
       return env.LEGACY.fetch(target);
     }
     if (url.pathname === "/api/catalog") {
-      return env.ASSETS.fetch(new Request(new URL("/catalog.json", url), request));
+      return env.ASSETS.fetch(
+        new Request(new URL("/catalog.json", url), request),
+      );
     }
     if (url.pathname === "/api/health") {
       const cf = (request as Request & { cf?: { colo?: string } }).cf;
       return Response.json(
-        { ok: true, service: "aphrody-webos", colo: cf?.colo ?? null, time: new Date().toISOString() },
+        {
+          ok: true,
+          service: "aphrody-webos",
+          colo: cf?.colo ?? null,
+          time: new Date().toISOString(),
+        },
         { headers: { "cache-control": "no-store" } },
       );
     }
     if (url.pathname === "/api/browse") {
-      if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
+      if (request.method !== "GET")
+        return new Response("Method not allowed", { status: 405 });
       return browse(request);
     }
-    if (url.pathname === "/vm/alpine.iso" && (request.method === "GET" || request.method === "HEAD"))
+    if (
+      url.pathname === "/vm/alpine.iso" &&
+      (request.method === "GET" || request.method === "HEAD")
+    )
       return iso(request, env);
-    if (url.pathname.startsWith("/api/")) return new Response("Not found", { status: 404 });
-    const res = await env.ASSETS.fetch(request);
+    if (url.pathname.startsWith("/api/"))
+      return new Response("Not found", { status: 404 });
+    const workspace =
+      url.pathname === "/workspace" || url.pathname.startsWith("/workspace/");
+    const res = workspace
+      ? await workspaceResponse(request, env.ASSETS)
+      : await env.ASSETS.fetch(request);
     const out = new Response(res.body, res);
-    out.headers.set("content-security-policy", url.pathname.startsWith("/apps/") ? APP_CSP : PAGE_CSP);
+    out.headers.set(
+      "content-security-policy",
+      workspace
+        ? PAGE_CSP.replace("base-uri 'none'", "base-uri 'self'")
+        : url.pathname.startsWith("/apps/")
+          ? APP_CSP
+          : PAGE_CSP,
+    );
     for (const [k, v] of Object.entries(ISOLATION)) out.headers.set(k, v);
-    out.headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
-    if (url.pathname === "/catalog.json" || url.pathname.endsWith(".html") || url.pathname === "/")
+    out.headers.set(
+      "strict-transport-security",
+      "max-age=31536000; includeSubDomains",
+    );
+    if (
+      url.pathname === "/catalog.json" ||
+      url.pathname.endsWith(".html") ||
+      url.pathname === "/"
+    )
       out.headers.set("cache-control", "no-cache");
     return out;
   },
