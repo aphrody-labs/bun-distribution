@@ -3,17 +3,18 @@ import { expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { buildArgs, gitToken, imageTag, readPins, runArgs } from "./aphrody-build.ts";
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../..");
+const PINS = `${ROOT}/docs/aphrody`;
 
 test("pins come from the repository manifests", async () => {
   const pins = readPins(
-    await Bun.file(`${ROOT}/rust-toolchain.toml`).text(),
-    await Bun.file(`${ROOT}/package.json`).text(),
+    await Bun.file(`${PINS}/rust-toolchain.toml`).text(),
+    await Bun.file(`${PINS}/package.json`).text(),
     await Bun.file(`${ROOT}/Cargo.lock`).text(),
   );
   expect(pins.rustChannel).toMatch(/^\d+\.\d+\.\d+$/);
   expect(pins.bun).toMatch(/^\d+\.\d+\.\d+$/);
-  expect(pins.bunRelease).toBe("bun-v1.4.4");
+  expect(pins.bunRelease).toBe("bun-v1.4.5");
   expect(pins.wasmBindgen).toMatch(/^\d+\.\d+\.\d+$/);
   expect(pins.rustTargets).toContain("x86_64-pc-windows-msvc");
   expect(pins.rustTargets).toContain("wasm32-unknown-unknown");
@@ -34,7 +35,7 @@ test("image build is tagged versioned and latest, from the small build context",
   expect(args).toContain("aphrody-build:latest");
   expect(args).toContain("RUST_TARGETS=x86_64-unknown-linux-gnu wasm32-unknown-unknown");
   expect(args).toContain("BUN_RELEASE_VERSION=aphrody-v1.4.2-aphrody.1");
-  expect(args.at(-1)).toBe("tools/config/container/build");
+  expect(args.at(-1)).toBe("tools/aphrody/config/container/build");
 });
 
 test("run is bounded, non-root, cache-backed and passes secrets by name only", () => {

@@ -40,8 +40,10 @@ export const CACHE_VOLUMES = {
   xdg: "/cache/xdg",
 } as const;
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
-const CONTEXT = "tools/config/container/build";
+const ROOT = resolve(import.meta.dir, "../../../..");
+/** Aphrody pins (Rust channel, Bun) live with its documentation; Cargo.lock is the workspace one. */
+const PINS = `${ROOT}/docs/aphrody`;
+const CONTEXT = "tools/aphrody/config/container/build";
 
 export type Pins = {
   rustChannel: string;
@@ -212,8 +214,8 @@ function git(args: string[]): string {
 
 async function image(): Promise<void> {
   const pins = readPins(
-    await Bun.file(`${ROOT}/rust-toolchain.toml`).text(),
-    await Bun.file(`${ROOT}/package.json`).text(),
+    await Bun.file(`${PINS}/rust-toolchain.toml`).text(),
+    await Bun.file(`${PINS}/package.json`).text(),
     await Bun.file(`${ROOT}/Cargo.lock`).text(),
   );
   const revision = git(["rev-parse", "HEAD"]);
