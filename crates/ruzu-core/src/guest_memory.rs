@@ -46,19 +46,19 @@ pub trait GuestMemoryInterface {
     fn get_span(&self, addr: u64, size: usize) -> Option<*mut u8>;
 
     /// Read a block of memory (safe path, may trigger page tracking).
-    fn read_block(&self, addr: u64, dest: *mut u8, size: usize);
+    fn read_block(&self, addr: u64, dest: &mut [u8]);
 
     /// Read a block of memory (unsafe path, no page tracking).
-    fn read_block_unsafe(&self, addr: u64, dest: *mut u8, size: usize);
+    fn read_block_unsafe(&self, addr: u64, dest: &mut [u8]);
 
     /// Write a block of memory (safe path).
-    fn write_block(&self, addr: u64, src: *const u8, size: usize);
+    fn write_block(&self, addr: u64, src: &[u8]);
 
     /// Write a block of memory (unsafe path).
-    fn write_block_unsafe(&self, addr: u64, src: *const u8, size: usize);
+    fn write_block_unsafe(&self, addr: u64, src: &[u8]);
 
     /// Write a block of memory through the cache.
-    fn write_block_cached(&self, addr: u64, src: *const u8, size: usize);
+    fn write_block_cached(&self, addr: u64, src: &[u8]);
 
     /// Flush a region of memory.
     fn flush_region(&self, addr: u64, size: usize);
@@ -235,15 +235,14 @@ impl<'memory, 'backup, M: GuestMemoryInterface, T: Copy + Default + Clone>
             self.is_data_copy = true;
             self.span_valid = true;
 
+            // SAFETY: set_copy_storage allocated self.size initialized elements exclusively for this accessor.
+            let output = unsafe {
+                core::slice::from_raw_parts_mut(self.data_ptr.cast::<u8>(), self.size_bytes())
+            };
             if self.flags.contains(GuestMemoryFlags::SAFE) {
-                self.memory
-                    .read_block(self.addr, self.data_ptr as *mut u8, self.size_bytes());
+                self.memory.read_block(self.addr, output);
             } else {
-                self.memory.read_block_unsafe(
-                    self.addr,
-                    self.data_ptr as *mut u8,
-                    self.size_bytes(),
-                );
+                self.memory.read_block_unsafe(self.addr, output);
             }
         }
     }
@@ -260,15 +259,20 @@ impl<'memory, 'backup, M: GuestMemoryInterface, T: Copy + Default + Clone>
 
     /// Write data to guest memory from the given slice.
     pub fn write(&self, write_data: &[T]) {
-        let src = write_data.as_ptr() as *const u8;
+        assert!(
+            write_data.len() >= self.size,
+            "guest write source is shorter than its destination"
+        );
+        // SAFETY: write_data contains at least self.size elements, checked above.
+        let src = unsafe {
+            core::slice::from_raw_parts(write_data.as_ptr().cast::<u8>(), self.size_bytes())
+        };
         if self.flags.contains(GuestMemoryFlags::CACHED) {
-            self.memory
-                .write_block_cached(self.addr, src, self.size_bytes());
+            self.memory.write_block_cached(self.addr, src);
         } else if self.flags.contains(GuestMemoryFlags::SAFE) {
-            self.memory.write_block(self.addr, src, self.size_bytes());
+            self.memory.write_block(self.addr, src);
         } else {
-            self.memory
-                .write_block_unsafe(self.addr, src, self.size_bytes());
+            self.memory.write_block_unsafe(self.addr, src);
         }
     }
 
@@ -373,18 +377,16 @@ impl<'memory, 'backup, M: GuestMemoryInterface, T: Copy + Default + Clone> Drop
 
         if self.inner.addr_changed || self.inner.is_data_copy {
             assert!(self.inner.span_valid);
-            let src = self.inner.data_ptr as *const u8;
             let size = self.inner.size_bytes();
+            // SAFETY: the accessor retains its initialized copy/scratch storage through this Drop.
+            let src =
+                unsafe { core::slice::from_raw_parts(self.inner.data_ptr.cast::<u8>(), size) };
             if self.inner.flags.contains(GuestMemoryFlags::CACHED) {
-                self.inner
-                    .memory
-                    .write_block_cached(self.inner.addr, src, size);
+                self.inner.memory.write_block_cached(self.inner.addr, src);
             } else if self.inner.flags.contains(GuestMemoryFlags::SAFE) {
-                self.inner.memory.write_block(self.inner.addr, src, size);
+                self.inner.memory.write_block(self.inner.addr, src);
             } else {
-                self.inner
-                    .memory
-                    .write_block_unsafe(self.inner.addr, src, size);
+                self.inner.memory.write_block_unsafe(self.inner.addr, src);
             }
         } else if self.inner.flags.contains(GuestMemoryFlags::SAFE)
             || self.inner.flags.contains(GuestMemoryFlags::CACHED)
@@ -432,23 +434,21 @@ mod tests {
                 .then(|| unsafe { bytes.as_mut_ptr().add(addr as usize) })
         }
 
-        fn read_block(&self, addr: u64, dest: *mut u8, size: usize) {
+        fn read_block(&self, addr: u64, dest: &mut [u8]) {
             self.read_calls.set(self.read_calls.get() + 1);
             let bytes = unsafe { &*self.bytes.get() };
-            unsafe {
-                std::ptr::copy_nonoverlapping(bytes.as_ptr().add(addr as usize), dest, size);
-            }
+            dest.copy_from_slice(&bytes[addr as usize..addr as usize + dest.len()]);
         }
 
-        fn read_block_unsafe(&self, addr: u64, dest: *mut u8, size: usize) {
-            self.read_block(addr, dest, size);
+        fn read_block_unsafe(&self, addr: u64, dest: &mut [u8]) {
+            self.read_block(addr, dest);
         }
 
-        fn write_block(&self, _addr: u64, _src: *const u8, _size: usize) {}
+        fn write_block(&self, _addr: u64, _src: &[u8]) {}
 
-        fn write_block_unsafe(&self, _addr: u64, _src: *const u8, _size: usize) {}
+        fn write_block_unsafe(&self, _addr: u64, _src: &[u8]) {}
 
-        fn write_block_cached(&self, _addr: u64, _src: *const u8, _size: usize) {}
+        fn write_block_cached(&self, _addr: u64, _src: &[u8]) {}
 
         fn flush_region(&self, _addr: u64, _size: usize) {
             self.flush_calls.set(self.flush_calls.get() + 1);

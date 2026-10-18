@@ -15,7 +15,6 @@ use crate::host_shaders::vertex_shaders::OPENGL_PRESENT_VERT;
 use crate::renderer_opengl::gl_resource_manager::{OGLBuffer, OGLProgram, OGLSampler};
 use crate::renderer_opengl::gl_shader_manager::ProgramManagerHandle;
 use crate::renderer_opengl::gl_shader_util::create_program_from_source;
-use crate::renderer_opengl::Device;
 use ruzu_core::frontend::framebuffer_layout::FramebufferLayout;
 use std::collections::LinkedList;
 use std::ffi::c_void;
@@ -82,7 +81,7 @@ pub struct WindowAdaptPass {
     frag: OGLProgram,
     vert: OGLProgram,
     sampler: OGLSampler,
-    device: *const Device,
+    has_unified_vertex_buffers: bool,
     vertex_buffer_address: u64,
 }
 
@@ -90,7 +89,7 @@ impl WindowAdaptPass {
     /// Create a new window adapt pass with the given sampler and fragment shader.
     ///
     /// Port of `WindowAdaptPass::WindowAdaptPass()`.
-    pub fn new(device: *const Device, sampler: OGLSampler, frag_source: &str) -> Self {
+    pub fn new(has_unified_vertex_buffers: bool, sampler: OGLSampler, frag_source: &str) -> Self {
         let vert = create_program_from_source(OPENGL_PRESENT_VERT, gl::VERTEX_SHADER);
         let frag = create_program_from_source(frag_source, gl::FRAGMENT_SHADER);
 
@@ -106,9 +105,6 @@ impl WindowAdaptPass {
                 gl::STREAM_DRAW,
             );
 
-            let has_unified_vertex_buffers = device
-                .as_ref()
-                .is_some_and(|device| device.has_vertex_buffer_unified_memory());
             if has_unified_vertex_buffers {
                 let make_resident = GL_MAKE_NAMED_BUFFER_RESIDENT_NV
                     .get()
@@ -135,7 +131,7 @@ impl WindowAdaptPass {
             frag,
             vert,
             sampler,
-            device,
+            has_unified_vertex_buffers,
             vertex_buffer_address,
         }
     }
@@ -210,11 +206,7 @@ impl WindowAdaptPass {
             gl::VertexAttribFormat(TEX_COORD_LOCATION as u32, 2, gl::FLOAT, gl::FALSE, 8);
             gl::VertexAttribBinding(POSITION_LOCATION as u32, 0);
             gl::VertexAttribBinding(TEX_COORD_LOCATION as u32, 0);
-            let has_unified_vertex_buffers = self
-                .device
-                .as_ref()
-                .is_some_and(|device| device.has_vertex_buffer_unified_memory());
-            if has_unified_vertex_buffers {
+            if self.has_unified_vertex_buffers {
                 gl::BindVertexBuffer(0, 0, 0, std::mem::size_of::<ScreenRectVertex>() as i32);
                 let buffer_address_range = GL_BUFFER_ADDRESS_RANGE_NV
                     .get()

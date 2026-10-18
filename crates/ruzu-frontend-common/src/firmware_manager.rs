@@ -505,7 +505,7 @@ mod tests {
         archive(&input, &[("prod.keys", b"synthetic")]);
         let offset = {
             let mut zip = zip::ZipArchive::new(fs::File::open(&input).unwrap()).unwrap();
-            let offset = zip.by_index(0).unwrap().data_start() as usize;
+            let offset = usize::try_from(zip.by_index(0).unwrap().data_start().unwrap()).unwrap();
             offset
         };
         let mut bytes = fs::read(&input).unwrap();

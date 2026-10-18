@@ -172,22 +172,27 @@ impl BlitScreen {
 
         let desired = (self.filters.get_scaling_filter)();
         self.current_window_adapt = Some(desired);
+        // SAFETY: the owning renderer keeps Device alive for this BlitScreen.
+        let has_unified_vertex_buffers = unsafe { self.device.as_ref() }
+            .is_some_and(|device| device.has_vertex_buffer_unified_memory());
         self.window_adapt = Some(match desired {
-            ScalingFilter::NearestNeighbor => filters::make_nearest_neighbor(self.device),
-            ScalingFilter::Bicubic => filters::make_bicubic(self.device),
-            ScalingFilter::ZeroTangent => filters::make_zero_tangent(self.device),
-            ScalingFilter::BSpline => filters::make_b_spline(self.device),
-            ScalingFilter::Mitchell => filters::make_mitchell(self.device),
-            ScalingFilter::Gaussian => filters::make_gaussian(self.device),
-            ScalingFilter::Spline1 => filters::make_spline1(self.device),
-            ScalingFilter::Lanczos => filters::make_lanczos(self.device),
-            ScalingFilter::ScaleForce => filters::make_scale_force(self.device),
-            ScalingFilter::Area => filters::make_area(self.device),
-            ScalingFilter::Mmpx => filters::make_mmpx(self.device),
+            ScalingFilter::NearestNeighbor => {
+                filters::make_nearest_neighbor(has_unified_vertex_buffers)
+            }
+            ScalingFilter::Bicubic => filters::make_bicubic(has_unified_vertex_buffers),
+            ScalingFilter::ZeroTangent => filters::make_zero_tangent(has_unified_vertex_buffers),
+            ScalingFilter::BSpline => filters::make_b_spline(has_unified_vertex_buffers),
+            ScalingFilter::Mitchell => filters::make_mitchell(has_unified_vertex_buffers),
+            ScalingFilter::Gaussian => filters::make_gaussian(has_unified_vertex_buffers),
+            ScalingFilter::Spline1 => filters::make_spline1(has_unified_vertex_buffers),
+            ScalingFilter::Lanczos => filters::make_lanczos(has_unified_vertex_buffers),
+            ScalingFilter::ScaleForce => filters::make_scale_force(has_unified_vertex_buffers),
+            ScalingFilter::Area => filters::make_area(has_unified_vertex_buffers),
+            ScalingFilter::Mmpx => filters::make_mmpx(has_unified_vertex_buffers),
             ScalingFilter::Fsr
             | ScalingFilter::Sgsr
             | ScalingFilter::SgsrEdge
-            | ScalingFilter::Bilinear => filters::make_bilinear(self.device),
+            | ScalingFilter::Bilinear => filters::make_bilinear(has_unified_vertex_buffers),
         });
     }
 }
