@@ -82,7 +82,11 @@ export interface AssembledBone {
   /** CRC32 (IEEE) of the bone name. */
   hash: number;
   parent: number | null;
-  local: { scale: [number, number, number]; quat: [number, number, number, number]; translation: [number, number, number] };
+  local: {
+    scale: [number, number, number];
+    quat: [number, number, number, number];
+    translation: [number, number, number];
+  };
   inverse_bind: number[][];
 }
 

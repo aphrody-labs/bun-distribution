@@ -10,9 +10,11 @@
     ".": "./src/index.ts",
     "./ffi": "./src/ffi.ts",
     "./wasm": "./src/wasm.ts",
+    "./wasm-node": "./src/wasm-node.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
+    "build:wasm": "bun scripts/build-wasm.ts",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "lint": "bun lint src"
   },

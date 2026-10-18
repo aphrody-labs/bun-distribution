@@ -1,7 +1,17 @@
 import { dlopen, FFIType, ptr, toArrayBuffer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { AssembledModelJson, AssetKind, CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
+import type {
+  AssembledModelJson,
+  AssetKind,
+  CpkEntry,
+  Dbxv2,
+  Dbxv2CpkFiles,
+  FormatInfo,
+  IndexEntry,
+  ModelJson,
+  Summary,
+} from "./types.ts";
 
 /** ABI version this loader was written against (`shenron_dbxv2_abi_version`). */
 export const EXPECTED_ABI_VERSION = 1;

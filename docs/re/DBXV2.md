@@ -32,7 +32,17 @@ Decoding: `bun_re::game::api::{xz_decode, decode_asset, read_asset}`, `shenron_d
 
 ## WebAssembly
 
-`wasm_identify_format`, `wasm_summarize`, `wasm_triage_cpk`, `wasm_extract_cpk_file` (feature `wasm`) and `wasm_xz_decode`, `wasm_audio_to_wav` (adds `dbxv2`) in `crates/re/src/game/wasm.rs`. Build with `wasm-pack build crates/re --target web --features wasm`. Typed loader: `loadDbxv2Wasm` in `@shenron/dbxv2`.
+`wasm_identify_format`, `wasm_summarize`, `wasm_triage_cpk`, `wasm_extract_cpk_file`, `wasm_cpk_find` / `wasm_cpk_read` (synchronous `read(offset, len)` callback), `wasm_model_json`, `wasm_model_assembled_json`, `wasm_model_glb` (feature `wasm`) and `wasm_xz_decode`, `wasm_audio_to_wav`, `wasm_emb_to_png`, `wasm_usm_to_video` (adds `dbxv2`) live in `crates/re/src/game/wasm.rs`. `bun-re` itself is an rlib; the loadable module is the cdylib of `crates/shenron-dbxv2` built with its `wasm` feature (which re-exports those bindings, no logic is duplicated).
+
+```
+cd packages/shenron-dbxv2 && bun run build:wasm
+```
+
+runs `cargo build -p shenron-dbxv2 --lib --features wasm --target wasm32-unknown-unknown --release` then `wasm-bindgen --target web` into `target/shenron-dbxv2-wasm/` (git-ignored; the `wasm-bindgen` CLI version must equal the crate version in `Cargo.lock`). `loadDbxv2WasmFromDir()` (`@shenron/dbxv2/wasm-node`, Bun or Node) loads that directory; `loadDbxv2Wasm(glue, bytes)` is the browser entry. `bun packages/shenron-dbxv2/scripts/wasm-proof.ts <file.cpk>` runs the module on a real CPK read by ranges (find `ext:emb`, read a CRILAYLA entry, compare with the `bun:ffi` result, convert to PNG).
+
+## AssembledModel adapter
+
+`model_assembled_json(name, emd, emb?, esk?)` (`bun_re::game::api`, `shenron_dbxv2_model_assembled_json`, `wasm_model_assembled_json`, `modelAssembledJson` in `@shenron/dbxv2`) returns the field layout of `aphrody_nie_formats::assemble::AssembledModel`, the type `aphrody-nie-model-serve` exports to GLB. That struct has no serde derive, so the JSON mirrors its fields (snake_case); vectors are arrays, not `{x,y,z}` objects. With feature `assembled`, `shenron_dbxv2::assembled::from_json` rebuilds the real `AssembledModel` (`cargo run -p shenron-dbxv2 --features assembled --example assembled_proof -- <name> <emd> [emb] [esk]`). Faithful: positions, normals, uv0, colors (when every vertex has one), indices, material and piece names, and the ESK skeleton (parent, local TRS, inverse bind, CRC32 of the bone name). Not mapped: `skin` stays `null` because the EMD parser does not read blend weights/indices; `component` is always `Generic`; `body_glb`, `face_glb`, `uniform_crc`, `texture_uri`, `aux_textures` and animation lists are empty; `embedded_textures` is empty (pixels via `embToPng`, raster metadata in `report.textures`).
 
 ## C ABI
 
