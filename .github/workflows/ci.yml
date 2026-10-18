@@ -29,37 +29,44 @@ jobs:
         run: bun run lint
       - name: Format
         run: bun run format:check
+      - name: Documentation links and navigation
+        run: bun run docs:check
       - name: Workspace manifests
-        run: bun install --frozen-lockfile --lockfile-only
+        run: bun scripts/workspace-manifests.ts
 
   rust:
-    name: Rust ${{ matrix.package }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
+    name: Rust ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - bun-re
-          - aphrody-nie-*
-          - craft-fonts*
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-workspace
         with:
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
           rust: "true"
-      - name: Manifests
-        run: bun scripts/cargo.ts exec -- metadata --format-version 1 --no-deps --locked > /dev/null
-      - name: Check
-        run: bun scripts/cargo.ts exec -- check --locked -p "${{ matrix.package }}" --all-targets
+      - name: Format
+        run: bun scripts/cargo.ts fmt
+      - name: Check every workspace member
+        run: bun scripts/cargo.ts check
+      - name: Clippy
+        run: bun scripts/cargo.ts exec -- clippy --workspace --all-targets --locked -- -D warnings
 
-  docs:
-    name: Docs
+  release-plan:
+    name: Release plan
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    needs: quality
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-bun
-      - name: Navigation and links
-        run: bun run docs:check
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+          rust: "true"
+      - name: Every unpublished npm package and crate
+        run: bun scripts/release.ts plan
+      - name: Dry-run publication of the npm packages that are not out yet
+        run: bun scripts/release.ts npm

@@ -4,15 +4,41 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to npm and crates.io (otherwise dry-run)
+        type: boolean
+        default: false
+      crate-limit:
+        description: Maximum crates to publish in this run (crates.io rate limits new crates)
+        type: string
+        default: "5"
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+          rust: "true"
+      - run: bun scripts/release.ts verify
+
   binaries:
     name: Binaries ${{ matrix.target }}
+    needs: verify
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 180
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
@@ -21,6 +47,8 @@ jobs:
             target: linux-x64
           - os: ubuntu-24.04-arm
             target: linux-arm64
+          - os: windows-latest
+            target: windows-x64
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-workspace
@@ -28,15 +56,67 @@ jobs:
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
           rust: "true"
       - name: Build
+        shell: bash
         run: |
+          mkdir -p dist/bin
           bun scripts/cargo-nie.ts --install dist/bin
           bun scripts/cargo.ts exec -- build --release --locked -p bun-re --features pipeline --bin bunre
           bun scripts/cargo.ts exec -- build --release --locked -p bun-steam --features depot --bin bun-steam-depot
-          cp target/release/bunre target/release/bun-steam-depot dist/bin/
+          cp target/release/bunre* target/release/bun-steam-depot* dist/bin/
       - name: Archive
-        run: tar -C dist -czf "bun-os-${{ matrix.target }}.tar.gz" bin
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          tar -C dist -czf "bun-os-${{ matrix.target }}.tar.gz" bin
+          sha256sum "bun-os-${{ matrix.target }}.tar.gz" > "bun-os-${{ matrix.target }}.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
         with:
-          files: bun-os-${{ matrix.target }}.tar.gz
+          name: bun-os-${{ matrix.target }}
+          path: bun-os-${{ matrix.target }}.tar.gz*
+
+  npm:
+    name: npm
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - name: Publish the unpublished packages
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+          APPLY: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && '--apply' || '' }}
+        run: bun scripts/release.ts npm $APPLY
+
+  crates:
+    name: crates.io
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-workspace
+        with:
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+          rust: "true"
+      - name: Publish the unpublished crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          APPLY: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && '--apply' || '' }}
+        run: bun scripts/release.ts crates $APPLY --limit "${{ inputs.crate-limit || '5' }}" --pause 600
+
+  github-release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [binaries, npm, crates]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
           generate_release_notes: true
