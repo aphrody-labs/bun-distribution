@@ -3,6 +3,7 @@
 // consumers, and whether a crate can plausibly build for wasm32 (no native-only dependency anywhere below it).
 //   bun scripts/workspace-explore.ts [--json FILE] [--group PREFIX]
 import { dirname, join, resolve } from "node:path";
+import { stat } from "node:fs/promises";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -26,6 +27,10 @@ interface Crate {
   wasmTable: boolean;
   wasmBindgen: boolean;
   nativeDirect: string[];
+  manifest: string;
+  workspaceMember: boolean;
+  buildTarget: string[];
+  qualification: "not-executed";
 }
 interface Pkg {
   name: string;
@@ -36,6 +41,27 @@ interface Pkg {
   external: string[];
   browser: boolean;
   wasmDir: boolean;
+  scripts: Record<string, string>;
+  exports: unknown;
+  workspaceMember: boolean;
+  qualification: "not-executed";
+}
+
+const rootCargo = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
+  workspace?: { members?: string[] };
+};
+const rootBun = await Bun.file(join(root, "package.json")).json();
+const sourceConfig = await Bun.file(join(root, "aphrody.config.json")).json();
+const appInventory = await Bun.file(join(root, "infra/apps.json")).json();
+const cargoMembers = (rootCargo.workspace?.members ?? []).map(pattern => new Bun.Glob(pattern));
+const bunMembers = (rootBun.workspaces ?? []).map((pattern: string) => new Bun.Glob(pattern));
+async function directoryExists(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
 }
 
 function tomlSections(text: string): Map<string, string> {
@@ -59,7 +85,7 @@ function depNames(body: string): string[] {
 }
 
 const crates = new Map<string, Crate>();
-for await (const file of new Bun.Glob("crates/*/Cargo.toml").scan({ cwd: root })) {
+for await (const file of new Bun.Glob("{crates,apps}/*/Cargo.toml").scan({ cwd: root })) {
   const text = await Bun.file(join(root, file)).text();
   const sections = tomlSections(text);
   const pkg = sections.get("package") ?? "";
@@ -70,6 +96,8 @@ for await (const file of new Bun.Glob("crates/*/Cargo.toml").scan({ cwd: root })
   const lib = sections.get("lib") ?? "";
   const kinds = [...(/crate-type\s*=\s*\[([^\]]*)\]/.exec(lib)?.[1] ?? "").matchAll(/"([a-z]+)"/g)].map(m => m[1]!);
   const bins = text.split("[[bin]]").slice(1).map(b => /name\s*=\s*"([^"]+)"/.exec(b)?.[1] ?? "").filter(Boolean);
+  // Cargo's implicit binary target is real even without a [[bin]] table.
+  if (!/^autobins\s*=\s*false/m.test(pkg) && await Bun.file(join(root, dirName, "src/main.rs")).exists() && !bins.includes(name)) bins.push(name);
   const internal = new Set<string>();
   const external = new Set<string>();
   let wasmTable = false;
@@ -91,6 +119,10 @@ for await (const file of new Bun.Glob("crates/*/Cargo.toml").scan({ cwd: root })
   crates.set(name, {
     name, dir: dirName, description, kinds, bins, internal: [...internal], external: [...external], wasmTable,
     wasmBindgen: external.has("wasm-bindgen"), nativeDirect: [...nativeDirect],
+    manifest: file.replaceAll("\\", "/"),
+    workspaceMember: cargoMembers.some(pattern => pattern.match(dirName.replaceAll("\\", "/"))),
+    buildTarget: bins.map(binary => `cargo build --locked -p ${name} --bin ${binary}`),
+    qualification: "not-executed",
   });
 }
 // A workspace = true dependency may be external; keep only names that are crates of this repository as internal.
@@ -124,6 +156,7 @@ for await (const file of new Bun.Glob("{packages,apps}/*/package.json").scan({ c
     const j = JSON.parse(await Bun.file(join(root, file)).text()) as {
       name?: string; description?: string; bin?: string | Record<string, string>;
       dependencies?: Record<string, string>; devDependencies?: Record<string, string>; browser?: unknown; exports?: unknown;
+      scripts?: Record<string, string>;
     };
     const dir = dirname(file);
     const name = j.name ?? dir;
@@ -133,7 +166,10 @@ for await (const file of new Bun.Glob("{packages,apps}/*/package.json").scan({ c
       bins: typeof j.bin === "string" ? [name] : Object.keys(j.bin ?? {}),
       internal: deps.filter(d => d.startsWith("@aphrody/")), external: deps.filter(d => !d.startsWith("@aphrody/")),
       browser: !!j.browser || JSON.stringify(j.exports ?? {}).includes('"browser"'),
-      wasmDir: await Bun.file(join(root, dir, "wasm")).exists().then(() => false, () => false),
+      wasmDir: await directoryExists(join(root, dir, "wasm")),
+      scripts: j.scripts ?? {}, exports: j.exports ?? null,
+      workspaceMember: bunMembers.some((pattern: Bun.Glob) => pattern.match(dir.replaceAll("\\", "/"))),
+      qualification: "not-executed",
     });
   } catch {
     // Manifest without valid JSON: skipped.
@@ -143,12 +179,28 @@ for await (const file of new Bun.Glob("{packages,apps}/*/package.json").scan({ c
 const args = Bun.argv.slice(2);
 const prefix = args[args.indexOf("--group") + 1] && args.includes("--group") ? args[args.indexOf("--group") + 1]! : "";
 const report = {
+  schemaVersion: 2,
+  evidence: "source-manifests-only",
+  qualification: "not-executed",
+  sources: sourceConfig.modules.map((module: { id: string; fork: string; upstream: string; revision: string; sourceKind?: string; manifestPath?: string }) => ({
+    component: module.id,
+    repository: module.fork,
+    upstream: module.upstream,
+    recordedSourceRevision: module.revision,
+    sourceKind: module.sourceKind ?? "submodule",
+    manifest: module.manifestPath ?? null,
+    qualification: "not-executed",
+  })),
+  applications: appInventory.apps.map((app: { id: string; kind: string; native: unknown; entrypoint: string }) => ({
+    component: app.id, kind: app.kind, native: app.native, entrypoint: app.entrypoint,
+    declaredTargets: appInventory.targets, qualification: "not-executed",
+  })),
   generated: new Date().toISOString(),
   crates: [...crates.values()].map(c => ({
     ...c,
     consumers: [...(consumers.get(c.name) ?? [])].sort(),
     nativeBelow: nativeBelow(c.name),
-    wasmClean: nativeBelow(c.name).length === 0 && !c.kinds.includes("proc-macro"),
+    wasmCandidate: nativeBelow(c.name).length === 0 && !c.kinds.includes("proc-macro"),
   })).sort((a, b) => a.name.localeCompare(b.name)),
   packages: [...packages.values()].sort((a, b) => a.name.localeCompare(b.name)),
 };
@@ -156,9 +208,9 @@ const out = args.includes("--json") ? args[args.indexOf("--json") + 1] : undefin
 if (out) await Bun.write(resolve(out), JSON.stringify(report, null, 2));
 
 const rows = report.crates.filter(c => c.name.startsWith(prefix));
-const clean = rows.filter(c => c.wasmClean);
+const clean = rows.filter(c => c.wasmCandidate);
 const families = new Map<string, number>();
 for (const c of rows) families.set(c.name.split("-")[0]!, (families.get(c.name.split("-")[0]!) ?? 0) + 1);
-console.log(`crates: ${rows.length}, wasm-clean (no native-only dependency below): ${clean.length}, packages: ${report.packages.length}`);
+console.log(`crates/apps: ${rows.length}, wasm candidates (manifest heuristic, unqualified): ${clean.length}, packages: ${report.packages.length}`);
 console.log(`largest families: ${[...families].sort((a, b) => b[1] - a[1]).slice(0, 25).map(([k, n]) => `${k}:${n}`).join(" ")}`);
 console.log(`unused crates (no consumer, no binary): ${rows.filter(c => !c.consumers.length && !c.bins.length && !c.kinds.includes("cdylib")).length}`);

@@ -5,7 +5,7 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-const rootDir = resolve(import.meta.dir, "../../../../docs/aphrody");
+const rootDir = resolve(import.meta.dir, "../../../..");
 const yoloEntry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 
 // Dispatcher commands the Bun fork does not serve: `rename` adds the Aphrody preset to `bun rename`,
@@ -19,7 +19,7 @@ const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase()
 /** True for this script, its wrappers and any TypeScript entry: running one of them would recurse. */
 export function isLauncher(candidate: string, root = rootDir): boolean {
   const path = norm(candidate);
-  return path.startsWith(`${norm(join(root, "scripts/dev/cli"))}/`) || path.endsWith(".ts");
+  return path.startsWith(`${norm(join(root, "scripts/aphrody/dev/cli"))}/`) || path.endsWith(".ts");
 }
 
 /** APHRODY_BIN, then target/release, then PATH without the launchers, then the user install, then target/debug. */

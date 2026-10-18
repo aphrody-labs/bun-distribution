@@ -12,8 +12,8 @@ import {
   runPackageCommand,
 } from "../src/package-commands";
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
-const entry = join(root, "packages/engine/yolo/src/index.ts");
+const root = resolve(import.meta.dir, "../../..");
+const entry = join(root, "packages/yolo-cli/src/index.ts");
 const fixture = mkdtempSync(join(tmpdir(), "yolo-package-commands-"));
 
 afterAll(() => rmSync(fixture, { recursive: true, force: true }));

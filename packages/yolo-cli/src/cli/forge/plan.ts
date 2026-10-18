@@ -402,8 +402,8 @@ export const BINARY = { name: "yolo", aliases: ["bun", "vu"] } as const;
 
 /** CLI entry and version file of the monorepo, relative to `--yolo-root`. */
 export const YOLO_CLI = {
-  entry: "packages/engine/yolo/src/index.ts",
-  versionFile: "packages/engine/yolo/VERSION",
+  entry: "packages/yolo-cli/src/index.ts",
+  versionFile: "packages/yolo-cli/VERSION",
 } as const;
 
 /** `bun build --compile` arguments that put the yolo CLI on the engine that runs them. */

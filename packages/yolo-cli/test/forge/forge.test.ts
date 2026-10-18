@@ -264,7 +264,7 @@ describe("build environment", () => {
       "/lib/libaphrody_ffi.so",
       "--define",
       'YOLO_VERSION="0.1.0"',
-      "packages/engine/yolo/src/index.ts",
+      "packages/yolo-cli/src/index.ts",
       "--outfile",
       "/art/yolo",
     ]);

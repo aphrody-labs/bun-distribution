@@ -367,7 +367,7 @@ function withLock<T>(p: Paths, body: () => Promise<T>): Promise<T> {
     const factoryRoot =
       process.env.APHRODY_ROOT?.trim() ||
       process.env.APHRODY_WORKSPACE_ROOT?.trim() ||
-      resolve(import.meta.dir, "../../../../../docs/aphrody");
+      resolve(import.meta.dir, "../../../../..");
     const factoryPolicy = await readFactoryConfig(factoryRoot);
     if (factoryPolicy && existsSync(factoryPolicy.lockPath)) {
       return withFactoryResource(factoryPolicy, body);

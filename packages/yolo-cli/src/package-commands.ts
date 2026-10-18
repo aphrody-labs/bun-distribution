@@ -39,30 +39,30 @@ export interface PackageCommand extends PackageRunner {
 /** `yolo m3 <tool>`: the CLIs of the m3 packages besides the framework's own `m3` (their npm `bin` in brackets). */
 export const M3_TOOLS = {
   next: {
-    module: "../material/packages/m3-next/bin/m3-next.ts",
+    module: "packages/m3-next/bin/m3-next.ts",
     run: "runM3Next",
     summary:
       "Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next, runner from @aphrody/next-bun]",
   },
   bun: {
-    module: "../material/packages/m3-bun/src/cli.ts",
+    module: "packages/m3-bun/src/cli.ts",
     run: "runCli",
     summary: "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
     keepAlive: true,
   },
   "os-themes": {
-    module: "../material/packages/m3-os-themes/src/cli.ts",
+    module: "packages/m3-os-themes/src/cli.ts",
     run: "runOsThemes",
     summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
   },
   "next-migrate": {
-    module: "../material/packages/m3-next-migrate/src/cli.ts",
+    module: "packages/m3-next-migrate/src/cli.ts",
     run: "runNextMigrate",
     summary:
       "Next.js 16 migration, codemods (next16 and tailwind4 from @aphrody/next-bun, plus mui) and pages-hints [m3-next-migrate, next-migrate]",
   },
   "svg-to-ico": {
-    module: "../material/packages/material-design-icons/scripts/svg-to-ico.ts",
+    module: "packages/material-design-icons/scripts/svg-to-ico.ts",
     run: "runSvgToIco",
     summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
@@ -72,7 +72,7 @@ export const M3_TOOLS = {
     summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
   scaffold: {
-    module: "../material/packages/m3/packages/scaffold/src/cli.ts",
+    module: "packages/scaffold/src/cli.ts",
     run: "runScaffold",
     script: true,
     summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
@@ -96,7 +96,7 @@ export const PACKAGE_COMMANDS = {
     summary: "Run the optimize-workspace skill through `aphrody exec` (--print previews it)",
   },
   update: {
-    module: "packages/infra/update/src/cli.ts",
+    module: "packages/update/src/cli.ts",
     run: "runUpdate",
     summary: "Tool pins, dependencies, Cargo lock, user systemd units, upstream sources",
   },
@@ -106,23 +106,23 @@ export const PACKAGE_COMMANDS = {
     summary: "Google Drive projection and Fonts proxy (Gemini runtime: aphrody google)",
   },
   "doc-ai": {
-    module: "packages/ai/doc-ai/src/cli.ts",
+    module: "packages/doc-ai/src/cli.ts",
     run: "main",
     summary: "Translate Markdown, generate Lit API guides, sync docs/",
   },
   browser: {
-    module: "../bun/packages/bun-web/src/cli.ts",
+    module: "toolchains/bun/packages/bun-web/src/cli.ts",
     run: "runAgentBrowser",
     summary: "One CDP browser command on the Bun browser endpoint, as a JSON line",
   },
   forge: {
-    module: "packages/engine/yolo/src/cli/forge/main.ts",
+    module: "packages/yolo-cli/src/cli/forge/main.ts",
     run: "runForge",
     summary: "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
     keepAlive: true,
   },
   m3: {
-    module: "../material/packages/m3/packages/m3/src/cli.ts",
+    module: "packages/m3/src/cli.ts",
     run: "runCli",
     summary: "M3 framework CLI (dev, build, compile, desktop, tokens, check, new) and the m3 package tools",
     keepAlive: true,
