@@ -237,6 +237,67 @@ pub fn summarize(bytes: &[u8], file_name: &str) -> Result<Value> {
     Ok(json!({ "format": found.format, "category": found.category, "data": data }))
 }
 
+/// Typed MSG reader: every table with its id, key name and lines; each string carries its slot
+/// (`offset`, `chars`, `bytes`, `flag`) and the encoding chosen from them (`utf8` when
+/// `bytes == chars + 1`, `utf16le` when `bytes == chars * 2 + 2`, else `unknown`).
+pub fn msg_read(bytes: &[u8]) -> Result<Value> {
+    to_value(&MsgFile::parse(bytes)?)
+}
+
+/// Cue sheet of an ACB (feature `dbxv2`): name, version, cue count, cue names, whether a
+/// waveform bank is embedded and the external AWB name.
+#[cfg(feature = "dbxv2")]
+pub fn acb_info(bytes: &[u8]) -> Result<Value> {
+    let info = aphrody_nie_formats::cri_audio::acb_parse(bytes).map_err(|error| {
+        ReError::ParseError {
+            context: "acb",
+            details: error.to_string(),
+        }
+    })?;
+    Ok(json!({
+        "name": info.name,
+        "version": info.version,
+        "cueCount": info.cue_count,
+        "cueNames": info.cue_names,
+        "embeddedAwbBytes": info.embedded_awb.len(),
+        "externalAwb": info.external_awb_name,
+    }))
+}
+
+/// What each format yields through this surface, stated plainly. `state`: `full` (decoded
+/// content), `header` (validated, header-level fields only), `unverified` (a reader exists but
+/// was never checked on game files), `convert` (converted to another
+/// format), `identify` (recognised by magic or extension, no reader).
+pub fn support() -> Value {
+    let row = |format: &str, state: &str, detail: &str| {
+        json!({ "format": format, "state": state, "detail": detail })
+    };
+    json!([
+        row("cpk", "full", "table of contents, ranged reads, CRILAYLA extraction"),
+        row("msg", "full", "msgRead: tables, key names, lines, UTF-8/UTF-16LE"),
+        row("emb", "full", "entry table; embToPng decodes DDS (BCn) entries; PS4 GNF is not recognised"),
+        row("emd", "full", "geometry (position, normal, uv); no blend weights, tangents or colours"),
+        row("esk", "full", "bone table, names, local TRS, inverse bind"),
+        row("acb", "full", "acbInfo: cue names; audioToWav decodes embedded waveforms"),
+        row("awb", "convert", "audioToWav"),
+        row("hca", "convert", "audioToWav"),
+        row("usm", "convert", "usmToVideo (MPEG-2 yields a raw .m2v stream)"),
+        row("cms", "unverified", "reader written against synthetic fixtures, not checked on game files"),
+        row("cus", "unverified", "reader written against synthetic fixtures, not checked on game files"),
+        row("pup", "unverified", "reader written against synthetic fixtures, not checked on game files"),
+        row("bac", "header", "validated walk; header fields only, no hitbox or frame data"),
+        row("bdm", "header", "validated walk; header fields only"),
+        row("bcm", "header", "validated walk; header fields only"),
+        row("bcs", "header", "validated walk; header fields only"),
+        row("bsa", "header", "validated walk; header fields only"),
+        row("ean", "header", "validated walk; header and skeleton, keyframes are read and discarded"),
+        row("emm", "header", "validated walk; header fields only"),
+        row("eepk", "identify", "no reader"),
+        row("ema", "identify", "no reader"),
+        row("emo", "identify", "no reader"),
+    ])
+}
+
 /// Decode every subsong of an HCA/ADX/AWB/ACB buffer to PCM16 WAV images, in bank order.
 /// A streamed ACB (waveforms in a sibling `.awb`) yields an empty list.
 #[cfg(feature = "dbxv2")]
@@ -644,8 +705,9 @@ pub fn model_assembled_json(
     let textures: Vec<Value> = emb
         .as_ref()
         .map(|emb| {
-            (0..emb.textures.len())
-                .filter_map(|i| emb.decode_rgba(i).ok())
+            // EMB header metadata only: `EmbFile::decode_rgba` is a placeholder raster.
+            emb.textures
+                .iter()
                 .map(|t| json!({ "width": t.width, "height": t.height, "format": t.format }))
                 .collect()
         })

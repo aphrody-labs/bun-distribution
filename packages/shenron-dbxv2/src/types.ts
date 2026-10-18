@@ -123,6 +123,49 @@ export interface AssembledModelJson {
   animation_excluded: unknown[];
 }
 
+/** One string slot of a MSG file and its decoded text. */
+export interface MsgString {
+  offset: number;
+  chars: number;
+  bytes: number;
+  flag: number;
+  /** `utf8` when bytes == chars + 1, `utf16le` when bytes == chars * 2 + 2, else `unknown`. */
+  encoding: "utf8" | "utf16le" | "unknown";
+  text: string;
+}
+
+export interface MsgTable {
+  id: number;
+  key: MsgString;
+  lines: MsgString[];
+}
+
+/** Typed MSG reader output. */
+export interface MsgFile {
+  endian_mark: number;
+  version: number;
+  tables: MsgTable[];
+  /** Flat view: `name_id` is the key name. */
+  entries: { id: number; name_id: string; lines: string[] }[];
+}
+
+/** ACB cue sheet. */
+export interface AcbInfo {
+  name: string;
+  version: number;
+  cueCount: number;
+  cueNames: string[];
+  embeddedAwbBytes: number;
+  externalAwb: string | null;
+}
+
+/** What a format yields through this surface; `header` means validated, header fields only. */
+export interface FormatSupport {
+  format: string;
+  state: "full" | "header" | "unverified" | "convert" | "identify";
+  detail: string;
+}
+
 /** Byte-in, byte-out operations common to both loaders. Outputs are copies. */
 export interface Dbxv2 {
   identify(bytes: Uint8Array, fileName?: string): FormatInfo;
@@ -135,6 +178,12 @@ export interface Dbxv2 {
   embToPng(bytes: Uint8Array, index: number): Uint8Array;
   /** EMD (+ optional EMB textures, ESK skeleton) as assembled-model JSON. */
   modelJson(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): ModelJson;
+  /** MSG tables with key names and lines (UTF-8 or UTF-16LE chosen per string). */
+  msgRead(bytes: Uint8Array): MsgFile;
+  /** ACB cue sheet: cue names and bank layout. */
+  acbInfo(bytes: Uint8Array): AcbInfo;
+  /** Per-format statement of what is decoded, header-only, unverified or unreadable. */
+  support(): FormatSupport[];
   /** The same model in the field layout of the Rust `AssembledModel` served by `aphrody-nie-model-serve`. */
   modelAssembledJson(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): AssembledModelJson;
   /** The same model as binary glTF. */

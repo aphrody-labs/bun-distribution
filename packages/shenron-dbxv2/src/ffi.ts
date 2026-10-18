@@ -2,7 +2,10 @@ import { dlopen, FFIType, ptr, toArrayBuffer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
+  AcbInfo,
   AssembledModelJson,
+  FormatSupport,
+  MsgFile,
   AssetKind,
   CpkEntry,
   Dbxv2,
@@ -70,6 +73,9 @@ const symbols = {
     args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
     returns: FFIType.i32,
   },
+  shenron_dbxv2_msg_read: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+  shenron_dbxv2_acb_info: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+  shenron_dbxv2_support: { args: [FFIType.ptr], returns: FFIType.i32 },
   shenron_dbxv2_model_assembled_json: {
     args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
     returns: FFIType.i32,
@@ -184,6 +190,9 @@ export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 &
           ),
         ),
       ),
+    msgRead: bytes => json<MsgFile>(call(out => native.shenron_dbxv2_msg_read(ptr(bytes), size(bytes), ptr(out)))),
+    acbInfo: bytes => json<AcbInfo>(call(out => native.shenron_dbxv2_acb_info(ptr(bytes), size(bytes), ptr(out)))),
+    support: () => json<FormatSupport[]>(call(out => native.shenron_dbxv2_support(ptr(out)))),
     modelAssembledJson: (name, emd, emb, esk) =>
       json<AssembledModelJson>(
         call(out =>

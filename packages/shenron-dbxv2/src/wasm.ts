@@ -1,5 +1,8 @@
 import type {
+  AcbInfo,
   AssembledModelJson,
+  FormatSupport,
+  MsgFile,
   CpkEntry,
   Dbxv2,
   Dbxv2CpkRanged,
@@ -22,6 +25,10 @@ export interface Dbxv2WasmGlue {
   wasm_extract_cpk_file(bytes: Uint8Array, name: string): Uint8Array;
   wasm_summarize(bytes: Uint8Array, fileName: string): Summary;
   wasm_model_json(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): ModelJson;
+  wasm_msg_read(bytes: Uint8Array): MsgFile;
+  wasm_support(): FormatSupport[];
+  /** Exists only when the module was built with the `dbxv2` feature as well. */
+  wasm_acb_info?(bytes: Uint8Array): AcbInfo;
   wasm_model_assembled_json(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): AssembledModelJson;
   wasm_model_glb(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): Uint8Array;
   wasm_font_to_sfnt(bytes: Uint8Array): Uint8Array;
@@ -50,6 +57,9 @@ export async function loadDbxv2Wasm(glue: Dbxv2WasmGlue, wasm?: unknown): Promis
     audioToWav: bytes => needs(glue.wasm_audio_to_wav, "audio decoding")(bytes),
     embToPng: (bytes, index) => needs(glue.wasm_emb_to_png, "PNG encoding")(bytes, index),
     modelJson: (name, emd, emb, esk) => glue.wasm_model_json(name, emd, emb, esk),
+    msgRead: bytes => glue.wasm_msg_read(bytes),
+    acbInfo: bytes => needs(glue.wasm_acb_info, "ACB parsing")(bytes),
+    support: () => glue.wasm_support(),
     modelAssembledJson: (name, emd, emb, esk) => glue.wasm_model_assembled_json(name, emd, emb, esk),
     modelGlb: (name, emd, emb, esk) => glue.wasm_model_glb(name, emd, emb, esk),
     usmToVideo: bytes => needs(glue.wasm_usm_to_video, "video remux")(bytes).bytes,

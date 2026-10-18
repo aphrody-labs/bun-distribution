@@ -18,6 +18,9 @@
 //! | `shenron_dbxv2_cpk_read_file(cpk_path, entry, start, len, out)` | bytes of one entry (CRILAYLA decompressed); `len == 0` means all |
 //! | `shenron_dbxv2_emb_to_png(data, len, index, out)` | PNG of one EMB entry |
 //! | `shenron_dbxv2_model_json` / `shenron_dbxv2_model_glb` | assembled EMD (+EMB, ESK) as JSON / GLB |
+//! | `shenron_dbxv2_msg_read(data, len, out)` | MSG tables, key names and lines JSON |
+//! | `shenron_dbxv2_acb_info(data, len, out)` | ACB cue sheet JSON (cue names) |
+//! | `shenron_dbxv2_support(out)` | per-format support table JSON |
 //! | `shenron_dbxv2_model_assembled_json` | same inputs, JSON in the field layout of `AssembledModel` |
 //! | `shenron_dbxv2_usm_to_video(data, len, out)` | MP4 (H.264) or WebM (VP9) bytes, sniffed by magic |
 //! | `shenron_dbxv2_font_to_sfnt(data, len, out)` | validated TTF/OTF/WOFF bytes |
@@ -389,6 +392,51 @@ pub unsafe extern "C" fn shenron_dbxv2_model_json(
         .map_err(|error| error.to_string())?;
         json_bytes(&value)
     })
+}
+
+/// Typed MSG reader: tables, key names and lines as JSON.
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_msg_read(
+    data: *const u8,
+    len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || {
+        let value = api::msg_read(bytes).map_err(|error| error.to_string())?;
+        json_bytes(&value)
+    })
+}
+
+/// ACB cue sheet (name, version, cue names) as JSON.
+///
+/// # Safety
+/// `data` valid for `len` bytes, `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_acb_info(
+    data: *const u8,
+    len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let bytes = unsafe { input(data, len) };
+    run(out, || {
+        let value = api::acb_info(bytes).map_err(|error| error.to_string())?;
+        json_bytes(&value)
+    })
+}
+
+/// Per-format support table (`full`, `header`, `unverified`, `convert`, `identify`) as JSON.
+///
+/// # Safety
+/// `out` writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_support(out: *mut ShBuf) -> c_int {
+    run(out, || json_bytes(&api::support()))
 }
 
 /// Model in the field layout of `AssembledModel` (snake_case; see `bun_re::game::api::model_assembled_json`

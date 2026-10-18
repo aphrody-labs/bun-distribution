@@ -223,6 +223,33 @@ pub fn wasm_model_json(
         .map_err(to_js_err)
 }
 
+/// Typed MSG reader (see [`api::msg_read`]).
+#[wasm_bindgen]
+pub fn wasm_msg_read(bytes: &[u8]) -> Result<JsValue, JsValue> {
+    api::msg_read(bytes)
+        .map_err(to_js_err)?
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
+}
+
+/// ACB cue sheet (needs the `dbxv2` feature).
+#[cfg(feature = "dbxv2")]
+#[wasm_bindgen]
+pub fn wasm_acb_info(bytes: &[u8]) -> Result<JsValue, JsValue> {
+    api::acb_info(bytes)
+        .map_err(to_js_err)?
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
+}
+
+/// What each format yields through this surface (see [`api::support`]).
+#[wasm_bindgen]
+pub fn wasm_support() -> Result<JsValue, JsValue> {
+    api::support()
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
+}
+
 /// The model in the field layout of `AssembledModel` (see [`api::model_assembled_json`]).
 #[wasm_bindgen]
 pub fn wasm_model_assembled_json(

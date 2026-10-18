@@ -44,6 +44,17 @@ runs `cargo build -p shenron-dbxv2 --lib --features wasm --target wasm32-unknown
 
 `model_assembled_json(name, emd, emb?, esk?)` (`bun_re::game::api`, `shenron_dbxv2_model_assembled_json`, `wasm_model_assembled_json`, `modelAssembledJson` in `@shenron/dbxv2`) returns the field layout of `aphrody_nie_formats::assemble::AssembledModel`, the type `aphrody-nie-model-serve` exports to GLB. That struct has no serde derive, so the JSON mirrors its fields (snake_case); vectors are arrays, not `{x,y,z}` objects. With feature `assembled`, `shenron_dbxv2::assembled::from_json` rebuilds the real `AssembledModel` (`cargo run -p shenron-dbxv2 --features assembled --example assembled_proof -- <name> <emd> [emb] [esk]`). Faithful: positions, normals, uv0, colors (when every vertex has one), indices, material and piece names, and the ESK skeleton (parent, local TRS, inverse bind, CRC32 of the bone name). Not mapped: `skin` stays `null` because the EMD parser does not read blend weights/indices; `component` is always `Generic`; `body_glb`, `face_glb`, `uniform_crc`, `texture_uri`, `aux_textures` and animation lists are empty; `embedded_textures` is empty (pixels via `embToPng`, raster metadata in `report.textures`).
 
+## Readers and honest coverage
+
+`msgRead` (`shenron_dbxv2_msg_read`, `wasm_msg_read`) decodes the real MSG layout: per table the id, key name and lines, each string with its slot (`offset`, `chars`, `bytes`, `flag`) and the encoding chosen from it (`utf8` when `bytes == chars + 1`, `utf16le` when `bytes == chars * 2 + 2`). `acbInfo` returns the cue sheet (cue names). `support()` returns the per-format table (`full`, `header`, `unverified`, `convert`, `identify`) so a client never assumes more than exists:
+
+- BAC, BDM, BCM, BCS, BSA, EAN, EMM: the gameplay loaders validate the whole file but only emit header-level fields; hitbox, frame and keyframe data are not decoded (EAN reads keyframes and discards them).
+- EEPK, EMA, EMO: recognised by extension only; PS4 GNF textures inside EMB are not recognised.
+- CMS, CUS, PUP: readers exist but were written against synthetic fixtures and never checked on game files.
+- EMD: positions, normals and UVs only; blend weights, tangents and vertex colours are not read, so `modelAssembledJson` has no skin.
+- `EmbFile::decode_rgba` is a placeholder raster, not the game pixels: use `embToPng`.
+- Before this change `EskFile::parse` and `MsgFile::parse` fabricated their output (a bone count read from the wrong field; NUL-separated strings after byte 16); both now follow the real layouts.
+
 ## C ABI
 
 `crates/shenron-dbxv2` (cdylib + rlib) exports `shenron_dbxv2_{abi_version,version,last_error,buf_free,identify,cpk_list,cpk_extract,summarize,audio_to_wav}`. Results come back through an out buffer (`ptr`, `len`) freed with `shenron_dbxv2_buf_free`; status is 0, -1 (error, see `last_error`) or -2 (panic). Typed `bun:ffi` loader: `loadDbxv2Ffi` in `packages/shenron-dbxv2` (library from `SHENRON_DBXV2_LIB` or `target/{release,debug}`).
