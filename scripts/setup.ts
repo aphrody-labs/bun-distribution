@@ -4,6 +4,7 @@ import { mkdir } from "node:fs/promises";
 import { inspectCargoWorkspace, loadConfig } from "../packages/bun-workspace/src/index.ts";
 import { runProcess } from "../packages/bun-workspace/src/process.ts";
 import { inspectSetupSources, materialWebPreparationPlan } from "./setup-submodules.ts";
+import { inspectReVendors, setupReVendors } from "./setup-re-vendors.ts";
 
 const root = resolve(import.meta.dir, "..");
 const args = Bun.argv.slice(2);
@@ -11,7 +12,8 @@ if (args.length && (args.length !== 1 || args[0] !== "--plan")) throw new Error(
 const sources = await inspectSetupSources(root);
 const material = materialWebPreparationPlan(root);
 if (args[0] === "--plan") {
-  console.log(JSON.stringify({ root, sources, material, qualification: "source-preflight-only" }, null, 2));
+  const reVendors = await inspectReVendors(root);
+  console.log(JSON.stringify({ root, sources, material, reVendors, qualification: "source-preflight-only" }, null, 2));
   process.exit(0);
 }
 if (!sources.ready)
@@ -79,6 +81,7 @@ if (process.platform === "win32" && requiresForge) {
   submoduleEnv = { ...qualificationEnv, GIT_SSH_COMMAND: sshCommand };
 }
 await run(["git", "submodule", "update", "--init", "--depth", "1"], submoduleEnv);
+await setupReVendors(root);
 await mkdir(resolve(root, "build/packages"), { recursive: true });
 for (const command of material.commands) await run(command.argv, env, command.cwd);
 // The tarball is packed on this machine, so its integrity is a local artifact: record it before the frozen install.

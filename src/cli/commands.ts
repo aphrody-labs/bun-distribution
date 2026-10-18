@@ -16,7 +16,7 @@ const FORMAT_IGNORE = [
   "packages/iecode-cpp/**",
   "packages/niepy/**",
   "packages/nie-blender/**",
-  "packages/dbxv2/**",
+  "vendor/dbxv2/**",
   "packages/iecode-scripts/**",
   "packages/iecode-docs/**",
   "packages/bun-tauri/crates/aphrody-tauri-cli/templates/**",
@@ -54,7 +54,12 @@ define(
     summary: "Check the workspace, toolchains and runtime",
     ...script(workspaceCli, "doctor"),
   },
-  { group: "", name: "status", summary: "Workspace and source status", ...script(workspaceCli, "status") },
+  {
+    group: "",
+    name: "status",
+    summary: "Workspace and source status",
+    ...script(workspaceCli, "status"),
+  },
   {
     group: "",
     name: "sync",
@@ -99,11 +104,26 @@ define(
         ...FORMAT_PATHS,
       ]),
   },
-  { group: "", name: "n2b", summary: "Migrate Node.js code to Bun (native bun n2b)", ...native("n2b") },
-  { group: "", name: "release", summary: "Build and publish a release", ...script("scripts/release.ts") },
+  {
+    group: "",
+    name: "n2b",
+    summary: "Migrate Node.js code to Bun (native bun n2b)",
+    ...native("n2b"),
+  },
+  {
+    group: "",
+    name: "release",
+    summary: "Build and publish a release",
+    ...script("scripts/release.ts"),
+  },
 
   // cargo -------------------------------------------------------------------------------------
-  { group: "cargo", name: "metadata", summary: "Cargo workspace metadata", ...script("scripts/cargo.ts", "metadata") },
+  {
+    group: "cargo",
+    name: "metadata",
+    summary: "Cargo workspace metadata",
+    ...script("scripts/cargo.ts", "metadata"),
+  },
   {
     group: "cargo",
     name: "fmt",
@@ -136,7 +156,12 @@ define(
     summary: "cargo check the NIE crates",
     ...script("scripts/cargo.ts", "exec", "--", "check", "--locked", "-p", "aphrody-nie-*"),
   },
-  { group: "cargo", name: "nie-build", summary: "Build the NIE crates", ...script("scripts/cargo-nie.ts") },
+  {
+    group: "cargo",
+    name: "nie-build",
+    summary: "Build the NIE crates",
+    ...script("scripts/cargo-nie.ts"),
+  },
   {
     group: "cargo",
     name: "fmt-crates",
@@ -160,10 +185,30 @@ define(
   },
 
   // workspace ---------------------------------------------------------------------------------
-  { group: "workspace", name: "list", summary: "Capability catalog", ...script(workspaceCli, "list") },
-  { group: "workspace", name: "status", summary: "Workspace status", ...script(workspaceCli, "status") },
-  { group: "workspace", name: "doctor", summary: "Workspace doctor", ...script(workspaceCli, "doctor") },
-  { group: "workspace", name: "sync", summary: "Sync the workspace", ...script(workspaceCli, "sync") },
+  {
+    group: "workspace",
+    name: "list",
+    summary: "Capability catalog",
+    ...script(workspaceCli, "list"),
+  },
+  {
+    group: "workspace",
+    name: "status",
+    summary: "Workspace status",
+    ...script(workspaceCli, "status"),
+  },
+  {
+    group: "workspace",
+    name: "doctor",
+    summary: "Workspace doctor",
+    ...script(workspaceCli, "doctor"),
+  },
+  {
+    group: "workspace",
+    name: "sync",
+    summary: "Sync the workspace",
+    ...script(workspaceCli, "sync"),
+  },
   {
     group: "workspace",
     name: "run",
@@ -184,7 +229,12 @@ define(
     summary: "Check workspace manifests",
     ...script("scripts/workspace-manifests.ts"),
   },
-  { group: "workspace", name: "crates", summary: "Crate inventory", ...script("scripts/crate-inventory.ts") },
+  {
+    group: "workspace",
+    name: "crates",
+    summary: "Crate inventory",
+    ...script("scripts/crate-inventory.ts"),
+  },
   {
     group: "workspace",
     name: "node-modules",
@@ -229,7 +279,12 @@ define(
     usage: "<plan|build> [args]",
     ...script("scripts/build-packages.ts"),
   },
-  { group: "build", name: "apt", summary: "Build the APT portability target", ...script("src/build-apt.ts") },
+  {
+    group: "build",
+    name: "apt",
+    summary: "Build the APT portability target",
+    ...script("src/build-apt.ts"),
+  },
   {
     group: "build",
     name: "frontend",
@@ -251,7 +306,12 @@ define(
     target: "package.json",
     run: args => spawn([process.execPath, "install", "--filter", "@frontend/source", "--frozen-lockfile", ...args]),
   },
-  { group: "build", name: "video", summary: "Build FilmCraft", ...script(workspaceCli, "build", "filmcraft") },
+  {
+    group: "build",
+    name: "video",
+    summary: "Build FilmCraft",
+    ...script(workspaceCli, "build", "filmcraft"),
+  },
   {
     group: "build",
     name: "plan",
@@ -334,7 +394,12 @@ define(
       return 0;
     },
   },
-  { group: "factory", name: "ubuntu", summary: "Ubuntu compatibility factory", ...script("factory/ubuntu.ts") },
+  {
+    group: "factory",
+    name: "ubuntu",
+    summary: "Ubuntu compatibility factory",
+    ...script("factory/ubuntu.ts"),
+  },
 
   // source ------------------------------------------------------------------------------------
   {
@@ -369,7 +434,12 @@ define(
   },
 
   // desktop -----------------------------------------------------------------------------------
-  { group: "desktop", name: "dev", summary: "Run the Bun desktop in development", ...bunRun("apps/desktop", "dev") },
+  {
+    group: "desktop",
+    name: "dev",
+    summary: "Run the Bun desktop in development",
+    ...bunRun("apps/desktop", "dev"),
+  },
   {
     group: "desktop",
     name: "native-dev",
@@ -382,7 +452,12 @@ define(
     summary: "Build the native desktop shell",
     ...bunRun("apps/desktop", "desktop:build"),
   },
-  { group: "desktop", name: "web-build", summary: "Build the desktop web UI", ...bunRun("apps/desktop", "build") },
+  {
+    group: "desktop",
+    name: "web-build",
+    summary: "Build the desktop web UI",
+    ...bunRun("apps/desktop", "build"),
+  },
 
   // webos -------------------------------------------------------------------------------------
   {
@@ -417,7 +492,12 @@ define(
   },
 
   // iecode ------------------------------------------------------------------------------------
-  { group: "iecode", name: "setup", summary: "Fresh IECODE setup", ...script("scripts/iecode/tools/setup-fresh.ts") },
+  {
+    group: "iecode",
+    name: "setup",
+    summary: "Fresh IECODE setup",
+    ...script("scripts/iecode/tools/setup-fresh.ts"),
+  },
   {
     group: "iecode",
     name: "setup-data",
@@ -484,7 +564,12 @@ define(
       abs("packages/inagle/src/cli.ts"),
     ),
   },
-  { group: "iecode", name: "web-build", summary: "Build the IECODE web app", ...bunRun("apps/iecode-web", "build") },
+  {
+    group: "iecode",
+    name: "web-build",
+    summary: "Build the IECODE web app",
+    ...bunRun("apps/iecode-web", "build"),
+  },
 
   // rg and nie turbo builds -----------------------------------------------------------------------
   {
@@ -549,7 +634,12 @@ define(
     summary: "cargo check the NIE crates",
     ...script("scripts/cargo.ts", "exec", "--", "check", "--locked", "-p", "aphrody-nie-*"),
   },
-  { group: "nie", name: "cargo-build", summary: "Build the NIE crates", ...script("scripts/cargo-nie.ts") },
+  {
+    group: "nie",
+    name: "cargo-build",
+    summary: "Build the NIE crates",
+    ...script("scripts/cargo-nie.ts"),
+  },
 
   // in-process owners ---------------------------------------------------------------------------
   {

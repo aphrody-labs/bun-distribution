@@ -1,24 +1,18 @@
 {
   "compilerOptions": {
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    "exactOptionalPropertyTypes": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2023"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUncheckedIndexedAccess": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
     "strict": true,
-    "target": "ES2023",
-    "types": ["@aphrody/bun-types"],
-    "verbatimModuleSyntax": true
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [
+      "@aphrody/bun-types"
+    ]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "docs/.vitepress/config.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.mjs"
+  ]
 }

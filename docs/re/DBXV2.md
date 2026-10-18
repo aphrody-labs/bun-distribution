@@ -2,12 +2,12 @@
 
 One capability merges four former owners:
 
-| Owner | Role now |
-|---|---|
-| `packages/dbxv2` (Python toolkit, submodule) | Reference implementation and format catalogue (`formats.json`, `DATA.md`, `docs/`). Kept for `serve`, `rag`/`llm`/`caption` (Gemini), `tools clone` and `setup`, which have no Rust port. |
-| `crates/re` (`bun-re`, feature `dbxv2`) | The port of every other Python pass: `bunre dbxv2 map|reverse|extract|tex|audio|text|models|parse|index|classify|search|stats|sav|report`, with the gameplay readers (BAC/BCM/BCS/BDM/BSA/EAN/EMM/ESK) ported from pyxenoverse offset for offset. |
-| `packages/re` (Bun fork of morluto/rea) + `packages/re/replica` | Binary-analysis tooling and the Replica skills; DBXV2 reuses it for the `reverse` pass only. |
-| Shenron (`packages/shenron-*`) | Consumer of the in-memory surface below. |
+| Owner                                                           | Role now                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vendor/dbxv2` (Python toolkit, pinned submodule)               | Reference implementation and format catalogue (`formats.json`, `DATA.md`, `docs/`). Kept for `serve`, `rag`/`llm`/`caption` (Gemini), `tools clone` and `setup`, which have no Rust port. Its Python dependencies and lock remain owned by the toolkit; it is not a Bun workspace package. |
+| `crates/re` (`bun-re`, feature `dbxv2`)                         | The port of every other Python pass: `bunre dbxv2 map                                                                                                                                                                                                                                      | reverse | extract | tex | audio | text | models | parse | index | classify | search | stats | sav | report`, with the gameplay readers (BAC/BCM/BCS/BDM/BSA/EAN/EMM/ESK) ported from pyxenoverse offset for offset. |
+| `packages/re` (Bun fork of morluto/rea) + `packages/re/replica` | Binary-analysis tooling and the Replica skills; DBXV2 reuses it for the `reverse` pass only.                                                                                                                                                                                               |
+| Shenron (`packages/shenron-*`)                                  | Consumer of the in-memory surface below.                                                                                                                                                                                                                                                   |
 
 ## In-memory surface
 

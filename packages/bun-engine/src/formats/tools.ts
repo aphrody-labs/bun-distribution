@@ -110,12 +110,12 @@ export async function nativeNdsInfo(path: string): Promise<Record<string, unknow
   }
 }
 
-/** Magika content type through the `re` bridge (packages/re/src/ml/magika.ts). */
+/** Magika content type through the canonical REA bridge. */
 export async function magikaIdentify(path: string): Promise<unknown> {
   const root = workspaceRoot();
   if (root) Bun.env.BUN_ENGINE_HOME ??= root;
   try {
-    const { identifyWithMagika } = await import("../../../re/src/ml/magika.js");
+    const { identifyWithMagika } = await import("../../../../vendor/rea/src/ml/magika.js");
     return await identifyWithMagika(path);
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
