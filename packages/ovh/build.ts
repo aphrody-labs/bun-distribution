@@ -6,7 +6,7 @@ const root = resolve(import.meta.dir, "../..");
 const result = await runProcess(
   [process.execPath, resolve(root, "scripts/build-packages.ts"), "build", "--package", "ovh"],
   root,
-  { timeoutMs: 30000 },
+  { timeoutMs: 30000, maxOutputBytes: 2 * 1024 * 1024 },
 );
 if (result.stdout) console.log(result.stdout.trimEnd());
 if (result.stderr) console.error(result.stderr.trimEnd());

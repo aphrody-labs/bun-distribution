@@ -94,7 +94,12 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
+      - name: Require the crates.io token
+        if: env.CARGO_REGISTRY_TOKEN == '' && (startsWith(github.ref, 'refs/tags/') || inputs.publish)
+        run: echo "::error::CARGO_REGISTRY_TOKEN is not set on this repository"; exit 1
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-workspace
         with:
@@ -102,7 +107,6 @@ jobs:
           rust: "true"
       - name: Publish the unpublished crates in dependency order
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
           APPLY: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && '--apply' || '' }}
         run: bun scripts/release.ts crates $APPLY --limit "${{ inputs.crate-limit || '5' }}" --pause 600
 

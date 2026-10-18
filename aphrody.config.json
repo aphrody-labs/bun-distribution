@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "runtime": {
-    "version": "1.4.4",
+    "version": "1.4.5",
     "repository": "aphrody-labs/bun",
-    "revision": "4b8dee0bc69d2c290111001f2249e63e1dc95b70"
+    "revision": "1d019cb1b558453c2f8901434d51d63ff1c5f014"
   },
   "runtimeTargets": {
     "windows-x64": {
-      "version": "1.4.4",
+      "version": "1.4.5",
       "repository": "aphrody-labs/bun",
-      "revision": "4b8dee0bc69d2c290111001f2249e63e1dc95b70"
+      "revision": "1d019cb1b558453c2f8901434d51d63ff1c5f014"
     },
     "linux-x64": {
       "version": "1.4.5",
