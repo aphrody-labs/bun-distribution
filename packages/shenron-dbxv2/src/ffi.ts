@@ -1,7 +1,7 @@
 import { dlopen, FFIType, ptr, toArrayBuffer } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { AssetKind, CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
+import type { AssembledModelJson, AssetKind, CpkEntry, Dbxv2, Dbxv2CpkFiles, FormatInfo, IndexEntry, ModelJson, Summary } from "./types.ts";
 
 /** ABI version this loader was written against (`shenron_dbxv2_abi_version`). */
 export const EXPECTED_ABI_VERSION = 1;
@@ -57,6 +57,10 @@ const symbols = {
     returns: FFIType.i32,
   },
   shenron_dbxv2_model_json: {
+    args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
+    returns: FFIType.i32,
+  },
+  shenron_dbxv2_model_assembled_json: {
     args: [FFIType.cstring, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.ptr],
     returns: FFIType.i32,
   },
@@ -159,6 +163,21 @@ export function loadDbxv2Ffi(libraryPath?: string): Dbxv2 &
       json<ModelJson>(
         call(out =>
           native.shenron_dbxv2_model_json(
+            cstr(name) as never,
+            ptr(emd),
+            size(emd),
+            opt(emb),
+            size(emb),
+            opt(esk),
+            size(esk),
+            ptr(out),
+          ),
+        ),
+      ),
+    modelAssembledJson: (name, emd, emb, esk) =>
+      json<AssembledModelJson>(
+        call(out =>
+          native.shenron_dbxv2_model_assembled_json(
             cstr(name) as never,
             ptr(emd),
             size(emd),

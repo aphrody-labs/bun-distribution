@@ -538,6 +538,135 @@ pub fn model_json(name: &str, emd: &[u8], emb: Option<&[u8]>, esk: Option<&[u8]>
     }))
 }
 
+/// The model in the field layout of `aphrody_nie_formats::assemble::AssembledModel` (the type
+/// `aphrody-nie-model-serve` exports to GLB), snake_case names as in that struct.
+///
+/// Faithful: `primitives[].positions/normals/uv0/colors/indices/material_name/piece`, skeleton
+/// bone `name/parent/local(scale,quat,translation)/inverse_bind`, `hash` = CRC32 (IEEE) of the
+/// bone name. Fixed by the origin, not invented: `component` is `Generic` (a DBXV2 character is
+/// not a body/face/uniform composition), `body_glb`/`face_glb` empty, `uniform_crc` 0,
+/// `texture_uri` empty, `aux_textures`/`animation_*` empty. `skin` is set only when the EMD
+/// carries both bone indices and weights; the 4 influences are padded to 8 and the indices are
+/// passed through unresolved (the EMD parser does not map a submesh palette to skeleton bones).
+/// `embedded_textures` is empty: pixels are not inlined (use [`emb_to_png`]); the decoded
+/// raster metadata is in `report.textures`.
+pub fn model_assembled_json(
+    name: &str,
+    emd: &[u8],
+    emb: Option<&[u8]>,
+    esk: Option<&[u8]>,
+) -> Result<Value> {
+    use crate::game::formats::emb::EmbFile;
+    let emd = EmdFile::parse(emd)?;
+    let emb = emb.map(EmbFile::parse).transpose()?;
+    let esk = esk.map(EskFile::parse).transpose()?;
+
+    let mut materials: Vec<String> = Vec::new();
+    let mut primitives = Vec::new();
+    for part in &emd.parts {
+        for mesh in &part.meshes {
+            for sub in &mesh.submeshes {
+                let material_index = materials
+                    .iter()
+                    .position(|m| *m == sub.material_name)
+                    .unwrap_or_else(|| {
+                        materials.push(sub.material_name.clone());
+                        materials.len() - 1
+                    });
+                let colors: Vec<[f32; 4]> = if sub.vertices.iter().all(|v| v.color.is_some()) {
+                    sub.vertices.iter().filter_map(|v| v.color).collect()
+                } else {
+                    Vec::new()
+                };
+                let skinned = !sub.vertices.is_empty()
+                    && sub
+                        .vertices
+                        .iter()
+                        .all(|v| v.bone_indices.is_some() && v.bone_weights.is_some());
+                let skin = skinned.then(|| {
+                    let joints: Vec<[u16; 8]> = sub
+                        .vertices
+                        .iter()
+                        .map(|v| {
+                            let b = v.bone_indices.unwrap_or_default();
+                            [b[0], b[1], b[2], b[3], 0, 0, 0, 0]
+                        })
+                        .collect();
+                    let weights: Vec<[f32; 8]> = sub
+                        .vertices
+                        .iter()
+                        .map(|v| {
+                            let w = v.bone_weights.unwrap_or_default();
+                            [w[0], w[1], w[2], w[3], 0.0, 0.0, 0.0, 0.0]
+                        })
+                        .collect();
+                    json!({ "joints": joints, "weights": weights })
+                });
+                primitives.push(json!({
+                    "component": "Generic",
+                    "source_index": primitives.len(),
+                    "material_index": u8::try_from(material_index).unwrap_or(u8::MAX),
+                    "material_name": sub.material_name,
+                    "texture_uri": "",
+                    "positions": sub.vertices.iter().map(|v| v.position).collect::<Vec<_>>(),
+                    "normals": sub.vertices.iter().map(|v| v.normal).collect::<Vec<_>>(),
+                    "uv0": sub.vertices.iter().map(|v| v.uv).collect::<Vec<_>>(),
+                    "colors": colors,
+                    "indices": sub.indices,
+                    "skin": skin,
+                    "piece": sub.name,
+                }));
+            }
+        }
+    }
+
+    let skeleton = esk.as_ref().map(|esk| {
+        let bones: Vec<Value> = esk
+            .bones
+            .iter()
+            .map(|bone| {
+                json!({
+                    "name": bone.name,
+                    "hash": crc32fast::hash(bone.name.as_bytes()),
+                    "parent": bone.parent_index,
+                    "local": {
+                        "scale": bone.scale,
+                        "quat": bone.rotation,
+                        "translation": bone.translation,
+                    },
+                    "inverse_bind": bone.inverse_bind_matrix,
+                })
+            })
+            .collect();
+        json!({ "source": esk.name, "bones": bones })
+    });
+
+    let textures: Vec<Value> = emb
+        .as_ref()
+        .map(|emb| {
+            (0..emb.textures.len())
+                .filter_map(|i| emb.decode_rgba(i).ok())
+                .map(|t| json!({ "width": t.width, "height": t.height, "format": t.format }))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok(json!({
+        "internal_code": name,
+        "body_glb": "",
+        "face_glb": "",
+        "uniform_crc": 0,
+        "primitives": primitives,
+        "embedded_textures": [],
+        "skeleton": skeleton,
+        "aux_textures": [],
+        "report": { "origin": "dbxv2", "textures": textures },
+        "strict_materials": false,
+        "animation_clips": [],
+        "animation_excluded": [],
+    }))
+}
+
 /// Same model as a binary glTF (`.glb`).
 pub fn model_glb(
     name: &str,

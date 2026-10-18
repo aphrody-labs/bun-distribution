@@ -70,6 +70,55 @@ export interface ModelJson {
   skeleton: unknown;
 }
 
+/** Skinning influences per vertex, up to eight (`[u16; 8]` / `[f32; 8]` in the Rust type). */
+export interface AssembledSkin {
+  joints: number[][];
+  weights: number[][];
+}
+
+/** Bone of the assembled skeleton; `inverse_bind` is the 4x4 matrix as stored by the ESK. */
+export interface AssembledBone {
+  name: string;
+  /** CRC32 (IEEE) of the bone name. */
+  hash: number;
+  parent: number | null;
+  local: { scale: [number, number, number]; quat: [number, number, number, number]; translation: [number, number, number] };
+  inverse_bind: number[][];
+}
+
+/**
+ * Field layout of `aphrody_nie_formats::assemble::AssembledModel` (what `aphrody-nie-model-serve`
+ * exports to GLB), snake_case as in the Rust struct. `component` is always `Generic`,
+ * `embedded_textures` is empty (pixels come from `embToPng`; raster metadata is in `report.textures`).
+ */
+export interface AssembledModelJson {
+  internal_code: string;
+  body_glb: string;
+  face_glb: string;
+  uniform_crc: number;
+  primitives: {
+    component: "Body" | "Face" | "Uniform" | "Keshin" | "Armed" | "Generic";
+    source_index: number;
+    material_index: number;
+    material_name: string;
+    texture_uri: string;
+    positions: [number, number, number][];
+    normals: [number, number, number][];
+    uv0: [number, number][];
+    colors: [number, number, number, number][];
+    indices: number[];
+    skin: AssembledSkin | null;
+    piece: string;
+  }[];
+  embedded_textures: { component: string; name: string; png_bytes: number[] }[];
+  skeleton: { source: string; bones: AssembledBone[] } | null;
+  aux_textures: unknown[];
+  report: { origin: string; textures: { width: number; height: number; format: string }[] };
+  strict_materials: boolean;
+  animation_clips: unknown[];
+  animation_excluded: unknown[];
+}
+
 /** Byte-in, byte-out operations common to both loaders. Outputs are copies. */
 export interface Dbxv2 {
   identify(bytes: Uint8Array, fileName?: string): FormatInfo;
@@ -82,6 +131,8 @@ export interface Dbxv2 {
   embToPng(bytes: Uint8Array, index: number): Uint8Array;
   /** EMD (+ optional EMB textures, ESK skeleton) as assembled-model JSON. */
   modelJson(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): ModelJson;
+  /** The same model in the field layout of the Rust `AssembledModel` served by `aphrody-nie-model-serve`. */
+  modelAssembledJson(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): AssembledModelJson;
   /** The same model as binary glTF. */
   modelGlb(name: string, emd: Uint8Array, emb?: Uint8Array, esk?: Uint8Array): Uint8Array;
   /** MP4 (H.264), WebM (VP9) or raw .m2v MPEG-2 stream (DBXV2 movies) of a CRI USM; sniff the magic. */

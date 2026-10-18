@@ -18,6 +18,7 @@
 //! | `shenron_dbxv2_cpk_read_file(cpk_path, entry, start, len, out)` | bytes of one entry (CRILAYLA decompressed); `len == 0` means all |
 //! | `shenron_dbxv2_emb_to_png(data, len, index, out)` | PNG of one EMB entry |
 //! | `shenron_dbxv2_model_json` / `shenron_dbxv2_model_glb` | assembled EMD (+EMB, ESK) as JSON / GLB |
+//! | `shenron_dbxv2_model_assembled_json` | same inputs, JSON in the field layout of `AssembledModel` |
 //! | `shenron_dbxv2_usm_to_video(data, len, out)` | MP4 (H.264) or WebM (VP9) bytes, sniffed by magic |
 //! | `shenron_dbxv2_font_to_sfnt(data, len, out)` | validated TTF/OTF/WOFF bytes |
 //! | `shenron_dbxv2_xz_decode(data, len, out)` | decoded bytes of one xz stream (`.xz` asset fetched over HTTP) |
@@ -31,6 +32,13 @@ use std::{
 };
 
 use bun_re::game::api;
+
+#[cfg(feature = "assembled")]
+pub mod assembled;
+
+/// wasm32 build: re-export the wasm-bindgen functions of bun-re so they land in this cdylib.
+#[cfg(feature = "wasm")]
+pub use bun_re::game::wasm::*;
 
 /// ABI version of this library; bumped on any incompatible signature change.
 pub const ABI_VERSION: u32 = 1;
@@ -373,6 +381,43 @@ pub unsafe extern "C" fn shenron_dbxv2_model_json(
     };
     run(out, || {
         let value = api::model_json(
+            name,
+            emd,
+            (!emb.is_empty()).then_some(emb),
+            (!esk.is_empty()).then_some(esk),
+        )
+        .map_err(|error| error.to_string())?;
+        json_bytes(&value)
+    })
+}
+
+/// Model in the field layout of `AssembledModel` (snake_case; see `bun_re::game::api::model_assembled_json`
+/// for what is faithful and what is fixed). Same arguments as [`shenron_dbxv2_model_json`].
+///
+/// # Safety
+/// Same contract as [`shenron_dbxv2_model_json`].
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn shenron_dbxv2_model_assembled_json(
+    name: *const c_char,
+    emd: *const u8,
+    emd_len: usize,
+    emb: *const u8,
+    emb_len: usize,
+    esk: *const u8,
+    esk_len: usize,
+    out: *mut ShBuf,
+) -> c_int {
+    // SAFETY: forwarded caller contract.
+    let (name, emd, emb, esk) = unsafe {
+        (
+            text(name),
+            input(emd, emd_len),
+            input(emb, emb_len),
+            input(esk, esk_len),
+        )
+    };
+    run(out, || {
+        let value = api::model_assembled_json(
             name,
             emd,
             (!emb.is_empty()).then_some(emb),

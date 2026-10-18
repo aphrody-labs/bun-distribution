@@ -223,6 +223,21 @@ pub fn wasm_model_json(
         .map_err(to_js_err)
 }
 
+/// The model in the field layout of `AssembledModel` (see [`api::model_assembled_json`]).
+#[wasm_bindgen]
+pub fn wasm_model_assembled_json(
+    name: &str,
+    emd: &[u8],
+    emb: Option<Vec<u8>>,
+    esk: Option<Vec<u8>>,
+) -> Result<JsValue, JsValue> {
+    let value =
+        api::model_assembled_json(name, emd, emb.as_deref(), esk.as_deref()).map_err(to_js_err)?;
+    value
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
+}
+
 /// Same model as binary glTF.
 #[wasm_bindgen]
 pub fn wasm_model_glb(
