@@ -10,12 +10,17 @@ fn main() {
         eprintln!("usage: assembled_proof <name> <emd> [emb|-] [esk|-]");
         std::process::exit(2);
     };
-    let read = |i: usize| rest.get(i).filter(|p| *p != "-").map(|p| fs::read(p).expect("read"));
+    let read = |i: usize| {
+        rest.get(i)
+            .filter(|p| *p != "-")
+            .map(|p| fs::read(p).expect("read"))
+    };
     let (emd, emb, esk) = (fs::read(emd).expect("read emd"), read(0), read(1));
     let json = bun_re::game::api::model_assembled_json(name, &emd, emb.as_deref(), esk.as_deref())
         .expect("adapter");
     let bytes = serde_json::to_vec(&json).expect("json");
-    let model = shenron_dbxv2::assembled::from_json(&bytes).expect("deserialise into AssembledModel");
+    let model =
+        shenron_dbxv2::assembled::from_json(&bytes).expect("deserialise into AssembledModel");
     let skinned = model.primitives.iter().filter(|p| p.skin.is_some()).count();
     println!("json bytes: {}", bytes.len());
     println!(
@@ -27,7 +32,11 @@ fn main() {
         model.skeleton.as_ref().map_or(0, |s| s.bones.len()),
     );
     let glb = model.to_glb();
-    println!("to_glb: {} bytes, magic {:?}", glb.len(), std::str::from_utf8(&glb[..4]).unwrap_or("?"));
+    println!(
+        "to_glb: {} bytes, magic {:?}",
+        glb.len(),
+        std::str::from_utf8(&glb[..4]).unwrap_or("?")
+    );
     let reference = bun_re::game::api::model_glb(name, &emd, emb.as_deref(), esk.as_deref());
     println!("bun_re model_glb: {:?} bytes", reference.map(|g| g.len()));
 }

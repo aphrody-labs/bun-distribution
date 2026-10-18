@@ -18,10 +18,7 @@ use utoipa::ToSchema;
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum UserSignupSource {
-    #[deprecated(
-        since = "1.4.4",
-        note = "Use other Artcraft* enum variants instead"
-    )]
+    #[deprecated(since = "1.4.4", note = "Use other Artcraft* enum variants instead")]
     #[serde(rename = "artcraft")]
     ArtCraft,
 

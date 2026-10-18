@@ -226,8 +226,7 @@ const APP_ID: &str = "ai.storyteller.cadcraft";
 const APP_ICON_PNG: &[u8] =
     include_bytes!("../../../assets/cadcraft/app-icon/cadcraft-macos-512.png");
 #[cfg(not(target_os = "macos"))]
-const APP_ICON_PNG: &[u8] =
-    include_bytes!("../../../assets/cadcraft/app-icon/cadcraft-256.png");
+const APP_ICON_PNG: &[u8] = include_bytes!("../../../assets/cadcraft/app-icon/cadcraft-256.png");
 
 fn app_icon() -> Option<egui::IconData> {
     eframe::icon_data::from_png_bytes(APP_ICON_PNG)

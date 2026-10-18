@@ -248,12 +248,11 @@ pub fn msg_read(bytes: &[u8]) -> Result<Value> {
 /// waveform bank is embedded and the external AWB name.
 #[cfg(feature = "dbxv2")]
 pub fn acb_info(bytes: &[u8]) -> Result<Value> {
-    let info = aphrody_nie_formats::cri_audio::acb_parse(bytes).map_err(|error| {
-        ReError::ParseError {
+    let info =
+        aphrody_nie_formats::cri_audio::acb_parse(bytes).map_err(|error| ReError::ParseError {
             context: "acb",
             details: error.to_string(),
-        }
-    })?;
+        })?;
     Ok(json!({
         "name": info.name,
         "version": info.version,
@@ -269,28 +268,70 @@ pub fn acb_info(bytes: &[u8]) -> Result<Value> {
 /// was never checked on game files), `convert` (converted to another
 /// format), `identify` (recognised by magic or extension, no reader).
 pub fn support() -> Value {
-    let row = |format: &str, state: &str, detail: &str| {
-        json!({ "format": format, "state": state, "detail": detail })
-    };
+    let row = |format: &str, state: &str, detail: &str| json!({ "format": format, "state": state, "detail": detail });
     json!([
-        row("cpk", "full", "table of contents, ranged reads, CRILAYLA extraction"),
-        row("msg", "full", "msgRead: tables, key names, lines, UTF-8/UTF-16LE"),
-        row("emb", "full", "entry table; embToPng decodes DDS (BCn) entries; PS4 GNF is not recognised"),
-        row("emd", "full", "geometry (position, normal, uv); no blend weights, tangents or colours"),
+        row(
+            "cpk",
+            "full",
+            "table of contents, ranged reads, CRILAYLA extraction"
+        ),
+        row(
+            "msg",
+            "full",
+            "msgRead: tables, key names, lines, UTF-8/UTF-16LE"
+        ),
+        row(
+            "emb",
+            "full",
+            "entry table; embToPng decodes DDS (BCn) entries; PS4 GNF is not recognised"
+        ),
+        row(
+            "emd",
+            "full",
+            "geometry (position, normal, uv); no blend weights, tangents or colours"
+        ),
         row("esk", "full", "bone table, names, local TRS, inverse bind"),
-        row("acb", "full", "acbInfo: cue names; audioToWav decodes embedded waveforms"),
+        row(
+            "acb",
+            "full",
+            "acbInfo: cue names; audioToWav decodes embedded waveforms"
+        ),
         row("awb", "convert", "audioToWav"),
         row("hca", "convert", "audioToWav"),
-        row("usm", "convert", "usmToVideo (MPEG-2 yields a raw .m2v stream)"),
-        row("cms", "unverified", "reader written against synthetic fixtures, not checked on game files"),
-        row("cus", "unverified", "reader written against synthetic fixtures, not checked on game files"),
-        row("pup", "unverified", "reader written against synthetic fixtures, not checked on game files"),
-        row("bac", "header", "validated walk; header fields only, no hitbox or frame data"),
+        row(
+            "usm",
+            "convert",
+            "usmToVideo (MPEG-2 yields a raw .m2v stream)"
+        ),
+        row(
+            "cms",
+            "unverified",
+            "reader written against synthetic fixtures, not checked on game files"
+        ),
+        row(
+            "cus",
+            "unverified",
+            "reader written against synthetic fixtures, not checked on game files"
+        ),
+        row(
+            "pup",
+            "unverified",
+            "reader written against synthetic fixtures, not checked on game files"
+        ),
+        row(
+            "bac",
+            "header",
+            "validated walk; header fields only, no hitbox or frame data"
+        ),
         row("bdm", "header", "validated walk; header fields only"),
         row("bcm", "header", "validated walk; header fields only"),
         row("bcs", "header", "validated walk; header fields only"),
         row("bsa", "header", "validated walk; header fields only"),
-        row("ean", "header", "validated walk; header and skeleton, keyframes are read and discarded"),
+        row(
+            "ean",
+            "header",
+            "validated walk; header and skeleton, keyframes are read and discarded"
+        ),
         row("emm", "header", "validated walk; header fields only"),
         row("eepk", "identify", "no reader"),
         row("ema", "identify", "no reader"),
@@ -351,7 +392,9 @@ pub fn read_asset(root: &std::path::Path, kind: &str, cpk: &str, path: &str) -> 
                 | std::path::Component::RootDir
                 | std::path::Component::Prefix(_)
         ) {
-            return Err(ReError::CorruptHeader(format!("asset path escapes the tree: {path}")));
+            return Err(ReError::CorruptHeader(format!(
+                "asset path escapes the tree: {path}"
+            )));
         }
     }
     let base = root.join(&relative);
@@ -364,11 +407,7 @@ pub fn read_asset(root: &std::path::Path, kind: &str, cpk: &str, path: &str) -> 
             Err(error) => return Err(error.into()),
         }
     }
-    Err(std::io::Error::new(
-        std::io::ErrorKind::NotFound,
-        format!("{kind}/{cpk}/{path}"),
-    )
-    .into())
+    Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("{kind}/{cpk}/{path}")).into())
 }
 
 // ---------------------------------------------------------------------------

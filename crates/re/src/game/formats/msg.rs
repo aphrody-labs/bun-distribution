@@ -84,9 +84,16 @@ fn string_at(b: &[u8], slot: usize) -> Result<MsgString> {
     let raw = b
         .get(offset as usize..)
         .and_then(|rest| rest.get(..bytes as usize))
-        .ok_or_else(|| corrupt(format!("string at {offset:#x} ({bytes} bytes) is out of range")))?;
+        .ok_or_else(|| {
+            corrupt(format!(
+                "string at {offset:#x} ({bytes} bytes) is out of range"
+            ))
+        })?;
     let (encoding, text) = if bytes == chars.wrapping_add(1) {
-        ("utf8", String::from_utf8_lossy(&raw[..raw.len() - 1]).into_owned())
+        (
+            "utf8",
+            String::from_utf8_lossy(&raw[..raw.len() - 1]).into_owned(),
+        )
     } else if bytes == chars.wrapping_mul(2).wrapping_add(2) {
         let units: Vec<u16> = raw[..raw.len() - 2]
             .chunks_exact(2)
@@ -96,7 +103,9 @@ fn string_at(b: &[u8], slot: usize) -> Result<MsgString> {
     } else {
         (
             "unknown",
-            String::from_utf8_lossy(raw).trim_end_matches('\0').to_string(),
+            String::from_utf8_lossy(raw)
+                .trim_end_matches('\0')
+                .to_string(),
         )
     };
     Ok(MsgString {
@@ -140,7 +149,9 @@ impl MsgFile {
             let line_count = u32_at(buffer, lists + i * 8)? as usize;
             let lines_at = u32_at(buffer, lists + i * 8 + 4)? as usize;
             if line_count > buffer.len() / 16 {
-                return Err(corrupt(format!("{line_count} lines cannot fit in the file")));
+                return Err(corrupt(format!(
+                    "{line_count} lines cannot fit in the file"
+                )));
             }
             let lines = (0..line_count)
                 .map(|j| string_at(buffer, lines_at + j * 16))
@@ -189,7 +200,9 @@ impl MsgFile {
             }
             out
         };
-        let key_slots: Vec<[u8; 16]> = (0..n).map(|i| slot(&format!("MSG_{i}"), 0, &mut blob)).collect();
+        let key_slots: Vec<[u8; 16]> = (0..n)
+            .map(|i| slot(&format!("MSG_{i}"), 0, &mut blob))
+            .collect();
         let line_slots: Vec<[u8; 16]> = lines.iter().map(|l| slot(l, 0, &mut blob)).collect();
 
         let mut buf = Vec::new();

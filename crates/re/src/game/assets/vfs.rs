@@ -323,7 +323,8 @@ impl GameVfs {
     fn mount_level5(&mut self) -> AssetResult<()> {
         Err(AssetError::Format {
             format: "level5-ievr",
-            details: "the IEVR archive mount reads the filesystem and is unavailable on wasm32".to_owned(),
+            details: "the IEVR archive mount reads the filesystem and is unavailable on wasm32"
+                .to_owned(),
         })
     }
 

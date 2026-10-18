@@ -30,9 +30,22 @@ const inSubmodule = (dir: string) => {
 
 const metadata = JSON.parse(await capture(["cargo", "metadata", "--format-version", "1", "--no-deps", "--locked"]));
 const owned: string[] = metadata.packages
-  .filter((pkg: { manifest_path: string }) => !inSubmodule(dirname(pkg.manifest_path)))
+  .filter(
+    (pkg: { manifest_path: string; targets: { src_path: string }[] }) =>
+      !inSubmodule(dirname(pkg.manifest_path)) && !pkg.targets.some(target => inSubmodule(dirname(target.src_path))),
+  )
   .map((pkg: { name: string }) => pkg.name);
 
-const args = ["cargo", "fmt", ...owned.flatMap(name => ["-p", name]), ...(write ? [] : ["--", "--check"])];
 console.log(`rustfmt: ${owned.length} owned crates, ${metadata.packages.length - owned.length} in submodules skipped`);
-process.exit(await Bun.spawn(args, { cwd: root, stdout: "inherit", stderr: "inherit" }).exited);
+// Windows limits a command line to 32k characters, so the crates are formatted in batches.
+let status = 0;
+for (let at = 0; at < owned.length; at += 4) {
+  const args = [
+    "cargo",
+    "fmt",
+    ...owned.slice(at, at + 4).flatMap(name => ["-p", name]),
+    ...(write ? [] : ["--", "--check"]),
+  ];
+  status ||= await Bun.spawn(args, { cwd: root, stdout: "inherit", stderr: "inherit" }).exited;
+}
+process.exit(status);
