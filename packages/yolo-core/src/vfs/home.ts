@@ -19,13 +19,13 @@ export function isCompiled(): boolean {
 }
 
 export function findRepoRoot(start: string = process.cwd()): string {
-  const fromEnv = process.env["YOLO_HOME"];
+  const fromEnv = process.env["BUN_OS_ROOT"] || process.env["YOLO_HOME"];
   if (fromEnv !== undefined && fromEnv !== "") return resolve(fromEnv);
   if (isCompiled()) return dirname(dirname(process.execPath));
 
   let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "package.json"))) {
+    if (isCheckout(dir)) {
       return dir;
     }
     const parent = dirname(dir);
@@ -35,7 +35,7 @@ export function findRepoRoot(start: string = process.cwd()): string {
 
   let metaDir = resolve(import.meta.dir);
   for (;;) {
-    if (existsSync(join(metaDir, "vendor.toml")) && existsSync(join(metaDir, "package.json"))) {
+    if (isCheckout(metaDir)) {
       return metaDir;
     }
     const parent = dirname(metaDir);
@@ -43,7 +43,7 @@ export function findRepoRoot(start: string = process.cwd()): string {
     metaDir = parent;
   }
 
-  return resolve(import.meta.dir, "../../../../docs/aphrody/packages");
+  throw new Error("Bun OS checkout not found; configure BUN_OS_ROOT explicitly");
 }
 
 export function yoloHome(): string {
@@ -57,17 +57,21 @@ export function yoloVersion(): string {
 }
 
 /**
- * The yolo checkout that contains `start` (or one of its parents): the directory holding `vendor.toml` and the CLI
+ * The Bun OS checkout that contains `start` (or one of its parents): the directory holding the source lock and CLI
  * sources. The installed executable hands source-tree commands (`ship`, `import`, `status`...) to it.
  */
 export function findCheckout(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "packages/engine/yolo/src/index.ts"))) {
+    if (isCheckout(dir)) {
       return dir;
     }
     const parent = dirname(dir);
     if (parent === dir) return null;
     dir = parent;
   }
+}
+
+function isCheckout(root: string): boolean {
+  return existsSync(join(root, "sources.lock.json")) && existsSync(join(root, "packages/yolo-cli/src/index.ts"));
 }

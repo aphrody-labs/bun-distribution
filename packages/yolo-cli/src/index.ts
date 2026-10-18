@@ -184,10 +184,10 @@ async function main(): Promise<void> {
     "hooks",
   ]);
   if (isCompiled() && CHECKOUT_ONLY.has(command)) {
-    const checkout = findCheckout();
+    const checkout = findCheckout(process.env.BUN_OS_ROOT ?? process.cwd());
     if (checkout === null) {
       console.error(
-        `\`yolo ${command}\` requires yolo checkout data. Run it inside a checkout containing vendor.toml and packages/engine/yolo/src/index.ts.`,
+        `\`yolo ${command}\` requires Bun OS checkout data. Configure BUN_OS_ROOT or run it inside a checkout containing sources.lock.json and packages/yolo-cli/src/index.ts.`,
       );
       process.exitCode = 1;
       return;
