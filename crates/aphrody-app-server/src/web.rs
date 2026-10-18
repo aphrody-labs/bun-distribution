@@ -20,10 +20,18 @@ pub(crate) async fn index() -> (axum::http::StatusCode, axum::response::Html<&'s
 }
 
 fn asset_status() -> axum::http::StatusCode {
-    if ui_embedded() { axum::http::StatusCode::OK } else { axum::http::StatusCode::SERVICE_UNAVAILABLE }
+    if ui_embedded() {
+        axum::http::StatusCode::OK
+    } else {
+        axum::http::StatusCode::SERVICE_UNAVAILABLE
+    }
 }
 
-pub(crate) async fn script() -> (axum::http::StatusCode, [(&'static str, &'static str); 1], &'static str) {
+pub(crate) async fn script() -> (
+    axum::http::StatusCode,
+    [(&'static str, &'static str); 1],
+    &'static str,
+) {
     (
         asset_status(),
         [("content-type", "text/javascript; charset=utf-8")],
@@ -31,7 +39,11 @@ pub(crate) async fn script() -> (axum::http::StatusCode, [(&'static str, &'stati
     )
 }
 
-pub(crate) async fn style() -> (axum::http::StatusCode, [(&'static str, &'static str); 1], &'static str) {
+pub(crate) async fn style() -> (
+    axum::http::StatusCode,
+    [(&'static str, &'static str); 1],
+    &'static str,
+) {
     (
         asset_status(),
         [("content-type", "text/css; charset=utf-8")],
@@ -55,7 +67,10 @@ mod tests {
             assert!(!index().await.1.0.contains("built without the web console"));
         } else {
             assert_eq!(index().await.0, axum::http::StatusCode::SERVICE_UNAVAILABLE);
-            assert_eq!(script().await.0, axum::http::StatusCode::SERVICE_UNAVAILABLE);
+            assert_eq!(
+                script().await.0,
+                axum::http::StatusCode::SERVICE_UNAVAILABLE
+            );
             assert_eq!(style().await.0, axum::http::StatusCode::SERVICE_UNAVAILABLE);
             assert!(index().await.1.0.contains("built without the web console"));
         }

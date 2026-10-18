@@ -15,10 +15,12 @@ const MACOS_TRAFFIC_LIGHT_WIDTH = 90;
 // Detect macOS once
 const isMacOS =
   typeof navigator !== "undefined" &&
-  (navigator.platform.toLowerCase().includes("mac") || navigator.userAgent.includes("Mac"));
+  (navigator.platform.toLowerCase().includes("mac") ||
+    navigator.userAgent.includes("Mac"));
 
 function WindowControls() {
-  if (typeof window === "undefined" || !window.__TAURI__ || isMacOS) return null;
+  if (typeof window === "undefined" || !window.__TAURI__ || isMacOS)
+    return null;
   return (
     <div
       className="flex items-center gap-1 pl-2"
@@ -27,7 +29,7 @@ function WindowControls() {
     >
       <button
         type="button"
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           if (window.__TAURI__?.core) {
             void window.__TAURI__.core.invoke("aphrody_shell_window", {
@@ -42,7 +44,7 @@ function WindowControls() {
       </button>
       <button
         type="button"
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           if (window.__TAURI__?.core) {
             void window.__TAURI__.core.invoke("aphrody_shell_window", {
@@ -57,7 +59,7 @@ function WindowControls() {
       </button>
       <button
         type="button"
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           if (window.__TAURI__?.core) {
             void window.__TAURI__.core.invoke("aphrody_shell_window", {
@@ -74,7 +76,10 @@ function WindowControls() {
   );
 }
 
-export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 0 }: TopBarProps) {
+export const TopBar = memo(function TopBar({
+  sidebarWidth = 0,
+  inspectorWidth = 0,
+}: TopBarProps) {
   const containerRef = useOverflowCalculation();
 
   const isSidebarCollapsed = sidebarWidth === 0;
@@ -89,8 +94,12 @@ export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 
     <div
       className="absolute top-0 z-[60] h-12"
       data-tauri-drag-region
-      onDoubleClick={e => {
-        if (e.target === e.currentTarget && typeof window !== "undefined" && window.__TAURI__?.core) {
+      onDoubleClick={(e) => {
+        if (
+          e.target === e.currentTarget &&
+          typeof window !== "undefined" &&
+          window.__TAURI__?.core
+        ) {
           void window.__TAURI__.core.invoke("aphrody_shell_window", {
             action: { action: "toggle_maximize" },
           });
@@ -105,8 +114,12 @@ export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 
         ref={containerRef}
         className="relative flex items-center h-full px-3 gap-3 overflow-hidden"
         data-tauri-drag-region
-        onDoubleClick={e => {
-          if (e.target === e.currentTarget && typeof window !== "undefined" && window.__TAURI__?.core) {
+        onDoubleClick={(e) => {
+          if (
+            e.target === e.currentTarget &&
+            typeof window !== "undefined" &&
+            window.__TAURI__?.core
+          ) {
             void window.__TAURI__.core.invoke("aphrody_shell_window", {
               action: { action: "toggle_maximize" },
             });
@@ -120,7 +133,11 @@ export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 
         <TopBarSection position="center" />
         <button
           type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent("aphrody:open-command-palette"))}
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent("aphrody:open-command-palette"),
+            )
+          }
           className="hidden sm:flex h-9 items-center gap-2 rounded-full bg-surface-container px-3 text-label-large text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer border border-outline-variant/30 select-none shadow-xs"
           title="Ouvrir la palette de commandes (Ctrl+K)"
         >

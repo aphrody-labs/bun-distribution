@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Public projection of the existing Rust GetAccountResponse contract. No credentials are retained. */
-export interface SessionIdentity { authMode: "oss" | "apikey" | "chatgpt" | "headers" | null; }
+export interface SessionIdentity {
+  authMode: "oss" | "apikey" | "chatgpt" | "headers" | null;
+}
 export function sessionIdentity(value: unknown): SessionIdentity {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid account response.");
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("Invalid account response.");
   const mode = (value as Record<string, unknown>).authMode;
-  if (mode !== null && (typeof mode !== "string" || !["oss", "apikey", "chatgpt", "headers"].includes(mode))) throw new Error("Invalid account authentication mode.");
+  if (
+    mode !== null &&
+    (typeof mode !== "string" ||
+      !["oss", "apikey", "chatgpt", "headers"].includes(mode))
+  )
+    throw new Error("Invalid account authentication mode.");
   return { authMode: mode as SessionIdentity["authMode"] };
 }
 export async function readSessionIdentity(

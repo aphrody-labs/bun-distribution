@@ -271,7 +271,10 @@ mod tests {
             root.path().join("packages/m3-templates/base/big.json"),
             vec![b'x'; MAX_FILE_BYTES + 1],
         )?;
-        fs::write(root.path().join("packages/m3-templates/base/logo.png"), b"binary")?;
+        fs::write(
+            root.path().join("packages/m3-templates/base/logo.png"),
+            b"binary",
+        )?;
         Ok(root)
     }
 
@@ -279,7 +282,10 @@ mod tests {
     fn package_manifest_relative_paths_resolve_to_the_flat_owner() -> io::Result<()> {
         let root = fixture()?;
         let manifest = root.path().join("packages/m3-templates/stack.toml");
-        fs::write(&manifest, fs::read_to_string(&manifest)?.replace("packages/m3-templates/", "templates/"))?;
+        fs::write(
+            &manifest,
+            fs::read_to_string(&manifest)?.replace("packages/m3-templates/", "templates/"),
+        )?;
         let templates = load_templates(root.path())?;
         assert_eq!(templates.len(), 3);
         assert_eq!(templates[0].files[1].content, "export {};\n");
