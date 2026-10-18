@@ -541,7 +541,7 @@
 	url = https://github.com/aphrody-labs/capture-harness.git
 	branch = os
 [submodule "packages/dbxv2"]
-	path = packages/dbxv2
+	path = vendor/dbxv2
 	url = https://github.com/aphrody-labs/dbxv2.git
 	branch = master
 [submodule "packages/iecode-scripts"]
@@ -620,3 +620,7 @@
 [submodule "vendor/fbi"]
 	path = vendor/fbi
 	url = https://github.com/aphrody-labs/fbi.git
+[submodule "vendor/rea"]
+	path = vendor/rea
+	url = https://github.com/aphrody-labs/rea.git
+	branch = main

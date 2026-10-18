@@ -2,6 +2,7 @@
 # Bun OS gamestream launcher (run as ubuntu on the VPS from this directory or any other).
 #   ./up.sh webrtc     build if needed and start the WebRTC/WebGPU stream (default)
 #   ./up.sh moonlight  seed the Wolf state and start Wolf for Moonlight clients
+#   ./up.sh x11        capture the existing authorized host X11 desktop (video and input)
 #   ./up.sh build      (re)build the image, niced and bounded
 #   ./up.sh down       stop and remove both services
 set -eu
@@ -14,6 +15,7 @@ export WOLF_STATE=${WOLF_STATE:-/games/wolf}
 
 files="-f compose.yaml"
 [ -e /dev/ntsync ] && files="$files -f compose.ntsync.yaml"
+[ "${1:-webrtc}" != x11 ] || files="$files -f compose.x11.yaml"
 compose() {
   # shellcheck disable=SC2086
   docker compose $files --profile webrtc --profile moonlight "$@"
@@ -28,7 +30,7 @@ build() {
 
 case "${1:-webrtc}" in
 build) build ;;
-webrtc)
+webrtc|x11)
   docker image inspect aphrody/bun-gamestream:local >/dev/null 2>&1 || build
   compose up -d --no-build gamestream
   ;;
@@ -39,5 +41,5 @@ moonlight)
   compose up -d --no-build wolf
   ;;
 down) compose down ;;
-*) echo "usage: $0 [webrtc|moonlight|build|down]" >&2; exit 2 ;;
+*) echo "usage: $0 [webrtc|x11|moonlight|build|down]" >&2; exit 2 ;;
 esac

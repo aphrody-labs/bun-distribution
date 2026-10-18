@@ -571,7 +571,8 @@
     "packages/bun-windows-xinput1-4",
     "packages/bun-windows-xmllite",
     "packages/bun-windows-xolehlp",
-    "packages/bun-windows-xpsprint"
+    "packages/bun-windows-xpsprint",
+    "vendor/rea"
   ],
   "type": "module",
   "exports": {

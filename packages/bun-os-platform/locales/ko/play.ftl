@@ -142,3 +142,7 @@ not-found = 존재하지 않는 페이지입니다. 라이브러리로 돌아가
 error-load = { $what }을(를) 불러오지 못했습니다: { $error }. VPS에서 play 서비스가 실행 중인지 확인하세요.
 status-gamepad = 게임패드 연결됨
 status-no-gamepad = 게임패드 없음
+stream-launch-note = 게임 호스트에 설치된 게임을 실행하고 현재 스트림에 연결합니다.
+stream-game-unavailable = 이 게임은 게임 호스트에 완전히 설치되지 않았습니다.
+stream-launch-requested = Steam에 실행을 요청했습니다. 스트림은 송신자의 현재 화면을 보여 줍니다.
+stream-launch-failed = 실행 요청이 실패했습니다. 게임 호스트에서 Steam이 실행 중인지 확인하세요.

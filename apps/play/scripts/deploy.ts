@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Deploys the built release (apps/play/dist, from scripts/build.ts on this workstation) to the VPS:
- * replaces ~/apps/play/current in place (no kept releases), writes ~/apps/play/play.env, installs
+ * replaces ~/apps/play/current in place (no kept releases), preserves ~/apps/play/play.env, installs
  * the user unit bun-os-play.service (bun-os-gaming.slice) and the distro TLS vhost
  * play.aphrody.app.conf (nginx -t, then reload only). Nothing is compiled on the VPS.
  *
  * Usage: bun apps/play/scripts/deploy.ts [--build] [--host vps] [--skip-vhost]
- * Prerequisites on the VPS: ~/apps/play/runtime/bun (Bun OS release with bun:nginx) and the
+ * Prerequisites on the VPS: an installed Bun with bun:nginx and the existing play.env, plus the
  * engine ~/apps/play/nginx/sbin/nginx (toolchains/bun/packages/bun-nginx build-provider.ts).
  */
 import { $ } from "bun";
@@ -31,8 +31,10 @@ const staging = await mkdtemp(join(tmpdir(), "play-release-"));
 try {
   // Relative operands: GNU tar and scp read "C:" in a Windows path as a remote host.
   await $`tar -czf play.tgz -C ${dist} .`.cwd(staging);
-  await $`scp -q play.tgz ${host}:/tmp/`.cwd(staging);
-  await $`scp -q infra/config/host/apps/vps/gaming/play/bun-os-play.service infra/config/host/nginx/play/play.aphrody.app.conf ${host}:/tmp/`.cwd(
+  await $`scp -q -o ConnectTimeout=15 -o BatchMode=yes play.tgz ${host}:/tmp/`.cwd(
+    staging,
+  );
+  await $`scp -q -o ConnectTimeout=15 -o BatchMode=yes infra/config/host/apps/vps/gaming/play/bun-os-play.service infra/config/host/nginx/play/play.aphrody.app.conf ${host}:/tmp/`.cwd(
     repo,
   );
 } finally {
@@ -42,29 +44,28 @@ try {
 const remote = String.raw`
 set -eu
 P="$HOME/apps/play"
-test -x "$P/runtime/bun" && test -x "$P/nginx/sbin/nginx"
+test -f "$P/play.env" && test -x "$P/nginx/sbin/nginx"
+RUNTIME=$(printenv PLAY_DEPLOY_RUNTIME || true)
+if [ -z "$RUNTIME" ]; then
+  if [ -x "$P/runtime/bun" ]; then RUNTIME="$P/runtime/bun"; else RUNTIME="$HOME/.local/bin/bun"; fi
+fi
+case "$RUNTIME" in /*) ;; *) echo 'Runtime must be an absolute installed path' >&2; exit 1 ;; esac
+case "$RUNTIME" in *[!a-zA-Z0-9_./-]*) echo 'Unsupported runtime path characters' >&2; exit 1 ;; esac
+test -x "$RUNTIME"
+"$RUNTIME" -e 'await import("bun:nginx")'
 rm -rf "$P/next" && mkdir -p "$P/next" "$P/data/usr" && tar -xzf /tmp/play.tgz -C "$P/next" && rm -f /tmp/play.tgz
-# The owner's SteamID64 (read-only from the client's loginusers.vdf) is the Steam sign-in allow list.
-STEAM_IDS=$(grep -ohE '"7656119[0-9]{10}"' "$HOME/.steam/steam/config/loginusers.vdf" 2>/dev/null | tr -d '"' | sort -u | paste -sd, - || true)
-umask 077
-cat > "$P/play.env" <<EOF
-NODE_ENV=production
-PLAY_ROOT=$P/current
-PLAY_DATA=$P/data
-PLAY_SECRETS=$HOME/.aphrody/secrets/play
-PLAY_NGINX_BINARY=$P/nginx/sbin/nginx
-PLAY_NGINX_PREFIX=$P/nginx
-PLAY_STEAM_IDS=$STEAM_IDS
-BEP_ROOT=$P/data/usr
-BEP_PROJECT=$P/data/usr/var/lib/bep/library
-EOF
+# Existing host-specific environment and protected session stores stay untouched.
 mkdir -p "$HOME/.config/systemd/user"
-install -m 644 /tmp/bun-os-play.service "$HOME/.config/systemd/user/bun-os-play.service" && rm -f /tmp/bun-os-play.service
+sed "s|__PLAY_RUNTIME__|$RUNTIME|g" /tmp/bun-os-play.service > "$HOME/.config/systemd/user/bun-os-play.service"
+chmod 644 "$HOME/.config/systemd/user/bun-os-play.service"
+rm -f /tmp/bun-os-play.service
 systemctl --user daemon-reload
 systemctl --user stop bun-os-play.service 2>/dev/null || true
 rm -rf "$P/current" && mv "$P/next" "$P/current"
 systemctl --user enable --now bun-os-play.service
-for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:18480/healthz && break; sleep 0.5; done
+curl --fail --silent --retry 12 --retry-delay 1 --retry-connrefused --retry-max-time 20 --max-time 3 -o /dev/null http://127.0.0.1:18480/healthz
+curl --fail --silent --max-time 5 -o /dev/null http://127.0.0.1:18480/api/platform/theme
+curl --fail --silent --max-time 5 -o /dev/null 'http://127.0.0.1:18480/api/platform/i18n?domains=common,play&lang=fr'
 systemctl --user --no-pager --lines=8 status bun-os-play.service | sed -n '1,14p'
 `;
 const vhost = String.raw`
@@ -86,6 +87,7 @@ if ! sudo cmp -s /tmp/play.aphrody.app.conf "$LIVE"; then
 fi
 rm -f /tmp/play.aphrody.app.conf
 `;
-await $`ssh ${host} ${remote}`;
-if (!args.includes("--skip-vhost")) await $`ssh ${host} ${vhost}`;
+await $`ssh -o ConnectTimeout=15 -o BatchMode=yes ${host} ${"timeout 60 sh <<'PLAY_DELIVERY'\n" + remote + "\nPLAY_DELIVERY"}`;
+if (!args.includes("--skip-vhost"))
+  await $`ssh -o ConnectTimeout=15 -o BatchMode=yes ${host} ${"timeout 30 sh <<'PLAY_VHOST'\n" + vhost + "\nPLAY_VHOST"}`;
 console.log(`deployed apps/play to ${host}`);

@@ -1,0 +1,14 @@
+# Capture the existing Steam desktop. No Steam library, credentials or sessions are mounted.
+# Use with compose.yaml through ./up.sh x11; the base owns CPU/memory/device constraints.
+services:
+  gamestream:
+    user: "0:0"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    environment:
+      GAMESTREAM_MODE: x11
+      GAMESTREAM_VIDEO_SOURCE: x11
+      GAMESTREAM_DISPLAY: ":99"
+      GAMESTREAM_HOST: 10.200.77.1
+      GAMESTREAM_ICE_ADDRESS: 10.200.77.1
+      GAMESTREAM_AUDIO: "0"

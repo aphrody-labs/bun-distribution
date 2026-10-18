@@ -145,3 +145,7 @@ not-found = Cette page n'existe pas. Revenez à la bibliothèque.
 error-load = { $what } n'a pas chargé : { $error }. Vérifiez que le service play tourne sur le VPS.
 status-gamepad = Manette connectée
 status-no-gamepad = Aucune manette
+stream-launch-note = Lancer ce jeu installé sur l’hôte de jeu, puis ouvrir son flux actuel.
+stream-game-unavailable = Ce jeu n’est pas entièrement installé sur l’hôte de jeu.
+stream-launch-requested = Lancement demandé à Steam. Le flux montre l’image actuelle de l’émetteur.
+stream-launch-failed = La demande de lancement a échoué. Vérifiez que Steam tourne sur l’hôte de jeu.

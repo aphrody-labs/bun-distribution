@@ -119,7 +119,8 @@ const games = [];
 for (const row of rows) {
   if (!existsSync(row.path)) continue;
   // Only free ROMs are published; the owner's private dump store never is.
-  if (isPrivatePath(row.path)) throw new Error(`refusing to publish a private dump: ${row.path}`);
+  if (isPrivatePath(row.path))
+    throw new Error(`refusing to publish a private dump: ${row.path}`);
   const rom = `/roms/${row.md5}${extname(row.path).toLowerCase()}`;
   cpSync(row.path, join(publicDir, rom));
   const pack = packById.get(row.source.slice("free:".length));
@@ -197,7 +198,10 @@ const releasePaths: BunPlugin = {
   name: "play-release-paths",
   setup(build) {
     build.onLoad(
-      { filter: /[\\/]packages[\\/]bun-engine[\\/]src[\\/].*\.ts$/ },
+      {
+        filter:
+          /[\\/]packages[\\/](bun-engine|bun-os-platform|bun-loaders)[\\/].*\.ts$/,
+      },
       async (args) => {
         const dir = relative(repo, dirname(args.path)).replaceAll("\\", "/");
         const file = `${dir}/${basename(args.path)}`;
@@ -230,6 +234,35 @@ check(
 cpSync(consoles, join(dist, "packages", "bun-engine", "plugins", "consoles"), {
   recursive: true,
 });
+// Platform paths resolve beside their original module, including after bundling.
+for (const directory of ["locales", "themes", "plugins"]) {
+  cpSync(
+    join(repo, "packages", "bun-os-platform", directory),
+    join(dist, "packages", "bun-os-platform", directory),
+    { recursive: true },
+  );
+}
+// Built-ins and their lazy capability owners are loaded by path, outside the server graph.
+// Preserve manifest entry paths, emitting self-contained Bun JavaScript at each one.
+for (const entry of [
+  "packages/bun-os-platform/plugins/bun-engine/index.ts",
+  "packages/bun-os-platform/plugins/bun-loaders/index.ts",
+  "packages/bun-engine/src/formats/index.ts",
+  "packages/bun-engine/src/plugins/consoles.ts",
+  "packages/bun-loaders/src/index.ts",
+]) {
+  check(
+    await Bun.build({
+      entrypoints: [join(repo, entry)],
+      outdir: dirname(join(dist, entry)),
+      naming: basename(entry),
+      target: "bun",
+      minify: { syntax: true, whitespace: true },
+      plugins: [releasePaths],
+    }),
+    entry,
+  );
+}
 mkdirSync(join(dist, "nginx"), { recursive: true });
 cpSync(
   join(repo, "infra", "config", "host", "nginx", "play", "engine.conf"),

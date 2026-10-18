@@ -35,8 +35,10 @@
   --tile-width: clamp(132px, 13vw, 200px);
   --tile-focus-scale: 1.08;
   --focus-ring: 3px;
-  --retint: var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
-  --press: var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+  --retint: var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-emphasized);
+  --press: var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
   --scrim-strong: 94%;
   --scrim-soft: 82%;
   scroll-padding-top: calc(var(--bar-height) + var(--space-4));
@@ -428,14 +430,34 @@ main {
   background:
     linear-gradient(
       to right,
-      color-mix(in srgb, var(--md-sys-color-surface) var(--scrim-strong), transparent) 0%,
-      color-mix(in srgb, var(--md-sys-color-surface) var(--scrim-soft), transparent) 45%,
+      color-mix(
+          in srgb,
+          var(--md-sys-color-surface) var(--scrim-strong),
+          transparent
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--md-sys-color-surface) var(--scrim-soft),
+          transparent
+        )
+        45%,
       transparent 80%
     ),
-    linear-gradient(to top, var(--md-sys-color-surface) 0%, var(--md-sys-color-surface) 30%, transparent 60%),
+    linear-gradient(
+      to top,
+      var(--md-sys-color-surface) 0%,
+      var(--md-sys-color-surface) 30%,
+      transparent 60%
+    ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--md-sys-color-surface) var(--scrim-soft), transparent) 0,
+      color-mix(
+          in srgb,
+          var(--md-sys-color-surface) var(--scrim-soft),
+          transparent
+        )
+        0,
       transparent calc(var(--bar-height) * 2)
     );
   transition: background var(--retint);
@@ -445,7 +467,8 @@ main {
   display: grid;
   gap: var(--space-4);
   max-width: 720px;
-  padding: calc(var(--bar-height) + var(--space-12)) var(--space-8) var(--space-8);
+  padding: calc(var(--bar-height) + var(--space-12)) var(--space-8)
+    var(--space-8);
 }
 .hero-system {
   margin: 0;
@@ -741,7 +764,7 @@ body.gamescope .screen {
   inset: 0;
   margin: 0;
   border-radius: 0;
-  background: #000;
+  background: var(--md-sys-color-scrim);
 }
 body.gamescope .screen iframe {
   width: 100%;
@@ -764,7 +787,8 @@ dialog::backdrop {
   height: 100dvh;
   max-height: none;
   width: min(360px, 90vw);
-  border-radius: 0 var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) 0;
+  border-radius: 0 var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-large) 0;
   translate: -100% 0;
   transition:
     translate var(--retint),

@@ -3,6 +3,7 @@
 #   GAMESTREAM_MODE=webrtc   (default) gamescope headless + PipeWire + Bun signalling + WebRTC sender
 #   GAMESTREAM_MODE=wolf-app run the workload inside the Wayland compositor Wolf provides
 #   GAMESTREAM_MODE=probe    print the Vulkan/GL/GStreamer capabilities and exit
+#   GAMESTREAM_MODE=x11      capture an existing authorized host desktop, without gamescope
 set -eu
 
 W=${GAMESTREAM_WIDTH:-1280}
@@ -22,6 +23,18 @@ probe() {
 }
 
 case "${GAMESTREAM_MODE:-webrtc}" in
+x11)
+  : "${GAMESTREAM_DISPLAY:?Set the existing authorized X display}"
+  : "${GAMESTREAM_HOST:?Set the private mesh bind address}"
+  : "${GAMESTREAM_ICE_ADDRESS:?Set the private mesh ICE address}"
+  export GAMESTREAM_VIDEO_SOURCE=x11
+  export GAMESTREAM_AUDIO=0
+  /usr/bin/python3 /opt/gamestream/sender.py --check
+  [ -w /dev/uinput ] || { log "uinput is not writable"; exit 1; }
+  export GAMESTREAM_SENDER="/usr/bin/python3 /opt/gamestream/sender.py"
+  cd /opt/bun-gamestream
+  exec bun src/server.ts
+  ;;
 probe)
   probe
   exit 0
