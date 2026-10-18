@@ -1,5 +1,16 @@
 # Bun OS workspace
 
+## Owner workflow update — 2026-10-18
+
+- No new Git worktrees. Consolidate existing branches and worktrees into the
+  canonical checkout after preserving their source changes in Git.
+- Run builds and qualification on the VPS only, including Git qualification
+  hooks. The Windows workstation edits and synchronizes sources.
+- Commit source checkpoints and synchronize PC/VPS at delivery boundaries;
+  fetch before normal pushes and never force-push.
+- Share the existing VPS factory slots between runtime, OS and web builds,
+  with at most four compiler jobs per concurrent lane and shared owner caches.
+
 ## Bun OS consolidation goal
 
 Before workspace, Cargo/Bun ownership, build-factory, packaging, cache, target,
