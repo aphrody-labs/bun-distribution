@@ -266,10 +266,6 @@
 	path = vendor/material-web
 	url = https://github.com/aphrody-labs/material-web.git
 	shallow = true
-[submodule "vendor/material-color-utilities"]
-	path = vendor/material-color-utilities
-	url = https://github.com/aphrody-labs/material-color-utilities.git
-	shallow = true
 [submodule "vendor/material-design-icons"]
 	path = vendor/material-design-icons
 	url = https://github.com/aphrody-labs/material-design-icons.git
@@ -500,18 +496,12 @@
 	path = vendor/steam/steamlocate-rs
 	url = https://github.com/CosmicHorrorDev/steamlocate-rs.git
 	branch = master
-[submodule "vendor/steam/steam-mcp-server"]
-	path = vendor/steam/steam-mcp-server
-	url = https://github.com/sharkusmanch/steam-mcp-server.git
 [submodule "vendor/steam/steamos-claude-skill"]
 	path = vendor/steam/steamos-claude-skill
 	url = https://github.com/28allday/steamos-claude-skill.git
 [submodule "vendor/steam/steam-claude-skills"]
 	path = vendor/steam/steam-claude-skills
 	url = https://github.com/tugteam/steam-claude-skills.git
-[submodule "vendor/re/ghidramcp"]
-	path = vendor/re/ghidramcp
-	url = https://github.com/LaurieWired/GhidraMCP.git
 [submodule "vendor/re/ida-pro-mcp"]
 	path = vendor/re/ida-pro-mcp
 	url = https://github.com/mrexodia/ida-pro-mcp.git
