@@ -3,6 +3,7 @@
 // out/craft/<id>/. Cargo runs once for all apps so shared dependencies compile one time; the pinned
 // wasm-bindgen and Binaryen of the web-emulation lock produce and shrink the modules.
 //   bun build-craft.ts [id ...]
+import { cp } from "node:fs/promises";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -151,7 +152,12 @@ for (const app of apps) {
   await run([bindgen, "--target", "web", "--out-dir", dest, "--out-name", bin, "--no-typescript", raw]);
   const bound = join(dest, `${bin}_bg.wasm`);
   await run([wasmOpt, "-Oz", ...FEATURES, "--strip-debug", "--strip-producers", bound, "-o", bound]);
-  if (app.web) {
+  if (app.web || !(await Bun.file(join(root, "apps", app.crate, "Trunk.toml")).exists()) && (await Bun.file(join(root, "apps", app.crate, "index.html")).text()).includes("from \"./" + bin + ".js\"")) {
+    // Hand-written page: it imports ./<bin>.js itself, so ship the page unchanged.
+    await Bun.write(join(dest, "index.html"), await Bun.file(join(root, "apps", app.crate, "index.html")).text());
+    const web = join(root, "apps", app.crate, "web");
+    if (existsSync(web)) await cp(web, dest, { recursive: true });
+  } else if (app.web) {
     const { cp } = await import("node:fs/promises");
     await cp(join(root, "apps", app.crate, "web"), dest, { recursive: true });
   } else {

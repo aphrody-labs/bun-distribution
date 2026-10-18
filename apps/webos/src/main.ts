@@ -10,6 +10,7 @@ import { browserApp } from "./apps/browser";
 import { editorApp } from "./apps/editor";
 import { engineApp } from "./apps/engine";
 import { filesApp } from "./apps/files";
+import { docsApp } from "./apps/docs";
 import { linuxApp } from "./apps/linux";
 import { inspectorApp } from "./apps/inspector";
 import { storeApp } from "./apps/store";
@@ -102,6 +103,16 @@ const builtins: Builtin[] = [
     width: 900,
     height: 620,
     mount: root => loading(root, linuxApp(root)),
+  },
+  {
+    id: "docs",
+    name: "Docs",
+    icon: "doc",
+    desc: "Bun, the Bun fork and Bun OS documentation, searchable",
+    group: "core",
+    width: 980,
+    height: 640,
+    mount: root => loading(root, docsApp(root)),
   },
   {
     id: "terminal",
@@ -628,14 +639,20 @@ installKeys(wm, {
 });
 
 void registerServiceWorker();
+const wanted = new URLSearchParams(location.search).get("app");
 void reconcile()
   .then(registry)
   .then(entries => {
     registryEntries = entries;
     refreshApps();
+    // Old product links (?app=craft-pdf): open the installed package, or the store to install it.
+    const entry = entries.find(e => e.id === wanted);
+    if (entry) {
+      if (installed()[entry.id]) launchPackage(entry);
+      else launchBuiltin(builtins.find(b => b.id === "apps")!);
+    }
   })
   .catch(() => {});
 
-const first = new URLSearchParams(location.search).get("app");
-const target = builtins.find(x => x.id === first);
-launchBuiltin(target ?? builtins[0]!);
+const target = builtins.find(x => x.id === wanted);
+if (target || !wanted || !wanted.includes("-")) launchBuiltin(target ?? builtins[0]!);

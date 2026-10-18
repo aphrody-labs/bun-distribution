@@ -4,7 +4,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { listen } from "@aphrody/tauri/api/event";
+import { listen } from "./web-runtime";
 import { clsx } from "clsx";
 import { Badge, Button, CircleButton, Icon, Popover, toast, usePopover } from "@aphrody/m3-primitives";
 import { Markdown, ToolCall, type ToolCallPair } from "@aphrody/m3-ai";

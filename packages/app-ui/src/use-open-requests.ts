@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Applies the open requests the OS hands to Aphrody (`aphrody://` links, "Open with"): the native
 // side queues them and emits `aphrody://open`; the main window drains the queue here.
-import { listen } from "@aphrody/tauri/api/event";
+import { listen } from "./web-runtime";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { desktopRoutes } from "./desktop-navigation";

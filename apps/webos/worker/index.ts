@@ -9,6 +9,8 @@ interface R2ObjectBodyLike {
 }
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
+  /** The former aphrody-app Worker, kept as the private backend of the merged API routes (service binding). */
+  LEGACY: { fetch(request: Request): Promise<Response> };
   /** R2 bucket aphrody-assets; large VM images live under webos/vm/. */
   VM: {
     get(key: string, options?: { range?: { offset: number; length?: number } }): Promise<R2ObjectBodyLike | null>;
@@ -171,9 +173,72 @@ async function browse(request: Request): Promise<Response> {
   return new Response(rewritten.body, { status: upstream.status === 404 ? 404 : 200, headers });
 }
 
+/** Routes of the former aphrody.app Worker, now served under aphrody.com (same handler, same bindings). */
+const LEGACY_ROUTES = ["/api/site/", "/api/yolo/", "/mcp", "/v1/"];
+const LEGACY_ORIGIN = "https://aphrody.app";
+
+/** Old product hosts redirect to the Web OS; each Craft capability opens its package. */
+const CRAFT_PACKAGE: Record<string, string> = {
+  filmcraft: "craft-film",
+  video: "craft-film",
+  artcraft: "apps",
+  generation: "apps",
+  photocraft: "craft-photo",
+  images: "craft-photo",
+  vectorcraft: "craft-vector",
+  vectors: "craft-vector",
+  effectcraft: "apps",
+  compositing: "apps",
+  lightcraft: "craft-light",
+  "photo-processing": "craft-light",
+  pdfcraft: "craft-pdf",
+  pdf: "craft-pdf",
+  wordcraft: "craft-word",
+  documents: "craft-word",
+  soundcraft: "craft-sound",
+  audio: "craft-sound",
+  designcraft: "craft-design",
+  layout: "craft-design",
+  cadcraft: "craft-cad",
+  cad: "craft-cad",
+  deckcraft: "craft-deck",
+  slides: "craft-deck",
+  gridcraft: "craft-grid",
+  tables: "craft-grid",
+  figcraft: "craft-fig",
+  "interface-layouts": "craft-fig",
+  desktop: "apps",
+  apt: "apps",
+};
+
+function redirectFor(url: URL): string | undefined {
+  const host = url.hostname;
+  if (host === "www.aphrody.com") return `https://aphrody.com${url.pathname}${url.search}`;
+  if (host === "aphrody.app" || host === "www.aphrody.app") return "https://aphrody.com/";
+  const m = /^(?:app-)?([a-z-]+?)(?:craft)?\.aphrody\.app$/.exec(host);
+  if (m) {
+    const name = host.startsWith("app-") ? m[1]! : host.split(".")[0]!;
+    return `https://aphrody.com/?app=${CRAFT_PACKAGE[name] ?? "apps"}`;
+  }
+  return undefined;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const legacyPath = LEGACY_ROUTES.some(
+      prefix => url.pathname === prefix || url.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`),
+    );
+    // API clients of the old hosts keep working (no redirect): the same routes answer on every host.
+    const moved = legacyPath ? undefined : redirectFor(url);
+    if (moved) return Response.redirect(moved, 301);
+    if (legacyPath) {
+      const target = new Request(`${LEGACY_ORIGIN}${url.pathname}${url.search}`, request);
+      return env.LEGACY.fetch(target);
+    }
+    if (url.pathname === "/api/catalog") {
+      return env.ASSETS.fetch(new Request(new URL("/catalog.json", url), request));
+    }
     if (url.pathname === "/api/health") {
       const cf = (request as Request & { cf?: { colo?: string } }).cf;
       return Response.json(

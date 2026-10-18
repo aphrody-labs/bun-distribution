@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Studio bridge: typed calls to the native Studio commands of the desktop app (crates/ui/app/src/studio.rs).
-import { invoke } from "@aphrody/tauri/api/core";
+import { invoke } from "./web-runtime";
 import { isTauri } from "./tauri-bridge";
 
 async function studio<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {

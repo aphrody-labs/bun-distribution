@@ -4,7 +4,9 @@ import { cp, mkdir, readdir, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { buildPackages } from "./packages";
+import { buildSeo } from "./seo";
 import { stageVm } from "./vm";
+import { buildDocs } from "./docs";
 
 const root = resolve(import.meta.dir, "../..");
 const dist = join(import.meta.dir, "dist");
@@ -218,11 +220,16 @@ await Bun.write(
     ],
   }),
 );
-await cp(join(import.meta.dir, "src/styles.css"), join(dist, "styles.css"));
+// Shared sheet plus one sheet per app (src/apps/*.css), served as one file.
+const sheets = [join(import.meta.dir, "src/styles.css"), ...(await readdir(join(import.meta.dir, "src/apps"))).filter(f => f.endsWith(".css")).sort().map(f => join(import.meta.dir, "src/apps", f))];
+await Bun.write(join(dist, "styles.css"), (await Promise.all(sheets.map(s => Bun.file(s).text()))).join(String.fromCharCode(10)));
 await cp(join(import.meta.dir, "src/index.html"), join(dist, "index.html"));
 await cp(join(import.meta.dir, "public"), dist, { recursive: true });
 await Bun.write(join(dist, "catalog.json"), JSON.stringify(catalog));
 await stageVm(dist);
+const docs = await buildDocs(dist);
+console.log(`docs: ${Object.entries(docs).map(([k, n]) => `${k} ${n}`).join(", ")}`);
 const built = await buildPackages(dist);
+await buildSeo(dist, catalog);
 console.log(`packages: ${built.map(p => p.id).join(", ") || "none"}`);
 console.log(`webos: ${apps.length} apps, ${packages.length} packages, ${crates.length} crates`);

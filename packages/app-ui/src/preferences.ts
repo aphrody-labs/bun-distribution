@@ -5,7 +5,7 @@
 // `APHRODY_MODELS_DIR` for every `aphrody` child). Values written by earlier builds to
 // `localStorage` are migrated once. Outside Tauri (the plain web build) `localStorage` is the
 // store. Model routing stays in the `APHRODY_AI_*` contract read by `aphrody app-server`.
-import { invoke } from "@aphrody/tauri/api/core";
+import { invoke } from "./web-runtime";
 
 import { isTauri } from "./tauri-bridge";
 

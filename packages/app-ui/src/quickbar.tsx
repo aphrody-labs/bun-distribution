@@ -5,7 +5,7 @@
 // thread/start + turn/start and `aphrody_session_stream` for the streamed answer.
 // Suggestions (calculator, matching threads), the in-bar history and first-run onboarding are
 // local: they read app-server threads and `preferences`, and send nothing before submit.
-import { Channel, invoke } from "@aphrody/tauri/api/core";
+import { Channel, invoke } from "./web-runtime";
 import { AphrodyAvatar } from "@aphrody/identity";
 import { Icon, Kbd, Tooltip } from "@aphrody/m3-primitives";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -15,7 +15,7 @@ import { Onboarding } from "./onboarding";
 import { hydratePreferences, loadPreferences, type Preferences, savePreferences } from "./preferences";
 import { type Attachment, buildInput, imageDataUrl } from "./quickbar-input";
 import { CANONICAL_COMMANDS, suggest, type Suggestion } from "./quickbar-suggest";
-import { emitTo } from "@aphrody/tauri/api/event";
+import { emitTo } from "./web-runtime";
 import { MENU_EVENTS } from "./menu-commands";
 
 type Notification = {
@@ -240,7 +240,7 @@ export function QuickBar() {
 
   const attachFile = async () => {
     try {
-      const { open } = await import("@aphrody/tauri/plugins/dialog");
+      const { open } = await import("./web-runtime");
       const picked = await open({
         title: "Joindre un fichier",
         multiple: true,
@@ -361,7 +361,7 @@ export function QuickBar() {
           className="flex items-center gap-2 pb-2"
           onMouseDown={event => {
             if (event.button === 0 && event.target === event.currentTarget) {
-              void import("@aphrody/tauri/api/window").then(({ getCurrentWindow }) =>
+              void import("./web-runtime").then(({ getCurrentWindow }) =>
                 getCurrentWindow().startDragging(),
               );
             }
