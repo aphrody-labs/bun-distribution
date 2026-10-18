@@ -3,24 +3,16 @@
 # bunos-alpine: minimal hardened Alpine + Bun (musl) for sites, servers and CDN edges.
 # Targets: runtime (Bun.serve app server), edge (compiled cache/CDN binary). Multi-arch amd64/arm64.
 ARG ALPINE_VERSION
-ARG BUN_VERSION
 
 FROM alpine:${ALPINE_VERSION} AS base
 RUN apk add --no-cache tini libstdc++ libgcc ca-certificates \
   && addgroup -S -g 10001 bun && adduser -S -D -H -u 10001 -G bun -s /sbin/nologin bun
 
-FROM base AS bun-amd64
-ARG BUN_VERSION
-ARG BUN_SHA256_AMD64
-ADD --checksum=sha256:${BUN_SHA256_AMD64} https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64-musl.zip /tmp/bun.zip
-
-FROM base AS bun-arm64
-ARG BUN_VERSION
-ARG BUN_SHA256_ARM64
-ADD --checksum=sha256:${BUN_SHA256_ARM64} https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-aarch64-musl.zip /tmp/bun.zip
-
-FROM bun-${TARGETARCH} AS bun
-RUN cd /tmp && unzip -q bun.zip && install -m755 bun-linux-*/bun /usr/local/bin/bun && rm -rf /tmp/bun*
+FROM base AS bun
+ARG TARGETARCH
+COPY --chmod=755 runtime/${TARGETARCH}/bun /usr/local/bin/bun
+COPY runtime/${TARGETARCH}/receipt.json /usr/share/bun-os/runtime.receipt.json
+RUN bun --version
 
 FROM bun AS edge-build
 WORKDIR /src

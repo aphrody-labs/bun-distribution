@@ -1,12 +1,16 @@
 export interface LinuxABI {
-  abi: "gnu";
-  libc: "glibc";
+  abi: "gnu" | "musl";
+  libc: "glibc" | "musl";
   interpreter: string;
   machine: number;
 }
 
 /** Read the loader selected by the artifact itself before staging it on a GNU host. */
-export async function inspectLinuxABI(path: string, architecture: "x64" | "arm64"): Promise<LinuxABI> {
+export async function inspectLinuxABI(
+  path: string,
+  architecture: "x64" | "arm64",
+  abi: "gnu" | "musl" = "gnu",
+): Promise<LinuxABI> {
   const file = Bun.file(path);
   const header = await file.slice(0, 64).bytes();
   if (
@@ -60,13 +64,14 @@ export async function inspectLinuxABI(path: string, architecture: "x64" | "arm64
       throw new Error("Invalid ELF interpreter name");
     interpreter = new TextDecoder().decode(value.subarray(0, -1));
   }
-  const expected =
-    architecture === "x64"
+  const expected = abi === "musl"
+    ? [architecture === "x64" ? "/lib/ld-musl-x86_64.so.1" : "/lib/ld-musl-aarch64.so.1"]
+    : architecture === "x64"
       ? ["/lib64/ld-linux-x86-64.so.2", "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]
       : ["/lib/ld-linux-aarch64.so.1", "/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"];
   if (!interpreter || !expected.includes(interpreter))
     throw new Error(
-      "The COSMIC distribution requires the GNU glibc loader; static or musl artifacts need a separate target",
+      `The selected ${abi} target requires its own ELF loader; incompatible or static artifacts need separate qualification`,
     );
-  return { abi: "gnu", libc: "glibc", interpreter, machine };
+  return { abi, libc: abi === "gnu" ? "glibc" : "musl", interpreter, machine };
 }
