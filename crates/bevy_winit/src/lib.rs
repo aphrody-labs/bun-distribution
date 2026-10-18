@@ -1,3 +1,4 @@
+#![allow(clippy::todo, clippy::unimplemented, clippy::dbg_macro)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![doc(

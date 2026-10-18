@@ -141,7 +141,7 @@ async fn overload_529_fails_over_to_local() {
         json!({ "error": "overloaded" }),
     );
     let local = fake(StatusCode::OK, answers("technical"));
-    let local_hits = local.hits.clone();
+    let local_hits = std::sync::Arc::clone(&local.hits);
     let saas_base = serve("/v1/systemone", saas).await;
     let local_base = serve("/v1/systemone", local).await;
     let router = JevRouter::new(
@@ -188,7 +188,7 @@ async fn network_failure_fails_over_to_local() {
 async fn degraded_p99_routes_to_local_and_probes_saas() {
     let mut saas = fake(StatusCode::OK, answers("billing"));
     saas.delay = Duration::from_millis(40);
-    let saas_hits = saas.hits.clone();
+    let saas_hits = std::sync::Arc::clone(&saas.hits);
     let saas_base = serve("/v1/systemone", saas).await;
     let local_base = serve("/v1/systemone", fake(StatusCode::OK, answers("billing"))).await;
     let policy = RoutingPolicy {
@@ -233,7 +233,7 @@ async fn large_state_goes_to_edge_with_envelope() {
     );
     let edge_base = serve("/client/v4/accounts/acct/ai/run", edge).await;
     let saas = fake(StatusCode::OK, answers("billing"));
-    let saas_hits = saas.hits.clone();
+    let saas_hits = std::sync::Arc::clone(&saas.hits);
     let saas_base = serve("/v1/systemone", saas).await;
     let router = JevRouter::new(
         Some(Endpoint::saas(&saas_base, "key").unwrap()),
@@ -292,7 +292,7 @@ async fn text_output_is_rejected() {
 #[tokio::test]
 async fn client_error_is_not_failed_over() {
     let local = fake(StatusCode::OK, answers("billing"));
-    let local_hits = local.hits.clone();
+    let local_hits = std::sync::Arc::clone(&local.hits);
     let saas_base = serve(
         "/v1/systemone",
         fake(StatusCode::UNPROCESSABLE_ENTITY, json!({ "error": "bad" })),

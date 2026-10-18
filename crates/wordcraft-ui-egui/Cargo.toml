@@ -15,6 +15,7 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
+zbus = "5"
 craft-ui = { path = "../craft-ui" }
 wordcraft-geom = { path = "../wordcraft-geom" }
 wordcraft-doc = { path = "../wordcraft-doc" }

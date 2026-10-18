@@ -224,6 +224,7 @@ impl State {
         // SAFETY: the context is current throughout the parser call; info and the out-pointer
         // are live. The decoder is owned by Session until explicitly destroyed.
         status(
+            // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
             unsafe { (self.api.create_decoder)(&mut self.decoder, &mut info) },
             "cuvidCreateDecoder",
         )?;
@@ -267,6 +268,7 @@ impl State {
         // SAFETY: the validated picture index belongs to the live decoder. Both output
         // pointers and proc are writable, and Session has pushed the context on this thread.
         status(
+            // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
             unsafe {
                 (self.api.map)(
                     self.decoder,
@@ -377,6 +379,7 @@ impl Mapped<'_> {
         // SAFETY: this guard owns one successful mapping on this decoder, and the context is
         // still current. No GPU-memory references escape the synchronous host copy.
         status(
+            // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
             unsafe { (self.api.unmap)(self.decoder, self.address) },
             "cuvidUnmapVideoFrame64",
         )?;
@@ -508,6 +511,7 @@ impl Session {
             let mut capabilities = caps(codec, geometry.bits);
             // SAFETY: capabilities is a live writable C struct, and the CUDA context is current.
             status(
+                // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
                 unsafe { (api.caps)(&mut capabilities) },
                 "cuvidGetDecoderCaps",
             )?;
@@ -565,6 +569,7 @@ impl Session {
         // SAFETY: params and output pointer are valid; the state allocation remains alive until
         // after parser destruction (Drop), and the library is retained by Session.
         status(
+            // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
             unsafe { (api.create_parser)(&mut self.parser, &mut params) },
             "cuvidCreateVideoParser",
         )?;
@@ -641,6 +646,7 @@ impl Session {
         if let Some(address) = state.mapped.get() {
             // SAFETY: retry an outstanding map before releasing its decoder; context is current.
             match status(
+                // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
                 unsafe { (state.api.unmap)(state.decoder, address) },
                 "cuvidUnmapVideoFrame64",
             ) {
@@ -654,6 +660,7 @@ impl Session {
             // SAFETY: owned decoder, no host views or callbacks remain; unmapping was attempted
             // first, and context and library remain live while the driver releases its resources.
             match status(
+                // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
                 unsafe { (state.api.destroy_decoder)(state.decoder) },
                 "cuvidDestroyDecoder",
             ) {
@@ -670,6 +677,7 @@ impl Session {
         if !parser.is_null() {
             // SAFETY: owned parser, no parse call running; user data and library are still live.
             match status(
+                // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
                 unsafe { (state.api.destroy_parser)(parser) },
                 "cuvidDestroyVideoParser",
             ) {
@@ -855,6 +863,7 @@ mod tests {
         let data = ptr::from_mut(&mut state).cast();
         // SAFETY: data points to exclusive live test state; the closure touches no driver.
         assert_eq!(
+            // SAFETY: FFI call into the NVDEC library loaded by this module; all pointers passed are valid for the call.
             unsafe { callback(data, |_| panic!("synthetic callback panic")) },
             0
         );

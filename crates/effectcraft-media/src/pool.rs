@@ -583,7 +583,7 @@ impl MediaPool {
         let path: Arc<str> = footage.path.as_str().into();
         let src = self.inner.source(&path).ok_or("the file can't be opened")?;
         let s0 = start.to_units_floor(rate as i64);
-        let native = src.info().audio.as_ref().map_or(rate, |a| a.sample_rate);
+        let native = src.info().audio().map_or(rate, |a| a.sample_rate);
         if native == 0 || rate == 0 || native == rate {
             return read_stereo(&src, s0, frames, rate);
         }
@@ -1161,8 +1161,7 @@ fn read_stereo(
     };
     let aac = src
         .info()
-        .audio
-        .as_ref()
+        .audio()
         .is_some_and(|a| a.codec.starts_with("AAC"));
     crate::downmix::downmix_into(&buf.channels, aac, dst);
     Ok(out)

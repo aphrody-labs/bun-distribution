@@ -1,3 +1,4 @@
+#![allow(clippy::todo, clippy::unimplemented, clippy::dbg_macro)]
 //! This crate provides the tools for positioning and rendering text in Bevy.
 //!
 //! # `Font`

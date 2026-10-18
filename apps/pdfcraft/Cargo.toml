@@ -45,3 +45,7 @@ pollster = "1.0"
 
 [build-dependencies]
 winresource = "0.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = "0.31"
+wayland-protocols = "0.32"

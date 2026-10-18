@@ -90,6 +90,7 @@ impl HeapTracker {
         unsafe { &*self.buffer }
     }
 
+    #[allow(clippy::mut_from_ref)]
     fn buffer_mut(&self) -> &mut HostMemory {
         unsafe { &mut *self.buffer }
     }

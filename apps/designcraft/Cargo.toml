@@ -17,9 +17,12 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
+winit = "0.31.0-beta.2"
+rfd = "0.17"
 designcraft-engine = { path = "../../crates/designcraft-engine" }
 designcraft-ui-egui = { path = "../../crates/designcraft-ui-egui" }
 eframe = { version = "0.36", default-features = false, features = [
+  "glow",
   "default_fonts",
   "wgpu",
   "accesskit",

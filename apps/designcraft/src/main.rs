@@ -69,7 +69,7 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.app.ui(ui);
     }
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         // A normal exit before the third frame is not a crash.
         if let Some(s) = self.startup.as_mut() {
             s.presented();

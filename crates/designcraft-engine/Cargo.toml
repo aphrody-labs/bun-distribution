@@ -15,6 +15,7 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
+tempfile = "3"
 craft-print = { workspace = true }
 designcraft-images = { path = "../designcraft-images" }
 designcraft-geom = { path = "../designcraft-geom" }

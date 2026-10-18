@@ -1,3 +1,4 @@
+#![allow(clippy::approx_constant)]
 // SPDX-FileCopyrightText: 2025 ruzu contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 

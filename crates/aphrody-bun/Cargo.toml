@@ -22,7 +22,7 @@ gpu = ["aphrody-render/gpu"]
 
 [dependencies]
 memchr = "2"
-aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = [] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = [] }
 aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", features = ["crawl", "network"] }
 aphrody-svg = { path = "../aphrody-svg", default-features = false, features = ["raster", "glyph", "m3", "symbols"] }
 base64 = "0.23.1"

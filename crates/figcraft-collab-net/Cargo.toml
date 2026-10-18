@@ -23,6 +23,11 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
+tungstenite = "0.30"
+rustls = "0.23"
+base64 = "0.23"
+webpki-roots = "1"
+getrandom = "0.4"
 figcraft-engine = { path = "../figcraft-engine" }
 figcraft-collab = { path = "../figcraft-collab" }
 figcraft-doc = { path = "../figcraft-doc" }

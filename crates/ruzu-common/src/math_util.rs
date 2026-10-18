@@ -5,7 +5,7 @@
 //! Math utilities: PI constant and Rectangle struct.
 
 /// Pi constant (32-bit float precision), matching the C++ `Common::PI`.
-pub const PI: f32 = 3.1415926535f32;
+pub const PI: f32 = core::f32::consts::PI;
 
 /// A rectangle defined by left, top, right, bottom edges.
 /// Corresponds to `Common::Rectangle<T>` in the C++ code.

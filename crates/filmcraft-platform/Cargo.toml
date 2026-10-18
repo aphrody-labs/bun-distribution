@@ -21,6 +21,7 @@ type_complexity = "allow"
 undocumented_unsafe_blocks = "deny"
 
 [dependencies]
+libloading = "0.9"
 filmcraft-bitstream = { path = "../filmcraft-bitstream" }
 filmcraft-codecs = { path = "../filmcraft-codecs" }
 filmcraft-color = { path = "../filmcraft-color" }

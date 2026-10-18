@@ -1,3 +1,4 @@
+#![allow(clippy::todo, clippy::unimplemented, clippy::dbg_macro)]
 #![doc = include_str!("../README.md")]
 #![cfg_attr(
     any(docsrs, docsrs_dep),

@@ -12,6 +12,7 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
+memory-stats = "1"
 photocraft-geom = { path = "../photocraft-geom" }
 photocraft-color = { path = "../photocraft-color" }
 photocraft-raster = { path = "../photocraft-raster" }

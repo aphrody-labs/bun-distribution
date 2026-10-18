@@ -31,6 +31,7 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
+rustix = "1"
 figcraft-collab = { path = "../../crates/figcraft-collab" }
 figcraft-collab-net = { path = "../../crates/figcraft-collab-net" }
 figcraft-format = { path = "../../crates/figcraft-format" }

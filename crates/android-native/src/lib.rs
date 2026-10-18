@@ -1,3 +1,4 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 //! JNI library for `com.aphrody.android.NativeBridge`.
 
 use jni::sys::{JNIEnv, jclass, jint};

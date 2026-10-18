@@ -176,7 +176,7 @@ mod tests {
         let (_, malformed) = fixture(1.2);
         assert!(confident_choice(&request, &malformed, "tool", 0.0).is_err());
         assert!(confident_choice(&request, &response, "missing", 0.0).is_err());
-        let mut foreign = response.clone();
+        let mut foreign = response;
         let Some(Answer::Choice { choice, .. }) = foreign.answers.get_mut("tool") else {
             panic!()
         };

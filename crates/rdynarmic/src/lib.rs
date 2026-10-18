@@ -1,3 +1,4 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 pub mod backend;
 pub mod common;
 pub mod frontend;

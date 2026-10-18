@@ -109,7 +109,7 @@ impl eframe::App for App {
         with_app(|fig| figcraft_ui_egui::windows::guard(fig, &ctx, |fig| fig.ui(ui)));
     }
 
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         with_app(|fig| services::save_state(fig));
         if let Some(r) = recovery::lock(&self.recovery).take() {
             r.finish();

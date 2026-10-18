@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use aphrody_winclean::{TOOL_NAMES, catalog};
+use bun_windows_winclean::{TOOL_NAMES, catalog};
 use sha2::{Digest as _, Sha256};
 
 #[test]
@@ -39,7 +39,7 @@ fn migration_ledger_is_complete_and_has_unambiguous_owners() {
     let ledger: Ledger = serde_json::from_str(include_str!("../tool-migration.json"))
         .expect("tool migration ledger must be valid JSON");
     assert_eq!(ledger.catalog_tool_count, TOOL_NAMES.len());
-    let normalized_catalog = aphrody_winclean::CATALOG_JSON.replace("\r\n", "\n");
+    let normalized_catalog = bun_windows_winclean::CATALOG_JSON.replace("\r\n", "\n");
     assert_eq!(
         ledger.catalog_sha256,
         Sha256::digest(normalized_catalog.as_bytes())
@@ -84,7 +84,7 @@ fn migration_ledger_is_complete_and_has_unambiguous_owners() {
 
 #[cfg(windows)]
 mod live {
-    use aphrody_winclean::{GetOsInfoArgs, TOOL_NAMES, Winclean};
+    use bun_windows_winclean::{GetOsInfoArgs, TOOL_NAMES, Winclean};
 
     #[test]
     fn rust_catalog_matches_vendored_bindings() {
@@ -130,5 +130,5 @@ mod live {
 
 #[test]
 fn rust_client_loads_on_all_targets() {
-    assert!(aphrody_winclean::Winclean::load().is_ok());
+    assert!(bun_windows_winclean::Winclean::load().is_ok());
 }

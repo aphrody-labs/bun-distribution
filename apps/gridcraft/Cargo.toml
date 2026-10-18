@@ -17,9 +17,13 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
+craft-print = { path = "../../crates/craft-print" }
+rfd = "0.17"
+arboard = "3"
 gridcraft-engine = { path = "../../crates/gridcraft-engine" }
 gridcraft-ui-egui = { path = "../../crates/gridcraft-ui-egui" }
 eframe = { version = "0.36", default-features = false, features = [
+  "glow",
   "default_fonts",
   "wgpu",
   "accesskit",

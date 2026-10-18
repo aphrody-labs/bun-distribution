@@ -17,6 +17,9 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
+candle-core = "0.11"
+candle-nn = "0.11"
+lightcraft-fetch = { path = "../lightcraft-fetch" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

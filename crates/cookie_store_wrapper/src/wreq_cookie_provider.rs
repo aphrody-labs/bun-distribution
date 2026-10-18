@@ -13,9 +13,9 @@
 use crate::shared_cookie_store::SharedCookieStore;
 use log::warn;
 use url::Url;
-use wreq::Uri;
 use wreq::cookie::{CookieStore as WreqCookieStore, Cookies};
 use wreq::header::HeaderValue;
+use wreq::{Uri, Version};
 
 impl WreqCookieStore for SharedCookieStore {
     fn set_cookies(&self, cookie_headers: &mut dyn Iterator<Item = &HeaderValue>, uri: &Uri) {
@@ -40,7 +40,7 @@ impl WreqCookieStore for SharedCookieStore {
         });
     }
 
-    fn cookies(&self, uri: &Uri) -> Cookies {
+    fn cookies(&self, uri: &Uri, _version: Version) -> Cookies {
         let Some(request_url) = uri_to_url(uri) else {
             return Cookies::Empty;
         };

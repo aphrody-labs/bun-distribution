@@ -790,7 +790,7 @@ mod tests {
 
     #[test]
     fn canonical_pet_seed_matches_the_bun_identity_contract() {
-        let pet = include_str!("../../../../m3/packages/identity/src/pet.ts");
+        let pet = include_str!("../../../packages/identity/src/pet.ts");
         assert!(pet.contains(&format!("seed: \"{}\"", pet_seed_hex())));
         assert!(pet.contains(&format!("socks: \"{}\"", pet_seed_hex())));
     }

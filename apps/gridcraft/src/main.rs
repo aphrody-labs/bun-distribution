@@ -76,7 +76,7 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.0.ui(ui);
     }
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         print::finish_pending_jobs();
         save_prefs(&self.0);
         // macOS (#117): end the process here, before eframe tears the window down. AccessKit's

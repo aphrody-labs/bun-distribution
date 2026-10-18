@@ -32,7 +32,7 @@ image-compare = "0.5"
 palette = { version = "0.7", default-features = false, features = ["std"] }
 aphrody-svg = { path = "../aphrody-svg", default-features = false, features = ["raster", "glyph", "symbols"] }
 ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
-aphrody-m3-tokens = { git = "https://github.com/aphrody-labs/material", rev = "e858361dfd2597b067eea56d471ff4caab7442f8", version = "1.4.4", features = ["serde"] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = ["serde"] }
 base64 = "0.23.1"
 ico = "0.5"
 thiserror = "2.0.20"

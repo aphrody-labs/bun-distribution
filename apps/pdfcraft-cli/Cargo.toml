@@ -23,6 +23,7 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
+rustix = "1"
 pdfcraft-render = { path = "../../crates/pdfcraft-render" }
 serde_json = "1"
 pdfcraft-engine = { path = "../../crates/pdfcraft-engine" }

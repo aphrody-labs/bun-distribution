@@ -19,7 +19,7 @@ use utoipa::ToSchema;
 #[serde(rename_all = "snake_case")]
 pub enum UserSignupSource {
     #[deprecated(
-        since = "2026-01-30",
+        since = "1.4.4",
         note = "Use other Artcraft* enum variants instead"
     )]
     #[serde(rename = "artcraft")]

@@ -105,7 +105,7 @@ impl eframe::App for App {
     }
     /// A normal exit: the workspace is saved, and this run's autosave files are not needed (a
     /// crash leaves them for recovery).
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         self.persist_workspace(true);
         self.cad.shutdown_autosave();
     }
@@ -224,7 +224,7 @@ const APP_ID: &str = "ai.storyteller.cadcraft";
 
 #[cfg(target_os = "macos")]
 const APP_ICON_PNG: &[u8] =
-    include_bytes!("../../../libraries/cadcraft/assets/app-icon/cadcraft-macos-512.png");
+    include_bytes!("../../../assets/cadcraft/app-icon/cadcraft-macos-512.png");
 #[cfg(not(target_os = "macos"))]
 const APP_ICON_PNG: &[u8] =
     include_bytes!("../../../libraries/cadcraft/assets/app-icon/cadcraft-256.png");

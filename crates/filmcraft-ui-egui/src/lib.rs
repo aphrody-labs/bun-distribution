@@ -2637,7 +2637,7 @@ impl eframe::App for FilmcraftApp {
         self.collect_screenshots(ctx);
     }
 
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         // Flush the recovery journal and stop the auto-save worker; a session with nothing unsaved
         // removes its journal, one with unsaved changes keeps it for the next launch.
         self.session.shutdown();

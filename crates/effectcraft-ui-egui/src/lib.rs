@@ -2212,7 +2212,7 @@ impl EffectcraftApp {
 }
 
 impl eframe::App for EffectcraftApp {
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         self.save_workspace_state();
         // Clean exit: no crash recovery next launch (unless the graphics device was lost with
         // unsaved changes, which are in the auto-save it offers).

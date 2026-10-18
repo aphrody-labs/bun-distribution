@@ -28,10 +28,17 @@ accessibility = ["eframe/accesskit"]
 windows7 = ["eframe/glow"]
 
 [dependencies]
+winit = "0.31.0-beta.2"
+image = "0.25"
+rfd = "0.17"
+arboard = "3"
+craft-print = { path = "../../crates/craft-print" }
+webbrowser = "1"
 vectorcraft-engine = { path = "../../crates/vectorcraft-engine" }
 vectorcraft-ui-egui = { path = "../../crates/vectorcraft-ui-egui" }
 vectorcraft-text = { path = "../../crates/vectorcraft-text" }
 eframe = { version = "0.36", default-features = false, features = [
+  "glow",
   "default_fonts",
   "wayland",
   "x11",
@@ -45,3 +52,7 @@ winresource = "0.1"
 
 [target.'cfg(windows)'.dependencies]
 winsafe = { workspace = true, features = ["gui"], optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = "0.31"
+wayland-protocols = "0.32"

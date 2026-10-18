@@ -15,6 +15,8 @@ testgen = ["dep:image"]
 corpus = []
 
 [dependencies]
+rayon = "1"
+jxl-oxide = "0.12"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 zune-jpeg = "0.5"
 image = { version = "0.25", default-features = false, features = ["jpeg"], optional = true }

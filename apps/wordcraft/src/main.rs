@@ -88,7 +88,7 @@ impl eframe::App for App {
         self.0.ui(ui);
         self.3.show(frame);
     }
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         print::finish_pending_jobs();
         save_prefs(&self.0);
         if let Some(key_file) = &self.2 {

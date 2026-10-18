@@ -16,7 +16,7 @@ use std::fmt;
 /// assert_eq!(ext.without_period(), "mp4");
 /// assert_eq!(ext.with_period(), ".mp4");
 /// ```
-#[derive(Clone, Eq, Hash)]
+#[derive(Clone, Eq)]
 pub struct Extension {
     /// The extension without the leading period, e.g. "png", "mp4".
     value: Cow<'static, str>,
@@ -58,6 +58,12 @@ impl Extension {
     /// Returns the extension with the leading period, e.g. `".png"`.
     pub fn with_period(&self) -> &str {
         &self.dotted
+    }
+}
+
+impl std::hash::Hash for Extension {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.hash(state);
     }
 }
 

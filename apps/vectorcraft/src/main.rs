@@ -98,14 +98,10 @@ impl eframe::App for App {
             discard_marked_text();
         }
     }
-    #[cfg(not(feature = "windows7"))]
-    fn on_exit(&mut self) {
-        file_access::unconfined(|| save_prefs(&self.app));
-        end_before_teardown(self.frames);
-    }
-    #[cfg(feature = "windows7")]
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         file_access::unconfined(|| save_prefs(&self.app));
+        #[cfg(not(feature = "windows7"))]
+        end_before_teardown(self.frames);
     }
 }
 

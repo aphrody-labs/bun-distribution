@@ -21,6 +21,8 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
+aws-lc-rs = "1"
+getrandom = "0.4"
 pdfcraft-cos = { path = "../pdfcraft-cos" }
 pdfcraft-annot = { path = "../pdfcraft-annot" }
 pdfcraft-fonts = { path = "../pdfcraft-fonts" }

@@ -1,3 +1,4 @@
+#![allow(clippy::todo, clippy::unimplemented, clippy::dbg_macro)]
 #![expect(unsafe_code, reason = "Unsafe code is used to improve performance.")]
 //! Composable scene authoring for Bevy, defined using the Bevy Scene Notation (BSN) format.
 //!

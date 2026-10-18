@@ -8,6 +8,8 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/soundcraft"
 
 [dependencies]
+vst3 = "0.3"
+libloading = "0.9"
 soundcraft-dsp = { path = "../soundcraft-dsp" }
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"

@@ -20,10 +20,16 @@ large_enum_variant = "allow"
 result_large_err = "allow"
 
 [dependencies]
+cpal = "0.17"
+winit = "0.31.0-beta.2"
+rfd = "0.17"
+image = "0.25"
+arboard = "3"
 deckcraft-engine = { path = "../../crates/deckcraft-engine" }
 deckcraft-ui-egui = { path = "../../crates/deckcraft-ui-egui" }
 deckcraft-media = { path = "../../crates/deckcraft-media" }
 eframe = { version = "0.36", default-features = false, features = [
+  "glow",
   "default_fonts",
   "wgpu",
   "accesskit",

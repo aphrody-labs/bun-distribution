@@ -196,6 +196,9 @@ pub fn import_with_report(bytes: &[u8], opts: &ImportOptions) -> Result<ImportRe
                 InterpreterWarning::ImageDecodeFailure => {
                     "an image could not be decoded and was skipped"
                 }
+                InterpreterWarning::ContentTruncated => {
+                    "the content stream was truncated; the remaining operators were skipped"
+                }
             };
             if let Ok(mut v) = sink2.lock()
                 && !v.iter().any(|x| x == msg)

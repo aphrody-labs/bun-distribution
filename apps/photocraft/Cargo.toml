@@ -20,6 +20,15 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
+resvg = "0.48"
+winit = "0.31.0-beta.2"
+futures-lite = "2"
+photocraft-cms = { path = "../../crates/photocraft-cms" }
+async-io = "2"
+rfd = "0.17"
+arboard = "3"
+ron = "0.12"
+open = "5"
 photocraft-doc = { path = "../../crates/photocraft-doc" }
 photocraft-color = { path = "../../crates/photocraft-color" }
 photocraft-raster = { path = "../../crates/photocraft-raster" }
@@ -49,3 +58,8 @@ harness = false
 
 [build-dependencies]
 winresource = "0.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = "0.13"
+zbus = "5"
+wl-clipboard-rs = "0.9"
