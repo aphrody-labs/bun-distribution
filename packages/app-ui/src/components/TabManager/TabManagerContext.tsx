@@ -1,5 +1,6 @@
 import { createContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { appBasePath } from "../../app-base";
 type Router = ReturnType<typeof createBrowserRouter>;
 
 import { deriveTitleFromPath } from "./route-title";
@@ -140,7 +141,7 @@ interface TabManagerProviderProps {
 }
 
 export function TabManagerProvider({ children, routes }: TabManagerProviderProps) {
-  const router = useMemo(() => createBrowserRouter(routes), [routes]);
+  const router = useMemo(() => createBrowserRouter(routes, { basename: appBasePath() }), [routes]);
 
   const [tabs, setTabs] = useState<Tab[]>(() => {
     const persisted = loadPersistedState();

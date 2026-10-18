@@ -23,19 +23,19 @@ use tower_http::services::ServeFile;
 
 /// Only published product assets. Provider stores, dossiers and native binaries are absent.
 pub const SOURCE_ROOTS: &[(&str, &str)] = &[
-    ("icons", "m3/packages/assets/icons"),
-    ("images", "m3/packages/assets/images"),
-    ("svgs", "m3/packages/assets/svgs"),
-    ("sounds", "m3/packages/assets/sounds"),
-    ("videos", "m3/packages/assets/videos"),
-    ("lottie", "m3/packages/assets/lottie"),
-    ("models", "m3/packages/assets/models"),
-    ("wasm", "m3/packages/assets/wasm"),
-    ("brand", "crates/ui/identity/assets/brand"),
-    ("logo", "crates/ui/identity/assets/logo"),
-    ("pet", "crates/ui/identity/assets/aphrody"),
-    ("fonts", "m3/packages/m3-fonts/fonts"),
-    ("shaders", "crates/ui/render/src"),
+    ("icons", "packages/assets/icons"),
+    ("images", "packages/assets/images"),
+    ("svgs", "packages/assets/svgs"),
+    ("sounds", "packages/assets/sounds"),
+    ("videos", "packages/assets/videos"),
+    ("lottie", "packages/assets/lottie"),
+    ("models", "packages/assets/models"),
+    ("wasm", "packages/assets/wasm"),
+    ("brand", "crates/aphrody-identity/assets/brand"),
+    ("logo", "crates/aphrody-identity/assets/logo"),
+    ("pet", "crates/aphrody-identity/assets/aphrody"),
+    ("fonts", "packages/m3-fonts/fonts"),
+    ("shaders", "crates/aphrody-render/src"),
 ];
 const MAX_BYTES: u64 = 128 * 1024 * 1024;
 static SNAPSHOT_ID: AtomicU64 = AtomicU64::new(0);
@@ -391,13 +391,13 @@ mod tests {
 
     fn fixture() -> (tempfile::TempDir, SharedAssets) {
         let root = tempfile::tempdir().unwrap();
-        let icons = root.path().join("m3/packages/assets/icons");
+        let icons = root.path().join("packages/assets/icons");
         std::fs::create_dir_all(&icons).unwrap();
         for directory in ["models", "wasm", "fonts"] {
             let relative = if directory == "fonts" {
-                "m3/packages/m3-fonts/fonts".to_owned()
+                "packages/m3-fonts/fonts".to_owned()
             } else {
-                format!("m3/packages/assets/{directory}")
+                format!("packages/assets/{directory}")
             };
             std::fs::create_dir_all(root.path().join(relative)).unwrap();
         }
@@ -454,7 +454,7 @@ mod tests {
                 .is_empty()
         );
         std::fs::write(
-            root.path().join("m3/packages/assets/icons/sample.png"),
+            root.path().join("packages/assets/icons/sample.png"),
             b"new bytes",
         )
         .unwrap();
@@ -485,7 +485,7 @@ mod tests {
             to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
             b"new bytes"
         );
-        std::fs::remove_file(root.path().join("m3/packages/assets/icons/sample.png")).unwrap();
+        std::fs::remove_file(root.path().join("packages/assets/icons/sample.png")).unwrap();
         let response = app
             .clone()
             .oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap())
@@ -534,17 +534,17 @@ mod tests {
         assert_eq!(media_type("models", "scene.glb"), Some("model/gltf-binary"));
         assert_eq!(media_type("fonts", "font.woff2"), Some("font/woff2"));
         std::fs::write(
-            root.path().join("m3/packages/assets/models/scene.glb"),
+            root.path().join("packages/assets/models/scene.glb"),
             b"glTF12345678",
         )
         .unwrap();
         std::fs::write(
-            root.path().join("m3/packages/assets/wasm/runtime.wasm"),
+            root.path().join("packages/assets/wasm/runtime.wasm"),
             [0, 97, 115, 109, 1, 0, 0, 0],
         )
         .unwrap();
         std::fs::write(
-            root.path().join("m3/packages/m3-fonts/fonts/font.woff2"),
+            root.path().join("packages/m3-fonts/fonts/font.woff2"),
             b"wOF2data",
         )
         .unwrap();
@@ -633,7 +633,7 @@ mod tests {
         std::fs::write(outside.path().join("private.png"), b"protected").unwrap();
         std::os::unix::fs::symlink(
             outside.path().join("private.png"),
-            root.path().join("m3/packages/assets/icons/private.png"),
+            root.path().join("packages/assets/icons/private.png"),
         )
         .unwrap();
         assert!(assets.source("icons", "private.png").is_err());

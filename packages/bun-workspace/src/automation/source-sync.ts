@@ -122,7 +122,7 @@ function ownerRemote(url: string, owners: string[], repository: SyncRepository):
   return !!match && owners.includes(match[1]!) && match[2] === (repository.repositoryName ?? repository.id);
 }
 export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyncConfig> {
-  const config: SourceSyncConfig = await Bun.file(join(root, "tools/config/commit-sync.json")).json();
+  const config: SourceSyncConfig = await Bun.file(join(root, "tools/aphrody/config/commit-sync.json")).json();
   if (
     config.schemaVersion !== 1 ||
     !Array.isArray(config.owners) ||
@@ -209,7 +209,7 @@ export async function syncRepository(
     const destination = `refs/remotes/${repository.remote}/${repository.destinationBranch}`;
     row.sourceHead = must(await run(["rev-parse", "--verify", source]), "Source branch");
     row.dirty = !!must(
-      await run(["status", "--porcelain=v1", "--untracked-files=normal", "--ignore-submodules=none"]),
+      await run(["status", "--porcelain=v1", "--untracked-files=normal", "--ignore-submodules=dirty"]),
       "Source worktree",
     );
     if (options.apply) {
@@ -218,6 +218,7 @@ export async function syncRepository(
         "fetch",
         "--no-prune",
         "--no-tags",
+        "--no-recurse-submodules",
         repository.remote,
         `+refs/heads/${repository.destinationBranch}:${destination}`,
       ]);
@@ -249,14 +250,14 @@ export async function syncRepository(
       if (
         must(await run(["rev-parse", source]), "Source revision") !== row.sourceHead ||
         must(
-          await run(["status", "--porcelain=v1", "--untracked-files=normal", "--ignore-submodules=none"]),
+          await run(["status", "--porcelain=v1", "--untracked-files=normal", "--ignore-submodules=dirty"]),
           "Source worktree",
         )
       )
         return { ...row, action: "concurrent-work-preserved" };
       if ((await run(["merge-base", "--is-ancestor", row.sourceHead, row.destinationHead])).code !== 0)
         return { ...row, status: "diverged", action: "preserved" };
-      const merged = await run(["merge", "--ff-only", row.destinationHead]);
+      const merged = await run(["-c", "submodule.recurse=false", "merge", "--ff-only", row.destinationHead]);
       return {
         ...row,
         status: merged.code === 0 ? "current" : "merge-error",

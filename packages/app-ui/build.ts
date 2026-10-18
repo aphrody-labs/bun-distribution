@@ -3,6 +3,7 @@
 import { buildM3 } from "@aphrody/m3/build";
 import { loadM3Config } from "@aphrody/m3/config";
 import { m3Bun } from "@aphrody/m3-bun/plugin";
+import { m3Plugin } from "@aphrody/m3/plugin";
 import { undeclaredDependencies } from "./undeclared-deps";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -14,6 +15,7 @@ import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
 import { prunePublicFontCopies } from "./public-assets-package";
 import { productBuildContext } from "@aphrody/product/build-inputs";
 import { normalizeAppBase } from "./src/app-base";
+import { stageWebOsNotices } from "../webos-wasm/stage-notices";
 const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
 const escape = (value: string) =>
   value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
@@ -88,6 +90,10 @@ if (import.meta.main) {
         `Missing WebOS build artifact ${artifact}; run bun run --cwd "${dirname(dirname(webosWasm))}" build:wasm through the serialized native build owner before building App UI`,
       );
   }
+  await stageWebOsNotices(dirname(webosWasm));
+  // SSR uses the same asset resolver as the browser bundle, with no CSS compiler in this process.
+  await import("../identity/scripts/sprite.ts");
+  Bun.plugin(m3Plugin({ root: config.root, configDir: config.dir, tailwind: false, sass: false }));
   const { ProductSearchHome } =
     await import("./src/routes/product/ProductSearchHome");
   const started = performance.now();
@@ -111,6 +117,7 @@ if (import.meta.main) {
     join(result.outdir, "wasm", WEBOS_WASM_NAME),
     Bun.file(webosWasm),
   );
+  await Bun.write(join(result.outdir, "wasm", "LICENSE-APACHE"), Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   // The bundler emits the app as hashed chunks; the page shell is the source HTML with those bundles referenced.
   const jsChunk = result.outputs.find(

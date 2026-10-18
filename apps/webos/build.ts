@@ -147,6 +147,7 @@ await cp(
   join(wasmDir, "aphrody_webos_wasm_bg.wasm"),
   join(dist, "wasm/aphrody_webos_wasm_bg.wasm"),
 );
+await cp(join(root, "LICENSE-APACHE"), join(dist, "wasm/LICENSE-APACHE"));
 // @aphrody/m3-fonts: Google Sans Flex / Code and Material Symbols, subset to the faces the shell uses.
 const fontSrc = join(root, "packages/m3-fonts/fonts");
 await mkdir(join(dist, "fonts"), { recursive: true });

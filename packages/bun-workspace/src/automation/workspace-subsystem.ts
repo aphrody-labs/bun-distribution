@@ -43,7 +43,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_build_factory_status",
     description:
-      "Where heavy Cargo/Bun work runs (factory or local) and why, from tools/config/build-factory.json and this host's environment (CLI: build-factory status).",
+      "Where heavy Cargo/Bun work runs (factory or local) and why, from tools/aphrody/config/build-factory.json and this host's environment (CLI: build-factory status).",
     inputSchema: {
       type: "object",
       properties: { root: ROOT_SCHEMA },

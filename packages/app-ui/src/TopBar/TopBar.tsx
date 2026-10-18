@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { TopBarSection } from "./Section";
 import { useOverflowCalculation } from "./useOverflowCalculation";
+import { SessionIdentity } from "../SessionIdentity";
 
 interface TopBarProps {
   sidebarWidth?: number;
@@ -130,6 +131,7 @@ export const TopBar = memo(function TopBar({ sidebarWidth = 0, inspectorWidth = 
           </kbd>
         </button>
         <TopBarSection position="right" />
+        <SessionIdentity />
         <WindowControls />
       </div>
     </div>

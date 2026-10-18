@@ -2048,14 +2048,15 @@ pub async fn serve_http(addr: SocketAddr) -> Result<(), AppServerError> {
 /// Reusable app transport router. Hosts must preserve the loopback-only listener
 /// boundary when composing it; RPC/event handlers retain their Host/Origin checks.
 pub fn http_router() -> Router {
-    http_routes().route("/", get(web::index))
+    http_routes()
+        .route("/", get(web::index))
+        .route("/app.js", get(web::script))
+        .route("/app.css", get(web::style))
 }
 
 fn http_routes() -> Router {
     let state = Arc::new(Mutex::new(AppServer::new()));
     Router::new()
-        .route("/app.js", get(web::script))
-        .route("/app.css", get(web::style))
         .route("/health", get(http_health).options(http_cors_preflight))
         .route("/healthz", get(http_health).options(http_cors_preflight))
         .route("/rpc", post(http_rpc).options(http_cors_preflight))
@@ -3403,9 +3404,9 @@ model_provider = "fixture"
         use tower::ServiceExt;
 
         let root = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(root.path().join("m3/templates")).unwrap();
-        std::fs::write(root.path().join("m3/templates/stack.toml"), "").unwrap();
-        let ui = root.path().join("crates/ui/app/ui-dist");
+        std::fs::create_dir_all(root.path().join("packages/m3-templates")).unwrap();
+        std::fs::write(root.path().join("packages/m3-templates/stack.toml"), "").unwrap();
+        let ui = root.path().join("packages/app-ui/dist");
         std::fs::create_dir_all(&ui).unwrap();
         let shell = "<div id=\"root\">canonical app-ui</div><script src=\"/app.js\"></script>";
         std::fs::write(ui.join("index.html"), shell).unwrap();

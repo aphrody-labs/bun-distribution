@@ -176,13 +176,13 @@ fn read_files(root: &Path, directory: &Path, budget: &mut Budget) -> io::Result<
     Ok(files)
 }
 
-/// Load exactly the declared template catalog. Paths are confined to m3/templates;
+/// Load exactly the declared template catalog. Paths are confined to packages/m3-templates;
 /// each text file is capped at 64KiB, the catalog at 32MiB and 10,000 entries.
 /// The host must keep the configured source tree immutable during loading; path
 /// checks do not claim protection against concurrent adversarial directory swaps.
 pub fn load_templates(root: &Path) -> io::Result<Vec<TemplateDefinition>> {
     let root = root.canonicalize()?;
-    let manifest = checked_path(&root, Path::new("m3/templates/stack.toml"))?;
+    let manifest = checked_path(&root, Path::new("packages/m3-templates/stack.toml"))?;
     let source = read_bounded(&manifest, MAX_STACK_BYTES)?
         .ok_or_else(|| invalid("stack manifest size limit exceeded"))?;
     let stack: toml::Value =
@@ -203,11 +203,16 @@ pub fn load_templates(root: &Path) -> io::Result<Vec<TemplateDefinition>> {
             .clone()
             .try_into()
             .map_err(|_| invalid("invalid template declaration"))?;
-        let relative = Path::new(&template.path);
-        if !relative.starts_with("m3/templates") {
-            return Err(invalid("template outside m3/templates denied"));
+        // The flattened package retains manifest-relative `templates/<name>` declarations.
+        let declared = Path::new(&template.path);
+        let relative = declared.strip_prefix("templates").map_or_else(
+            |_| declared.to_owned(),
+            |path| Path::new("packages/m3-templates").join(path),
+        );
+        if !relative.starts_with("packages/m3-templates") {
+            return Err(invalid("template outside packages/m3-templates denied"));
         }
-        let directory = checked_path(&root, relative)?;
+        let directory = checked_path(&root, &relative)?;
         let mut tags = Vec::new();
         if template.required {
             tags.push("required".to_owned());
@@ -231,7 +236,7 @@ pub fn load_templates(root: &Path) -> io::Result<Vec<TemplateDefinition>> {
             id: id.clone(),
             name: id.clone(),
             tagline: template.description,
-            description: format!("{} in m3/templates/stack.toml", template.path),
+            description: format!("{} in packages/m3-templates/stack.toml", template.path),
             tags,
             cli_command,
             dependencies,
@@ -247,27 +252,38 @@ mod tests {
 
     fn fixture() -> io::Result<tempfile::TempDir> {
         let root = tempfile::tempdir()?;
-        fs::create_dir_all(root.path().join("m3/templates/base/src"))?;
-        fs::create_dir_all(root.path().join("m3/templates/hono"))?;
-        fs::create_dir_all(root.path().join("m3/templates/web"))?;
+        fs::create_dir_all(root.path().join("packages/m3-templates/base/src"))?;
+        fs::create_dir_all(root.path().join("packages/m3-templates/hono"))?;
+        fs::create_dir_all(root.path().join("packages/m3-templates/web"))?;
         fs::write(
-            root.path().join("m3/templates/stack.toml"),
-            "[template.base]\npath='m3/templates/base'\ndescription='Base server'\nrequired=true\ndependencies={a='1'}\ndev_dependencies={a='2',b='3'}\n[template.hono]\npath='m3/templates/hono'\nexclusive='framework'\n[template.web]\npath='m3/templates/web'\ncurated='default'\n",
+            root.path().join("packages/m3-templates/stack.toml"),
+            "[template.base]\npath='packages/m3-templates/base'\ndescription='Base server'\nrequired=true\ndependencies={a='1'}\ndev_dependencies={a='2',b='3'}\n[template.hono]\npath='packages/m3-templates/hono'\nexclusive='framework'\n[template.web]\npath='packages/m3-templates/web'\ncurated='default'\n",
         )?;
         fs::write(
-            root.path().join("m3/templates/base/src/server.ts"),
+            root.path().join("packages/m3-templates/base/src/server.ts"),
             "export {};\n",
         )?;
         fs::write(
-            root.path().join("m3/templates/base/Dockerfile"),
+            root.path().join("packages/m3-templates/base/Dockerfile"),
             "FROM scratch\n",
         )?;
         fs::write(
-            root.path().join("m3/templates/base/big.json"),
+            root.path().join("packages/m3-templates/base/big.json"),
             vec![b'x'; MAX_FILE_BYTES + 1],
         )?;
-        fs::write(root.path().join("m3/templates/base/logo.png"), b"binary")?;
+        fs::write(root.path().join("packages/m3-templates/base/logo.png"), b"binary")?;
         Ok(root)
+    }
+
+    #[test]
+    fn package_manifest_relative_paths_resolve_to_the_flat_owner() -> io::Result<()> {
+        let root = fixture()?;
+        let manifest = root.path().join("packages/m3-templates/stack.toml");
+        fs::write(&manifest, fs::read_to_string(&manifest)?.replace("packages/m3-templates/", "templates/"))?;
+        let templates = load_templates(root.path())?;
+        assert_eq!(templates.len(), 3);
+        assert_eq!(templates[0].files[1].content, "export {};\n");
+        Ok(())
     }
 
     #[test]
@@ -311,13 +327,13 @@ mod tests {
     fn traversal_and_external_template_paths_are_rejected() -> io::Result<()> {
         let root = fixture()?;
         for path in [
-            "m3/templates/../secret",
+            "packages/m3-templates/../secret",
             "../secret",
             "/secret",
             "crates/ai",
         ] {
             fs::write(
-                root.path().join("m3/templates/stack.toml"),
+                root.path().join("packages/m3-templates/stack.toml"),
                 format!("[template.bad]\npath='{path}'\n"),
             )?;
             assert!(load_templates(root.path()).is_err());
@@ -332,7 +348,7 @@ mod tests {
         fs::write(root.path().join("secret.ts"), "protected")?;
         std::os::unix::fs::symlink(
             root.path().join("secret.ts"),
-            root.path().join("m3/templates/base/secret.ts"),
+            root.path().join("packages/m3-templates/base/secret.ts"),
         )?;
         assert!(load_templates(root.path()).is_err());
         Ok(())
