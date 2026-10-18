@@ -50,6 +50,7 @@ if (import.meta.main) {
   if (Bun.env.APP_UI_BUN_REVISION && Bun.env.APP_UI_BUN_REVISION !== bunRevision)
     throw new Error("Selected Bun revision must match the canonical checkout HEAD");
   const docsFile = resolve(import.meta.dir, "../../build/docs-catalog.json");
+  if (!(await Bun.file(docsFile).exists())) await import("./scripts/docs-catalog.ts");
   if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
     throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
   // Check both outputs before bundling imports the generated wasm-bindgen glue.
