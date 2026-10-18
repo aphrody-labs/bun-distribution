@@ -609,3 +609,6 @@
 	path = vendor/rea
 	url = https://github.com/aphrody-labs/rea.git
 	branch = main
+[submodule "vendor/cubeb-rs"]
+	path = vendor/cubeb-rs
+	url = https://github.com/aphrody-labs/cubeb-rs.git

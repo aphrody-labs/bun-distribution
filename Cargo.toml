@@ -1375,6 +1375,7 @@ vk-mem = "0.5"
 spirv-cross2 = "0.7"
 
 [patch.crates-io]
+cubeb-sys = { path = "vendor/cubeb-rs/cubeb-sys" }
 # PyO3: same fork and pin as the [patch.crates-io] of toolchains/bun/Cargo.toml.
 pyo3 = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
 pyo3-build-config = { git = "https://github.com/aphrody-labs/pyo3", rev = "451d99fdcdcddf159e8e0a1186960b332cdb5d7c" }
