@@ -2,7 +2,7 @@
   "extends": "./tsconfig-base.json",
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "types": ["bun"],
+    "types": ["@aphrody/bun-types"],
     "noEmit": true
   },
   "include": ["tailwind-preset.ts", "public-urls.ts", "test/public-urls.test.ts"]

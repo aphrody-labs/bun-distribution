@@ -12,11 +12,14 @@
     "verbatimModuleSyntax": true,
     "noUncheckedIndexedAccess": false,
     "noImplicitOverride": false,
-    "types": ["bun", "node"],
+    "types": ["@aphrody/bun-types", "node"],
     "jsx": "react-jsx",
     "declaration": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "bun": ["../../node_modules/@aphrody/bun-types/index.d.ts"]
+    }
   }
 }

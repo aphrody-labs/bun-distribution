@@ -22,6 +22,7 @@
     "allowJs": false,
     "rootDir": "../..",
     "paths": {
+      "bun": ["../../node_modules/@aphrody/bun-types/index.d.ts"],
       "@rosegriffon/db": ["../rg-db/src/index.ts"],
       "@rosegriffon/db/*": ["../rg-db/src/*"],
       "@rosegriffon/types": ["../rg-types/src/index.ts"],

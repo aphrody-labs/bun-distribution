@@ -2,12 +2,7 @@
 // WebGPU drawer for the pet atlas. The 2d mode draws one textured quad; the 3d mode stacks
 // `slices` quads of the same frame along depth, rotates them about the vertical axis and shades
 // each slice from the alpha gradient of the silhouette, which reads as a lit volume.
-import {
-  fitRect,
-  type DrawOptions,
-  type PetDrawer,
-  type PetPose,
-} from "../../../../../../../../../aphrody/m3/packages/identity/src/render/frames.ts";
+import { fitRect, type DrawOptions, type PetDrawer, type PetPose } from "./frames.ts";
 
 const SHADER_2D = /* wgsl */ `
 struct Quad {

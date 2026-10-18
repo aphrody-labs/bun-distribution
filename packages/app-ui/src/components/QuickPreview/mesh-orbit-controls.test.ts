@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // oxlint-disable-next-line no-unassigned-import -- register the existing DOM owner for real Three input events
-import "../../../../../../scripts/test-dom";
+import "../../../../../scripts/aphrody/test-dom";
 import { afterEach, expect, test } from "bun:test";
 import { PerspectiveCamera } from "three";
 import { bindMeshOrbitControls } from "./mesh-orbit-controls";

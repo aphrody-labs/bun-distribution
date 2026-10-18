@@ -6,7 +6,7 @@ import { inspectPackages } from "../../core/src/vendor/status";
 import { isCompiled } from "../../core/src/vfs/home";
 import { SUPPORTED_TARGETS, hostTarget } from "@aphrody/runtime-sdk/artifact";
 import { hostTarget as leafHostTarget } from "@aphrody/runtime-sdk/target";
-import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
+import { COMPILE_FLAGS } from "../../../scripts/aphrody/release/compile-flags";
 
 const cli = resolve(import.meta.dir, "../../yolo-cli/src/index.ts");
 

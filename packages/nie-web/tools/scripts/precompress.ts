@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { brotliCompressSync, constants, zstdCompressSync } from "node:zlib";
 import { isPrecompressionTarget } from "./precompression-targets";
 import { assertNePubliePas, resolveBuildOutDir } from "./out-dir";
-import { assertPublicEntryBundle } from "../../build/scripts/public-entry-bundle";
+import { assertPublicEntryBundle } from "./public-entry-bundle";
 
 // Une version en préparation est compressée AVANT de remplacer le bundle servi — c'est pourquoi
 // le déploiement passe ici le chemin de sa version, et pourquoi ce chemin est vérifié : ce script

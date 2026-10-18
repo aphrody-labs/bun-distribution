@@ -4,7 +4,7 @@
     "noEmit": true,
     "declaration": false,
     "noUncheckedIndexedAccess": false,
-    "types": ["bun"],
+    "types": ["@aphrody/bun-types"],
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",

@@ -1,8 +1,16 @@
 {
   "extends": "../../packages/nie-ui/tsconfig.base.json",
   "compilerOptions": {
-    "types": ["bun", "@webgpu/types"]
+    "types": ["@aphrody/bun-types", "@webgpu/types"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "pkg", "wii/pkg"]
+  "exclude": [
+    "node_modules",
+    "pkg",
+    "wii/pkg",
+    // These two workers import the wasm-bindgen output `pkg/`, which only exists after `bun run build:wasm`
+    // and needs the WebWorker libs. `bun run typecheck` checks them with their own tsconfig.json.
+    "src/emu",
+    "src/renderer_3d"
+  ]
 }

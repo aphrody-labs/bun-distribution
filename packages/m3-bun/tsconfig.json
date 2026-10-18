@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["bun", "node"]
+    "types": ["@aphrody/bun-types", "node"]
   },
   "include": ["src/**/*", "bin/**/*", "test/**/*"]
 }

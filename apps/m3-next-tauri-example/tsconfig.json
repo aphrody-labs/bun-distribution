@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -19,10 +23,35 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ],
+      "@aphrody/m3-next": [
+        "../../packages/m3-next/src/index.ts"
+      ],
+      "@aphrody/m3-next/server": [
+        "../../packages/m3-next/src/server.tsx"
+      ],
+      "@aphrody/m3-next/client": [
+        "../../packages/m3-next/src/client.tsx"
+      ],
+      "@aphrody/m3-next/proxy": [
+        "../../packages/m3-next/src/theme-proxy.ts"
+      ]
     },
-    "types": ["bun", "next/types/global"]
+    "types": [
+      "@aphrody/bun-types",
+      "next/types/global"
+    ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

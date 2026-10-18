@@ -12,6 +12,6 @@
     "verbatimModuleSyntax": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "types": ["bun", "node"]
+    "types": ["@aphrody/bun-types", "node"]
   }
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // oxlint-disable-next-line no-unassigned-import -- register the existing DOM owner before real React components
-import "../../../../scripts/test-dom";
+import "../../../scripts/aphrody/test-dom";
 import { afterEach, expect, test } from "bun:test";
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";

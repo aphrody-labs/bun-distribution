@@ -6,8 +6,11 @@ declare module "#cli-wasm-glue" {
   export type InitOptions = { module_or_path?: InitInput | Promise<InitInput> };
   export type SyncInitOptions = { module: BufferSource | WebAssembly.Module };
 
-  export default function init(input?: InitInput | Promise<InitInput> | InitOptions): Promise<unknown>;
-  export function initSync(input: BufferSource | WebAssembly.Module | SyncInitOptions): unknown;
+  export interface InitOutput {
+    readonly memory: WebAssembly.Memory;
+  }
+  export default function init(input?: InitInput | Promise<InitInput> | InitOptions): Promise<InitOutput>;
+  export function initSync(input: BufferSource | WebAssembly.Module | SyncInitOptions): InitOutput;
   export function initPanicHook(): void;
   export function run(args: string[], stdin: string, filesJson: string): string;
   export function version(): string;
@@ -15,4 +18,9 @@ declare module "#cli-wasm-glue" {
   export function manifest(): string;
   export function callJson(op: string, input: string): string;
   export function callVec(op: string, params: string, a: Uint8Array, b: Uint8Array): Uint8Array;
+}
+
+declare module "@aphrody/cli-wasm/wasm/aphrody_command_wasm.js" {
+  export * from "#cli-wasm-glue";
+  export { default } from "#cli-wasm-glue";
 }

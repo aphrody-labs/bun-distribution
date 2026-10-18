@@ -12,7 +12,7 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": false,
     "skipLibCheck": true,
-    "types": ["bun", "pg", "node"]
+    "types": ["@aphrody/bun-types", "pg", "node"]
   },
   "include": ["src/**/*.ts"],
   "exclude": [

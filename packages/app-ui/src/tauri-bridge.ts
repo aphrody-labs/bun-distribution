@@ -7,7 +7,7 @@
 
 import { Channel } from "@aphrody/tauri/api/core";
 // oxlint-disable-next-line import/no-empty-named-blocks, unicorn/require-module-specifiers -- use the canonical global augmentation without a runtime import.
-import type {} from "../../../../crates/tauri/aphrody-tauri-api/src/global";
+import type {} from "../../bun-tauri/js/api/global";
 import { browserSessionStream } from "./browser-session-stream";
 import { webOsRagSearch, webOsRagStats, webOsReadDir, webOsReadText, wantsHttpBackend } from "./webos-backend";
 

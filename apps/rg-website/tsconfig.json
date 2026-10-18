@@ -3,9 +3,10 @@
   "compilerOptions": {
     "noImplicitOverride": false,
     "noUncheckedIndexedAccess": false,
-    "types": ["google.maps", "bun", "@webgpu/types"],
+    "types": ["google.maps", "@aphrody/bun-types", "@webgpu/types"],
     "tsBuildInfoFile": ".next/.tsbuildinfo",
     "paths": {
+      "bun": ["../../node_modules/@aphrody/bun-types/index.d.ts"],
       "@/*": ["./src/*", "./*"],
       "@public/*": ["./public/*"],
       "@iecode/*": ["../../*"],

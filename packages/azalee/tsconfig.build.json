@@ -7,7 +7,7 @@
     "declaration": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": false,
-    "types": ["bun"],
+    "types": ["@aphrody/bun-types"],
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "allowImportingTsExtensions": false,
     "moduleDetection": "force",

@@ -10,7 +10,7 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
-    "types": ["node", "react", "react-dom"],
+    "types": ["@aphrody/bun-types", "node", "react", "react-dom"],
     "paths": {
       "@/*": ["./src/*", "./*"],
       "@rosegriffon/db": ["../../packages/db/src/index.ts"],

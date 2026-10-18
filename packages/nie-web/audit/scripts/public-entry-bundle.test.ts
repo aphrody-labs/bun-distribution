@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "bun:test";
-import { assertPublicEntryBundle } from "../../build/scripts/public-entry-bundle";
+import { assertPublicEntryBundle } from "../../tools/scripts/public-entry-bundle";
 
 let bundle: string | null = null;
 afterEach(() => {

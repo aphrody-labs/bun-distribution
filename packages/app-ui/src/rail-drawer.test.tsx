@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Real React DOM navigation behavior; no application services, stored threads or screenshots.
 // oxlint-disable-next-line no-unassigned-import -- the existing owner registers the DOM before React loads
-import "../../../../scripts/test-dom";
+import "../../../scripts/aphrody/test-dom";
 import { afterEach, expect, test } from "bun:test";
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
