@@ -1,4 +1,4 @@
-import { stubGlobal, restoreGlobals } from "../../../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../../../artcraft-frontend/tools/testing/globals";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "bun:test";
 import { CompletionModal } from "./CompletionModal";

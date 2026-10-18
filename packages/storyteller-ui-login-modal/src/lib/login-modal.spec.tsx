@@ -1,8 +1,14 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../artcraft-frontend/tools/testing/globals";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, jest, vi } from "bun:test";
 import { LoginModal } from "./login-modal";
 import { useLoginModalStore } from "./useLoginModalStore";
+
+/** Bun fake timers are synchronous: advance them, then let the resulting promise callbacks settle. */
+async function advanceTimersAndFlush(milliseconds: number): Promise<void> {
+  jest.advanceTimersByTime(milliseconds);
+  for (let i = 0; i < 5; i += 1) await Promise.resolve();
+}
 
 const { native, forbiddenFetch } = (() => ({
   native: vi.fn(),
@@ -111,7 +117,7 @@ describe("native login modal integration", () => {
         challengeId: "native_handle",
       });
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(30_000);
+        await advanceTimersAndFlush(30_000);
       });
       expect(
         native.mock.calls.filter(([command]) => command === "storyteller_poll_login_challenge_command"),
@@ -173,9 +179,10 @@ describe("native login modal integration", () => {
         });
       expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(5000);
+        await advanceTimersAndFlush(5000);
       });
-      expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+      expect(success).toHaveBeenCalledTimes(1);
+      expect(success).toHaveBeenCalledWith(USER);
       if (!beforeCompletion)
         await act(async () => {
           resolveSession(null);
@@ -184,11 +191,11 @@ describe("native login modal integration", () => {
       expect(screen.queryByRole("img", { name: "Login QR" })).toBeNull();
       expect(useLoginModalStore.getState().isOpen).toBe(true);
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(2999);
+        await advanceTimersAndFlush(2999);
       });
       expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(1);
+        await advanceTimersAndFlush(1);
       });
       expect(useLoginModalStore.getState().isOpen).toBe(false);
       expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
@@ -228,7 +235,8 @@ describe("native login modal integration", () => {
     await act(async () => {
       fireEvent.click(submit);
     });
-    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    expect(success).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledWith(USER);
     expect(native).toHaveBeenCalledWith(
       signup ? "storyteller_password_signup_command" : "storyteller_password_login_command",
       {
@@ -247,7 +255,7 @@ describe("native login modal integration", () => {
       expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
       expect(screen.queryByText("Join Our Community")).toBeNull();
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(3000);
+        await advanceTimersAndFlush(3000);
       });
       expect(useLoginModalStore.getState().isOpen).toBe(false);
     }
@@ -263,22 +271,23 @@ describe("native login modal integration", () => {
       fireEvent.click(screen.getByRole("button", { name: "Login with Website" }));
     });
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5000);
+      await advanceTimersAndFlush(5000);
     });
     expect(screen.getByRole("status").textContent).toContain("Logged in as google_user");
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
+      await advanceTimersAndFlush(1500);
     });
     view.rerender(<LoginModal isSignUp={false} onClose={latestClose} onArtCraftAuthSuccess={success} />);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
+      await advanceTimersAndFlush(1500);
     });
     expect(useLoginModalStore.getState().isOpen).toBe(false);
     expect(firstClose).not.toHaveBeenCalled();
     expect(latestClose).toHaveBeenCalledTimes(1);
-    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    expect(success).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledWith(USER);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10_000);
+      await advanceTimersAndFlush(10_000);
     });
     expect(latestClose).toHaveBeenCalledTimes(1);
   });
@@ -291,12 +300,12 @@ describe("native login modal integration", () => {
       fireEvent.click(screen.getByRole("button", { name: "Scan to Login" }));
     });
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5000);
+      await advanceTimersAndFlush(5000);
     });
     expect(screen.getByRole("heading", { name: "Logged in as google_user" })).toBeTruthy();
     view.unmount();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10_000);
+      await advanceTimersAndFlush(10_000);
     });
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -307,7 +316,8 @@ describe("native login modal integration", () => {
     await act(async () => {
       render(<LoginModal onArtCraftAuthSuccess={success} />);
     });
-    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    expect(success).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledWith(USER);
     expect(useLoginModalStore.getState().isOpen).toBe(false);
     expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
   });

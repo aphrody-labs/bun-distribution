@@ -1,5 +1,5 @@
 import { vi, beforeEach, describe, it, expect, afterEach } from "bun:test";
-import { stubGlobal, restoreGlobals } from "../../../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../../../artcraft-frontend/tools/testing/globals";
 import * as THREE from "three";
 import { loadPreviewOnCanvas } from "./loadPreviewOnCanvas";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "bun:test";
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../artcraft-frontend/tools/testing/globals";
 import { render } from "@testing-library/react";
 
 import StorytellerUiViewer3d from "./viewer-3d";

@@ -1,11 +1,8 @@
 {
   "extends": "../artcraft-frontend/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "types": ["@aphrody/bun-types", "node"],
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+    "jsx": "react-jsx"
   },
   "exclude": [
     "out-tsc",

@@ -9,7 +9,7 @@ vi.mock("@sparkjsdev/spark", async () => {
   const accumulator = () => ({ splats: { dispose: vi.fn() } });
   return {
     SplatMesh: class extends Object3D {
-      dispose = vi.fn();
+      override dispose = vi.fn();
     },
     SparkRenderer: class extends Object3D {
       defaultView = { dispose: vi.fn() };

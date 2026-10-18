@@ -1,11 +1,8 @@
 {
   "extends": "../artcraft-frontend/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "types": ["@aphrody/bun-types", "node"],
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+    "jsx": "react-jsx"
   },
   "exclude": [
     "out-tsc",
@@ -31,25 +28,5 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
-  "references": [
-    {
-      "path": "../storyteller-markdown-content/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-popover/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-button/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-tauri-api/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-icons/tsconfig.lib.json"
-    }
-  ]
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 }

@@ -40,7 +40,7 @@ describe("Scene disposal", () => {
 
       scene.disposeObject(group);
 
-      expect(scene.shader_objects).toEqual([otherWater]);
+      expect<unknown>(scene.shader_objects).toEqual([otherWater]);
     });
 
     it("stops and forgets the video behind a video plane", () => {

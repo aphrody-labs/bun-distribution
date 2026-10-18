@@ -1,11 +1,8 @@
 {
   "extends": "../artcraft-frontend/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "types": ["@aphrody/bun-types", "node"],
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+    "jsx": "react-jsx"
   },
   "exclude": [
     "out-tsc",
@@ -34,10 +31,5 @@
     "eslint.config.cjs",
     "eslint.config.mjs"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
-  "references": [
-    {
-      "path": "../storyteller-tauri-api/tsconfig.lib.json"
-    }
-  ]
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 }

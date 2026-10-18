@@ -1,19 +1,8 @@
 {
   "extends": "../artcraft-frontend/tsconfig.base.json",
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "../storyteller-common"
-    },
-    {
-      "path": "../storyteller-tauri-utils"
-    },
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ]
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../artcraft-frontend/types/*.d.ts"],
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist", "out-tsc"]
 }

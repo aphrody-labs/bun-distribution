@@ -1,34 +1,8 @@
 {
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "../storyteller-api"
-    },
-    {
-      "path": "../storyteller-common"
-    },
-    {
-      "path": "../storyteller-ui-promptbox"
-    },
-    {
-      "path": "../storyteller-ui-gallery-modal"
-    },
-    {
-      "path": "../storyteller-ui-tooltip"
-    },
-    {
-      "path": "../storyteller-ui-popover"
-    },
-    {
-      "path": "../storyteller-ui-button"
-    },
-    {
-      "path": "../storyteller-icons"
-    },
-    {
-      "path": "./tsconfig.lib.json"
-    }
-  ],
-  "extends": "../artcraft-frontend/tsconfig.base.json"
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../artcraft-frontend/types/*.d.ts"],
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist", "out-tsc"]
 }

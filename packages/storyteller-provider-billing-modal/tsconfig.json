@@ -1,25 +1,8 @@
 {
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "../storyteller-tauri-events"
-    },
-    {
-      "path": "../storyteller-ui-modal"
-    },
-    {
-      "path": "../storyteller-common"
-    },
-    {
-      "path": "../storyteller-ui-pricing-modal"
-    },
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
-  "extends": "../artcraft-frontend/tsconfig.base.json"
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../artcraft-frontend/types/*.d.ts"],
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist", "out-tsc"]
 }

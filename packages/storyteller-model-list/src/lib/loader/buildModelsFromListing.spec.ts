@@ -60,9 +60,9 @@ describe("desktop catalog", () => {
         },
       ],
     );
-    expect(model.resolutions).toEqual(["eight_k"]);
-    expect(model.aspectRatios).toEqual(["future_aspect"]);
-    expect(model.qualityOptions).toEqual(["ultra"]);
+    expect<unknown>(model.resolutions).toEqual(["eight_k"]);
+    expect<unknown>(model.aspectRatios).toEqual(["future_aspect"]);
+    expect<unknown>(model.qualityOptions).toEqual(["ultra"]);
     expect(model.canUseImagePrompt).toBe(true);
     expect(model.canEditImages).toBe(false);
   });
@@ -210,13 +210,13 @@ it.each(["gpt_image_2p5_flare", "gpt_image_2p5_sunburst"])("preserves every %s q
       image_refs_supported: true,
     },
   ]).find(m => m.tauriId === id)!;
-  expect(model.qualityOptions).toEqual(qualities);
-  expect(model.defaultQuality).toBe("high");
-  expect(model.resolutions).toEqual(resolutions);
-  expect(model.defaultResolution).toBe("one_k");
-  expect(model.canEditImages).toBe(true);
-  expect(model.resolveQuality(CommonQuality.Max)).toBe("max");
-  expect(model.resolveQuality(CommonQuality.Auto)).toBe("auto");
+  expect<unknown>(model.qualityOptions).toEqual(qualities);
+  expect<unknown>(model.defaultQuality).toBe("high");
+  expect<unknown>(model.resolutions).toEqual(resolutions);
+  expect<unknown>(model.defaultResolution).toBe("one_k");
+  expect<unknown>(model.canEditImages).toBe(true);
+  expect<unknown>(model.resolveQuality(CommonQuality.Max)).toBe("max");
+  expect<unknown>(model.resolveQuality(CommonQuality.Auto)).toBe("auto");
 });
 
 it("uses the new model's default when a saved quality tier is unsupported", () => {
@@ -230,9 +230,9 @@ it("uses the new model's default when a saved quality tier is unsupported", () =
       },
     ],
   );
-  expect(model.resolveQuality(CommonQuality.Max)).toBe("high");
-  expect(model.resolveQuality(CommonQuality.XHigh)).toBe("high");
-  expect(model.resolveQuality(CommonQuality.Low)).toBe("low");
+  expect<unknown>(model.resolveQuality(CommonQuality.Max)).toBe("high");
+  expect<unknown>(model.resolveQuality(CommonQuality.XHigh)).toBe("high");
+  expect<unknown>(model.resolveQuality(CommonQuality.Low)).toBe("low");
 });
 
 it("offers ArtCraft and direct Midjourney only for supported Midjourney models", () => {

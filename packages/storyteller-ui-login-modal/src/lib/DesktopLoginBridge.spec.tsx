@@ -1,7 +1,13 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../artcraft-frontend/tools/testing/globals";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, jest, vi } from "bun:test";
 import { DesktopLoginBridge } from "./DesktopLoginBridge";
+
+/** Bun fake timers are synchronous: advance them, then let the resulting promise callbacks settle. */
+async function advanceTimersAndFlush(milliseconds: number): Promise<void> {
+  jest.advanceTimersByTime(milliseconds);
+  for (let i = 0; i < 5; i += 1) await Promise.resolve();
+}
 
 const { native, forbiddenFetch } = (() => ({
   native: vi.fn(),
@@ -26,7 +32,7 @@ let expiresIn: number;
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.setSystemTime(new Date("2026-09-25T12:00:00Z"));
+  jest.setSystemTime(new Date("2026-09-25T12:00:00Z"));
   stubGlobal("fetch", forbiddenFetch);
   localStorage.clear();
   native.mockReset();
@@ -180,7 +186,8 @@ describe("desktop native login bridge integration", () => {
     expect(screen.getByRole("img", { name: "Login QR" })).toBeTruthy();
     outcome = { status: "redeemed", maybe_user: USER };
     await tick(5000);
-    expect(success).toHaveBeenCalledExactlyOnceWith(USER);
+    expect(success).toHaveBeenCalledTimes(1);
+    expect(success).toHaveBeenCalledWith(USER);
   });
 
   it("fails closed on a future status", async () => {
@@ -213,7 +220,7 @@ async function start(label: string) {
 }
 async function tick(ms: number) {
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(ms);
+    await advanceTimersAndFlush(ms);
   });
 }
 function calls(command: string) {

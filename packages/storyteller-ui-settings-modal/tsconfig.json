@@ -1,76 +1,8 @@
 {
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "../storyteller-keybinds"
-    },
-    {
-      "path": "../storyteller-tauri-utils"
-    },
-    {
-      "path": "../storyteller-model-list"
-    },
-    {
-      "path": "../storyteller-ui-popover"
-    },
-    {
-      "path": "../storyteller-ui-promptbox"
-    },
-    {
-      "path": "../storyteller-subscription"
-    },
-    {
-      "path": "../storyteller-credits"
-    },
-    {
-      "path": "../storyteller-ui-pricing-modal"
-    },
-    {
-      "path": "../storyteller-ui-switch"
-    },
-    {
-      "path": "../storyteller-ui-select"
-    },
-    {
-      "path": "../storyteller-soundboard"
-    },
-    {
-      "path": "../storyteller-ui-input"
-    },
-    {
-      "path": "../storyteller-tauri-events"
-    },
-    {
-      "path": "../storyteller-ui-login-modal"
-    },
-    {
-      "path": "../storyteller-api"
-    },
-    {
-      "path": "../storyteller-icons"
-    },
-    {
-      "path": "../storyteller-google-analytics"
-    },
-    {
-      "path": "../storyteller-ui-label"
-    },
-    {
-      "path": "../storyteller-tauri-api"
-    },
-    {
-      "path": "../storyteller-ui-button"
-    },
-    {
-      "path": "../storyteller-ui-modal"
-    },
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
-  "extends": "../artcraft-frontend/tsconfig.base.json"
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../artcraft-frontend/types/*.d.ts"],
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist", "out-tsc"]
 }

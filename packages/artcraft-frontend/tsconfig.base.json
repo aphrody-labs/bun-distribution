@@ -1,8 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
     "lib": ["es2022", "dom"],
@@ -78,8 +75,11 @@
       "@storyteller/subscription": ["../storyteller-subscription/src/index.ts"],
       "@storyteller/tauri-api": ["../storyteller-tauri-api/src/index.ts"],
       "@storyteller/tauri-events": ["../storyteller-tauri-events/src/index.ts"],
-      "@storyteller/tauri-utils": ["../storyteller-tauri-utils/src/index.ts"]
+      "@storyteller/tauri-utils": ["../storyteller-tauri-utils/src/index.ts"],
+      "bun": ["../../node_modules/@aphrody/bun-types/index.d.ts"]
     },
-    "types": ["@aphrody/bun-types", "node"]
+    "types": ["@aphrody/bun-types", "@aphrody/bun-types/test-globals", "node"],
+    "noEmit": true,
+    "allowJs": true
   }
 }

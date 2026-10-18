@@ -1,58 +1,8 @@
 {
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "../storyteller-ui-sliderv2"
-    },
-    {
-      "path": "../storyteller-api"
-    },
-    {
-      "path": "../storyteller-ui-promptbox"
-    },
-    {
-      "path": "../storyteller-api-enums"
-    },
-    {
-      "path": "../storyteller-ui-pricing-modal"
-    },
-    {
-      "path": "../storyteller-ui-help-menu"
-    },
-    {
-      "path": "../storyteller-ui-model-selector"
-    },
-    {
-      "path": "../storyteller-model-list"
-    },
-    {
-      "path": "../storyteller-keybinds"
-    },
-    {
-      "path": "../storyteller-common"
-    },
-    {
-      "path": "../storyteller-ui-action-reminder-modal"
-    },
-    {
-      "path": "../storyteller-ui-tooltip"
-    },
-    {
-      "path": "../storyteller-icons"
-    },
-    {
-      "path": "../storyteller-ui-button"
-    },
-    {
-      "path": "../storyteller-ui-modal"
-    },
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
-  "extends": "../artcraft-frontend/tsconfig.base.json"
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../artcraft-frontend/types/*.d.ts"],
+  "extends": "../artcraft-frontend/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "exclude": ["dist", "out-tsc"]
 }

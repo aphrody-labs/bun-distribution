@@ -1,4 +1,4 @@
-import { stubGlobal, restoreGlobals } from "../../../../../tools/testing/globals";
+import { stubGlobal, restoreGlobals } from "../../../artcraft-frontend/tools/testing/globals";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { VideoIcon } from "lucide-react";
@@ -100,15 +100,17 @@ describe("checker", () => {
   });
 
   it("pauses while the window is hidden", () => {
-    const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+    let hidden = true;
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
     markVideoThumbnailFailed(THUMB);
     vi.advanceTimersByTime(60_000);
     expect(probes).toHaveLength(0);
 
-    hidden.mockReturnValue(false);
+    hidden = false;
     document.dispatchEvent(new Event("visibilitychange"));
     vi.advanceTimersByTime(0);
     expect(probes).toHaveLength(1);
+    Reflect.deleteProperty(document, "hidden");
   });
 });
 

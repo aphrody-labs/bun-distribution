@@ -1,11 +1,8 @@
 {
   "extends": "../artcraft-frontend/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "types": ["@aphrody/bun-types", "node"],
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+    "jsx": "react-jsx"
   },
   "exclude": [
     "out-tsc",
@@ -31,52 +28,5 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
-  "references": [
-    {
-      "path": "../storyteller-common/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-model-list/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-action-reminder-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-toaster/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-gravatar/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-api/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-google-analytics/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-audio-player/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-viewer-3d/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-loading-spinner/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-tauri-api/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-icons/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-button/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-tooltip/tsconfig.lib.json"
-    },
-    {
-      "path": "../storyteller-ui-modal/tsconfig.lib.json"
-    }
-  ]
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 }
