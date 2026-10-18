@@ -48,8 +48,8 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-job-cli-"));
   roots.push(root);
-  await mkdir(join(root, "tools", "config"), { recursive: true });
-  await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(config));
+  await mkdir(join(root, "tools", "aphrody", "config"), { recursive: true });
+  await writeFile(join(root, "tools/aphrody/config/build-factory.json"), JSON.stringify(config));
   const marker = join(root, "invocation.json");
   const response = join(root, "response.json");
   const receipt = {

@@ -6,17 +6,25 @@
   "windowsFactory": {
     "host": "omar-pc",
     "target": "windows-x64",
-    "enabled": true,
-    "nativeArchitectures": ["x64"],
-    "crossArchitectures": ["arm64"],
+    "enabled": false,
+    "nativeArchitectures": [
+      "x64"
+    ],
+    "crossArchitectures": [
+      "arm64"
+    ],
     "maxJobs": 1,
     "reserveMemoryGiB": 6,
     "reserveDiskGiB": 20,
-    "scope": ["windows-native-builds", "windows-packaging", "windows-smoke-tests"],
+    "scope": [
+      "windows-native-builds",
+      "windows-packaging",
+      "windows-smoke-tests"
+    ],
     "execution": "local-windows"
   },
   "executionOnlyTargets": [],
-  "workspaceRoot": "/home/ubuntu/src/aphrody",
+  "workspaceRoot": "/home/ubuntu/src/bun-os",
   "cacheRoot": "/home/ubuntu/build/storage/cache",
   "artifactRoot": "/home/ubuntu/build/storage/artifacts",
   "lockPath": "/home/ubuntu/build/locks/heavy.lock",
@@ -25,9 +33,9 @@
     "value": "vps"
   },
   "rust": {
-    "maxJobs": 12,
+    "maxJobs": 4,
     "serialized": true,
-    "wrapper": "scripts/build/rust/cargo-serial.sh",
+    "wrapper": "scripts/cargo.ts",
     "incremental": false,
     "cache": "sccache"
   },
@@ -37,7 +45,9 @@
   },
   "ui": {
     "enabled": true,
-    "classes": ["shenron-ui-reuse"],
+    "classes": [
+      "shenron-ui-reuse"
+    ],
     "lockPath": "/home/ubuntu/build/locks/ui.lock",
     "workRoot": "/home/ubuntu/build/storage/artifacts/ui/jobs",
     "maxJobs": 1,
@@ -49,7 +59,13 @@
     "timeoutSeconds": 5400
   },
   "local": {
-    "allowed": ["help", "plan", "inventory", "source-edit", "scoped-static-check"],
+    "allowed": [
+      "help",
+      "plan",
+      "inventory",
+      "source-edit",
+      "scoped-static-check"
+    ],
     "heavyExecution": "remote"
   },
   "transport": {
@@ -76,10 +92,11 @@
     "cleanup": "existing-infra-allowlist-only"
   },
   "repositories": {
-    "bun-os": "/home/ubuntu/src/bun",
-    "aphrody": "/home/ubuntu/src/aphrody",
-    "yolo": "/home/ubuntu/src/yolo",
-    "iecode": "/home/ubuntu/src/iecode"
+    "bun-os": "/home/ubuntu/src/bun-os",
+    "aphrody": "/home/ubuntu/src/bun-os",
+    "yolo": "/home/ubuntu/src/bun-os",
+    "iecode": "/home/ubuntu/src/iecode",
+    "bun-runtime": "/home/ubuntu/src/bun"
   },
   "next": {
     "image": "node:22-bookworm-slim",

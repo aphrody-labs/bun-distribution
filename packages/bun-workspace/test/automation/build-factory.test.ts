@@ -404,10 +404,10 @@ test.skipIf(process.platform === "win32")(
     const f = await preparationFixture();
     try {
       const root = join(f.root, "owner-config");
-      await mkdir(join(root, "tools", "config"), { recursive: true });
-      await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.declared));
+      await mkdir(join(root, "tools", "aphrody", "config"), { recursive: true });
+      await writeFile(join(root, "tools/aphrody/config/build-factory.json"), JSON.stringify(f.declared));
       await writeFile(
-        join(root, "tools/config/commit-sync.json"),
+        join(root, "tools/aphrody/config/commit-sync.json"),
         JSON.stringify({
           schemaVersion: 1,
           owners: ["aphrody-labs"],

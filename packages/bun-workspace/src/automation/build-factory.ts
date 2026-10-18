@@ -391,7 +391,7 @@ export interface BuildFactoryStatus {
 }
 
 export async function readFactoryConfig(root: string): Promise<BuildFactoryConfig | null> {
-  const file = Bun.file(join(root, "tools/config/build-factory.json"));
+  const file = Bun.file(join(root, "tools/aphrody/config/build-factory.json"));
   return (await file.exists()) ? ((await file.json()) as BuildFactoryConfig) : null;
 }
 
@@ -415,7 +415,7 @@ export function heavyBuildStatus(
     route: "local" as const,
     reason,
   });
-  if (!config) return local("tools/config/build-factory.json is absent");
+  if (!config) return local("tools/aphrody/config/build-factory.json is absent");
   if (env.CLAUDE_CODE_REMOTE === "true") return local("Claude Code cloud session: builds run in the session");
   if (env.APHRODY_CLOUD === "1") return local("APHRODY_CLOUD=1 (cloud session or container): builds run in place");
   if (env.GITHUB_ACTIONS === "true" || env.CI === "true") return local("CI/GitHub Actions runner: builds run in place");
@@ -710,7 +710,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       }
     }
     const config = await readFactoryConfig(root);
-    if (!config) throw new Error("tools/config/build-factory.json is absent");
+    if (!config) throw new Error("tools/aphrody/config/build-factory.json is absent");
     const { factoryJobStatusPlan } = await import("./build-factory-jobs.ts");
     return runFactoryJobTransport(factoryJobStatusPlan(config, jobId, { tailLines }), root);
   }
@@ -778,7 +778,7 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
     throw new Error("Detached jobs require both --detach and an explicit --job <stable-id>");
   if (only.length && !install) throw new Error("--bin selects binaries for --install");
   const config = await readFactoryConfig(root);
-  if (!config) throw new Error("tools/config/build-factory.json is absent");
+  if (!config) throw new Error("tools/aphrody/config/build-factory.json is absent");
   if (action === "prepare") {
     if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("A full pinned Git revision is required");
     const source = await declaredFactorySource(root, repository, revision);

@@ -87,14 +87,14 @@ async function fixture() {
 }
 
 // Yolo is fused into the monorepo (cf2fa3f4b): only Aphrody and its Python sibling synchronize.
-test("declaration uses existing owner remotes and explicit main destinations", async () => {
+test("declaration synchronizes the canonical distribution and runtime branches", async () => {
   const config = await loadSourceSyncConfig();
   expect(config.repositories.map(repo => [repo.id, repo.remote, repo.sourceBranch, repo.destinationBranch])).toEqual([
-    ["aphrody", "workspace", "main", "main"],
-    ["bun-os", "origin", "main", "main"],
+    ["bun-os", "github", "os", "os"],
+    ["bun-runtime", "origin", "main", "main"],
   ]);
   const bun = config.repositories.find(repository => repository.id === "bun-os")!;
-  expect(bun.repositoryName).toBe("bun");
+  expect(bun.repositoryName).toBe("bun-distribution");
   expect(bun.buildEnabled).toBe(false);
 });
 test("plan does not fetch or push and dirty source commits synchronize without staging private files", async () => {
@@ -545,8 +545,8 @@ test("native factory worker prepares the exact pin before its declared build and
   const value = await fixture();
   value.repository.id = "yolo";
   value.repository.buildCommand = ["bash", "owned-build.sh"];
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
-  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+  await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(value.config));
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
   const path = join(state, "builds", "yolo.json");
@@ -634,8 +634,8 @@ test("Bun native CI worker binds the protected revision and stable receipt id to
     buildEnabled: true,
     buildCommand: ["bun", "scripts/aphrody/native-ci.ts", "worker"],
   });
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
-  const configPath = join(value.root, "tools", "config", "commit-sync.json");
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+  const configPath = join(value.root, "tools", "aphrody", "config", "commit-sync.json");
   await writeFile(configPath, JSON.stringify(value.config));
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
@@ -738,9 +738,9 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
   expect(() => factoryBuildCommand(value.repository, { ...job, revision: "main" })).toThrow();
   value.repository.buildCommand = ["bun", "scripts/aphrody/native-ci.ts", "worker", "--revision", "b".repeat(40)];
   expect(() => factoryBuildCommand(value.repository, job)).toThrow();
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
   await writeFile(
-    join(value.root, "tools", "config", "commit-sync.json"),
+    join(value.root, "tools", "aphrody", "config", "commit-sync.json"),
     JSON.stringify({
       ...value.config,
       repositories: [{ ...value.repository, buildEnabled: "false" }],
@@ -751,12 +751,12 @@ test("disabled Bun builds do not queue and native commands cannot replace their 
 
 test("repo-sync status reads live receipts and pending metadata without exposing tokens or changing state", async () => {
   const value = await fixture();
-  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
   const config = {
     ...value.config,
     repositories: ["yolo", "aphrody"].map(id => Object.assign({}, value.repository, { id, buildCommand: ["fixture"] })),
   };
-  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(config));
+  await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(config));
   const state = join(value.root, "protected-state");
   const absent = await readRepoSyncStatus(value.root, state);
   expect(absent.state).toBe("absent");
@@ -853,8 +853,8 @@ test.skipIf(process.platform === "win32")(
   "SIGTERM ends CLI watch and releases protected lock",
   async () => {
     const value = await fixture();
-    await mkdir(join(value.root, "tools", "config"), { recursive: true });
-    await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+    await mkdir(join(value.root, "tools", "aphrody", "config"), { recursive: true });
+    await writeFile(join(value.root, "tools", "aphrody", "config", "commit-sync.json"), JSON.stringify(value.config));
     const entry = join(value.root, "watch.ts");
     await writeFile(
       entry,
