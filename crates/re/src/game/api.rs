@@ -617,9 +617,7 @@ pub fn model_assembled_json(
     emb: Option<&[u8]>,
     esk: Option<&[u8]>,
 ) -> Result<Value> {
-    use crate::game::formats::emb::EmbFile;
     let emd = EmdFile::parse(emd)?;
-    let emb = emb.map(EmbFile::parse).transpose()?;
     let esk = esk.map(EskFile::parse).transpose()?;
 
     let mut materials: Vec<String> = Vec::new();
@@ -702,14 +700,30 @@ pub fn model_assembled_json(
         json!({ "source": esk.name, "bones": bones })
     });
 
+    // Rasters of the real EMB container, read from their DDS headers
+    // (`EmbFile::decode_rgba` is a placeholder, not the game pixels).
     let textures: Vec<Value> = emb
-        .as_ref()
-        .map(|emb| {
-            // EMB header metadata only: `EmbFile::decode_rgba` is a placeholder raster.
-            emb.textures
-                .iter()
-                .map(|t| json!({ "width": t.width, "height": t.height, "format": t.format }))
-                .collect()
+        .and_then(|bytes| {
+            let archive = EmbArchive::parse(bytes).ok()?;
+            Some(
+                (0..archive.entries.len())
+                    .map(|i| {
+                        let data = archive.entry_bytes(bytes, i).unwrap_or(&[]);
+                        let dword = |at: usize| {
+                            data.get(at..at + 4)
+                                .map_or(0, |b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+                        };
+                        if data.starts_with(b"DDS ") && data.len() >= 88 {
+                            let four_cc = String::from_utf8_lossy(&data[84..88])
+                                .trim_end_matches('\0')
+                                .to_string();
+                            json!({ "width": dword(16), "height": dword(12), "format": four_cc })
+                        } else {
+                            json!({ "width": 0, "height": 0, "format": "unknown" })
+                        }
+                    })
+                    .collect(),
+            )
         })
         .unwrap_or_default();
 

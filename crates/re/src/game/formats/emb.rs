@@ -91,7 +91,7 @@ impl EmbFile {
                 };
 
                 if data_offset < buffer.len() {
-                    let end = (data_offset + data_size).min(buffer.len());
+                    let end = data_offset.saturating_add(data_size).min(buffer.len());
                     let payload = buffer[data_offset..end].to_vec();
 
                     let (width, height, mipmaps, format) = inspect_dds_header(&payload);
