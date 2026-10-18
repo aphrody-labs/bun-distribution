@@ -8,11 +8,11 @@
 
 mod dbxv2;
 #[cfg(feature = "assets")]
-mod vfs;
-#[cfg(feature = "assets")]
 mod game;
 #[cfg(feature = "pipeline")]
 mod pipeline;
+#[cfg(feature = "assets")]
+mod vfs;
 
 use std::ffi::OsString;
 use std::process::ExitCode;

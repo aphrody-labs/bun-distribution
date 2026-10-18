@@ -4813,14 +4813,31 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 match built {
                     Ok((ndjson, header)) => {
                         if route == "index" {
-                            respond(&mut stream, 200, "OK", "application/x-ndjson", ndjson.as_bytes());
+                            respond(
+                                &mut stream,
+                                200,
+                                "OK",
+                                "application/x-ndjson",
+                                ndjson.as_bytes(),
+                            );
                         } else {
-                            respond(&mut stream, 200, "OK", "application/json", header.as_bytes());
+                            respond(
+                                &mut stream,
+                                200,
+                                "OK",
+                                "application/json",
+                                header.as_bytes(),
+                            );
                         }
                     }
                     Err(e) => {
                         warn!("manifest VFS : {e}");
-                        respond_text(&mut stream, 500, "Internal Server Error", "manifest indisponible");
+                        respond_text(
+                            &mut stream,
+                            500,
+                            "Internal Server Error",
+                            "manifest indisponible",
+                        );
                     }
                 }
                 return;
@@ -4828,7 +4845,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             // Private (see `private_route`): sha256 + size of the extracted bytes of one path.
             "hash" => {
                 let p = param(query, "path").unwrap_or_default();
-                let vfs_path = if p.starts_with("data/") { p } else { format!("data/{p}") };
+                let vfs_path = if p.starts_with("data/") {
+                    p
+                } else {
+                    format!("data/{p}")
+                };
                 if vfs_path.contains("..") {
                     respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
                     return;

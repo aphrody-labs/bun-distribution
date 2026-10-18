@@ -3,7 +3,9 @@
 //! `aphrody-nie-formats`, the type `aphrody-nie-model-serve` exports to GLB.
 
 use aphrody_nie_formats::{
-    assemble::{AssembledModel, MeshComponent, MeshPrimitive, PrimitiveSkin, Skeleton, SkeletonBone},
+    assemble::{
+        AssembledModel, MeshComponent, MeshPrimitive, PrimitiveSkin, Skeleton, SkeletonBone,
+    },
     g4mg::{Vec2, Vec3, Vec4},
     g4sk::LocalTrs,
 };
@@ -91,16 +93,40 @@ pub fn from_json(json: &[u8]) -> Result<AssembledModel, String> {
                 material_index: p.material_index,
                 material_name: p.material_name,
                 texture_uri: p.texture_uri,
-                positions: p.positions.iter().map(|v| Vec3 { x: v[0], y: v[1], z: v[2] }).collect(),
-                normals: p.normals.iter().map(|v| Vec3 { x: v[0], y: v[1], z: v[2] }).collect(),
+                positions: p
+                    .positions
+                    .iter()
+                    .map(|v| Vec3 {
+                        x: v[0],
+                        y: v[1],
+                        z: v[2],
+                    })
+                    .collect(),
+                normals: p
+                    .normals
+                    .iter()
+                    .map(|v| Vec3 {
+                        x: v[0],
+                        y: v[1],
+                        z: v[2],
+                    })
+                    .collect(),
                 uv0: p.uv0.iter().map(|v| Vec2 { u: v[0], v: v[1] }).collect(),
                 colors: p
                     .colors
                     .iter()
-                    .map(|v| Vec4 { x: v[0], y: v[1], z: v[2], w: v[3] })
+                    .map(|v| Vec4 {
+                        x: v[0],
+                        y: v[1],
+                        z: v[2],
+                        w: v[3],
+                    })
                     .collect(),
                 indices: p.indices,
-                skin: p.skin.map(|s| PrimitiveSkin { joints: s.joints, weights: s.weights }),
+                skin: p.skin.map(|s| PrimitiveSkin {
+                    joints: s.joints,
+                    weights: s.weights,
+                }),
                 piece: p.piece,
             })
         })
