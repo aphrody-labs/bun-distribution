@@ -116,6 +116,7 @@ pub struct MountOptions {
 enum Unit {
     Archive(Box<dyn Archive>),
     Loose(PathBuf),
+    #[cfg(not(target_arch = "wasm32"))]
     Level5(Box<aphrody_nie_formats::vfs::Vfs>),
 }
 
@@ -318,6 +319,15 @@ impl GameVfs {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    fn mount_level5(&mut self) -> AssetResult<()> {
+        Err(AssetError::Format {
+            format: "level5-ievr",
+            details: "the IEVR archive mount reads the filesystem and is unavailable on wasm32".to_owned(),
+        })
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     fn mount_level5(&mut self) -> AssetResult<()> {
         let started = Instant::now();
         let data = self.root.join("data");
@@ -432,6 +442,7 @@ impl GameVfs {
                 let source = FileSource::open(&root.join(&entry.path))?;
                 source.read_at(0, source.len())
             }
+            #[cfg(not(target_arch = "wasm32"))]
             Unit::Level5(owner) => owner.read(&entry.path).map_err(|error| AssetError::Format {
                 format: "level5-ievr",
                 details: format!("{}: {error}", entry.path),
@@ -469,6 +480,7 @@ impl GameVfs {
             let family = match &self.units[entry.unit as usize] {
                 Unit::Archive(container) => container.format(),
                 Unit::Loose(_) => "loose",
+                #[cfg(not(target_arch = "wasm32"))]
                 Unit::Level5(_) => "level5-ievr",
             };
             *containers.entry(family).or_default() += 1;
