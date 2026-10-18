@@ -158,7 +158,8 @@ impl Specializer<RenderPipeline> for LineGizmoPipelineSpecializer {
             GizmoLineStyle::Solid => "fragment_solid",
             GizmoLineStyle::Dotted => "fragment_dotted",
             GizmoLineStyle::Dashed { .. } => "fragment_dashed",
-            _ => unimplemented!(),
+            // Variants added later fall back to a solid line.
+            _ => "fragment_solid",
         };
 
         fragment.entry_point = Some(fragment_entry_point.into());

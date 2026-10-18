@@ -3,6 +3,12 @@ name = "core"
 version.workspace = true
 edition = "2021"
 
+# Faithful port of the zuyu core: the deny-by-default correctness lints flag its upstream
+# control flow (single-iteration range scans, raw-pointer service APIs) and stay warnings here,
+# as in the workspace lint policy.
+[lints.clippy]
+correctness = { level = "warn", priority = -1 }
+
 [features]
 default = ["openssl"]
 # The OpenSSL backend of the ssl service; without it the service reports upstream's

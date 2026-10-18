@@ -35,3 +35,11 @@ log = "0.4"
 
 [build-dependencies]
 winresource = "0.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rfd = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+muda = { version = "0.19.2", default-features = false }
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSApplication", "NSResponder"] }

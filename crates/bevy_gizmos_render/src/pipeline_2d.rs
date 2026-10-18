@@ -123,7 +123,8 @@ impl SpecializedRenderPipeline for LineGizmoPipeline {
             GizmoLineStyle::Solid => "fragment_solid",
             GizmoLineStyle::Dotted => "fragment_dotted",
             GizmoLineStyle::Dashed { .. } => "fragment_dashed",
-            _ => unimplemented!(),
+            // Variants added later fall back to a solid line.
+            _ => "fragment_solid",
         };
 
         RenderPipelineDescriptor {
