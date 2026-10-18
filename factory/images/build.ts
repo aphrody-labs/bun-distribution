@@ -3,9 +3,11 @@
 // Images build on a Linux Docker host (never WSL); tags stay on that host, nothing is pushed.
 import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { planUsr } from "../usr/build.ts";
+import { stageAlpineRuntime } from "./runtime.ts";
+import type { RuntimePin } from "@aphrody/bun-workspace";
 
 const here = import.meta.dir;
 const sshOptions = ["-o", "ConnectTimeout=15", "-o", "BatchMode=yes"];
@@ -62,13 +64,7 @@ function buildArgs(name: string): Record<string, string> {
   const bun = pins.bun!;
   const common = { BUN_VERSION: bun.version };
   if (name === "bunos-alpine") {
-    const musl = pins["bun-musl"] as Pin & { assets: Record<string, string> };
-    return {
-      BUN_VERSION: musl.version,
-      ALPINE_VERSION: pins.alpine.version,
-      BUN_SHA256_AMD64: musl.assets["bun-linux-x64-musl.zip"]!,
-      BUN_SHA256_ARM64: musl.assets["bun-linux-aarch64-musl.zip"]!,
-    };
+    return { ALPINE_VERSION: pins.alpine.version };
   }
   if (name === "bunos-ubuntu") {
     const kernel = pins["ubuntu-kernel"] as Pin & Record<"image" | "modules", { file: string; sha256: string }>;
@@ -277,8 +273,14 @@ function remoteScript(name: string, image: ImageSpec, targets: string[], args: R
   return lines.join("\n") + "\n";
 }
 
-async function build(name: string, host: string, only?: string) {
-  const image = spec(name);
+async function build(name: string, host: string, only?: string, runtimes?: string, platform?: string) {
+  const declared = spec(name);
+  const platforms = platform ? platform.split(",") : declared.platforms;
+  if (!platforms.length || platforms.some(value => !declared.platforms.includes(value)))
+    throw new Error("Image platform must be one of the declared target platforms");
+  const image = { ...declared, platforms };
+  if (name === "bunos-alpine" && !runtimes)
+    throw new Error("Alpine requires --runtimes JSON with qualified Aphrody fork musl binaries; no upstream fallback");
   const targets = only ? [only] : Object.keys(image.targets);
   for (const target of targets) if (!image.targets[target]) throw new Error(`Unknown target ${target} for ${name}`);
   const extra = await generated(name);
@@ -288,6 +290,27 @@ async function build(name: string, host: string, only?: string) {
   const stage = await mkdtemp(join(tmpdir(), "bun-os-image-"));
   try {
     await cp(join(here, name), join(stage, "context"), { recursive: true });
+    if (name === "bunos-alpine") {
+      const runtimeFile = resolve(runtimes!);
+      const inputs = await Bun.file(runtimeFile).json() as {
+        schemaVersion: number;
+        runtimes: Record<string, { binary: string; receipt: string }>;
+      };
+      if (inputs.schemaVersion !== 1 || !inputs.runtimes)
+        throw new Error("Invalid Alpine runtime inputs");
+      const pin = manifest.pins["bun-musl"]!;
+      const expected: RuntimePin = {
+        repository: String(pin.repository), version: pin.version, revision: String(pin.revision),
+      };
+      for (const target of platforms) {
+        const architecture = target === "linux/amd64" ? "amd64" : "arm64";
+        const input = inputs.runtimes[architecture];
+        if (!input || typeof input.binary !== "string" || typeof input.receipt !== "string")
+          throw new Error(`Missing qualified Alpine runtime for ${architecture}`);
+        await stageAlpineRuntime(join(stage, "context"), architecture,
+          resolve(dirname(runtimeFile), input.binary), resolve(dirname(runtimeFile), input.receipt), expected);
+      }
+    }
     if (image.agentTooling) await stageAgentTooling(join(stage, "context", "agent"), image.agentTooling);
     if (extra.missingRepo) throw new Error(extra.missingRepo);
     if (extra.repo)
@@ -340,6 +363,8 @@ export async function main(args: string[]) {
       target: { type: "string" },
       host: { type: "string" },
       job: { type: "string" },
+      runtimes: { type: "string" },
+      platform: { type: "string" },
     },
   });
   const [action = "plan", name] = positionals;
@@ -347,7 +372,7 @@ export async function main(args: string[]) {
   if (action === "fetch") return fetchSources();
   if (!name) throw new Error(`Expected image name: ${Object.keys(manifest.images).join("|")}`);
   if (action === "plan") return planImage(name);
-  if (action === "build") return build(name, host, values.target);
+  if (action === "build") return build(name, host, values.target, values.runtimes, values.platform);
   if (action === "status") {
     if (!values.job) throw new Error("Missing --job");
     return status(host, values.job);

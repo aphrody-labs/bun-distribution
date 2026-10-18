@@ -2076,7 +2076,7 @@ pub fn http_router_with_site(
     webos_url: Option<&str>,
 ) -> Result<Router, AppServerError> {
     let site = aphrody_site::router(root, webos_url)?;
-    Ok(http_routes().fallback_service(site))
+    Ok(http_routes().nest("/workspace", site.clone()).fallback_service(site))
 }
 
 /// Serve native product site and existing app RPC/events on one loopback-only
@@ -3423,6 +3423,9 @@ model_provider = "fixture"
             "/app/",
             "/app.js",
             "/app.css",
+            "/workspace/os",
+            "/workspace/app.js",
+            "/workspace/app.css",
         ] {
             let response = app
                 .clone()
@@ -3430,7 +3433,7 @@ model_provider = "fixture"
                 .await
                 .unwrap();
             assert_eq!(response.status(), StatusCode::OK, "{path}");
-            if matches!(path, "/" | "/app" | "/app/" | "/docs" | "/templates") {
+            if matches!(path, "/" | "/app" | "/app/" | "/docs" | "/templates" | "/workspace/os") {
                 let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024)
                     .await
                     .unwrap();

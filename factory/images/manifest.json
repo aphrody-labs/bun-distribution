@@ -16,13 +16,10 @@
       "sha256": "f3b26a658539d7ee33ab049d6c357355b46a492492012c9d1a1db9d59d192b93"
     },
     "bun-musl": {
-      "version": "1.4.3",
-      "note": "aphrody-labs/bun publishes no musl build of 1.4.4; bunos-alpine keeps the oven-sh musl release.",
-      "assets": {
-        "bun-linux-x64-musl.zip": "6e9ea98554ea0d05efda5840ae292618aaa3adefd66b0853520c5c86a37eac9c",
-        "bun-linux-aarch64-musl.zip": "8de8a0003cc2707bb555887e3d450e24e1edf3f605f491393e89ed61a8853420"
-      },
-      "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.3/"
+      "repository": "aphrody-labs/bun",
+      "version": "1.4.6",
+      "revision": "4bece04a99245ee8ee2d74a57d8c9eb8329f98c4",
+      "note": "Source candidate only. Build requires local fork musl binaries and native target qualification receipts; no upstream runtime substitution."
     },
     "omarchy": {
       "version": "4.0.4",
