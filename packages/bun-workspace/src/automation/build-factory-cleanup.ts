@@ -9,19 +9,25 @@ export interface FactoryCleanupPolicy {
   retiredOutputs: { path: string; terminalReceipt: string; reason: string }[];
 }
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
-const overlaps = (a: string, b: string) => a === b || a.startsWith(b + "/") || b.startsWith(a + "/");
+const overlaps = (a: string, b: string) =>
+  a === b || a.startsWith(b + "/") || b.startsWith(a + "/");
 
 export function validateFactoryCleanup(config: BuildFactoryConfig, policy: FactoryCleanupPolicy) {
   const base = posix.dirname(config.cacheRoot);
-  if (policy.privilegeBinary && !["/usr/bin/sudo-rs", "/usr/bin/sudo"].includes(policy.privilegeBinary))
+  if (
+    policy.privilegeBinary &&
+    !["/usr/bin/sudo-rs", "/usr/bin/sudo"].includes(policy.privilegeBinary)
+  )
     throw new Error("Factory privilege binary must be a declared installed sudo owner");
   if (policy.transientRoot !== posix.join(base, "transient"))
     throw new Error("The factory has one declared transient resource below its root");
   for (const entry of policy.retiredOutputs) {
     const name = posix.relative(posix.join(config.cacheRoot, "cargo"), entry.path);
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(name) || posix.normalize(entry.path) !== entry.path)
-      throw new Error("Cleanup accepts only explicitly retired Cargo intermediate target directories");
-    if (Object.values(config.repositories).some(source => overlaps(source, entry.path)))
+      throw new Error(
+        "Cleanup accepts only explicitly retired Cargo intermediate target directories",
+      );
+    if (Object.values(config.repositories).some((source) => overlaps(source, entry.path)))
       throw new Error("Factory source checkouts are preserved");
     if (
       !entry.terminalReceipt.startsWith(base + "/") ||
@@ -37,14 +43,21 @@ export function factoryPathReferenced(value: string, path: string): boolean {
   while ((index = value.indexOf(path, index + 1)) !== -1) {
     const before = value[index - 1];
     const after = value[index + path.length];
-    if ((before === undefined || /[=\s'";,:([{]/.test(before)) && (after === undefined || /[/\s'";,:)\]}]/.test(after)))
+    if (
+      (before === undefined || /[=\s'";,:([{]/.test(before)) &&
+      (after === undefined || /[/\s'";,:)\]}]/.test(after))
+    )
       return true;
   }
   return false;
 }
 
 /** Runs on the native Infra transport; no protected stores, retained artifacts or compiler caches are removed. */
-export function factoryCleanupScript(config: BuildFactoryConfig, policy: FactoryCleanupPolicy, apply: boolean) {
+export function factoryCleanupScript(
+  config: BuildFactoryConfig,
+  policy: FactoryCleanupPolicy,
+  apply: boolean,
+) {
   validateFactoryCleanup(config, policy);
   const input = { policy, apply };
   const program = String.raw`
@@ -134,7 +147,9 @@ console.log(JSON.stringify({ schema: "aphrody.factory-cleanup/1", apply: input.a
 `;
   // Privilege is needed to inspect every /proc fd and Docker mount; inability to inspect fails closed.
   const command = `${quote(policy.privilegeBinary ?? "/usr/bin/sudo-rs")} -n "$HOME/.bun/bin/bun" -e ${quote(program)} -- ${quote(JSON.stringify(input))}`;
-  return apply ? `flock --exclusive --timeout 1800 ${quote(config.lockPath)} sh -c ${quote(command)}` : command;
+  return apply
+    ? `flock --exclusive --timeout 1800 ${quote(config.lockPath)} sh -c ${quote(command)}`
+    : command;
 }
 
 /** Called only inside the existing factory heavy lock; the directory persists, its temporary contents do not. */
@@ -168,13 +183,30 @@ let lockIdentity;
 try { if (process.argv[3]) lockIdentity = statSync(process.argv[3], { bigint: true }); }
 catch (error) { if (error.code !== "ENOENT") throw error; }
 const lockLines = readFileSync("/proc/locks", "utf8").split("\n");
+// btrfs subvolumes: stat() reports the subvolume's anonymous device, /proc/locks the
+// superblock's, which /proc/self/mountinfo carries for the enclosing mount.
+const lockDevices = new Set();
+if (lockIdentity) {
+  const dev = lockIdentity.dev;
+  lockDevices.add(String(((dev >> 8n) & 0xfffn) | ((dev >> 32n) & 0xfffff000n)) + ":" + String((dev & 0xffn) | ((dev >> 12n) & 0xffffff00n)));
+  let best = "";
+  let mounted;
+  const escaped = new RegExp(String.fromCharCode(92, 92) + "([0-7]{3})", "g");
+  for (const line of readFileSync("/proc/self/mountinfo", "utf8").split(String.fromCharCode(10))) {
+    const parts = line.split(" ");
+    const point = parts[4]?.replace(escaped, (_, octal) => String.fromCharCode(parseInt(octal, 8)));
+    if (point && (process.argv[3] === point || process.argv[3].startsWith(point === "/" ? "/" : point + "/")) && point.length >= best.length) {
+      best = point;
+      mounted = parts[2];
+    }
+  }
+  if (mounted) lockDevices.add(mounted);
+}
 function matchesLock(fields) {
   const index = fields.indexOf("FLOCK");
   if (!lockIdentity || index < 0 || fields[index + 2] !== "WRITE") return false;
-  const major = ((lockIdentity.dev >> 8n) & 0xfffn) | ((lockIdentity.dev >> 32n) & 0xfffff000n);
-  const minor = (lockIdentity.dev & 0xffn) | ((lockIdentity.dev >> 12n) & 0xffffff00n);
   const [lockMajor, lockMinor, inode] = fields[index + 4].split(":");
-  return inode === String(lockIdentity.ino) && BigInt("0x" + lockMajor) === major && BigInt("0x" + lockMinor) === minor;
+  return inode === String(lockIdentity.ino) && lockDevices.has(String(BigInt("0x" + lockMajor)) + ":" + String(BigInt("0x" + lockMinor)));
 }
 const leaseStat = leaseOwner && lockLines.some(line => {
   const fields = line.trim().split(/\s+/);
@@ -247,16 +279,25 @@ for (const entry of readdirSync(root)) rmSync(root + "/" + entry, { recursive: t
 const localLeases = new Map<string, number>();
 
 /** A direct-route guardian is a sibling of build children, supervised by their Bun ancestor. */
-function supervisedFactoryGuardian(owner: number, lockPath: string, ancestors: Set<number>): boolean {
+function supervisedFactoryGuardian(
+  owner: number,
+  lockPath: string,
+  ancestors: Set<number>,
+): boolean {
   const fields = readFileSync(`/proc/${owner}/stat`, "utf8").split(") ")[1]?.split(" ");
   const supervisor = Number(fields?.[1]);
   if (!ancestors.has(supervisor)) return false;
   const uid = process.getuid?.();
-  if (uid === undefined || statSync(`/proc/${owner}`).uid !== uid || statSync(`/proc/${supervisor}`).uid !== uid)
+  if (
+    uid === undefined ||
+    statSync(`/proc/${owner}`).uid !== uid ||
+    statSync(`/proc/${supervisor}`).uid !== uid
+  )
     return false;
   const executable = statSync(`/proc/${supervisor}/exe`, { bigint: true });
   const currentExecutable = statSync(`/proc/self/exe`, { bigint: true });
-  if (executable.dev !== currentExecutable.dev || executable.ino !== currentExecutable.ino) return false;
+  if (executable.dev !== currentExecutable.dev || executable.ino !== currentExecutable.ino)
+    return false;
   const args = readFileSync(`/proc/${owner}/cmdline`, "utf8").split("\0").filter(Boolean);
   return (
     posix.basename(args[0] ?? "") === "flock" &&
@@ -274,13 +315,37 @@ function supervisedFactoryGuardian(owner: number, lockPath: string, ancestors: S
   );
 }
 
+/**
+ * Devices (`major:minor`, decimal) under which /proc/locks may list a lock on `path`. Linux
+ * encodes them in dev_t while /proc/locks prints hex; on btrfs, stat() reports the subvolume's
+ * anonymous device and /proc/locks the superblock's, given by the enclosing mount in mountinfo.
+ */
+export function lockDevices(path: string, dev: bigint): Set<string> {
+  const devices = new Set([
+    `${((dev >> 8n) & 0xfffn) | ((dev >> 32n) & 0xfffff000n)}:${(dev & 0xffn) | ((dev >> 12n) & 0xffffff00n)}`,
+  ]);
+  let best = "";
+  let mounted: string | undefined;
+  for (const line of readFileSync("/proc/self/mountinfo", "utf8").split("\n")) {
+    const parts = line.split(" ");
+    const point = parts[4]?.replace(/\\([0-7]{3})/g, (_, octal) =>
+      String.fromCharCode(parseInt(octal, 8)),
+    );
+    if (!point || point.length < best.length) continue;
+    if (path === point || path.startsWith(point === "/" ? "/" : `${point}/`)) {
+      best = point;
+      mounted = parts[2];
+    }
+  }
+  if (mounted) devices.add(mounted);
+  return devices;
+}
+
 /** A marker alone cannot bypass serialization: match the kernel lease to its actual inode and owner. */
 export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolean {
   try {
     const stat = statSync(lockPath, { bigint: true });
-    // Linux encodes major/minor device numbers in dev_t, while /proc/locks prints them in hex.
-    const major = ((stat.dev >> 8n) & 0xfffn) | ((stat.dev >> 32n) & 0xfffff000n);
-    const minor = (stat.dev & 0xffn) | ((stat.dev >> 12n) & 0xffffff00n);
+    const devices = lockDevices(lockPath, stat.dev);
     const ancestors = new Set<number>([process.pid]);
     let parent = process.ppid;
     while (parent > 1 && !ancestors.has(parent)) {
@@ -290,16 +355,17 @@ export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolea
     }
     return readFileSync("/proc/locks", "utf8")
       .split("\n")
-      .some(line => {
+      .some((line) => {
         const fields = line.trim().split(/\s+/);
         if (fields[1] !== "FLOCK" || fields[3] !== "WRITE") return false;
         const owner = Number(fields[4]);
         const [lockMajor, lockMinor, inode] = fields[5]?.split(":") ?? [];
         return (
           inode === String(stat.ino) &&
-          BigInt(`0x${lockMajor}`) === major &&
-          BigInt(`0x${lockMinor}`) === minor &&
-          (ancestors.has(owner) || owner === directOwner || supervisedFactoryGuardian(owner, lockPath, ancestors))
+          devices.has(`${BigInt(`0x${lockMajor}`)}:${BigInt(`0x${lockMinor}`)}`) &&
+          (ancestors.has(owner) ||
+            owner === directOwner ||
+            supervisedFactoryGuardian(owner, lockPath, ancestors))
         );
       });
   } catch {
@@ -337,7 +403,8 @@ export async function withFactoryResource<T>(
   const root = config.cleanup.transientRoot;
   if (
     process.env.APHRODY_FACTORY_RESOURCE === root &&
-    (inheritedFactoryResourceHeld(config) || factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
+    (inheritedFactoryResourceHeld(config) ||
+      factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
   )
     return body();
   const leaseEnv = { ...process.env };
@@ -358,7 +425,12 @@ export async function withFactoryResource<T>(
       "factory-guardian",
       [
         "set -euo pipefail",
-        ...factoryTransientShell(root, dockerBinary, config.lockPath, config.cleanup.privilegeBinary),
+        ...factoryTransientShell(
+          root,
+          dockerBinary,
+          config.lockPath,
+          config.cleanup.privilegeBinary,
+        ),
       ].join("\n"),
     ],
     {
@@ -395,12 +467,19 @@ export async function withFactoryResource<T>(
         "-c",
         [
           "set -euo pipefail",
-          ...factoryTransientShell(root, dockerBinary, config.lockPath, config.cleanup!.privilegeBinary, lease.pid),
+          ...factoryTransientShell(
+            root,
+            dockerBinary,
+            config.lockPath,
+            config.cleanup!.privilegeBinary,
+            lease.pid,
+          ),
         ].join("\n"),
       ],
       { windowsHide: true, stdout: "inherit", stderr: "inherit" },
     );
-    if (result.exitCode !== 0) throw new Error("Factory transient isolation could not be qualified");
+    if (result.exitCode !== 0)
+      throw new Error("Factory transient isolation could not be qualified");
   };
   let bodyStarted = false;
   try {
@@ -500,14 +579,17 @@ async function resourceMain() {
   const sccacheOnly = configPath === "--sccache";
   if (sccacheOnly) [configPath, ...command] = command;
   if (configPath === "--held") {
-    const config = command[0] ? ((await Bun.file(command[0]).json()) as BuildFactoryConfig) : undefined;
+    const config = command[0]
+      ? ((await Bun.file(command[0]).json()) as BuildFactoryConfig)
+      : undefined;
     process.exitCode = inheritedFactoryResourceHeld(config) ? 0 : 1;
     return;
   }
   if (!configPath || (!sccacheOnly && command.length === 0))
     throw new Error("usage: factory-resource <config> <command...>");
   const config = (await Bun.file(configPath).json()) as BuildFactoryConfig;
-  if (!config.cleanup) throw new Error("Factory transient policy is required for direct resource routing");
+  if (!config.cleanup)
+    throw new Error("Factory transient policy is required for direct resource routing");
   if (sccacheOnly) {
     await prewarmFactorySccache(config, command[0]);
     return;
@@ -526,7 +608,7 @@ async function resourceMain() {
 }
 
 if (import.meta.main)
-  resourceMain().catch(error => {
+  resourceMain().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
   });

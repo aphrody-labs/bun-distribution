@@ -291,7 +291,7 @@ fn find_workspace_catalog(cwd: &Path) -> Option<PathBuf> {
     cwd.ancestors().find_map(|base| {
         let catalog = base.join(CATALOG_RELATIVE_PATH);
         (base.join("Cargo.toml").is_file()
-            && base.join("crates/infra/ssh/Cargo.toml").is_file()
+            && base.join("crates/aphrody-ssh/Cargo.toml").is_file()
             && catalog.is_file())
         .then_some(catalog)
     })
@@ -784,7 +784,7 @@ mod tests {
     #[test]
     fn automatic_catalog_requires_current_monorepo_layout() {
         let root = std::env::temp_dir().join(format!("ssh-catalog-layout-{}", std::process::id()));
-        std::fs::create_dir_all(root.join("aphrody-infra/tools/config")).unwrap();
+        std::fs::create_dir_all(root.join("aphrody-infra/infra/config")).unwrap();
         std::fs::write(
             root.join("aphrody-infra/infra/config/service-catalog.json"),
             "{}",
@@ -792,12 +792,12 @@ mod tests {
         .unwrap();
         assert_eq!(find_workspace_catalog(&root), None);
         assert_eq!(find_workspace_catalog(&root.join("aphrody-infra")), None);
-        std::fs::create_dir_all(root.join("tools").join("config")).unwrap();
+        std::fs::create_dir_all(root.join("infra").join("config")).unwrap();
         std::fs::write(root.join(CATALOG_RELATIVE_PATH), "{}").unwrap();
         std::fs::write(root.join("Cargo.toml"), "[workspace]").unwrap();
         assert_eq!(find_workspace_catalog(&root), None);
-        std::fs::create_dir_all(root.join("crates/infra/ssh")).unwrap();
-        std::fs::write(root.join("crates/infra/ssh/Cargo.toml"), "[package]").unwrap();
+        std::fs::create_dir_all(root.join("crates/aphrody-ssh")).unwrap();
+        std::fs::write(root.join("crates/aphrody-ssh/Cargo.toml"), "[package]").unwrap();
         assert_eq!(
             find_workspace_catalog(&root.join("nested")),
             Some(root.join(CATALOG_RELATIVE_PATH))
