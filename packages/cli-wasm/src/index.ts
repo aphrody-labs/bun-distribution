@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Typed facade over crates/infra/aphrody-command-wasm: `aphrody pure ...` in WebAssembly.
+// Typed facade over crates/aphrody-command-wasm: `aphrody pure ...` in WebAssembly.
 import init, {
   abiVersion,
   callJson,

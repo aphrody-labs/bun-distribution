@@ -702,7 +702,9 @@ mod tests {
             .push_back(PendingFence {
                 fence: TestFence { stubbed: false },
                 pre_operations: VecDeque::new(),
-                operations: VecDeque::from([Box::new(|| panic!("operation failed")) as Operation]),
+                operations: VecDeque::from([
+                    Box::new(|| -> () { panic!("operation failed") }) as Operation
+                ]),
             });
 
         let result = catch_unwind(AssertUnwindSafe(|| {

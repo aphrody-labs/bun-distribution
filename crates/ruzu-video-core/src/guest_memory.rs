@@ -33,29 +33,24 @@ impl GuestMemoryInterface for DeviceMemoryManagerHandle {
         (!ptr.is_null()).then_some(ptr)
     }
 
-    fn read_block(&self, addr: u64, dest: *mut u8, size: usize) {
-        let output = unsafe { std::slice::from_raw_parts_mut(dest, size) };
-        self.memory_manager.smmu_read_block(addr, output);
+    fn read_block(&self, addr: u64, dest: &mut [u8]) {
+        self.memory_manager.smmu_read_block(addr, dest);
     }
 
-    fn read_block_unsafe(&self, addr: u64, dest: *mut u8, size: usize) {
-        let output = unsafe { std::slice::from_raw_parts_mut(dest, size) };
-        self.memory_manager.smmu_read_block_unsafe(addr, output);
+    fn read_block_unsafe(&self, addr: u64, dest: &mut [u8]) {
+        self.memory_manager.smmu_read_block_unsafe(addr, dest);
     }
 
-    fn write_block(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.smmu_write_block(addr, input);
+    fn write_block(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.smmu_write_block(addr, src);
     }
 
-    fn write_block_unsafe(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.smmu_write_block_unsafe(addr, input);
+    fn write_block_unsafe(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.smmu_write_block_unsafe(addr, src);
     }
 
-    fn write_block_cached(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.smmu_write_block_unsafe(addr, input);
+    fn write_block_cached(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.smmu_write_block_unsafe(addr, src);
     }
 
     fn flush_region(&self, addr: u64, size: usize) {
@@ -89,29 +84,24 @@ impl GuestMemoryInterface for GpuMemoryManagerHandle {
         (!ptr.is_null()).then_some(ptr)
     }
 
-    fn read_block(&self, addr: u64, dest: *mut u8, size: usize) {
-        let output = unsafe { std::slice::from_raw_parts_mut(dest, size) };
-        self.memory_manager.lock().read_block(addr, output);
+    fn read_block(&self, addr: u64, dest: &mut [u8]) {
+        self.memory_manager.lock().read_block(addr, dest);
     }
 
-    fn read_block_unsafe(&self, addr: u64, dest: *mut u8, size: usize) {
-        let output = unsafe { std::slice::from_raw_parts_mut(dest, size) };
-        self.memory_manager.lock().read_block_unsafe(addr, output);
+    fn read_block_unsafe(&self, addr: u64, dest: &mut [u8]) {
+        self.memory_manager.lock().read_block_unsafe(addr, dest);
     }
 
-    fn write_block(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.lock().write_block(addr, input);
+    fn write_block(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.lock().write_block(addr, src);
     }
 
-    fn write_block_unsafe(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.lock().write_block_unsafe(addr, input);
+    fn write_block_unsafe(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.lock().write_block_unsafe(addr, src);
     }
 
-    fn write_block_cached(&self, addr: u64, src: *const u8, size: usize) {
-        let input = unsafe { std::slice::from_raw_parts(src, size) };
-        self.memory_manager.lock().write_block_cached(addr, input);
+    fn write_block_cached(&self, addr: u64, src: &[u8]) {
+        self.memory_manager.lock().write_block_cached(addr, src);
     }
 
     fn flush_region(&self, addr: u64, size: usize) {

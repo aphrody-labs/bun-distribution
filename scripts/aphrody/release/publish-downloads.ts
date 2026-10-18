@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- uploads, checksums and factory jobs are intentionally sequential */
 /**
- * Publishes the Aphrody downloads (tools/config/downloads.json) in one repeatable flow:
+ * Publishes the Aphrody downloads (tools/aphrody/config/downloads.json) in one repeatable flow:
  *
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha> [--attempt <n>]  prepare + build the factory binaries (yolo ops build-factory), wait for the jobs
@@ -36,7 +36,7 @@ import { homedir, tmpdir } from "node:os";
 import { deflateRawSync } from "node:zlib";
 import { basename, join, resolve, sep } from "node:path";
 
-export const root = resolve(import.meta.dir, "../../../docs/aphrody");
+export const root = resolve(import.meta.dir, "../../..");
 
 // ---------------------------------------------------------------------------------------------
 // configuration
@@ -112,7 +112,7 @@ export interface DownloadsConfig {
 }
 
 export const loadConfig = (): DownloadsConfig =>
-  JSON.parse(readFileSync(join(root, "tools/config/downloads.json"), "utf8")) as DownloadsConfig;
+  JSON.parse(readFileSync(join(root, "tools/aphrody/config/downloads.json"), "utf8")) as DownloadsConfig;
 
 const expand = (path: string): string => (path.startsWith("~/") ? join(homedir(), path.slice(2)) : resolve(root, path));
 
