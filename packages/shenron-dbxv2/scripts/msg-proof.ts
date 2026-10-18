@@ -12,7 +12,10 @@ const lines = msg.tables.reduce((sum, t) => sum + t.lines.length, 0);
 const encodings = new Set(msg.tables.flatMap(t => [t.key, ...t.lines]).map(s => s.encoding));
 console.log(`tables=${msg.tables.length} lines=${lines} encodings=${[...encodings].join(",")}`);
 const first = msg.tables[0];
-if (first) console.log(`first: id=${first.id} key=${JSON.stringify(first.key.text)} line0=${JSON.stringify(first.lines[0]?.text)}`);
+if (first)
+  console.log(
+    `first: id=${first.id} key=${JSON.stringify(first.key.text)} line0=${JSON.stringify(first.lines[0]?.text)}`,
+  );
 const support = wasm.support();
 console.log(`support: ${support.length} formats; bac=${support.find(s => s.format === "bac")?.state}`);
 try {
