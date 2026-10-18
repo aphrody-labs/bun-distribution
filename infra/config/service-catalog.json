@@ -1223,6 +1223,17 @@
         "unit": "shenron-cloudflare-s3-renew.timer"
       },
       {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "shenron-manga-handoff.service",
+        "hold": "oneshot driven by permanent handoff timer"
+      },
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "shenron-manga-handoff.timer"
+      },
+      {
         "host": "local",
         "kind": "scheduledTask",
         "name": "Shenron R2 S3 scoped renewal",
