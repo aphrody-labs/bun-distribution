@@ -39,6 +39,9 @@ BITRATE = env_int("GAMESTREAM_BITRATE_KBPS", 8000)
 ENC_THREADS = env_int("GAMESTREAM_ENCODER_THREADS", 4)
 ICE_ADDRESS = os.environ.get("GAMESTREAM_ICE_ADDRESS", "").strip()
 VIDEO_NODE = os.environ.get("GAMESTREAM_VIDEO_NODE", "gamescope")
+VIDEO_SOURCE = os.environ.get("GAMESTREAM_VIDEO_SOURCE", "pipewire")
+if VIDEO_SOURCE not in ("pipewire", "x11"):
+    raise ValueError("GAMESTREAM_VIDEO_SOURCE must be pipewire or x11")
 AUDIO_NODE = os.environ.get("GAMESTREAM_AUDIO_NODE", "gamestream")
 AUDIO = os.environ.get("GAMESTREAM_AUDIO", "1") == "1"
 X_DISPLAY = os.environ.get("GAMESTREAM_DISPLAY", os.environ.get("DISPLAY", ":0"))
@@ -101,6 +104,8 @@ class XInput:
 
         self.X, self.XK, self.xtest = X, XK, xtest
         self.d = display.Display(display_name)
+        self.width = self.d.screen().width_in_pixels
+        self.height = self.d.screen().height_in_pixels
         if not self.d.has_extension("XTEST"):
             raise RuntimeError("XTEST missing on " + display_name)
         self.lock = threading.Lock()
@@ -122,7 +127,9 @@ class XInput:
             if t == "mm":
                 fake(self.d, X.MotionNotify, detail=1, x=int(m["dx"]), y=int(m["dy"]))
             elif t == "ma":
-                fake(self.d, X.MotionNotify, x=int(m["x"] * WIDTH), y=int(m["y"] * HEIGHT))
+                fake(self.d, X.MotionNotify,
+                     x=min(self.width - 1, max(0, int(m["x"] * self.width))),
+                     y=min(self.height - 1, max(0, int(m["y"] * self.height))))
             elif t == "mb":
                 button = {0: 1, 1: 2, 2: 3, 3: 8, 4: 9}.get(int(m["b"]), 1)
                 fake(self.d, X.ButtonPress if m["d"] else X.ButtonRelease, button)
@@ -206,6 +213,12 @@ class Gamepad:
 
 
 def video_branch():
+    source = (
+        "ximagesrc name=vsrc use-damage=false show-pointer=true do-timestamp=true ! "
+        f"video/x-raw,framerate={FPS}/1 ! "
+        if VIDEO_SOURCE == "x11" else
+        "pipewiresrc name=vsrc do-timestamp=true keepalive-time=1000 ! "
+    )
     x264 = (
         f"x264enc tune=zerolatency speed-preset=ultrafast bitrate={BITRATE} "
         f"vbv-buf-capacity={max(50, 2000 // FPS)} key-int-max={FPS * 4} bframes=0 b-adapt=false "
@@ -213,7 +226,7 @@ def video_branch():
         f'option-string="scenecut=0:rc-lookahead=0:sync-lookahead=0:slices={ENC_THREADS}"'
     )
     return (
-        f"pipewiresrc name=vsrc target-object={VIDEO_NODE} do-timestamp=true keepalive-time=1000 ! "
+        source +
         "queue name=vq max-size-buffers=1 max-size-time=0 max-size-bytes=0 leaky=downstream ! "
         "videoconvert n-threads=2 ! videoscale ! "
         f"video/x-raw,format=I420,width={WIDTH},height={HEIGHT} ! "
@@ -225,7 +238,7 @@ def video_branch():
 
 def audio_branch():
     return (
-        f"pipewiresrc name=asrc target-object={AUDIO_NODE} do-timestamp=true "
+        "pipewiresrc name=asrc do-timestamp=true "
         'stream-properties="props,stream.capture.sink=true" ! '
         "queue max-size-time=40000000 leaky=downstream ! audioconvert ! audioresample ! "
         "audio/x-raw,rate=48000,channels=2 ! "
@@ -249,6 +262,12 @@ class Session:
         if AUDIO:
             desc += audio_branch()
         self.pipe = Gst.parse_launch(desc)
+        # Set external strings as properties, never interpolate them into pipeline syntax.
+        video = self.pipe.get_by_name("vsrc")
+        video.set_property("display-name" if VIDEO_SOURCE == "x11" else "target-object",
+                           X_DISPLAY if VIDEO_SOURCE == "x11" else VIDEO_NODE)
+        if AUDIO:
+            self.pipe.get_by_name("asrc").set_property("target-object", AUDIO_NODE)
         self.webrtc = self.pipe.get_by_name("webrtc")
         self.restrict_ice()
         self.webrtc.connect("on-negotiation-needed", self.on_negotiation_needed)
@@ -449,6 +468,27 @@ class Sender:
         return True
 
 
-loop = GLib.MainLoop()
-Sender()
-loop.run()
+def main():
+    if "--check" in sys.argv:
+        required = ["ximagesrc" if VIDEO_SOURCE == "x11" else "pipewiresrc",
+                    "videoconvert", "videoscale", "x264enc", "rtph264pay", "webrtcbin", "nicesink"]
+        if AUDIO:
+            required += ["pipewiresrc", "opusenc", "rtpopuspay", "audioconvert", "audioresample"]
+        missing = [name for name in required if Gst.ElementFactory.find(name) is None]
+        if missing:
+            raise RuntimeError("Missing GStreamer elements: " + ", ".join(missing))
+        import evdev  # noqa: F401
+        XInput(X_DISPLAY)
+        pipeline = Gst.parse_launch("webrtcbin name=webrtc " + video_branch()
+                                    + (audio_branch() if AUDIO else ""))
+        pipeline.set_state(Gst.State.NULL)
+        log("preflight passed; no capture or stream started")
+        return
+    global loop
+    loop = GLib.MainLoop()
+    Sender()
+    loop.run()
+
+
+if __name__ == "__main__":
+    main()

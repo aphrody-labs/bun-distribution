@@ -41,6 +41,44 @@ Tunables (environment of `up.sh`): `GAMESTREAM_APP` (default `glxgears -fullscre
 `GAMESTREAM_FPS` (60), `GAMESTREAM_BITRATE_KBPS` (8000), `LP_NUM_THREADS` (4),
 `GAMESTREAM_ENCODER_THREADS` (3), `GAMESTREAM_CPUSET` (`4-11`), `GAMESTREAM_BIND` (`10.200.77.1`).
 
+## Capture the existing Steam desktop
+
+The existing image also supports `./up.sh x11` through `compose.x11.yaml`.
+Rebuild the image after a sender or entrypoint change. This mode captures host
+display `:99` through a read-only X11 socket mount, retains the private mesh bind,
+CPU and memory constraints, and uses the declared uinput device as container root.
+It starts neither gamescope nor a test workload, and mounts no Steam store.
+Audio is explicitly disabled for this initial mode. X11 authorization must already
+allow this capture; a failed preflight must not be bypassed with `xhost` changes.
+Image construction and actual desktop/game streaming remain separate gates.
+
+`host-x11.sh` reuses the sender and signalling protocol on the host, capturing an
+existing authorized X11 session instead of launching a container workload. It does
+not start Steam, sign in, change its library or create a second desktop.
+
+```sh
+GAMESTREAM_DISPLAY=:99 GAMESTREAM_HOST=10.200.77.1 \
+GAMESTREAM_ICE_ADDRESS=10.200.77.1 ./host-x11.sh --check
+# After Infra has qualified the dependencies and access, use the same command
+# without --check in a bounded, supervised job.
+```
+
+`GAMESTREAM_VIDEO_SOURCE=x11` selects `ximagesrc`; the default remains `pipewire`.
+The display is passed as a GStreamer property, with XTest input mapped to the
+actual desktop dimensions before capture scaling. Native audio is disabled by
+default: enable it only with `GAMESTREAM_AUDIO=1` and an explicit existing
+`GAMESTREAM_AUDIO_NODE` PipeWire sink monitor. `--check` verifies sender imports,
+elements and XTest access without starting capture. Gamepad activation additionally
+requires authorized write access to `/dev/uinput`; the script never changes it.
+
+The host needs the same GStreamer GI/WebRTC, x264, libnice and Python Xlib/evdev
+dependencies declared in `Containerfile`, plus `ximagesrc`. The October 18 probe
+found Xvfb `:99` (1600x900, XTEST), Python GI/Xlib and `ximagesrc`, but no
+GStreamer inspection tool, WebRTC/x264 plugin files or evdev package; the user
+could not write `/dev/uinput`. No native sender or real game stream was activated.
+Infra must qualify these prerequisites before launch. A successful preflight does
+not prove video, audio, input delivery or playable DBXV2 frame rates.
+
 ## CPU-only sizing
 
 - 8 of 12 CPUs (`cpuset 4-11`), 24 GiB memory for the session and each Wolf app, 8 GiB for Wolf,
