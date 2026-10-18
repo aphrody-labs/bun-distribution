@@ -2,15 +2,15 @@
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=../../libraries/cadcraft/assets/app-icon/cadcraft.ico");
+    println!("cargo:rerun-if-changed=../../assets/cadcraft/app-icon/cadcraft.ico");
     println!("cargo:rerun-if-env-changed=CADCRAFT_REQUIRE_WINRES");
     println!("cargo:rerun-if-env-changed=CADCRAFT_BUILD_SHA");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
     let mut res = winresource::WindowsResource::new();
-    if std::path::Path::new("../../libraries/cadcraft/assets/app-icon/cadcraft.ico").exists() {
-        res.set_icon("../../libraries/cadcraft/assets/app-icon/cadcraft.ico");
+    if std::path::Path::new("../../assets/cadcraft/app-icon/cadcraft.ico").exists() {
+        res.set_icon("../../assets/cadcraft/app-icon/cadcraft.ico");
     }
     res.set("ProductName", "CADCraft")
         .set("FileDescription", "CADCraft computer-aided design")

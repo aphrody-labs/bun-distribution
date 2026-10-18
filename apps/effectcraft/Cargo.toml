@@ -23,6 +23,7 @@ effectcraft-ui-egui = { path = "../../crates/effectcraft-ui-egui" }
 egui = "0.36"
 eframe = { version = "0.36", default-features = false, features = [
   "default_fonts",
+  "glow",
   "wgpu",
   "accesskit",
   "links",
@@ -39,3 +40,6 @@ log = "0.4"
 
 [build-dependencies]
 winresource = "0.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = { workspace = true, features = ["async-io", "blocking-api"] }

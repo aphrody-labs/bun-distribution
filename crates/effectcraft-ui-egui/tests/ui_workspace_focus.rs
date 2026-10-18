@@ -44,7 +44,7 @@ fn named_and_current_workspaces_survive_frontend_restart() {
     }
     app.ui.focused = PanelKind::Layer;
     let current = app.ui.dock.clone();
-    eframe::App::on_exit(&mut app);
+    eframe::App::on_exit(&mut app, None);
     assert!(
         store.read("workspaces.json").is_some(),
         "workspace data must reach the configured store"
@@ -154,7 +154,7 @@ fn unreadable_native_workspace_is_preserved_after_later_layout_changes() {
             json!({"name":"Must not overwrite"}),
         )
         .unwrap();
-        eframe::App::on_exit(&mut app);
+        eframe::App::on_exit(&mut app, None);
         assert_eq!(std::fs::read(&path).unwrap(), bytes);
         assert!(
             effectcraft_ui_egui::control::inspect(&app, &ctx)["workspaceStorageError"].is_string()

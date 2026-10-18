@@ -153,7 +153,7 @@ fn panel_windows_survive_restart_with_hostile_places_made_safe() {
         panel: PanelKind::Timeline,
         rect: [10.0, 10.0, 300.0, 200.0],
     });
-    eframe::App::on_exit(&mut app);
+    eframe::App::on_exit(&mut app, None);
     let restarted = EffectcraftApp::new(Session {
         config: Some(store),
         ..Default::default()

@@ -58,7 +58,7 @@ impl AudioOut for CpalOut {
             .ok_or("no audio output device")?;
         let cfg = dev.default_output_config().map_err(|e| e.to_string())?;
         let channels = cfg.channels() as usize;
-        let rate = cfg.sample_rate().0;
+        let rate = cfg.sample_rate();
         let config: cpal::StreamConfig = cfg.clone().into();
         let slot = self.error.clone();
         let err = move |e: cpal::StreamError| keep_stream_error(&slot, &e);

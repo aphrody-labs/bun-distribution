@@ -441,7 +441,7 @@ fn current_and_named_floating_layouts_survive_restart() {
             .is_ok()
     }));
     let current = app.ui.floating.clone();
-    eframe::App::on_exit(&mut app);
+    eframe::App::on_exit(&mut app, None);
     let mut restarted = EffectcraftApp::new(Session {
         config: Some(store),
         ..Default::default()

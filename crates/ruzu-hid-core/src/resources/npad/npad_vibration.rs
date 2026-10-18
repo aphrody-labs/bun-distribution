@@ -54,7 +54,7 @@ impl NpadVibration {
 
     pub fn set_vibration_master_volume(&self, master_volume: f32) -> ResultCode {
         let mut inner = self.inner.lock().unwrap();
-        if master_volume < 0.0 && master_volume > 1.0 {
+        if !(0.0..=1.0).contains(&master_volume) {
             return hid_result::RESULT_VIBRATION_STRENGTH_OUT_OF_RANGE;
         }
         inner.volume = master_volume;

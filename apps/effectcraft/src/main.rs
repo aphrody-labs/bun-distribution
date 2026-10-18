@@ -484,10 +484,10 @@ impl eframe::App for Desktop {
         }
     }
 
-    fn on_exit(&mut self) {
+    fn on_exit(&mut self, gl: Option<&eframe::glow::Context>) {
         self.launch.exited();
         self.window.save(self.app.session.config.as_deref());
-        self.app.on_exit();
+        self.app.on_exit(gl);
     }
 
     fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {

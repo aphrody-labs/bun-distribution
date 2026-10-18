@@ -51,7 +51,7 @@ async fn fetch_json(url: Url, stealth: u8, timeout_ms: u32) -> String {
             }
             #[cfg(not(feature = "native-stealth"))]
             {
-                return Err(obscura_net::ObscuraNetError::Network(
+                return Err(obscura_net::BunBrowserNetError::Network(
                     "native-stealth feature is not installed".into(),
                 ));
             }
@@ -63,7 +63,7 @@ async fn fetch_json(url: Url, stealth: u8, timeout_ms: u32) -> String {
     } else {
         match tokio::time::timeout(Duration::from_millis(u64::from(timeout_ms)), request).await {
             Ok(response) => response,
-            Err(_) => Err(obscura_net::ObscuraNetError::Network(
+            Err(_) => Err(obscura_net::BunBrowserNetError::Network(
                 "request timeout".into(),
             )),
         }
@@ -182,7 +182,7 @@ async fn request_json(request: HttpRequest) -> String {
             }
             #[cfg(not(feature = "native-stealth"))]
             {
-                return Err(obscura_net::ObscuraNetError::Network(
+                return Err(obscura_net::BunBrowserNetError::Network(
                     "native-stealth feature is not installed".into(),
                 ));
             }

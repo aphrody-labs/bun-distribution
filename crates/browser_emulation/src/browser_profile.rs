@@ -1,5 +1,5 @@
 use wreq::{Client, ClientBuilder};
-use wreq_util::{Emulation, EmulationOS, EmulationOption};
+use wreq_util::{Emulation, Platform, Profile};
 
 /// A browser identity to emulate.
 ///
@@ -23,10 +23,10 @@ pub enum BrowserProfile {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CustomBrowserProfile {
     /// The `wreq_util` fingerprint to emulate.
-    pub emulation: Emulation,
+    pub emulation: Profile,
 
     /// The operating system to present (drives `sec-ch-ua-platform`, the UA, …).
-    pub os: EmulationOS,
+    pub os: Platform,
 
     /// Overrides the User-Agent the emulation would otherwise send. Leave `None`
     /// to use the emulation's built-in UA.
@@ -41,8 +41,8 @@ impl BrowserProfile {
     /// `cf_clearance` is bound to the exact User-Agent string.
     pub fn safari_macos_with_user_agent(user_agent: impl Into<String>) -> Self {
         Self::Custom(CustomBrowserProfile {
-            emulation: Emulation::Safari18,
-            os: EmulationOS::MacOS,
+            emulation: Profile::Safari18,
+            os: Platform::MacOS,
             maybe_user_agent: Some(user_agent.into()),
         })
     }
@@ -92,31 +92,31 @@ impl BrowserProfile {
     /// Note: this does NOT include the User-Agent override — that is applied by
     /// [`Self::configure_client_builder`]. When emulating at the request level,
     /// apply any override yourself with a `user-agent` header.
-    pub fn emulation_option(&self) -> EmulationOption {
-        EmulationOption::builder()
-            .emulation(self.emulation())
-            .emulation_os(self.os())
+    pub fn emulation_option(&self) -> Emulation {
+        Emulation::builder()
+            .profile(self.emulation())
+            .platform(self.os())
             .build()
     }
 
     /// The underlying `wreq_util` emulation for this profile.
-    pub fn emulation(&self) -> Emulation {
+    pub fn emulation(&self) -> Profile {
         match self {
-            Self::Firefox139 => Emulation::Firefox139,
-            Self::Firefox147 => Emulation::Firefox147,
-            Self::Chrome131 => Emulation::Chrome131,
-            Self::Chrome145 => Emulation::Chrome145,
-            Self::Safari18 => Emulation::Safari18,
+            Self::Firefox139 => Profile::Firefox139,
+            Self::Firefox147 => Profile::Firefox147,
+            Self::Chrome131 => Profile::Chrome131,
+            Self::Chrome145 => Profile::Chrome145,
+            Self::Safari18 => Profile::Safari18,
             Self::Custom(custom) => custom.emulation,
         }
     }
 
     /// The operating system this profile presents. Named variants default to
     /// macOS.
-    pub fn os(&self) -> EmulationOS {
+    pub fn os(&self) -> Platform {
         match self {
             Self::Custom(custom) => custom.os,
-            _ => EmulationOS::MacOS,
+            _ => Platform::MacOS,
         }
     }
 
@@ -145,31 +145,31 @@ impl BrowserProfile {
 }
 
 /// The newest fingerprint we ship for the UA's browser family.
-fn emulation_for_user_agent(user_agent: &str) -> Emulation {
+fn emulation_for_user_agent(user_agent: &str) -> Profile {
     let lower = user_agent.to_ascii_lowercase();
     if lower.contains("firefox/") {
-        Emulation::Firefox147
+        Profile::Firefox147
     } else if lower.contains("chrome/") || lower.contains("chromium/") || lower.contains("edg/") {
-        Emulation::Chrome145
+        Profile::Chrome145
     } else {
         // Safari proper, WKWebView UAs ("AppleWebKit/... Safari/..." without
         // "Chrome/"), and anything unrecognized: our webviews are WebKit.
-        Emulation::Safari18
+        Profile::Safari18
     }
 }
 
-fn os_for_user_agent(user_agent: &str) -> EmulationOS {
+fn os_for_user_agent(user_agent: &str) -> Platform {
     let lower = user_agent.to_ascii_lowercase();
     if lower.contains("windows") {
-        EmulationOS::Windows
+        Platform::Windows
     } else if lower.contains("android") {
-        EmulationOS::Android
+        Platform::Android
     } else if lower.contains("iphone") || lower.contains("ipad") {
-        EmulationOS::IOS
+        Platform::IOS
     } else if lower.contains("linux") || lower.contains("x11") {
-        EmulationOS::Linux
+        Platform::Linux
     } else {
-        EmulationOS::MacOS
+        Platform::MacOS
     }
 }
 
@@ -187,24 +187,24 @@ mod tests {
     #[test]
     fn matching_user_agent_picks_family_and_keeps_exact_ua() {
         let safari = BrowserProfile::matching_user_agent(SAFARI_MAC_UA);
-        assert_eq!(safari.emulation(), Emulation::Safari18);
-        assert_eq!(safari.os(), EmulationOS::MacOS);
+        assert_eq!(safari.emulation(), Profile::Safari18);
+        assert_eq!(safari.os(), Platform::MacOS);
         assert_eq!(safari.maybe_user_agent_override(), Some(SAFARI_MAC_UA));
 
         // WKWebView says "Safari/..."-less AppleWebKit; still WebKit.
         assert_eq!(
             BrowserProfile::matching_user_agent(WKWEBVIEW_MAC_UA).emulation(),
-            Emulation::Safari18
+            Profile::Safari18
         );
 
         // Chrome also says "Safari/537.36" — "Chrome/" must win.
         let chrome = BrowserProfile::matching_user_agent(CHROME_MAC_UA);
-        assert_eq!(chrome.emulation(), Emulation::Chrome145);
-        assert_eq!(chrome.os(), EmulationOS::MacOS);
+        assert_eq!(chrome.emulation(), Profile::Chrome145);
+        assert_eq!(chrome.os(), Platform::MacOS);
 
         let firefox = BrowserProfile::matching_user_agent(FIREFOX_WIN_UA);
-        assert_eq!(firefox.emulation(), Emulation::Firefox147);
-        assert_eq!(firefox.os(), EmulationOS::Windows);
+        assert_eq!(firefox.emulation(), Profile::Firefox147);
+        assert_eq!(firefox.os(), Platform::Windows);
     }
 
     #[test]
@@ -217,24 +217,24 @@ mod tests {
     #[test]
     fn default_is_firefox139() {
         assert_eq!(BrowserProfile::default(), BrowserProfile::Firefox139);
-        assert_eq!(BrowserProfile::default().emulation(), Emulation::Firefox139);
+        assert_eq!(BrowserProfile::default().emulation(), Profile::Firefox139);
     }
 
     #[test]
     fn named_variants_default_to_macos_and_no_ua_override() {
-        assert_eq!(BrowserProfile::Chrome145.os(), EmulationOS::MacOS);
+        assert_eq!(BrowserProfile::Chrome145.os(), Platform::MacOS);
         assert_eq!(BrowserProfile::Chrome145.maybe_user_agent_override(), None);
     }
 
     #[test]
     fn custom_carries_os_and_ua_override() {
         let profile = BrowserProfile::Custom(CustomBrowserProfile {
-            emulation: Emulation::Chrome145,
-            os: EmulationOS::Windows,
+            emulation: Profile::Chrome145,
+            os: Platform::Windows,
             maybe_user_agent: Some("custom-agent/1.0".to_string()),
         });
-        assert_eq!(profile.emulation(), Emulation::Chrome145);
-        assert_eq!(profile.os(), EmulationOS::Windows);
+        assert_eq!(profile.emulation(), Profile::Chrome145);
+        assert_eq!(profile.os(), Platform::Windows);
         assert_eq!(
             profile.maybe_user_agent_override(),
             Some("custom-agent/1.0")
