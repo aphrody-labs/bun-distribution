@@ -156,7 +156,14 @@ async function publishCrates(): Promise<void> {
   const todo = (await missing(await cargoCrates(), cratePublished)).slice(0, limit);
   const failed: string[] = [];
   for (const crate of todo) {
-    const cmd = ["cargo", "publish", "--locked", "--manifest-path", crate.manifest, ...(apply ? [] : ["--dry-run"])];
+    const cmd = [
+      "cargo",
+      "publish",
+      "--allow-dirty",
+      "--manifest-path",
+      crate.manifest,
+      ...(apply ? [] : ["--dry-run"]),
+    ];
     if ((await run(cmd)) !== 0) failed.push(`${crate.name}@${crate.version}`);
     else if (apply && pause > 0) await Bun.sleep(pause);
   }
