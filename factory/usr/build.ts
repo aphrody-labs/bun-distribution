@@ -3,7 +3,7 @@
 //   [--verity] [--no-boot] [--host HOST] [--job ID]`
 import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Glob } from "bun";
 
@@ -181,7 +181,7 @@ async function fetchArtifacts(manifest: UsrManifest, host: string, composition: 
   const local = localArtifacts(manifest, composition, job);
   await mkdir(local, { recursive: true });
   const out = `${manifest.remoteRoot}/${job}/out`;
-  const listing = Bun.spawn(["ssh", ...sshOptions, host, `cd ${out} && stat -c '%s %n' *`], {
+  const listing = Bun.spawn(["ssh", ...sshOptions, host, `cd ${out} && find . -type f -printf '%s %P\n'`], {
     stdout: "pipe",
     stderr: "inherit",
     timeout: 30_000,
@@ -192,6 +192,7 @@ async function fetchArtifacts(manifest: UsrManifest, host: string, composition: 
   for (const line of text.trim().split("\n")) {
     const [size, name] = line.split(" ", 2) as [string, string];
     const target = join(local, name);
+    await mkdir(dirname(target), { recursive: true });
     for (
       let attempt = 1;
       (await Bun.file(target).exists()) ? Bun.file(target).size !== Number(size) : true;
@@ -320,7 +321,8 @@ async function build(composition: UsrComposition, host: string, options: BuildOp
       `set -e; mkdir -p ${manifest.remoteRoot}/pkgcache; cd ${remote}`,
       "mv pkgbuilds bunos-pkgs",
       `timeout ${seconds} docker run --rm --privileged --name bun-os-usr-${job} -v ${remote}:/job -v ${manifest.remoteRoot}/pkgcache:/pkgcache ${manifest.builderImage} bash /job/builder.sh > build.log 2>&1 || { tail -40 build.log; exit 1; }`,
-      "rm -rf overlay pkgs boot bunos-pkgs",
+      // The builder writes root-owned files into the job directory.
+      `docker run --rm -v ${remote}:/job ${manifest.builderImage} rm -rf /job/overlay /job/pkgs /job/boot /job/bunos-pkgs /job/bunos-utils-src`,
       "tail -12 build.log",
     ].join("; ");
     await run(["ssh", ...sshOptions, host, script], (seconds + 120) * 1000);

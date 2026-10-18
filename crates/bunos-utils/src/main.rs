@@ -55,21 +55,32 @@ macro_rules! uu_applets {
 #[macro_export]
 macro_rules! uu_result_applets {
     ($uucore:ident: [$($name:literal => $krate:ident,)*]) => {
-        pub const APPLETS: &[(&str, $crate::Main)] = &[
-            $(($name, |args| {
+        /// `#[uucore::main]` turns `uumain` into `fn -> i32`; plain ones return `UResult<()>`.
+        trait Status {
+            fn status(self, name: &str) -> i32;
+        }
+        impl Status for i32 {
+            fn status(self, _: &str) -> i32 {
+                self
+            }
+        }
+        impl Status for $uucore::error::UResult<()> {
+            fn status(self, name: &str) -> i32 {
                 use $uucore::error::UError as _;
-                match $krate::uumain(args.into_iter()) {
-                    Ok(()) => $crate::code($uucore::error::get_exit_code()),
+                match self {
+                    Ok(()) => $uucore::error::get_exit_code(),
                     Err(err) => {
-                        let status = err.code();
                         let message = err.to_string();
                         if !message.is_empty() {
-                            eprintln!("{}: {message}", $name);
+                            eprintln!("{name}: {message}");
                         }
-                        $crate::code(status)
+                        err.code()
                     }
                 }
-            }),)*
+            }
+        }
+        pub const APPLETS: &[(&str, $crate::Main)] = &[
+            $(($name, |args| $crate::code(Status::status($krate::uumain(args.into_iter()), $name))),)*
         ];
     };
 }

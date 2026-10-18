@@ -78,8 +78,11 @@ for f in "$cache"/*.sig; do
 done
 
 log "pacstrap $(wc -l <"$out/lock.tsv") locked packages"
-pacstrap -C /job/pacman.conf -G -M -U "$root" "$cache"/*.pkg.tar.zst
-sed '/^\[bunos\]/,/^$/d' /job/pacman.conf >/tmp/target-pacman.conf
+# Package documentation stays out of the image; licenses, man pages and translations remain.
+sed '/^\[options\]/a NoExtract = usr/share/doc/* usr/share/gtk-doc/* usr/share/info/*' /job/pacman.conf >/tmp/pacstrap.conf
+pacstrap -C /tmp/pacstrap.conf -G -M -U "$root" "$cache"/*.pkg.tar.zst
+install -d "$root/usr/share/doc"
+sed '/^\[bunos\]/,/^$/d' /tmp/pacstrap.conf >/tmp/target-pacman.conf
 install -Dm644 /tmp/target-pacman.conf "$root/etc/pacman.conf"
 
 log "merged-usr hierarchy"
@@ -112,13 +115,13 @@ du -sb "$root/usr" | cut -f1 >"$out/usr-bytes.txt"
 rm -rf "$root"/var/cache/pacman/pkg/* "$root"/var/lib/pacman/sync/*
 
 log "images"
-mkfs.erofs -z"${EROFS_COMPRESSION}" -T0 --all-root "$out/usr.erofs" "$root/usr" >/dev/null
-mksquashfs "$root/usr" "$out/usr.squashfs" -comp "${SQUASHFS_COMPRESSION}" -all-root -noappend -quiet
+mkfs.erofs -z"${EROFS_COMPRESSION}" -Eztailpacking -T0 --all-root "$out/usr.erofs" "$root/usr" >/dev/null
+mksquashfs "$root/usr" "$out/usr.squashfs" -comp "${SQUASHFS_COMPRESSION}" -Xcompression-level 19 -b 1M -all-root -noappend -quiet
 if [ "${VERITY}" = 1 ]; then
   veritysetup format --root-hash-file="$out/usr.erofs.roothash" "$out/usr.erofs" "$out/usr.erofs.verity" >"$out/usr.erofs.verity.txt"
 fi
 log "rootfs tarball"
-tar --zstd --xattrs --acls --numeric-owner -C "$root" -cf "$out/rootfs.tar.zst" .
+tar -I 'zstd -T0 -19 --long' --xattrs --acls --numeric-owner -C "$root" -cf "$out/rootfs.tar.zst" .
 sums="usr.erofs usr.squashfs rootfs.tar.zst"
 [ "${VERITY}" = 1 ] && sums="$sums usr.erofs.verity"
 
@@ -137,11 +140,11 @@ if [ "${BOOT}" = 1 ]; then
   log "boot: initrd and signed UKI"
   kver=$(ls "$root/usr/lib/modules" | head -1)
   kernel=$(ls "$root"/boot/vmlinuz-* | head -1)
-  cp /job/boot/mkinitcpio.conf "$root/tmp/bunos-mkinitcpio.conf"
-  arch-chroot "$root" mkinitcpio -c /tmp/bunos-mkinitcpio.conf -k "$kver" -g /tmp/bunos-initrd.img >/tmp/mkinitcpio.log 2>&1 \
+  cp /job/boot/mkinitcpio.conf "$root/var/tmp/bunos-mkinitcpio.conf"
+  arch-chroot "$root" mkinitcpio -c /var/tmp/bunos-mkinitcpio.conf -k "$kver" -g /var/tmp/bunos-initrd.img >/tmp/mkinitcpio.log 2>&1 \
     || { tail -30 /tmp/mkinitcpio.log; exit 8; }
   cmdline="$(cat /job/boot/cmdline) usrhash=$usrhash"
-  ukify build --linux="$kernel" --initrd="$root/tmp/bunos-initrd.img" --cmdline="$cmdline" \
+  ukify build --linux="$kernel" --initrd="$root/var/tmp/bunos-initrd.img" --cmdline="$cmdline" \
     --os-release=@"$root/usr/lib/os-release" --uname="$kver" \
     --secureboot-private-key="$b/signing.key" --secureboot-certificate="$out/signing.crt" \
     --output="$out/bunos.efi" >/dev/null
@@ -155,6 +158,8 @@ if [ "${BOOT}" = 1 ]; then
   mmd -i "$b/esp.img" ::EFI ::EFI/BOOT
   mcopy -i "$b/esp.img" "$out/bunos.efi" ::EFI/BOOT/BOOTX64.EFI
   dd if="$b/esp.img" of=/job/disk.raw bs=1M seek=$((esp_offset / 1048576)) conv=notrunc status=none
+  # The deferred ESP has no GPT entry yet; firmware only boots a listed EFI system partition.
+  echo "$((esp_offset / 512)),$((esp_size / 512)),U" | sfdisk -q --no-reread --no-tell-kernel -N 1 /job/disk.raw
 
   log "boot: QEMU"
   cp /usr/share/edk2/x64/OVMF_VARS.4m.fd "$b/vars.fd"
@@ -166,7 +171,7 @@ if [ "${BOOT}" = 1 ]; then
   set -e
   if grep -q 'BUNOS-BOOT-OK' "$out/boot.log"; then echo qualified >"$out/boot-result.txt"; else
     echo failed >"$out/boot-result.txt"; tail -40 "$out/boot.log"; fi
-  zstd -q -T0 --rm /job/disk.raw -o "$out/disk.raw.zst"
+  zstd -q -T0 -19 --long --rm /job/disk.raw -o "$out/disk.raw.zst"
   sums="$sums bunos.efi disk.raw.zst"
 fi
 
