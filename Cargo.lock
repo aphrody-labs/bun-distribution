@@ -2626,6 +2626,7 @@ dependencies = [
  "scraper 0.22.0",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "tempfile",
  "tokio",
 ]
