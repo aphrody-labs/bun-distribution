@@ -320,6 +320,9 @@ struct State {
     /// Bearer token opening `/raw/`, `/depot/` and raw `/export/` (`NIE_RAW_VFS_TOKEN`);
     /// `None` keeps them closed. See [`private_route`].
     raw_token: Option<aphrody_nie_explore::raw_access::Token>,
+    /// Canonical VFS manifest (`/vfs/index`, `/vfs/digest`): `(ndjson, header json)`, derived
+    /// from the pack TOCs on first use and kept for the life of the process.
+    manifest: std::sync::OnceLock<Result<(String, String), String>>,
 }
 
 /// Une source qui référence un asset, telle qu'écrite par
@@ -4248,7 +4251,8 @@ fn private_route(path: &str, query: &str) -> bool {
         path.strip_prefix(prefix)
             .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
     };
-    if under("/raw") || under("/depot") {
+    // `/vfs/hash` digests the game's own bytes (an oracle for known content): same gate as `/raw`.
+    if under("/raw") || under("/depot") || under("/vfs/hash") {
         return true;
     }
     let Some(rest) = path.strip_prefix("/export/") else {
@@ -4793,6 +4797,51 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                         );
                         j["describe"] = serde_json::json!(describe);
                         j
+                    }
+                }
+            }
+            // Canonical, content-addressed index of the logical VFS (aphrody_nie_formats::
+            // vfs_manifest): `/vfs/index` is NDJSON (header line with count and digest, then one
+            // row per path, sorted), `/vfs/digest` only the header. Names, offsets and sizes,
+            // never bytes. Sync clients compare their own view digest with this one.
+            "index" | "digest" => {
+                let built = state.manifest.get_or_init(|| {
+                    vfs.manifest("ievr")
+                        .map(|m| (m.to_ndjson(), m.header_json().to_string()))
+                        .map_err(|e| e.to_string())
+                });
+                match built {
+                    Ok((ndjson, header)) => {
+                        if route == "index" {
+                            respond(&mut stream, 200, "OK", "application/x-ndjson", ndjson.as_bytes());
+                        } else {
+                            respond(&mut stream, 200, "OK", "application/json", header.as_bytes());
+                        }
+                    }
+                    Err(e) => {
+                        warn!("manifest VFS : {e}");
+                        respond_text(&mut stream, 500, "Internal Server Error", "manifest indisponible");
+                    }
+                }
+                return;
+            }
+            // Private (see `private_route`): sha256 + size of the extracted bytes of one path.
+            "hash" => {
+                let p = param(query, "path").unwrap_or_default();
+                let vfs_path = if p.starts_with("data/") { p } else { format!("data/{p}") };
+                if vfs_path.contains("..") {
+                    respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
+                    return;
+                }
+                match vfs.read(&vfs_path) {
+                    Ok(bytes) => serde_json::json!({
+                        "path": vfs_path,
+                        "size": bytes.len(),
+                        "sha256": aphrody_nie_formats::vfs_manifest::sha256_hex(&bytes),
+                    }),
+                    Err(_) => {
+                        respond_text(&mut stream, 404, "Not Found", "fichier absent du VFS");
+                        return;
                     }
                 }
             }
@@ -6566,6 +6615,7 @@ fn main() -> Result<()> {
             cli.memory_cache_mib.saturating_mul(1024 * 1024),
         )),
         raw_token,
+        manifest: std::sync::OnceLock::new(),
     });
 
     // Audit hors ligne : pas de serveur (donc pas de port à prendre — un serveur peut tourner à

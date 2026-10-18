@@ -336,25 +336,20 @@ impl GameVfs {
             format: "level5-ievr",
             details: format!("{}: {error}", data.display()),
         })?;
-        // A batch tool shares the machine: keep at most 1 GiB of decrypted packs resident.
-        owner.regler_budget_cache(1 << 30);
+        // The owner caches pack TOCs only (entry bytes are positioned reads), so a mount over a
+        // network share never pulls a pack whole.
         let unit = u32::try_from(self.units.len()).unwrap_or(u32::MAX);
         let mut listed: Vec<(String, u64, String)> = owner
-            .iter()
-            .map(|(path, entry)| {
-                let container = if entry.cpk_filename.is_empty() {
+            .iter_all()
+            .map(|entry| {
+                let container = if entry.cpk.is_empty() {
                     "loose".into()
                 } else {
-                    entry.cpk_filename.clone()
+                    entry.cpk.to_string()
                 };
-                (path.to_string(), u64::from(entry.file_size), container)
+                (entry.path.to_string(), entry.size, container)
             })
             .collect();
-        listed.extend(
-            owner
-                .iter_extra()
-                .map(|(path, cpk)| (path.to_string(), 0, cpk.to_string())),
-        );
         listed.sort_by(|a, b| a.0.cmp(&b.0));
         for (index, (path, size, container)) in listed.iter().enumerate() {
             self.insert(path, *size, container, unit, index);

@@ -176,6 +176,9 @@ pub mod usm;
 /// VFS multi-CPK (feature `std` : lit `cpk_list.cfg.bin` + CPK via `std::fs`).
 #[cfg(feature = "std")]
 pub mod vfs;
+/// Canonical content-addressed VFS manifest (digest shared by server and clients).
+#[cfg(feature = "std")]
+pub mod vfs_manifest;
 
 #[cfg(all(feature = "std", not(target_arch = "wasm32")))]
 pub mod game_source;

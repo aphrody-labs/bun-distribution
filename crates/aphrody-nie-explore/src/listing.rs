@@ -29,7 +29,10 @@ pub struct VfsStats {
 #[must_use]
 pub fn stats(vfs: &Vfs, extension_limit: usize) -> VfsStats {
     let mut counts: BTreeMap<String, u32> = BTreeMap::new();
-    for (path, _) in vfs.iter() {
+    let mut total = 0usize;
+    for entry in vfs.iter_all() {
+        let path = entry.path;
+        total += 1;
         let name = path.rsplit('/').next().unwrap_or(path);
         let extension = name.rsplit_once('.').map_or_else(
             || "<none>".to_owned(),
@@ -42,7 +45,7 @@ pub fn stats(vfs: &Vfs, extension_limit: usize) -> VfsStats {
     top_extensions.truncate(extension_limit);
     VfsStats {
         mount: if vfs.is_dump() { "dump" } else { "packs" }.to_owned(),
-        total: vfs.asset_count() as u32,
+        total: total as u32,
         cpk_count: vfs.cpk_count() as u32,
         extra_count: vfs.extra_count() as u32,
         loose_count: vfs.loose_count() as u32,
@@ -158,7 +161,8 @@ pub fn ls_paged(vfs: &Vfs, prefix: &str, limit: usize, offset: usize) -> Listing
     let mut dirs: BTreeMap<&str, usize> = BTreeMap::new();
     let mut files: Vec<FileEntry> = Vec::new();
 
-    for (path, entry) in vfs.iter() {
+    for entry in vfs.iter_all() {
+        let path = entry.path;
         let Some(rest) = sous_prefixe(path, prefix) else {
             continue;
         };
@@ -169,8 +173,8 @@ pub fn ls_paged(vfs: &Vfs, prefix: &str, limit: usize, offset: usize) -> Listing
                 name: rest.to_string(),
                 ext: ext_de(rest),
                 path: path.to_string(),
-                size: entry.file_size,
-                cpk: entry.cpk_filename.clone(),
+                size: size_u32(entry.size),
+                cpk: entry.cpk.to_string(),
             }),
         }
     }
@@ -231,7 +235,8 @@ pub fn find_paged(
     let ext_voulue = ext.map(str::to_ascii_lowercase);
 
     let mut out: Vec<FileEntry> = Vec::new();
-    for (path, entry) in vfs.iter() {
+    for entry in vfs.iter_all() {
+        let path = entry.path;
         if !besoin.is_empty() && !path.to_ascii_lowercase().contains(&besoin) {
             continue;
         }
@@ -246,8 +251,8 @@ pub fn find_paged(
             name: name.to_string(),
             ext: e,
             path: path.to_string(),
-            size: entry.file_size,
-            cpk: entry.cpk_filename.clone(),
+            size: size_u32(entry.size),
+            cpk: entry.cpk.to_string(),
         });
     }
     out.sort_by(|a, b| a.path.cmp(&b.path));
@@ -268,15 +273,20 @@ pub fn find(vfs: &Vfs, query: &str, ext: Option<&str>, limit: usize) -> Vec<File
 /// Métadonnées d'une entrée précise, `None` si le chemin n'est pas un fichier du VFS.
 #[must_use]
 pub fn stat(vfs: &Vfs, path: &str) -> Option<FileEntry> {
-    let entry = vfs.find(path)?;
+    let entry = vfs.find_any(path)?;
     let name = path.rsplit('/').next().unwrap_or(path);
     Some(FileEntry {
         name: name.to_string(),
         ext: ext_de(name),
         path: path.to_string(),
-        size: entry.file_size,
-        cpk: entry.cpk_filename.clone(),
+        size: size_u32(entry.size),
+        cpk: entry.cpk.to_string(),
     })
+}
+
+/// `FileEntry.size` is a `u32` on the wire; a larger file saturates instead of wrapping.
+fn size_u32(size: u64) -> u32 {
+    u32::try_from(size).unwrap_or(u32::MAX)
 }
 
 #[cfg(test)]

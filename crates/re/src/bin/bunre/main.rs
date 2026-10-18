@@ -8,6 +8,8 @@
 
 mod dbxv2;
 #[cfg(feature = "assets")]
+mod vfs;
+#[cfg(feature = "assets")]
 mod game;
 #[cfg(feature = "pipeline")]
 mod pipeline;
@@ -15,7 +17,7 @@ mod pipeline;
 use std::ffi::OsString;
 use std::process::ExitCode;
 
-const USAGE: &str = "usage: bunre <pipeline|recompile|game|dbxv2> ...";
+const USAGE: &str = "usage: bunre <pipeline|recompile|game|vfs|dbxv2> ...";
 
 fn main() -> ExitCode {
     let mut args = std::env::args_os().skip(1);
@@ -25,6 +27,8 @@ fn main() -> ExitCode {
     };
     match command.to_str() {
         Some("dbxv2") => dbxv2::main(args),
+        #[cfg(feature = "assets")]
+        Some("vfs") => vfs::main(args),
         #[cfg(feature = "assets")]
         Some("game") => game::main(args),
         #[cfg(not(feature = "assets"))]

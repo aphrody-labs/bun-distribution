@@ -25,6 +25,7 @@ crc32fast = { workspace = true, optional = true }
 serde = { workspace = true, features = ["std", "derive"], optional = true }
 serde_json = { workspace = true }
 aes.workspace = true
+sha2.workspace = true
 # Décodage des textures DDS/BCn — feature `textures` uniquement (off par défaut).
 # `default-features = false` = décodeur pur Rust, compatible no_std/wasm32.
 image_dds = { workspace = true, optional = true }

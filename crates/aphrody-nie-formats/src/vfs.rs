@@ -125,6 +125,45 @@ pub struct CacheCpkStats {
     pub budget: usize,
 }
 
+/// `Path::is_file` with the case rule of the server. NTFS and SMB shares answer for
+/// `Data/Common/X.bin` when the file is `data/common/x.bin`, so a Windows host would serve
+/// (and list as readable) names the Linux server refuses. On Windows the final component is
+/// therefore compared byte for byte against its directory listing; elsewhere the filesystem
+/// is already case-exact.
+fn is_file_exact(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    #[cfg(windows)]
+    {
+        let (Some(parent), Some(name)) = (path.parent(), path.file_name()) else {
+            return false;
+        };
+        return std::fs::read_dir(parent)
+            .is_ok_and(|mut dir| dir.any(|e| e.is_ok_and(|e| e.file_name() == name)));
+    }
+    #[cfg(not(windows))]
+    true
+}
+
+/// Positioned read of `size` bytes at `offset` in a local pack.
+pub(crate) fn read_file_range(path: &Path, offset: u64, size: usize) -> Result<Vec<u8>, FormatError> {
+    use std::io::{Seek, SeekFrom};
+    let mut file =
+        File::open(path).map_err(|_| FormatError::Corrupt("impossible d'ouvrir le CPK"))?;
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|_| FormatError::Corrupt("impossible de se positionner dans le CPK"))?;
+    let mut buffer = vec![0u8; size];
+    file.read_exact(&mut buffer)
+        .map_err(|_| FormatError::TooShort { got: 0, need: size })?;
+    Ok(buffer)
+}
+
+/// Parse the header and TOC of a local pack without reading its payload.
+pub(crate) fn open_local_toc(path: &Path, name: &str) -> Result<CpkReader, FormatError> {
+    CpkReader::from_reader(name, |offset, size| read_file_range(path, offset, size))
+}
+
 /// Cache des CPK déjà chargés, borné LRU (cf. [`CpkCache`]).
 type CpkCacheMap = Mutex<CpkCache>;
 
@@ -136,6 +175,18 @@ pub struct VfsEntry {
     pub file_size: u32,
 }
 
+/// Borrowed view of one servable entry (main index or extra pack), see [`Vfs::iter_all`].
+#[derive(Debug, Clone, Copy)]
+pub struct VfsEntryRef<'a> {
+    pub path: &'a str,
+    /// Pack file name, empty for a loose file.
+    pub cpk: &'a str,
+    /// Extracted size in bytes when known (0 for entries added by [`Vfs::add_extra_index`]).
+    pub size: u64,
+    /// The entry comes from a pack absent from `cpk_list.cfg.bin`.
+    pub extra: bool,
+}
+
 /// Système de fichiers virtuel transparent pour Inazuma Eleven: Victory Road.
 pub struct Vfs {
     game_data_dir: PathBuf,
@@ -145,6 +196,9 @@ pub struct Vfs {
     /// `cpk_list.cfg.bin` (films, sound_asset…) : alimenté depuis l'index global
     /// `path → cpk` (cf. [`Vfs::add_extra_index`]). `read()` y bascule sur miss.
     index_extra: HashMap<String, String>,
+    /// Extracted size of the extra entries read from a pack TOC (absent for entries added through
+    /// [`Vfs::add_extra_index`], whose size is unknown).
+    extra_sizes: HashMap<String, u64>,
     cpk_names: HashSet<String>,
     cpk_cache: CpkCacheMap,
     /// Index du montage **dump**, construit paresseusement. Un dump complet porte ~255 000
@@ -175,6 +229,7 @@ impl Vfs {
             loose_files: false,
             index: HashMap::new(),
             index_extra: HashMap::new(),
+            extra_sizes: HashMap::new(),
             cpk_names: HashSet::new(),
             cpk_cache: Mutex::new(CpkCache::new(cpk_cache_budget())),
             loose_index: OnceLock::new(),
@@ -214,6 +269,7 @@ impl Vfs {
         }
         self.index.clear();
         self.index_extra.clear();
+        self.extra_sizes.clear();
         self.cpk_names.clear();
         self.overlays.clear();
         self.vider_cache();
@@ -265,6 +321,7 @@ impl Vfs {
             };
             self.index.clear();
             self.index_extra.clear();
+        self.extra_sizes.clear();
             self.cpk_names.clear();
             self.overlays.clear();
             self.vider_cache();
@@ -283,39 +340,18 @@ impl Vfs {
                     "remote packs directory listing is incomplete or a referenced CPK is missing",
                 ));
             }
-            for name in packs {
-                if !name.ends_with(".cpk") || self.cpk_names.contains(&name) {
-                    continue;
-                }
+            // Same rule as the local mount (`discover_extra_cpks`): extra packs land in
+            // `index_extra`, visited in byte order of their name, whatever order SFTP/HTTP listed.
+            let mut extras: Vec<String> = packs
+                .into_iter()
+                .filter(|name| name.ends_with(".cpk") && !self.cpk_names.contains(name))
+                .collect();
+            extras.sort();
+            for name in extras {
                 let reader = CpkReader::from_reader(&name, |offset, length| {
                     remote.range(&format!("packs/{name}"), offset, length)
                 })?;
-                for entry in &reader.entries {
-                    let path = if entry.directory.is_empty() {
-                        entry.filename.clone()
-                    } else {
-                        format!("{}/{}", entry.directory, entry.filename)
-                    };
-                    if !entry.filename.is_empty() && !self.index.contains_key(&path) {
-                        let size = if entry.extract_size == 0 {
-                            entry.size
-                        } else {
-                            entry.extract_size
-                        };
-                        let file_size = u32::try_from(size).map_err(|_| {
-                            FormatError::Corrupt("remote TOC entry size exceeds VFS size field")
-                        })?;
-                        self.index.insert(
-                            path.clone(),
-                            VfsEntry {
-                                internal_path: path,
-                                cpk_filename: name.clone(),
-                                file_size,
-                            },
-                        );
-                    }
-                }
-                self.cpk_names.insert(name.clone());
+                self.register_extra_pack(&name, &reader);
                 if let Ok(mut cache) = self.cpk_cache.lock() {
                     cache.insert(name, Arc::new((reader, Vec::new())));
                 }
@@ -383,12 +419,13 @@ impl Vfs {
                     crate::cfgbin::Value::String(s) => s,
                     _ => continue,
                 };
+                // `Value::Int` is an `i32`: a negative size is corrupt, not a 4 GiB file.
                 let file_size = match child.variables.get(4) {
-                    Some(crate::cfgbin::Value::Int(v)) => *v as u32,
+                    Some(crate::cfgbin::Value::Int(v)) => u32::try_from(*v).unwrap_or(0),
                     _ => 0,
                 };
 
-                let internal_path = format!("{}{}", directory, filename);
+                let internal_path = crate::vfs_manifest::join_canonical(directory, filename);
 
                 let entry = VfsEntry {
                     internal_path: internal_path.clone(),
@@ -435,41 +472,45 @@ impl Vfs {
         let Ok(dir_iter) = std::fs::read_dir(&packs) else {
             return 0;
         };
+        // `read_dir` order is filesystem-defined (hash order on ext4, creation order on NTFS):
+        // when two extra packs carry the same path the winner must not depend on the host, so the
+        // packs are visited in byte order of their name, exactly like the remote mount.
+        let mut names: Vec<String> = dir_iter
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".cpk") && !self.cpk_names.contains(name))
+            .collect();
+        names.sort();
 
         let mut added = 0usize;
-        for dir_entry in dir_iter.flatten() {
-            let name = dir_entry.file_name().to_string_lossy().to_string();
-            if !name.ends_with(".cpk") || self.cpk_names.contains(&name) {
-                continue; // Déjà dans l'index principal
-            }
-            // CPK présent sur disque mais absent du cpk_list : parser son TOC.
-            let cpk_path = packs.join(&name);
-            let Ok(mut f) = File::open(&cpk_path) else {
+        for name in names {
+            // Only the TOC is needed: a pack weighs several GiB.
+            let Ok(reader) = open_local_toc(&packs.join(&name), &name) else {
                 continue;
             };
-            let mut bytes = Vec::new();
-            if f.read_to_end(&mut bytes).is_err() {
-                continue;
-            }
-            let Ok(reader) = CpkReader::new(&bytes, &name) else {
-                continue;
-            };
-            for e in &reader.entries {
-                if e.filename.is_empty() {
-                    continue;
-                }
-                let path = if e.directory.is_empty() {
-                    e.filename.clone()
-                } else {
-                    format!("{}/{}", e.directory, e.filename)
-                };
-                if !self.index.contains_key(&path) && !self.index_extra.contains_key(&path) {
-                    self.index_extra.insert(path, name.clone());
-                    added += 1;
-                }
-            }
-            self.cpk_names.insert(name);
+            added += self.register_extra_pack(&name, &reader);
         }
+        added
+    }
+
+    /// Record the files of a pack that `cpk_list.cfg.bin` does not list. Shared by the local and
+    /// the remote mount so both resolve duplicates identically: the main index always wins, then
+    /// the first pack in byte order of its name.
+    fn register_extra_pack(&mut self, name: &str, reader: &CpkReader) -> usize {
+        let mut added = 0usize;
+        for e in &reader.entries {
+            if e.filename.is_empty() {
+                continue;
+            }
+            let path = crate::vfs_manifest::join_canonical(&e.directory, &e.filename);
+            if !self.index.contains_key(&path) && !self.index_extra.contains_key(&path) {
+                let size = if e.extract_size == 0 { e.size } else { e.extract_size };
+                self.extra_sizes.insert(path.clone(), size);
+                self.index_extra.insert(path, name.to_string());
+                added += 1;
+            }
+        }
+        self.cpk_names.insert(name.to_string());
         added
     }
 
@@ -495,6 +536,7 @@ impl Vfs {
         self.loose_files = true;
         self.index.clear();
         self.index_extra.clear();
+        self.extra_sizes.clear();
         self.cpk_names.clear();
         self.overlays.clear();
         self.loose_index = OnceLock::new();
@@ -659,12 +701,14 @@ impl Vfs {
             // Loose déclaré par cpk_list : le chemin interne débute par `data/`, que
             // `game_data_dir` porte déjà.
             let rel = internal_path.strip_prefix("data/").unwrap_or(internal_path);
-            return self.game_data_dir.join(rel).is_file();
+            return is_file_exact(&self.game_data_dir.join(rel));
         }
-        self.game_data_dir
-            .join("packs")
-            .join(&entry.cpk_filename)
-            .is_file()
+        is_file_exact(
+            &self
+                .game_data_dir
+                .join("packs")
+                .join(&entry.cpk_filename),
+        )
     }
 
     /// Chemin disque d'un fichier « loose » — déclaré dans `cpk_list.cfg.bin` avec un CPK vide,
@@ -692,7 +736,7 @@ impl Vfs {
         }
         let rel = internal_path.strip_prefix("data/").unwrap_or(internal_path);
         let direct = self.game_data_dir.join(rel);
-        if direct.is_file() {
+        if is_file_exact(&direct) {
             return Some(direct);
         }
 
@@ -708,7 +752,7 @@ impl Vfs {
                 continue;
             }
             let c = e.path().join(reste);
-            if c.is_file() {
+            if is_file_exact(&c) {
                 candidats.push(c);
             }
         }
@@ -785,43 +829,41 @@ impl Vfs {
         }
 
         let cpk_filename = &cpk_filename;
-        let mut cache = self.cpk_cache.lock().unwrap();
+        let cpk_path = self.game_data_dir.join("packs").join(cpk_filename);
+        let mut cache = self
+            .cpk_cache
+            .lock()
+            .map_err(|_| FormatError::Corrupt("VFS cache lock poisoned"))?;
 
+        // Only the TOC is cached; entry bytes are fetched with positioned reads, exactly like the
+        // remote mount. A pack weighs several GiB: loading it whole made the local path (server,
+        // `Vfs::init`) a different, memory-bound implementation from the SFTP/HTTP one.
         let reader_arc = if let Some(arc) = cache.get(cpk_filename) {
             arc
         } else {
-            let cpk_path = self.game_data_dir.join("packs").join(cpk_filename);
-            let mut file = File::open(&cpk_path)
-                .map_err(|_| FormatError::Corrupt("impossible d'ouvrir le CPK"))?;
-            let mut cpk_bytes = Vec::new();
-            file.read_to_end(&mut cpk_bytes)
-                .map_err(|_| FormatError::Corrupt("impossible de lire le CPK"))?;
-
-            let reader = CpkReader::new(&cpk_bytes, cpk_filename)?;
-            let arc = Arc::new((reader, cpk_bytes));
+            let reader = open_local_toc(&cpk_path, cpk_filename)?;
+            let arc = Arc::new((reader, Vec::new()));
             cache.insert(cpk_filename.clone(), arc.clone());
             arc
         };
 
-        // Le verrou du cache est rendu AVANT l'extraction : la recherche d'entrée et la
-        // décompression CRILAYLA sont du CPU pur sur des octets que notre `Arc` garde vivants
-        // même si un autre thread évince ce CPK entre-temps (c'est la garantie du cache).
-        // Le garder aurait sérialisé tout le décodage du serveur derrière un seul mutex.
+        // The cache lock is released BEFORE extraction (CRILAYLA decoding is pure CPU on bytes
+        // our `Arc` keeps alive even if another thread evicts this pack meanwhile).
         drop(cache);
 
-        let (reader, cpk_bytes) = &*reader_arc;
+        let (reader, _) = &*reader_arc;
 
-        // Trouver l'entrée CPK : on matche le CHEMIN COMPLET (`directory/filename`) en
-        // priorité — sinon les fichiers de même nom de base dans des dossiers différents du
-        // MÊME cpk (ex. `common/text/fr/skill_text.cfg.bin` vs `.../de/...`, `.../ja/...`)
-        // collisionnent et on sert toujours le premier (bug de langue). Repli sur le basename
-        // (exact puis insensible à la casse) pour l'index supplémentaire dont le scan azalee
-        // abaisse la casse des chemins (TOC CPK : casse d'origine `Chronicle_Title_CN_01.usm`).
+        // Full path (`directory/filename`) first: same-named files of different directories of
+        // the SAME pack (`common/text/fr/skill_text.cfg.bin` vs `.../de/...`) must not collide.
+        // `find_file` then falls back to a case-insensitive / basename match for the extra index
+        // whose paths may have been lowercased by the azalee scan.
         let cpk_entry = reader
             .find_file(internal_path)
             .ok_or(FormatError::Corrupt("fichier non trouve dans le CPK"))?;
 
-        reader.extract(cpk_bytes, cpk_entry)
+        reader.extract_from_reader(cpk_entry, |offset, size| {
+            read_file_range(&cpk_path, offset, size)
+        })
     }
 
     #[cfg(feature = "remote-vfs")]
@@ -1003,6 +1045,125 @@ impl Vfs {
         self.index_extra
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
+    }
+
+    /// Every servable logical path with its container and size: the main index (or the dump)
+    /// followed by the extra packs, in no particular order (sort when order matters).
+    ///
+    /// [`Vfs::iter`] only walks the main index, so a listing built on it silently omitted the
+    /// files of packs absent from `cpk_list.cfg.bin` while [`Vfs::read`] still served them: the
+    /// folder view and the readable set were two different VFS. Listing surfaces use this one.
+    pub fn iter_all(&self) -> impl Iterator<Item = VfsEntryRef<'_>> {
+        let main = self.iter().map(|(path, e)| VfsEntryRef {
+            path,
+            cpk: e.cpk_filename.as_str(),
+            size: u64::from(e.file_size),
+            extra: false,
+        });
+        let extra = self.index_extra.iter().map(|(path, cpk)| VfsEntryRef {
+            path: path.as_str(),
+            cpk: cpk.as_str(),
+            size: self.extra_sizes.get(path).copied().unwrap_or(0),
+            extra: true,
+        });
+        main.chain(extra.filter(|_| !self.loose_files))
+    }
+
+    /// Look one path up in the main index, then the extra index (the order [`Vfs::read`] uses).
+    #[must_use]
+    pub fn find_any(&self, internal_path: &str) -> Option<VfsEntryRef<'_>> {
+        if let Some(e) = self.find(internal_path) {
+            return Some(VfsEntryRef {
+                path: e.internal_path.as_str(),
+                cpk: e.cpk_filename.as_str(),
+                size: u64::from(e.file_size),
+                extra: false,
+            });
+        }
+        if self.loose_files {
+            return None;
+        }
+        let (path, cpk) = self.index_extra.get_key_value(internal_path)?;
+        Some(VfsEntryRef {
+            path: path.as_str(),
+            cpk: cpk.as_str(),
+            size: self.extra_sizes.get(internal_path).copied().unwrap_or(0),
+            extra: true,
+        })
+    }
+
+    /// Canonical manifest of this mount (see [`crate::vfs_manifest`]): one row per logical path,
+    /// with the pack, offset, stored and extracted size taken from the pack TOC. Only TOCs are
+    /// read (positioned reads, local or remote); overlays (`data/oc`, `var/ocgen`) are host-local
+    /// mounts and are excluded so every host derives the same digest from the same install.
+    ///
+    /// # Errors
+    /// A pack listed by the index cannot be opened.
+    pub fn manifest(&self, game: &str) -> Result<crate::vfs_manifest::Manifest, FormatError> {
+        use crate::vfs_manifest::{Manifest, ManifestEntry};
+        let mut rows: Vec<ManifestEntry> = Vec::new();
+        if self.loose_files {
+            for (path, e) in self.iter() {
+                if self.overlays.contains_key(path) {
+                    continue;
+                }
+                rows.push(ManifestEntry::loose(path, u64::from(e.file_size)));
+            }
+            return Ok(Manifest::new(game, rows));
+        }
+        let mut by_pack: std::collections::BTreeMap<&str, Vec<(&str, u64, bool)>> =
+            std::collections::BTreeMap::new();
+        for e in self.iter_all() {
+            if e.cpk.is_empty() {
+                rows.push(ManifestEntry::loose(e.path, e.size));
+            } else {
+                by_pack
+                    .entry(e.cpk)
+                    .or_default()
+                    .push((e.path, e.size, e.extra));
+            }
+        }
+        for (pack, paths) in by_pack {
+            let toc_pack = self.toc_for_manifest(pack)?;
+            let reader = &toc_pack.0;
+            // First occurrence wins: that is the one `CpkReader::find_file` serves.
+            let mut toc: HashMap<String, &crate::cpk::CpkEntry> =
+                HashMap::with_capacity(reader.entries.len());
+            for entry in &reader.entries {
+                if entry.filename.is_empty() {
+                    continue;
+                }
+                toc.entry(crate::vfs_manifest::join_canonical(
+                    &entry.directory,
+                    &entry.filename,
+                ))
+                .or_insert(entry);
+            }
+            for (path, declared, extra) in paths {
+                rows.push(match toc.get(path) {
+                    Some(entry) => ManifestEntry::packed(path, pack, entry, extra),
+                    None => ManifestEntry::unresolved(path, pack, declared, extra),
+                });
+            }
+        }
+        Ok(Manifest::new(game, rows))
+    }
+
+    fn toc_for_manifest(&self, pack: &str) -> Result<Arc<(CpkReader, Vec<u8>)>, FormatError> {
+        if let Ok(mut cache) = self.cpk_cache.lock()
+            && let Some(hit) = cache.get(pack)
+        {
+            return Ok(hit);
+        }
+        #[cfg(feature = "remote-vfs")]
+        if let Some(remote) = &self.remote {
+            let reader = CpkReader::from_reader(pack, |offset, length| {
+                remote.range(&format!("packs/{pack}"), offset, length)
+            })?;
+            return Ok(Arc::new((reader, Vec::new())));
+        }
+        let path = self.game_data_dir.join("packs").join(pack);
+        Ok(Arc::new((open_local_toc(&path, pack)?, Vec::new())))
     }
 
     /// Ajoute un fichier d'overlay au VFS associant un chemin logique interne à un fichier réel sur disque.
