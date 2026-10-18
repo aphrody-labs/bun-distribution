@@ -58,8 +58,23 @@ export class WindowManager {
   /** Window order per workspace, used by the tiled layouts. */
   private order = new Map<number, string[]>();
   constructor(private readonly desk: HTMLElement) {
+    this.layouts = {};
     try {
-      this.layouts = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? "{}") as Record<number, Layout>;
+      const saved: unknown = JSON.parse(
+        localStorage.getItem(LAYOUT_KEY) ?? "{}",
+      );
+      if (saved && typeof saved === "object") {
+        for (const [workspace, layout] of Object.entries(saved)) {
+          const ws = Number(workspace);
+          if (
+            Number.isInteger(ws) &&
+            ws >= 1 &&
+            ws <= WORKSPACES &&
+            LAYOUTS.includes(layout as Layout)
+          )
+            this.layouts[ws] = layout as Layout;
+        }
+      }
     } catch {
       this.layouts = {};
     }
@@ -100,7 +115,16 @@ export class WindowManager {
     const id = o.id ?? `w${++this.seq}`;
     const titleEl = h("span", { class: "win-title" }, o.title);
     const mk = (cls: string, name: string, label: string, fn: () => void) =>
-      h("button", { class: `win-btn ${cls}`, "aria-label": label, title: label, onclick: fn }, icon(name));
+      h(
+        "button",
+        {
+          class: `win-btn ${cls}`,
+          "aria-label": label,
+          title: label,
+          onclick: fn,
+        },
+        icon(name),
+      );
     const bar = h(
       "div",
       { class: "win-bar" },
@@ -113,7 +137,7 @@ export class WindowManager {
     const body = h("div", { class: "win-body" }, o.content);
     const el = h(
       "section",
-      { class: "win", role: "dialog", "aria-label": o.title },
+      { class: "win", role: "dialog", "aria-label": o.title, tabindex: -1 },
       bar,
       body,
       h("div", { class: "win-resize", "aria-hidden": "true" }),
@@ -145,15 +169,16 @@ export class WindowManager {
         if (list)
           this.order.set(
             win.ws,
-            list.filter(x => x !== id),
+            list.filter((x) => x !== id),
           );
         this.arrange();
         this.emit();
       },
       focus: () => this.focus(win),
-      setTitle: t => {
+      setTitle: (t) => {
         win.title = t;
         titleEl.textContent = t;
+        el.setAttribute("aria-label", t);
         this.emit();
       },
     };
@@ -161,7 +186,7 @@ export class WindowManager {
     this.order.set(win.ws, [...(this.order.get(win.ws) ?? []), id]);
     this.desk.append(el);
     el.addEventListener("pointerdown", () => this.focus(win), true);
-    bar.addEventListener("dblclick", e => {
+    bar.addEventListener("dblclick", (e) => {
       if (!(e.target as HTMLElement).closest(".win-btn")) this.toggleMax(win);
     });
     this.drag(win, bar);
@@ -184,14 +209,18 @@ export class WindowManager {
 
   focus(win: AppWindow) {
     win.el.style.zIndex = String(++this.z);
-    for (const w of this.windows.values()) w.el.classList.toggle("active", w === win);
+    for (const w of this.windows.values())
+      w.el.classList.toggle("active", w === win);
     this.emit();
   }
   restore(win: AppWindow) {
+    if (!win.scratch && win.ws !== this.workspace) this.goTo(win.ws);
+    if (win.scratch) this.scratchOpen = true;
     win.minimized = false;
     this.applyVisibility();
     this.arrange();
     this.focus(win);
+    win.el.focus({ preventScroll: true });
   }
   minimize(win: AppWindow) {
     win.minimized = true;
@@ -206,7 +235,10 @@ export class WindowManager {
     this.emit();
   }
   active(): AppWindow | undefined {
-    return [...this.windows.values()].find(w => w.el.classList.contains("active") && !w.minimized && this.visible(w));
+    return [...this.windows.values()].find(
+      (w) =>
+        w.el.classList.contains("active") && !w.minimized && this.visible(w),
+    );
   }
   activeId(): string | undefined {
     return this.active()?.id;
@@ -235,7 +267,7 @@ export class WindowManager {
     if (from)
       this.order.set(
         win.ws,
-        from.filter(x => x !== win.id),
+        from.filter((x) => x !== win.id),
       );
     win.ws = ws;
     win.scratch = false;
@@ -249,7 +281,9 @@ export class WindowManager {
   }
   /** Workspaces that currently hold at least one window. */
   occupied(): Set<number> {
-    return new Set([...this.windows.values()].filter(w => !w.scratch).map(w => w.ws));
+    return new Set(
+      [...this.windows.values()].filter((w) => !w.scratch).map((w) => w.ws),
+    );
   }
 
   // Scratchpad ---------------------------------------------------------------------------------
@@ -258,7 +292,7 @@ export class WindowManager {
     this.applyVisibility();
     this.arrange();
     if (this.scratchOpen) {
-      const top = [...this.windows.values()].filter(w => w.scratch).at(-1);
+      const top = [...this.windows.values()].filter((w) => w.scratch).at(-1);
       if (top) this.focus(top);
     }
     this.emit();
@@ -275,12 +309,19 @@ export class WindowManager {
   // Layout -------------------------------------------------------------------------------------
   private visibleWindows(): AppWindow[] {
     const ids = this.order.get(this.workspace) ?? [];
-    return ids.map(id => this.windows.get(id)!).filter(w => w && this.visible(w));
+    return ids
+      .map((id) => this.windows.get(id)!)
+      .filter((w) => w && this.visible(w));
   }
 
   private save(w: AppWindow) {
     if (w.el.dataset.float) return;
-    w.el.dataset.float = JSON.stringify([w.el.style.left, w.el.style.top, w.el.style.width, w.el.style.height]);
+    w.el.dataset.float = JSON.stringify([
+      w.el.style.left,
+      w.el.style.top,
+      w.el.style.width,
+      w.el.style.height,
+    ]);
   }
   private place(w: AppWindow, r: Rect) {
     this.save(w);
@@ -304,12 +345,35 @@ export class WindowManager {
     const layout = this.layout();
     const all = [...this.windows.values()];
     if (layout === "floating") {
-      for (const w of all) this.unplace(w);
+      for (const w of all) {
+        this.unplace(w);
+        if (w.maximized || !this.visible(w)) continue;
+        const width = this.desk.clientWidth;
+        const height = this.desk.clientHeight;
+        if (width <= 0 || height <= 0) continue;
+        const availableWidth = Math.max(120, width - GAP * 2);
+        const availableHeight = Math.max(120, height - 84);
+        const ww = Math.min(w.el.offsetWidth, availableWidth);
+        const wh = Math.min(w.el.offsetHeight, availableHeight);
+        Object.assign(w.el.style, {
+          width: `${ww}px`,
+          height: `${wh}px`,
+          left: `${Math.max(0, Math.min(w.el.offsetLeft, width - ww))}px`,
+          top: `${Math.max(0, Math.min(w.el.offsetTop, height - wh - 76))}px`,
+        });
+      }
       return;
     }
-    const tiled = this.visibleWindows().filter(w => !w.scratch && !w.maximized);
+    const tiled = this.visibleWindows().filter(
+      (w) => !w.scratch && !w.maximized,
+    );
     for (const w of all) if (!tiled.includes(w)) this.unplace(w);
-    const area: Rect = { x: GAP, y: GAP, w: this.desk.clientWidth - GAP * 2, h: this.desk.clientHeight - GAP * 2 - 76 };
+    const area: Rect = {
+      x: GAP,
+      y: GAP,
+      w: this.desk.clientWidth - GAP * 2,
+      h: this.desk.clientHeight - GAP * 2 - 76,
+    };
     if (!tiled.length || area.w <= 0) return;
     if (layout === "dwindle") this.dwindle(tiled, area);
     else this.scrolling(tiled, area);
@@ -320,7 +384,9 @@ export class WindowManager {
     if (!first) return;
     if (!rest.length) return this.place(first, r);
     const horizontal = r.w >= r.h;
-    const half: Rect = horizontal ? { ...r, w: (r.w - GAP) / 2 } : { ...r, h: (r.h - GAP) / 2 };
+    const half: Rect = horizontal
+      ? { ...r, w: (r.w - GAP) / 2 }
+      : { ...r, h: (r.h - GAP) / 2 };
     this.place(first, half);
     const next: Rect = horizontal
       ? { x: r.x + half.w + GAP, y: r.y, w: half.w, h: r.h }
@@ -333,10 +399,12 @@ export class WindowManager {
     const colW = list.length === 1 ? r.w : r.w * 0.7;
     const focused = Math.max(
       0,
-      list.findIndex(w => w.el.classList.contains("active")),
+      list.findIndex((w) => w.el.classList.contains("active")),
     );
     const start = r.x + (r.w - colW) / 2 - focused * (colW + GAP);
-    list.forEach((w, i) => this.place(w, { x: start + i * (colW + GAP), y: r.y, w: colW, h: r.h }));
+    list.forEach((w, i) =>
+      this.place(w, { x: start + i * (colW + GAP), y: r.y, w: colW, h: r.h }),
+    );
   }
 
   // Directional focus and swap -------------------------------------------------------------------
@@ -353,9 +421,11 @@ export class WindowManager {
       const b = c(w);
       const dx = b.x - a.x;
       const dy = b.y - a.y;
-      const along = dir === "left" ? -dx : dir === "right" ? dx : dir === "up" ? -dy : dy;
+      const along =
+        dir === "left" ? -dx : dir === "right" ? dx : dir === "up" ? -dy : dy;
       if (along <= 0) continue;
-      const across = dir === "left" || dir === "right" ? Math.abs(dy) : Math.abs(dx);
+      const across =
+        dir === "left" || dir === "right" ? Math.abs(dy) : Math.abs(dx);
       const s = along + across * 2;
       if (s < score) {
         score = s;
@@ -403,13 +473,19 @@ export class WindowManager {
             : { x: dw * 0.2, y: dh * 0.15, w: dw * 0.6, h: dh * 0.7 };
     w.maximized = false;
     w.el.classList.remove("maximized");
-    Object.assign(w.el.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+    Object.assign(w.el.style, {
+      left: `${r.x}px`,
+      top: `${r.y}px`,
+      width: `${r.w}px`,
+      height: `${r.h}px`,
+    });
   }
 
   // Pointer gestures ----------------------------------------------------------------------------
   private drag(win: AppWindow, bar: HTMLElement) {
-    bar.addEventListener("pointerdown", e => {
-      if (win.maximized || (e.target as HTMLElement).closest(".win-btn")) return;
+    bar.addEventListener("pointerdown", (e) => {
+      if (win.maximized || (e.target as HTMLElement).closest(".win-btn"))
+        return;
       this.startMove(win, e, bar);
     });
   }
@@ -429,13 +505,17 @@ export class WindowManager {
     const up = () => {
       target.removeEventListener("pointermove", move);
       target.removeEventListener("pointerup", up);
+      target.removeEventListener("pointercancel", up);
+      target.removeEventListener("lostpointercapture", up);
     };
     target.addEventListener("pointermove", move);
     target.addEventListener("pointerup", up);
+    target.addEventListener("pointercancel", up);
+    target.addEventListener("lostpointercapture", up);
   }
 
   private resize(win: AppWindow, grip: HTMLElement) {
-    grip.addEventListener("pointerdown", e => {
+    grip.addEventListener("pointerdown", (e) => {
       if (win.maximized) return;
       this.startResize(win, e, grip);
     });
@@ -453,16 +533,20 @@ export class WindowManager {
     const up = () => {
       grip.removeEventListener("pointermove", move);
       grip.removeEventListener("pointerup", up);
+      grip.removeEventListener("pointercancel", up);
+      grip.removeEventListener("lostpointercapture", up);
     };
     grip.addEventListener("pointermove", move);
     grip.addEventListener("pointerup", up);
+    grip.addEventListener("pointercancel", up);
+    grip.addEventListener("lostpointercapture", up);
   }
 
   /** Alt+drag moves a window from anywhere, Alt+right-drag resizes it (Super+drag in Omarchy). */
   private altGestures(win: AppWindow) {
     win.el.addEventListener(
       "pointerdown",
-      e => {
+      (e) => {
         if (!(e.altKey || e.metaKey) || win.maximized) return;
         e.preventDefault();
         e.stopPropagation();
@@ -472,7 +556,7 @@ export class WindowManager {
       },
       true,
     );
-    win.el.addEventListener("contextmenu", e => {
+    win.el.addEventListener("contextmenu", (e) => {
       if (e.altKey || e.metaKey) e.preventDefault();
     });
   }

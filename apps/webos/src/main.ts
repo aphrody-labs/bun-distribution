@@ -17,7 +17,13 @@ import { storeApp } from "./apps/store";
 import { terminalApp } from "./apps/terminal";
 import { h, icon } from "./dom";
 import { catalog } from "./os";
-import { installed, reconcile, registerServiceWorker, registry, type RegistryEntry } from "./pkg";
+import {
+  installed,
+  reconcile,
+  registerServiceWorker,
+  registry,
+  type RegistryEntry,
+} from "./pkg";
 import { installKeys, shortcutsView } from "./keys";
 import { WindowManager, type Layout } from "./wm";
 
@@ -43,7 +49,7 @@ function loading(root: HTMLElement, task: Promise<unknown>) {
   root.append(spin);
   task.then(
     () => spin.remove(),
-    error => {
+    (error) => {
       spin.textContent = `This app could not start: ${String(error)}`;
     },
   );
@@ -52,17 +58,43 @@ function loading(root: HTMLElement, task: Promise<unknown>) {
 function openEditor(path: string, text: string) {
   const content = h("div", { class: "fill" });
   void editorApp(content, path, text);
-  wm.open({ id: `edit:${path}`, title: path.split("/").pop() ?? path, icon: "doc", width: 640, height: 480, content });
+  wm.open({
+    id: `edit:${path}`,
+    title: path.split("/").pop() ?? path,
+    icon: "doc",
+    width: 640,
+    height: 480,
+    content,
+  });
 }
 
 const builtins: Builtin[] = [
+  {
+    id: "aphrody-workspace",
+    name: "Aphrody Workspace",
+    icon: "app",
+    desc: "Files, conversations, models and settings in your shared workspace",
+    group: "core",
+    width: 1100,
+    height: 720,
+    mount: (root) =>
+      root.append(
+        h("iframe", {
+          class: "appframe",
+          src: "/workspace/os",
+          title: "Aphrody Workspace",
+          allow:
+            "clipboard-read; clipboard-write; fullscreen; cross-origin-isolated",
+        }),
+      ),
+  },
   {
     id: "files",
     name: "Files",
     icon: "folder",
     desc: "Your files, saved in this browser",
     group: "core",
-    mount: root => loading(root, filesApp(root, openEditor)),
+    mount: (root) => loading(root, filesApp(root, openEditor)),
   },
   {
     id: "browser",
@@ -72,7 +104,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 1000,
     height: 640,
-    mount: root => browserApp(root),
+    mount: (root) => browserApp(root),
   },
   {
     id: "apps",
@@ -82,7 +114,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 860,
     height: 600,
-    mount: root => loading(root, appStore(root, refreshApps, launchPackage)),
+    mount: (root) => loading(root, appStore(root, refreshApps, launchPackage)),
   },
   {
     id: "settings",
@@ -92,7 +124,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 520,
     height: 520,
-    mount: root => settingsApp(root),
+    mount: (root) => settingsApp(root),
   },
   {
     id: "linux",
@@ -102,7 +134,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 900,
     height: 620,
-    mount: root => loading(root, linuxApp(root)),
+    mount: (root) => loading(root, linuxApp(root)),
   },
   {
     id: "docs",
@@ -112,7 +144,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 980,
     height: 640,
-    mount: root => loading(root, docsApp(root)),
+    mount: (root) => loading(root, docsApp(root)),
   },
   {
     id: "terminal",
@@ -122,7 +154,7 @@ const builtins: Builtin[] = [
     group: "advanced",
     width: 760,
     height: 460,
-    mount: root => loading(root, terminalApp(root)),
+    mount: (root) => loading(root, terminalApp(root)),
   },
   {
     id: "inspector",
@@ -132,7 +164,7 @@ const builtins: Builtin[] = [
     group: "advanced",
     width: 760,
     height: 560,
-    mount: root => loading(root, inspectorApp(root)),
+    mount: (root) => loading(root, inspectorApp(root)),
   },
   {
     id: "engine",
@@ -142,24 +174,26 @@ const builtins: Builtin[] = [
     group: "advanced",
     width: 820,
     height: 560,
-    mount: root => loading(root, engineApp(root)),
+    mount: (root) => loading(root, engineApp(root)),
   },
   {
     id: "workspace",
-    name: "Workspace",
+    name: "Source catalog",
     icon: "code",
     desc: "Every Bun OS app, package and crate",
     group: "advanced",
     width: 920,
     height: 600,
-    mount: root =>
+    mount: (root) =>
       loading(
         root,
         storeApp(
           root,
           (_kind, target) =>
             void window.open(
-              target.startsWith("http") ? target : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
+              target.startsWith("http")
+                ? target
+                : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
               "_blank",
               "noopener",
             ),
@@ -174,7 +208,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 820,
     height: 560,
-    mount: root => loading(root, mediaApp(root)),
+    mount: (root) => loading(root, mediaApp(root)),
   },
   {
     id: "webapps",
@@ -184,7 +218,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 760,
     height: 520,
-    mount: root => webAppsApp(root, () => renderLauncher()),
+    mount: (root) => webAppsApp(root, () => renderLauncher()),
   },
   {
     id: "calculator",
@@ -194,7 +228,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 320,
     height: 480,
-    mount: root => calculatorApp(root),
+    mount: (root) => calculatorApp(root),
   },
   {
     id: "storage",
@@ -204,7 +238,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 760,
     height: 520,
-    mount: root => loading(root, storageApp(root)),
+    mount: (root) => loading(root, storageApp(root)),
   },
   {
     id: "activity",
@@ -214,7 +248,7 @@ const builtins: Builtin[] = [
     group: "advanced",
     width: 640,
     height: 520,
-    mount: root => activityApp(root, wm),
+    mount: (root) => activityApp(root, wm),
   },
   {
     id: "keys",
@@ -224,7 +258,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 560,
     height: 560,
-    mount: root => root.append(shortcutsView()),
+    mount: (root) => root.append(shortcutsView()),
   },
   {
     id: "about",
@@ -234,20 +268,37 @@ const builtins: Builtin[] = [
     group: "core",
     width: 520,
     height: 420,
-    mount: root => loading(root, aboutApp(root)),
+    mount: (root) => loading(root, aboutApp(root)),
   },
 ];
 
 function launchBuiltin(b: Builtin) {
+  const existing = wm.windows.get(b.id);
+  if (existing) {
+    wm.restore(existing);
+    return;
+  }
   const content = h("div", { class: "fill" });
-  wm.open({ id: b.id, title: b.name, icon: b.icon, width: b.width, height: b.height, content });
+  wm.open({
+    id: b.id,
+    title: b.name,
+    icon: b.icon,
+    width: b.width,
+    height: b.height,
+    content,
+  });
   if (!content.hasChildNodes()) b.mount(content);
 }
 
 // Installed packages (from the package manager) behave like any other app.
 let registryEntries: RegistryEntry[] = [];
-const installedEntries = () => registryEntries.filter(e => installed()[e.id]);
+const installedEntries = () => registryEntries.filter((e) => installed()[e.id]);
 function launchPackage(e: RegistryEntry) {
+  const existing = wm.windows.get(`pkg:${e.id}`);
+  if (existing) {
+    wm.restore(existing);
+    return;
+  }
   const content = h("div", { class: "fill" });
   wm.open({
     id: `pkg:${e.id}`,
@@ -263,7 +314,8 @@ function launchPackage(e: RegistryEntry) {
         class: "appframe",
         src: `/apps/${e.id}/`,
         title: e.name,
-        allow: "fullscreen; gamepad; autoplay; clipboard-read; clipboard-write; cross-origin-isolated",
+        allow:
+          "fullscreen; gamepad; autoplay; clipboard-read; clipboard-write; cross-origin-isolated",
       }),
     );
   }
@@ -276,7 +328,7 @@ function refreshApps() {
 async function aboutApp(root: HTMLElement) {
   const data = await catalog();
   const health = await fetch("/api/health").then(
-    r => r.json() as Promise<{ colo?: string }>,
+    (r) => r.json() as Promise<{ colo?: string }>,
     () => ({}) as { colo?: string },
   );
   root.append(
@@ -284,16 +336,28 @@ async function aboutApp(root: HTMLElement) {
       "div",
       { class: "detail" },
       h("h2", {}, "Aphrody Bun OS"),
-      h("p", {}, "A complete desktop that runs in your browser. Your files stay on your device."),
+      h(
+        "p",
+        {},
+        "A complete desktop that runs in your browser. Your files stay on your device.",
+      ),
       h(
         "dl",
         { class: "kv" },
         h("dt", {}, "Workspace"),
-        h("dd", {}, `${data.counts.apps} apps · ${data.counts.packages} packages · ${data.counts.crates} crates`),
+        h(
+          "dd",
+          {},
+          `${data.counts.apps} apps · ${data.counts.packages} packages · ${data.counts.crates} crates`,
+        ),
         h("dt", {}, "Installed apps"),
         h("dd", {}, String(Object.keys(installed()).length)),
         h("dt", {}, "Browser"),
-        h("dd", {}, navigator.userAgent.replace(/^Mozilla\/5.0 /, "").slice(0, 80)),
+        h(
+          "dd",
+          {},
+          navigator.userAgent.replace(/^Mozilla\/5.0 /, "").slice(0, 80),
+        ),
         h("dt", {}, "Cores"),
         h("dd", {}, String(navigator.hardwareConcurrency ?? "n/a")),
         h("dt", {}, "Language"),
@@ -339,16 +403,22 @@ function settingsApp(root: HTMLElement) {
       h(
         "div",
         { class: "seg" },
-        ...["auto", "light", "dark"].map(m =>
+        ...["auto", "light", "dark"].map((m) =>
           h(
             "button",
             {
               class: "segb",
-              "aria-selected": String((localStorage.getItem("aph.mode") ?? "auto") === m),
+              "aria-selected": String(
+                (localStorage.getItem("aph.mode") ?? "auto") === m,
+              ),
               onclick: (e: Event) => {
                 set("aph.mode", m);
-                for (const b of (e.currentTarget as HTMLElement).parentElement!.children)
-                  b.setAttribute("aria-selected", String(b === e.currentTarget));
+                for (const b of (e.currentTarget as HTMLElement).parentElement!
+                  .children)
+                  b.setAttribute(
+                    "aria-selected",
+                    String(b === e.currentTarget),
+                  );
               },
             },
             m[0]!.toUpperCase() + m.slice(1),
@@ -386,7 +456,14 @@ function settingsApp(root: HTMLElement) {
 }
 
 // Launcher: your apps first, then installed packages, then advanced tools.
-const launcher = h("div", { class: "launcher", hidden: true, role: "dialog", "aria-label": "Launcher" });
+const launcher = h("div", {
+  class: "launcher",
+  hidden: true,
+  role: "dialog",
+  "aria-modal": "true",
+  "aria-label": "Applications",
+});
+let launcherOpener: HTMLElement | null = null;
 const lsearch = h("input", {
   class: "lsearch",
   type: "search",
@@ -395,11 +472,38 @@ const lsearch = h("input", {
   autocomplete: "off",
 });
 const lgrid = h("div", { class: "lgrid" });
-launcher.append(h("div", { class: "lbox" }, lsearch, lgrid));
+launcher.append(
+  h(
+    "div",
+    { class: "lbox" },
+    h(
+      "div",
+      { class: "launcher-heading" },
+      h(
+        "div",
+        {},
+        h("strong", {}, "Aphrody"),
+        h("span", {}, "Your apps, one workspace."),
+      ),
+      h(
+        "button",
+        {
+          class: "tbtn",
+          "aria-label": "Close applications",
+          onclick: () => closeLauncher(),
+        },
+        icon("close"),
+      ),
+    ),
+    lsearch,
+    lgrid,
+  ),
+);
 
 function renderLauncher() {
   const q = lsearch.value.trim().toLowerCase();
-  const match = (name: string, desc: string) => !q || name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
+  const match = (name: string, desc: string) =>
+    !q || name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
   const tile = (name: string, ic: string, fn: () => void, sub = "") =>
     h(
       "button",
@@ -415,24 +519,44 @@ function renderLauncher() {
       sub ? h("span", { class: "lsub" }, sub) : null,
     );
   const section = (title: string, tiles: HTMLElement[]) =>
-    tiles.length ? [h("h3", { class: "lhead" }, title), h("div", { class: "lsection" }, ...tiles)] : [];
+    tiles.length
+      ? [
+          h("h3", { class: "lhead" }, title),
+          h("div", { class: "lsection" }, ...tiles),
+        ]
+      : [];
   const core = builtins
-    .filter(b => b.group === "core" && match(b.name, b.desc))
-    .map(b => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
+    .filter((b) => b.group === "core" && match(b.name, b.desc))
+    .map((b) => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
   const pkgs = installedEntries()
-    .filter(e => match(e.name, e.description))
-    .map(e => tile(e.name, e.category === "games" ? "game" : "app", () => launchPackage(e), e.category));
+    .filter((e) => match(e.name, e.description))
+    .map((e) =>
+      tile(
+        e.name,
+        e.category === "games" ? "game" : "app",
+        () => launchPackage(e),
+        e.category,
+      ),
+    );
   const web = webApps()
-    .filter(a => match(a.name, a.url))
-    .map(a => tile(a.name, "globe", () => openWebApp(a), new URL(a.url).hostname));
+    .filter((a) => match(a.name, a.url))
+    .map((a) =>
+      tile(a.name, "globe", () => openWebApp(a), new URL(a.url).hostname),
+    );
   const adv = builtins
-    .filter(b => b.group === "advanced" && match(b.name, b.desc))
-    .map(b => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
+    .filter((b) => b.group === "advanced" && match(b.name, b.desc))
+    .map((b) => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
   const search = q
     ? [
         tile(`Search the web for “${lsearch.value.trim()}”`, "globe", () => {
           const content = h("div", { class: "fill" });
-          wm.open({ title: "Browser", icon: "globe", width: 1000, height: 640, content });
+          wm.open({
+            title: "Browser",
+            icon: "globe",
+            width: 1000,
+            height: 640,
+            content,
+          });
           browserApp(content, lsearch.value.trim());
         }),
       ]
@@ -446,6 +570,11 @@ function renderLauncher() {
   );
 }
 function openLauncher() {
+  if (launcher.hidden)
+    launcherOpener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
   launcher.hidden = false;
   lsearch.value = "";
   renderLauncher();
@@ -453,27 +582,60 @@ function openLauncher() {
 }
 function closeLauncher() {
   launcher.hidden = true;
+  if (launcherOpener?.isConnected) launcherOpener.focus();
+  else bar.querySelector<HTMLElement>(".brand")?.focus();
 }
 lsearch.addEventListener("input", renderLauncher);
-launcher.addEventListener("pointerdown", e => {
+launcher.addEventListener("pointerdown", (e) => {
   if (e.target === launcher) closeLauncher();
 });
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
     e.preventDefault();
     if (launcher.hidden) openLauncher();
     else closeLauncher();
   }
   if (e.key === "Escape" && !launcher.hidden) closeLauncher();
-  if (e.key === "Enter" && !launcher.hidden && document.activeElement === lsearch)
+  if (
+    e.key === "Enter" &&
+    !launcher.hidden &&
+    document.activeElement === lsearch
+  )
     lgrid.querySelector<HTMLElement>(".ltile")?.click();
+  if (
+    !launcher.hidden &&
+    e.key === "ArrowDown" &&
+    document.activeElement === lsearch
+  ) {
+    e.preventDefault();
+    lgrid.querySelector<HTMLElement>(".ltile")?.focus();
+  }
+  if (!launcher.hidden && e.key === "Tab") {
+    const controls = [
+      ...launcher.querySelectorAll<HTMLElement>("button, input"),
+    ];
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last?.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first?.focus();
+    }
+  }
 });
 
 function renderDock() {
   const items: HTMLElement[] = [
     h(
       "button",
-      { class: "dbtn launch", title: "Launcher (Ctrl+K)", "aria-label": "Open launcher", onclick: openLauncher },
+      {
+        class: "dbtn launch",
+        title: "Launcher (Ctrl+K)",
+        "aria-label": "Open launcher",
+        onclick: openLauncher,
+      },
       icon("grid"),
     ),
     h("span", { class: "dsep" }),
@@ -483,7 +645,9 @@ function renderDock() {
     if (w.minimized || wm.activeId() !== id) wm.restore(w);
     else wm.minimize(w);
   };
-  const pinned = ["files", "browser", "apps", "settings"].map(id => builtins.find(b => b.id === id)!);
+  const pinned = ["files", "browser", "terminal", "linux", "apps"].map((id) =>
+    builtins.find((b) => b.id === id)!,
+  );
   const seen = new Set<string>();
   for (const b of pinned) {
     seen.add(b.id);
@@ -541,22 +705,27 @@ const icons = h("div", { class: "icons" });
 function renderDesktopIcons() {
   const tiles = [
     ...builtins
-      .filter(b => b.group === "core" && b.id !== "about")
-      .map(b => ({ name: b.name, ic: b.icon, fn: () => launchBuiltin(b) })),
-    ...installedEntries().map(e => ({
+      .filter((b) => b.group === "core" && b.id !== "about")
+      .map((b) => ({ name: b.name, ic: b.icon, fn: () => launchBuiltin(b) })),
+    ...installedEntries().map((e) => ({
       name: e.name,
       ic: e.category === "games" ? "game" : "app",
       fn: () => launchPackage(e),
     })),
   ];
   icons.replaceChildren(
-    ...tiles.map(t =>
+    ...tiles.map((t) =>
       h(
         "button",
         {
           class: "dicon",
           onclick: (e: MouseEvent) => {
-            if (matchMedia("(pointer: coarse)").matches || e.detail >= 2) t.fn();
+            if (
+              e.detail === 0 ||
+              matchMedia("(pointer: coarse)").matches ||
+              e.detail >= 2
+            )
+              t.fn();
           },
         },
         h("span", { class: "licon" }, icon(t.ic)),
@@ -569,19 +738,35 @@ desk.append(icons);
 
 function tick() {
   const d = new Date();
-  clock.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  clock.textContent = d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   clock.dateTime = d.toISOString();
 }
 
 const wsBar = h("nav", { class: "wsbar", "aria-label": "Workspaces" });
+const workspaceStatus = h("button", {
+  class: "workspace-status",
+  "aria-label": "Switch workspace",
+  onclick: () => wm.cycleWorkspace(),
+});
+const activeApp = h("span", { class: "active-app", "aria-live": "polite" });
 const layoutBtn = h("button", {
   class: "tbtn layout",
   title: "Layout (Alt+L)",
   "aria-label": "Cycle layout",
   onclick: () => wm.cycleLayout(),
 });
-const MARK: Record<Layout, string> = { dwindle: "■", scrolling: "●", floating: "▲" };
+const MARK: Record<Layout, string> = {
+  dwindle: "■",
+  scrolling: "●",
+  floating: "▲",
+};
 function renderBar() {
+  workspaceStatus.textContent = `Space ${wm.workspace}`;
+  workspaceStatus.title = `Workspace ${wm.workspace}. Switch to the next workspace`;
+  activeApp.textContent = wm.active()?.title ?? "Desktop";
   const occupied = wm.occupied();
   wsBar.replaceChildren(
     ...Array.from({ length: 10 }, (_, i) => {
@@ -610,18 +795,41 @@ bar.append(
     "Aphrody",
   ),
   wsBar,
+  workspaceStatus,
+  activeApp,
   h("span", { class: "grow" }),
   layoutBtn,
   h(
     "button",
-    { class: "tbtn", title: "Search (Ctrl+K)", "aria-label": "Search", onclick: openLauncher },
+    {
+      class: "tbtn",
+      title: "Search (Ctrl+K)",
+      "aria-label": "Search",
+      onclick: openLauncher,
+    },
     icon("search"),
   ),
   clock,
+  h(
+    "button",
+    {
+      class: "tbtn",
+      title: "Settings",
+      "aria-label": "Open settings",
+      onclick: () => launchBuiltin(builtins.find((b) => b.id === "settings")!),
+    },
+    icon("gear"),
+  ),
 );
 desk.id = "desk";
 desk.tabIndex = -1;
-document.body.append(h("a", { class: "skip", href: "#desk" }, "Skip to desktop"), bar, desk, dock, launcher);
+document.body.append(
+  h("a", { class: "skip", href: "#desk" }, "Skip to desktop"),
+  bar,
+  desk,
+  dock,
+  launcher,
+);
 applyPrefs();
 tick();
 setInterval(tick, 15_000);
@@ -629,10 +837,10 @@ refreshApps();
 renderBar();
 installKeys(wm, {
   launcher: () => (launcher.hidden ? openLauncher() : closeLauncher()),
-  launch: id => launchBuiltin(builtins.find(b => b.id === id)!),
-  help: () => launchBuiltin(builtins.find(b => b.id === "keys")!),
-  webHotkey: code => {
-    const app = webApps().find(a => a.key === code);
+  launch: (id) => launchBuiltin(builtins.find((b) => b.id === id)!),
+  help: () => launchBuiltin(builtins.find((b) => b.id === "keys")!),
+  webHotkey: (code) => {
+    const app = webApps().find((a) => a.key === code);
     if (app) openWebApp(app);
     return !!app;
   },
@@ -642,17 +850,18 @@ void registerServiceWorker();
 const wanted = new URLSearchParams(location.search).get("app");
 void reconcile()
   .then(registry)
-  .then(entries => {
+  .then((entries) => {
     registryEntries = entries;
     refreshApps();
     // Old product links (?app=craft-pdf): open the installed package, or the store to install it.
-    const entry = entries.find(e => e.id === wanted);
+    const entry = entries.find((e) => e.id === wanted);
     if (entry) {
       if (installed()[entry.id]) launchPackage(entry);
-      else launchBuiltin(builtins.find(b => b.id === "apps")!);
+      else launchBuiltin(builtins.find((b) => b.id === "apps")!);
     }
   })
   .catch(() => {});
 
-const target = builtins.find(x => x.id === wanted);
-if (target || !wanted || !wanted.includes("-")) launchBuiltin(target ?? builtins[0]!);
+const target = builtins.find((x) => x.id === wanted);
+if (target || !wanted || !wanted.includes("-"))
+  launchBuiltin(target ?? builtins.find((b) => b.id === "files")!);
