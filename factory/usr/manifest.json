@@ -8,6 +8,7 @@
   "builderImage": "archlinux:base-devel",
   "builderImageObservedId": "061679925e5d",
   "builderPackages": [
+    "git",
     "arch-install-scripts",
     "squashfs-tools",
     "erofs-utils",

@@ -32,7 +32,14 @@ for name in ${BUNOS_PACKAGES}; do
     log "makepkg $name ($key)"
     cp -r "$src" "/tmp/pkgs/$name" && chown -R builder "/tmp/pkgs/$name"
     deps=$(bash -c "source /tmp/pkgs/$name/PKGBUILD; echo \${depends[@]} \${makedepends[@]} \${checkdepends[@]}")
-    [ -z "$deps" ] || pacman -S --noconfirm --needed $deps >/dev/null
+    # Dependencies on packages built earlier in this loop come from the local repository.
+    sync=""
+    for dep in $deps; do
+      dep=${dep%%[<>=]*}
+      built=$(ls "$repo/$dep"-[0-9]*.pkg.tar.zst 2>/dev/null | head -1 || true)
+      if [ -n "$built" ]; then pacman -U --noconfirm --needed "$built" >/dev/null; else sync="$sync $dep"; fi
+    done
+    [ -z "$sync" ] || pacman -S --noconfirm --needed $sync >/dev/null
     mkdir -p "$cached.tmp" && chown builder "$cached.tmp"
     (cd "/tmp/pkgs/$name" && su builder -c "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} PKGDEST=$cached.tmp makepkg --clean --noconfirm --nosign" \
       >"$out/makepkg-$name.log" 2>&1) || { tail -40 "$out/makepkg-$name.log"; exit 3; }
