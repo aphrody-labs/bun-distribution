@@ -166,8 +166,8 @@ secondary threads), so melonDS falls back to its software renderer and QPainter 
 
 | Core                                               | Path                         | State                                                                                                    |
 | -------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `dust-nds`                                         | Rust, Bevy on WebGPU         | builds; smoke: GodMode9i, 120 frames, non-black, no console errors                                       |
-| `melonds`                                          | Qt 6 + Emscripten (pthreads) | builds; boots GodMode9i at full speed; keyboard injection verified (F11 fullscreen)                      |
+| `dust-nds`                                         | Rust, Bevy on WebGPU         | built candidate; fresh VPS receipt required before packaging                                            |
+| `melonds`                                          | Qt 6 + Emscripten (pthreads) | built candidate; browser smoke must pass before packaging                                                |
 | `zakuro-3ds`                                       | Rust, Bevy on WebGPU         | Zakuro ported to wasm32 (in-memory images, no Vulkan/Cranelift/libloading, browser clock); build pending |
 | `azahar`                                           | Qt 6 + Emscripten            | recipe written (interpreter CPU, software renderer, no key blob); not yet run                            |
 | `tetanes-nes`, `rustboyadvance-gba`, `starpsx-psx` | Rust, Bevy                   | recipes in `build.ts`; after DS/3DS                                                                      |
@@ -175,8 +175,9 @@ secondary threads), so melonDS falls back to its software renderer and QPainter 
 - DS cores need no firmware: Dust has an HLE BIOS and boots plaintext homebrew without the ARM7
   BIOS; melonDS uses its built-in FreeBIOS. Commercial cartridges with an encrypted secure area
   need the user's own BIOS (local file).
-- Dust's interpreter reaches about 44 emulated fps in headless Chrome on the workstation (DS is
-  59.8 Hz); melonDS's interpreter (on its own pthread) runs at 60/60.
+- Historical workstation timings are not VPS qualification evidence. Software WebGPU on the
+  shared VPS may require `smoke.ts dust-nds --timeout-ms=600000`; the 120-frame threshold remains
+  unchanged. Receipts identify the exact tested single or threaded variant.
 - mGBA is not vendored; DuckStation is CC BY-NC-ND since 2024 (no derivative builds allowed), so
   neither is built here.
 - container2wasm (v0.8.4) runs a whole Linux container on an emulated CPU (Bochs for x86_64,

@@ -15,7 +15,9 @@ let instance: Promise<WebOs> | undefined;
 
 /** Load the Rust module and restore the file system, once per page. */
 export function getWebOs(): Promise<WebOs> {
-  instance ??= openWebOs({ wasm: new URL(WEBOS_WASM_FILE, import.meta.url) }).catch((error: unknown) => {
+  const wasm = new URL(WEBOS_WASM_FILE, import.meta.url);
+  wasm.search = new URL(import.meta.url).search;
+  instance ??= openWebOs({ wasm }).catch((error: unknown) => {
     instance = undefined;
     throw error;
   });

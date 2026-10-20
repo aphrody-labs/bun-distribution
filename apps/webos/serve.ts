@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Local server: the production Worker code over dist/ (bun serve.ts [port]).
-import { join } from "node:path";
+import { join, relative, resolve, isAbsolute } from "node:path";
 import worker from "./worker/index";
 
 const dist = join(import.meta.dir, "dist");
@@ -31,12 +31,26 @@ const vm = {
 };
 const assets = {
   async fetch(request: Request): Promise<Response> {
-    const parts = decodeURIComponent(new URL(request.url).pathname).split("/").filter(Boolean);
-    if (parts.includes("..")) return new Response("Bad path", { status: 400 });
+    if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+    let pathname: string;
+    try { pathname = decodeURIComponent(new URL(request.url).pathname); }
+    catch { return new Response("Bad path", { status: 400 }); }
+    const parts = pathname.split("/").filter(Boolean);
+    if (parts.some(part => part === ".." || /[\\:\0]/.test(part))) return new Response("Bad path", { status: 400 });
     const path = parts.join("/");
-    for (const candidate of [path, join(path, "index.html"), "index.html"]) {
-      const file = Bun.file(join(dist, candidate));
-      if (await file.exists()) return new Response(file);
+    const candidates = [path, join(path, "index.html"), ...(!parts.at(-1)?.includes(".") ? ["index.html"] : [])];
+    for (const candidate of candidates) {
+      const full = resolve(dist, candidate);
+      const within = relative(dist, full);
+      if (within.startsWith("..") || isAbsolute(within)) return new Response("Bad path", { status: 400 });
+      const file = Bun.file(full);
+      if (await file.exists()) {
+        const etag = `W/"${file.size.toString(16)}-${Math.trunc(file.lastModified).toString(16)}"`;
+        const headers = { "content-type": file.type, etag, "cache-control": "no-cache" };
+        const matches = request.headers.get("if-none-match")?.split(",").some(value => value.trim() === etag || value.trim() === "*");
+        if (matches) return new Response(null, { status: 304, headers });
+        return new Response(request.method === "HEAD" ? null : file, { headers });
+      }
     }
     return new Response("Not found", { status: 404 });
   },
