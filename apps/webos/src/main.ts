@@ -17,7 +17,7 @@ import { inspectorApp } from "./apps/inspector";
 import { storeApp } from "./apps/store";
 import { terminalApp } from "./apps/terminal";
 import { h, icon } from "./dom";
-import { catalog } from "./os";
+import { catalog, HOME } from "./os";
 import {
   installed,
   reconcile,
@@ -137,20 +137,14 @@ const builtins: Builtin[] = [
     id: "drive",
     name: "Aphrody Drive",
     icon: "folder",
-    desc: "Projects, assets and files in your Aphrody workspace",
+    desc: "Creative projects and assets in the shared WebOS workspace",
     group: "core",
     width: 1120,
     height: 740,
+    // Keep browser Drive on the same Rust VFS as Files. Projects saved here
+    // remain available in both windows across WebOS sessions.
     mount: (root) =>
-      root.append(
-        h("iframe", {
-          class: "appframe",
-          src: "/workspace/studio?section=drive",
-          title: "Aphrody Drive",
-          allow:
-            "clipboard-read; clipboard-write; fullscreen; cross-origin-isolated",
-        }),
-      ),
+      loading(root, filesApp(root, openEditor, `${HOME}/Projects`)),
   },
   {
     id: "settings",
