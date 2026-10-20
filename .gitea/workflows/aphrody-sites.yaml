@@ -1,0 +1,49 @@
+name: Aphrody Sites
+
+on:
+  push:
+    branches: [os]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aphrody-sites-production
+  cancel-in-progress: false
+
+jobs:
+  webos:
+    name: Build and publish unified WebOS
+    runs-on: aphrody-bun-linux
+    timeout-minutes: 120
+    env:
+      GIT_SSH_COMMAND: ssh -F /run/aphrody/git-ssh/config
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Validate checkout transport
+        run: |
+          command -v git >/dev/null
+          command -v ssh >/dev/null
+          test -r /run/aphrody/git-ssh/identity
+          test -r /run/aphrody/git-ssh/config
+          test -r /run/aphrody/git-ssh/known_hosts
+          test "$(stat -c %a /run/aphrody/git-ssh/identity)" = 600
+      - uses: builtin:checkout
+        with:
+          submodules: true
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select pinned Aphrody Bun runtime
+        run: |
+          test -x "$BUN_EXECUTABLE"
+          "$BUN_EXECUTABLE" --revision
+          printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
+      - name: Install workspace
+        run: |
+          bun install --frozen-lockfile
+          bun scripts/node-modules.ts
+      - name: Require production credential
+        run: test -n "$CLOUDFLARE_API_TOKEN"
+      - name: Build, deploy and verify all unified Worker hosts
+        run: bun apps/webos/deploy.ts

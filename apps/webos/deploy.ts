@@ -24,21 +24,35 @@ if (!process.env.CLOUDFLARE_API_TOKEN)
     "CLOUDFLARE_API_TOKEN must be supplied by the protected deployment environment.",
   );
 
-const branch = git("branch", "--show-current");
-if (branch !== "os")
-  throw new Error(
-    `Expected the production source branch os, found ${branch || "detached HEAD"}`,
-  );
 if (git("status", "--porcelain", "--untracked-files=no"))
   throw new Error(
     "Refusing production deployment from a checkout with tracked source changes.",
   );
 const commit = git("rev-parse", "HEAD");
-const upstream = git("rev-parse", "@{upstream}");
-if (commit !== upstream)
-  throw new Error(
-    `Refusing unpublished source ${commit}; branch tip is ${upstream}.`,
-  );
+const isCanonicalWorkflowRun =
+  (process.env.GITHUB_EVENT_NAME === "push" ||
+    process.env.GITHUB_EVENT_NAME === "workflow_dispatch") &&
+  process.env.GITHUB_REF === "refs/heads/os" &&
+  Boolean(process.env.GITHUB_SHA);
+if (isCanonicalWorkflowRun) {
+  const pushedCommit = process.env.GITHUB_SHA!.toLowerCase();
+  const publishedTip = git("rev-parse", "refs/remotes/origin/os");
+  if (commit !== pushedCommit || commit !== publishedTip)
+    throw new Error(
+      `Refusing deployment commit ${commit}; event=${pushedCommit}, origin/os=${publishedTip}.`,
+    );
+} else {
+  const branch = git("branch", "--show-current");
+  if (branch !== "os")
+    throw new Error(
+      `Expected the production source branch os, found ${branch || "detached HEAD"}`,
+    );
+  const upstream = git("rev-parse", "@{upstream}");
+  if (commit !== upstream)
+    throw new Error(
+      `Refusing unpublished source ${commit}; branch tip is ${upstream}.`,
+    );
+}
 
 const config = Bun.JSONC.parse(
   await Bun.file(join(workerRoot, "wrangler.jsonc")).text(),
