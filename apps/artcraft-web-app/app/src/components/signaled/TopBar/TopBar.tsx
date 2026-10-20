@@ -516,17 +516,17 @@ export const TopBar = ({ pageName }: Props) => {
                     {sumTotalCredits.toLocaleString()}
                   </span>
                 }
-                buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
-                panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-[3px]"
+                buttonClassName="min-h-11 px-3 ps-2.5 bg-ui-panel hover:bg-ui-controls border border-ui-panel-border hover:border-ui-controls-border shadow-none text-base-fg rounded-[var(--md-sys-shape-corner-small)] gap-1.5"
+                panelClassName="mt-2 bg-ui-modal border border-ui-panel-border text-base-fg rounded-[var(--md-sys-shape-corner-medium)] shadow-2xl"
               >
                 {(close) => (
-                  <div className="w-72 p-3 text-white">
+                  <div className="w-72 p-3 text-base-fg">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-white/70">
+                      <span className="text-sm font-medium text-base-fg/70">
                         Your credit balance
                       </span>
                       <button
-                        className="text-sm font-medium text-primary transition-colors hover:text-primary-300"
+                        className="min-h-11 rounded-[var(--md-sys-shape-corner-extra-small)] px-2 text-sm font-medium text-primary transition-colors hover:bg-ui-controls hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         onClick={() => {
                           close();
                           toggleCreditsModal();
@@ -535,13 +535,13 @@ export const TopBar = ({ pageName }: Props) => {
                         Buy credits
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-white">
+                    <div className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-base-fg">
                       <CoinsIcon className="text-xl text-primary" />
                       {sumTotalCredits.toLocaleString()}
                     </div>
 
                     <button
-                      className="mt-2 flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50 transition-colors hover:text-white"
+                      className="mt-2 flex min-h-11 items-center gap-1.5 rounded-[var(--md-sys-shape-corner-extra-small)] px-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       onClick={() => {
                         close();
                         useCostBreakdownModalStore.getState().openModal();

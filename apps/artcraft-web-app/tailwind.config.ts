@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 import colors from "tailwindcss/colors";
 
+const m3Color = (role: string) =>
+  `rgb(from var(--md-sys-color-${role}) r g b / <alpha-value>)`;
+
 export default {
   content: [
     "./app/index.html",
@@ -87,19 +90,20 @@ export default {
       indigo: colors.indigo,
       lime: colors.lime,
       primary: {
-        DEFAULT: "#2d81ff",
-        "50": "#eef6ff",
-        "100": "#d9ebff",
-        "200": "#bcdcff",
-        "300": "#8ec7ff",
-        "400": "#59a7ff",
-        "500": "#2d81ff",
-        "600": "#1b63f5",
-        "700": "#144ee1",
-        "800": "#173fb6",
-        "900": "#19398f",
-        "950": "#142457",
+        DEFAULT: m3Color("primary"),
+        "50": m3Color("primary-fixed"),
+        "100": m3Color("primary-fixed"),
+        "200": m3Color("primary-fixed-dim"),
+        "300": m3Color("inverse-primary"),
+        "400": m3Color("primary"),
+        "500": m3Color("primary"),
+        "600": m3Color("inverse-primary"),
+        "700": m3Color("primary-container"),
+        "800": m3Color("on-primary-container"),
+        "900": m3Color("on-primary-fixed-variant"),
+        "950": m3Color("on-primary-fixed"),
       },
+      "primary-foreground": m3Color("on-primary"),
       secondary: {
         DEFAULT: "#3E3E41",
         "50": "#f6f6f6",
@@ -255,22 +259,20 @@ export default {
         wrapper: "#39394d",
       },
       ui: {
-        // Brutalist system (matches artcraft-webapp): near-black surfaces
-        // with white/15 hairline borders. Values come from the --st-* theme
-        // variables in app/src/styles/base.css.
+        // Aphrody M3 semantic roles, bridged through app/src/styles/aphrody.css.
         background: "var(--st-bg)",
         panel: "var(--st-panel)",
         "panel-border": "var(--st-panel-border)",
         border: "var(--st-panel-border)",
-        controls: "rgb(var(--st-controls-rgb) / <alpha-value>)",
-        "controls-button": "rgb(var(--st-controls-rgb) / <alpha-value>)",
+        controls: m3Color("surface-container-highest"),
+        "controls-button": m3Color("surface-container-highest"),
         "controls-border": "var(--st-controls-border)",
         divider: "var(--st-divider)",
-        ink: "rgb(var(--st-fg-rgb) / <alpha-value>)",
-        "accent-ink": "#74aaff",
+        ink: m3Color("on-surface"),
+        "accent-ink": "var(--md-sys-color-primary)",
         sunken: "var(--st-sunken)",
       },
-      "base-fg": "rgb(var(--st-fg-rgb) / <alpha-value>)",
+      "base-fg": m3Color("on-surface"),
       media: {
         "audio-tts": "#6AAA88",
         "audio-v2v": "#6691B9",
@@ -287,36 +289,33 @@ export default {
       "axis-y": "#308752",
       "axis-z": "#2E70FF",
 
-      // shadcn tokens consumed by @storyteller/ui-video-editor. CSS
-      // variables live in app/src/styles/base.css. primary/secondary
-      // are intentionally NOT mapped here — the Tauri app already has
-      // its own brand colors elsewhere in this palette and the editor
-      // chrome inherits them via the --st-* surfaces.
-      background: "hsl(var(--background))",
-      foreground: "hsl(var(--foreground))",
+      // shadcn tokens consumed by @storyteller/ui-video-editor. The M3
+      // semantic aliases are installed by aphrody.css for both color modes.
+      background: m3Color("surface"),
+      foreground: m3Color("on-surface"),
       card: {
-        DEFAULT: "hsl(var(--card))",
-        foreground: "hsl(var(--card-foreground))",
+        DEFAULT: m3Color("surface-container-low"),
+        foreground: m3Color("on-surface"),
       },
       popover: {
-        DEFAULT: "hsl(var(--popover))",
-        foreground: "hsl(var(--popover-foreground))",
+        DEFAULT: m3Color("surface-container"),
+        foreground: m3Color("on-surface"),
       },
       muted: {
-        DEFAULT: "hsl(var(--muted))",
-        foreground: "hsl(var(--muted-foreground))",
+        DEFAULT: m3Color("surface-container-high"),
+        foreground: m3Color("on-surface-variant"),
       },
       accent: {
-        DEFAULT: "hsl(var(--accent))",
-        foreground: "hsl(var(--accent-foreground))",
+        DEFAULT: m3Color("tertiary-container"),
+        foreground: m3Color("on-tertiary-container"),
       },
       destructive: {
-        DEFAULT: "hsl(var(--destructive))",
-        foreground: "hsl(var(--destructive-foreground))",
+        DEFAULT: m3Color("error"),
+        foreground: m3Color("on-error"),
       },
-      border: "hsl(var(--border))",
-      input: "hsl(var(--input))",
-      ring: "hsl(var(--ring))",
+      border: m3Color("outline-variant"),
+      input: m3Color("outline"),
+      ring: m3Color("primary"),
       facebook: "#4267b2",
       reddit: "#ff5700",
       whatsapp: "#25d366",

@@ -31,6 +31,7 @@ if (git("status", "--porcelain", "--untracked-files=no"))
 const commit = git("rev-parse", "HEAD");
 const isCanonicalWorkflowRun =
   (process.env.GITHUB_EVENT_NAME === "push" ||
+    process.env.GITHUB_EVENT_NAME === "schedule" ||
     process.env.GITHUB_EVENT_NAME === "workflow_dispatch") &&
   process.env.GITHUB_REF === "refs/heads/os" &&
   Boolean(process.env.GITHUB_SHA);
@@ -57,14 +58,45 @@ if (isCanonicalWorkflowRun) {
 const config = Bun.JSONC.parse(
   await Bun.file(join(workerRoot, "wrangler.jsonc")).text(),
 ) as {
+  name: string;
+  services?: { binding: string; service: string }[];
   routes: { pattern: string; custom_domain?: boolean }[];
 };
+if (
+  config.name !== "aphrody-webos" ||
+  !config.services?.some(
+    ({ binding, service }) => binding === "LEGACY" && service === "aphrody-app",
+  )
+)
+  throw new Error("Expected WebOS to own the public hosts and bind the legacy API Worker.");
 const hosts = [
   ...new Set(config.routes.map(({ pattern }) => pattern.replace(/\/\*$/, ""))),
 ];
 if (hosts.length < 30)
   throw new Error(
     `Expected the complete Worker host set; found only ${hosts.length}.`,
+  );
+
+const legacyConfigPath = join(
+  root,
+  "toolchains/bun/packages/web/cloudflare/wrangler.jsonc",
+);
+const legacyConfig = Bun.JSONC.parse(
+  await Bun.file(legacyConfigPath).text(),
+) as {
+  name: string;
+  workers_dev?: boolean;
+  preview_urls?: boolean;
+  routes?: unknown[];
+};
+if (
+  legacyConfig.name !== "aphrody-app" ||
+  legacyConfig.workers_dev !== false ||
+  legacyConfig.preview_urls !== false ||
+  (legacyConfig.routes?.length ?? 0) > 0
+)
+  throw new Error(
+    "The aphrody-app backend must stay private; aphrody-webos is the sole public host owner.",
   );
 
 async function run(command: string[]) {

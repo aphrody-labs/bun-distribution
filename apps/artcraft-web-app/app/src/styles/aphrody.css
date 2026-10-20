@@ -1,31 +1,34 @@
 /* Craft component aliases follow the Aphrody-seeded M3 semantic palette. */
-:root[class] {
+:root {
   --st-bg: var(--md-sys-color-surface);
   --st-panel: var(--md-sys-color-surface-container);
   --st-modal: var(--md-sys-color-surface-container-high);
   --st-controls: var(--md-sys-color-surface-container-highest);
-  --st-controls-rgb: from var(--md-sys-color-surface-container-highest) r g b;
+  --st-controls-color: var(--md-sys-color-surface-container-highest);
   --st-sunken: var(--md-sys-color-surface-container-lowest);
   --st-fg: var(--md-sys-color-on-surface);
-  --st-fg-rgb: from var(--md-sys-color-on-surface) r g b;
   --st-panel-border: var(--md-sys-color-outline-variant);
   --st-controls-border: var(--md-sys-color-outline);
   --st-divider: var(--md-sys-color-outline-variant);
-  --background: from var(--md-sys-color-surface) h s l;
-  --foreground: from var(--md-sys-color-on-surface) h s l;
-  --primary: from var(--md-sys-color-primary) h s l;
-  --primary-foreground: from var(--md-sys-color-on-primary) h s l;
-  --secondary: from var(--md-sys-color-secondary-container) h s l;
-  --secondary-foreground: from var(--md-sys-color-on-secondary-container) h s l;
-  --muted: from var(--md-sys-color-surface-container-high) h s l;
-  --muted-foreground: from var(--md-sys-color-on-surface-variant) h s l;
-  --accent: from var(--md-sys-color-tertiary-container) h s l;
-  --accent-foreground: from var(--md-sys-color-on-tertiary-container) h s l;
-  --destructive: from var(--md-sys-color-error) h s l;
-  --destructive-foreground: from var(--md-sys-color-on-error) h s l;
-  --border: from var(--md-sys-color-outline-variant) h s l;
-  --input: from var(--md-sys-color-outline) h s l;
-  --ring: from var(--md-sys-color-primary) h s l;
+  --background: var(--md-sys-color-surface);
+  --foreground: var(--md-sys-color-on-surface);
+  --card: var(--md-sys-color-surface-container-low);
+  --card-foreground: var(--md-sys-color-on-surface);
+  --popover: var(--md-sys-color-surface-container);
+  --popover-foreground: var(--md-sys-color-on-surface);
+  --primary: var(--md-sys-color-primary);
+  --primary-foreground: var(--md-sys-color-on-primary);
+  --secondary: var(--md-sys-color-secondary-container);
+  --secondary-foreground: var(--md-sys-color-on-secondary-container);
+  --muted: var(--md-sys-color-surface-container-high);
+  --muted-foreground: var(--md-sys-color-on-surface-variant);
+  --accent: var(--md-sys-color-tertiary-container);
+  --accent-foreground: var(--md-sys-color-on-tertiary-container);
+  --destructive: var(--md-sys-color-error);
+  --destructive-foreground: var(--md-sys-color-on-error);
+  --border: var(--md-sys-color-outline-variant);
+  --input: var(--md-sys-color-outline);
+  --ring: var(--md-sys-color-primary);
   color-scheme: dark;
 }
 

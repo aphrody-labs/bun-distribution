@@ -2,18 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Subtle 3px corners on interactive controls (matches artcraft-webapp).
-   The brutalist system keeps large surfaces (panels, modals, tables),
-   passive labels, and media tiles square; anything pressable gets a soft
-   corner for affordance. Tailwind radius utilities (rounded-full,
-   rounded-none) still win — the utilities layer is emitted after base. */
+/* M3 small shape on controls by default; explicit component utilities such
+   as rounded-none and rounded-full remain authoritative in the utilities layer. */
 @layer base {
   button,
   select,
   textarea,
   input:not([type="radio"]):not([type="range"]),
   [role="button"] {
-    border-radius: 3px;
+    border-radius: var(--md-sys-shape-corner-small);
   }
 }
 

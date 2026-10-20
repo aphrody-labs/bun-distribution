@@ -913,7 +913,7 @@ export const ImageTo3DExperience = ({
     <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-base-fg">
       {backgroundImage && !hasResults && (
         <>
-          <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(var(--st-controls-rgb)_/_var(--st-gallery-vignette-alpha))_100%)]" />
+          <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(from_var(--st-controls-color)_r_g_b_/_var(--st-gallery-vignette-alpha))_100%)]" />
           <div className="fixed inset-0 z-0 overflow-hidden">
             <div
               className="h-full w-full opacity-30 transition-opacity duration-1000"

@@ -1,30 +1,46 @@
 // SPDX-License-Identifier: Apache-2.0
 // Same-origin host for Craft web apps that already implement their parent file bridge.
-export type CraftHostId = "cad" | "deck" | "grid" | "pdf";
+import {
+  webosCraftFileBridges,
+  type CraftHostId,
+} from "@aphrody/bun-workspace/capabilities";
 
-const PROTOCOL: Record<CraftHostId, string> = {
-  cad: "cadcraft",
-  deck: "deckcraft",
-  grid: "gridcraft",
-  pdf: "pdfcraft",
-};
-const MAX_FILE_BYTES = 64 * 1024 * 1024;
+export type { CraftHostId } from "@aphrody/bun-workspace/capabilities";
+
+const BRIDGES = webosCraftFileBridges();
+const BRIDGE_BY_ID = new Map(
+  BRIDGES.map(({ bridge }) => [bridge.id, bridge] as const),
+);
+const BRIDGE_BY_PACKAGE = new Map(
+  BRIDGES.map(({ packageId, bridge }) => [packageId, bridge] as const),
+);
+const BRIDGE_BY_EXTENSION = new Map(
+  BRIDGES.flatMap(({ bridge }) =>
+    bridge.extensions.map((extension) => [extension, bridge] as const),
+  ),
+);
 const MAX_PENDING_BYTES = 64 * 1024 * 1024;
 const MAX_NAME_CHARS = 240;
 
 export function craftHostForPath(path: string): CraftHostId | undefined {
-  const ext = path.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (
-    ext === "deckcraft" ||
-    ext === "slidecraft" ||
-    ext === "pptx" ||
-    ext === "potx" ||
-    ext === "ppsx"
-  )
-    return "deck";
-  if (ext === "pdf") return "pdf";
-  if (ext === "xlsx") return "grid";
-  if (ext === "dxf" || ext === "dwg") return "cad";
+  const ext = path
+    .replaceAll("\\", "/")
+    .split("/")
+    .pop()
+    ?.split(".")
+    .pop()
+    ?.toLowerCase();
+  return ext ? BRIDGE_BY_EXTENSION.get(ext)?.id : undefined;
+}
+
+export function craftHostForPackage(
+  packageId: string,
+): CraftHostId | undefined {
+  return BRIDGE_BY_PACKAGE.get(packageId)?.id;
+}
+
+export function craftHostMaxFileBytes(id: CraftHostId): number {
+  return BRIDGE_BY_ID.get(id)?.maxFileBytes ?? 0;
 }
 
 function messageType(data: unknown): string | undefined {
@@ -65,7 +81,9 @@ export function attachCraftHost(
   id: CraftHostId,
   onSave: (name: string, bytes: Uint8Array) => void | Promise<void>,
 ): CraftHost {
-  const prefix = PROTOCOL[id];
+  const bridge = BRIDGE_BY_ID.get(id);
+  if (!bridge) throw new Error(`No WebOS file bridge is registered for ${id}`);
+  const prefix = bridge.protocol;
   const pending: Array<{ name: string; bytes: Uint8Array }> = [];
   let pendingBytes = 0;
   let ready = false;
@@ -108,7 +126,7 @@ export function attachCraftHost(
 
     const name = fileName(event.data);
     const bytes = fileBytes(event.data);
-    if (!name || !bytes || bytes.byteLength > MAX_FILE_BYTES) {
+    if (!name || !bytes || bytes.byteLength > bridge.maxFileBytes) {
       console.warn(`Rejected invalid or oversized ${prefix} save`);
       return;
     }
@@ -125,7 +143,7 @@ export function attachCraftHost(
   frame.addEventListener("load", onLoad);
   return {
     open(name, bytes) {
-      if (disposed || bytes.byteLength > MAX_FILE_BYTES) return false;
+      if (disposed || bytes.byteLength > bridge.maxFileBytes) return false;
       if (!ready) {
         if (pendingBytes + bytes.byteLength > MAX_PENDING_BYTES) return false;
         pending.push({ name, bytes: bytes.slice() });

@@ -15,7 +15,7 @@ import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import tailwindConfig from "../../../apps/artcraft-web-app/tailwind.config";
 import { m3Plugin } from "@aphrody/m3/plugin";
-import { PET_COLORS } from "@aphrody/identity/pet";
+import { APHRODY_M3_SEED } from "@aphrody/identity/theme";
 
 export const frontendDir = resolve(import.meta.dir, "..");
 export const appDir = resolve(frontendDir, "../../apps/artcraft-web-app");
@@ -96,7 +96,7 @@ export async function buildFrontend(options: BuildOptions = {}) {
     metafile: true,
     plugins: [
       m3Plugin({
-        theme: { seed: PET_COLORS.seed },
+        theme: { seed: APHRODY_M3_SEED },
         tailwind: false,
         sass: false,
         urlImports: false,

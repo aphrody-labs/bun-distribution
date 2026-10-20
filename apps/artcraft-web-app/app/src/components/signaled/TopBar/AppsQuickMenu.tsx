@@ -38,9 +38,9 @@ const AppsQuickMenuSection = ({
             onClick={() => goToApp(app.action)}
             disabled={!app.action}
             className={twMerge(
-              "group flex w-full items-center gap-3 rounded-[3px] px-2 py-2 text-left transition-colors",
+              "group flex min-h-11 w-full items-center gap-3 rounded-[var(--md-sys-shape-corner-small)] px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               app.action
-                ? "cursor-pointer hover:bg-white/[0.08]"
+                ? "cursor-pointer text-base-fg hover:bg-ui-controls"
                 : "cursor-default opacity-60",
             )}
           >

@@ -2,7 +2,7 @@
 // Trunk's pre-build hook prepares one app's shell through the canonical M3 plugin.
 import { resolve } from "node:path";
 import { m3Plugin } from "../packages/m3/src/plugin.ts";
-import { PET_COLORS } from "../packages/identity/src/pet.ts";
+import { APHRODY_M3_SEED } from "@aphrody/identity/theme";
 
 const app = Bun.argv[2];
 if (!app || !/^[a-z]+craft-web$/.test(app))
@@ -21,7 +21,7 @@ const result = await Bun.build({
   target: "browser",
   plugins: [
     m3Plugin({
-      theme: { seed: PET_COLORS.seed },
+      theme: { seed: APHRODY_M3_SEED },
       tailwind: false,
       sass: false,
     }),

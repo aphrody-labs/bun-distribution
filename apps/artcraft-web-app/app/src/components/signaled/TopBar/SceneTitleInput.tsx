@@ -108,15 +108,18 @@ export const SceneTitleInput = ({ pageName }: Props) => {
 
           {isSceneOwner ? (
             <button
-              className="flex max-w-[280px] items-center border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:cursor-text hover:bg-white/10"
+              className="flex min-h-11 max-w-[280px] items-center rounded-[var(--md-sys-shape-corner-small)] border border-transparent px-3 py-1.5 text-sm font-semibold text-base-fg transition-colors hover:cursor-text hover:bg-ui-controls focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={handleShowInput}
               data-tauri-drag-region="false"
             >
               <span className="truncate">{scene.value.title || ""}</span>
-              <PencilIcon className="ml-2 shrink-0 text-sm opacity-50" />
+              <PencilIcon
+                aria-hidden="true"
+                className="ml-2 shrink-0 text-sm opacity-50"
+              />
             </button>
           ) : (
-            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
+            <div className="max-w-[280px] truncate border border-transparent px-3 py-1.5 text-sm font-semibold text-base-fg/80">
               {scene.value.title || ""}
             </div>
           )}
@@ -129,8 +132,8 @@ export const SceneTitleInput = ({ pageName }: Props) => {
             disabled={scene.value.ownerToken !== userInfo.value?.user_token}
             className="w-[420px]"
             inputClassName={twMerge(
-              "text-center h-[34px] text-sm font-semibold focus:outline-white/60",
-              isSaving && "outline-white/30",
+              "min-h-11 rounded-[var(--md-sys-shape-corner-small)] text-center text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              isSaving && "opacity-70",
             )}
             isError={!isValid}
             value={scene.value.title || ""}

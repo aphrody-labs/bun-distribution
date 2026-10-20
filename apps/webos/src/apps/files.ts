@@ -24,11 +24,20 @@ import {
   usage,
 } from "./files-ops";
 import { type Context, type ContentHit, byPath, call, loadContext, sdPath, searchContents, searchFiles } from "./files-wire";
-import { craftHostForPath, type CraftHostId } from "./craft-host";
+import {
+  craftHostForPath,
+  craftHostMaxFileBytes,
+  type CraftHostId,
+} from "./craft-host";
 
 export interface FilesAppOptions {
   start?: string;
-  openCraft?: (id: CraftHostId, name: string, bytes: Uint8Array) => boolean;
+  openCraft?: (
+    id: CraftHostId,
+    path: string,
+    name: string,
+    bytes: Uint8Array,
+  ) => boolean;
 }
 
 type SortKey = "name" | "size" | "kind";
@@ -624,9 +633,13 @@ export async function filesApp(
       const craft = craftHostForPath(e.path);
       const openCraft = options.openCraft;
       if (craft && openCraft) {
-        if (e.size > 64 * 1024 * 1024)
-          return toast("Craft can open files up to 64 MiB from Drive", true);
-        if (!openCraft(craft, e.name, os.fs.read(e.path)))
+        const maxFileBytes = craftHostMaxFileBytes(craft);
+        if (e.size > maxFileBytes)
+          return toast(
+            `Craft can open files up to ${Math.floor(maxFileBytes / (1024 * 1024))} MiB from Drive`,
+            true,
+          );
+        if (!openCraft(craft, e.path, e.name, os.fs.read(e.path)))
           return toast(`Install ${craft} from Apps, then open this file again`, true);
         return;
       }

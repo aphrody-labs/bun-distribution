@@ -18,6 +18,7 @@ import { storeApp } from "./apps/store";
 import { terminalApp } from "./apps/terminal";
 import {
   attachCraftHost,
+  craftHostForPackage,
   type CraftHost,
   type CraftHostId,
 } from "./apps/craft-host";
@@ -47,12 +48,6 @@ interface Builtin {
 const desk = h("main", { class: "desk" });
 const wm = new WindowManager(desk);
 const craftHosts = new Map<string, CraftHost>();
-const CRAFT_HOSTS: Record<string, CraftHostId> = {
-  "craft-cad": "cad",
-  "craft-deck": "deck",
-  "craft-grid": "grid",
-  "craft-pdf": "pdf",
-};
 const dock = h("nav", { class: "dock", "aria-label": "Dock" });
 const clock = h("time", { class: "clock" });
 const bar = h("header", { class: "topbar" });
@@ -238,14 +233,20 @@ const builtins: Builtin[] = [
         root,
         storeApp(
           root,
-          (_kind, target) =>
+          (kind, target) => {
+            if (kind === "app") {
+              const builtin = builtins.find((entry) => entry.id === target);
+              if (builtin) launchBuiltin(builtin);
+              return;
+            }
             void window.open(
               target.startsWith("http")
                 ? target
                 : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
               "_blank",
               "noopener",
-            ),
+            );
+          },
         ),
       ),
   },
@@ -342,28 +343,38 @@ function launchBuiltin(b: Builtin) {
 // Installed packages (from the package manager) behave like any other app.
 let registryEntries: RegistryEntry[] = [];
 const installedEntries = () => registryEntries.filter((e) => installed()[e.id]);
-function launchPackage(e: RegistryEntry) {
-  const existing = wm.windows.get(`pkg:${e.id}`);
+interface PackageWindowOptions {
+  id?: string;
+  title?: string;
+  documentPath?: string;
+}
+function launchPackage(
+  e: RegistryEntry,
+  options: PackageWindowOptions = {},
+): CraftHost | undefined {
+  const windowId = options.id ?? `pkg:${e.id}`;
+  const title = options.title ?? e.name;
+  const existing = wm.windows.get(windowId);
   if (existing) {
     wm.restore(existing);
-    return;
+    return craftHosts.get(windowId);
   }
   const content = h("div", { class: "fill" });
   let craftHost: CraftHost | undefined;
   wm.open({
-    id: `pkg:${e.id}`,
-    title: e.name,
+    id: windowId,
+    title,
     icon: e.category === "games" ? "game" : "app",
     width: 960,
     height: 640,
     content,
     onClose: () => {
       craftHost?.dispose();
-      if (craftHosts.get(e.id) === craftHost) craftHosts.delete(e.id);
+      if (craftHosts.get(windowId) === craftHost) craftHosts.delete(windowId);
     },
   });
   if (!content.hasChildNodes()) {
-    const hostId = CRAFT_HOSTS[e.id];
+    const hostId = craftHostForPackage(e.id);
     const frame = h("iframe", {
       class: "appframe",
       src: `/apps/${e.id}/${hostId ? "?host=parent" : ""}`,
@@ -371,18 +382,21 @@ function launchPackage(e: RegistryEntry) {
       allow:
         "fullscreen; gamepad; autoplay; clipboard-read; clipboard-write; cross-origin-isolated",
     }) as HTMLIFrameElement;
+    frame.title = title;
     if (hostId) {
       craftHost = attachCraftHost(frame, hostId, (name, bytes) =>
-        saveCraftFile(hostId, name, bytes),
+        saveCraftFile(hostId, name, bytes, options.documentPath),
       );
-      craftHosts.set(e.id, craftHost);
+      craftHosts.set(windowId, craftHost);
     }
     content.append(frame);
   }
+  return craftHost;
 }
 
 function openCraftFile(
   id: CraftHostId,
+  path: string,
   name: string,
   bytes: Uint8Array,
 ): boolean {
@@ -392,25 +406,49 @@ function openCraftFile(
     launchBuiltin(builtins.find((item) => item.id === "apps")!);
     return false;
   }
-  launchPackage(entry);
-  return craftHosts.get(packageId)?.open(name, bytes) ?? false;
+  const documentPath = path.replaceAll("\\", "/");
+  const windowId = `craft-doc:${id}:${encodeURIComponent(documentPath)}`;
+  const host = launchPackage(entry, {
+    id: windowId,
+    title: `${name} · ${entry.name}`,
+    documentPath,
+  });
+  return host?.open(name, bytes) ?? false;
 }
 
-async function saveCraftFile(id: CraftHostId, name: string, bytes: Uint8Array) {
+async function saveCraftFile(
+  id: CraftHostId,
+  name: string,
+  bytes: Uint8Array,
+  documentPath?: string,
+) {
   const os = await webos();
   const root = `${HOME}/Projects/Craft`;
-  const directory = `${root}/${id}`;
-  try {
-    os.fs.stat(root);
-  } catch {
-    os.fs.mkdir(root);
+  const normalizedPath = documentPath?.replaceAll("\\", "/");
+  const lastSlash = normalizedPath?.lastIndexOf("/") ?? -1;
+  const originalName =
+    lastSlash >= 0 ? normalizedPath!.slice(lastSlash + 1) : undefined;
+  const directory =
+    normalizedPath && lastSlash >= 0
+      ? normalizedPath.slice(0, lastSlash) || "/"
+      : `${root}/${id}`;
+  const savePath =
+    normalizedPath && name === originalName
+      ? normalizedPath
+      : `${directory}/${name}`;
+  if (!normalizedPath) {
+    try {
+      os.fs.stat(root);
+    } catch {
+      os.fs.mkdir(root);
+    }
   }
   try {
     os.fs.stat(directory);
   } catch {
     os.fs.mkdir(directory);
   }
-  os.fs.write(`${directory}/${name}`, bytes);
+  os.fs.write(savePath, bytes);
   await os.flush();
 }
 function refreshApps() {
@@ -957,4 +995,4 @@ void reconcile()
 
 const target = builtins.find((x) => x.id === wanted);
 if (target || !wanted || !wanted.includes("-"))
-  launchBuiltin(target ?? builtins.find((b) => b.id === "files")!);
+  launchBuiltin(target ?? builtins.find((b) => b.id === "workspace")!);

@@ -33,17 +33,19 @@ export default function ProfileDropdown() {
 
   return (
     <Menu as="div" className="relative">
-      <Menu.Button as="div">
-        <div className="group flex cursor-pointer items-center gap-1.5 transition-opacity duration-150 hover:opacity-90">
-          <Gravatar
-            size={34}
-            username={username}
-            email_hash={emailHash}
-            avatarIndex={avatarIndex}
-            backgroundIndex={backgroundColorIndex}
-          />
-          <ChevronDownIcon />
-        </div>
+      <Menu.Button
+        type="button"
+        aria-label="Open profile menu"
+        className="group flex min-h-11 items-center gap-1.5 rounded-full transition-opacity duration-150 hover:opacity-90"
+      >
+        <Gravatar
+          size={34}
+          username={username}
+          email_hash={emailHash}
+          avatarIndex={avatarIndex}
+          backgroundIndex={backgroundColorIndex}
+        />
+        <ChevronDownIcon />
       </Menu.Button>
       <Transition
         as={Fragment}
@@ -56,20 +58,20 @@ export default function ProfileDropdown() {
       >
         <Menu.Items
           static
-          className="absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-[3px] border border-white/15 bg-[#101014] focus:outline-none"
+          className="absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-[var(--md-sys-shape-corner-extra-small)] border border-ui-panel-border bg-ui-modal text-base-fg shadow-xl focus:outline-none"
         >
           <Menu.Item key={0}>
             {({ active }) => (
               <a
                 className={twMerge(
-                  "group flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-white/70 transition-colors",
-                  active && "bg-white/10",
+                  "group flex min-h-11 w-full items-center gap-2 px-4 py-2 text-start text-sm text-base-fg/80 transition-colors",
+                  active && "bg-ui-controls text-base-fg",
                 )}
                 href={profileUrl}
                 target="_blank"
                 rel="noreferrer"
               >
-                <UserIcon className="text-[11px] text-white/50" />
+                <UserIcon className="text-[11px] text-base-fg/60" />
                 My Profile
               </a>
             )}
@@ -79,14 +81,14 @@ export default function ProfileDropdown() {
               {({ active }) => (
                 <button
                   className={twMerge(
-                    "group flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-white/70 transition-colors",
-                    active && "bg-white/10",
+                    "group flex min-h-11 w-full items-center gap-2 px-4 py-2 text-start text-sm text-base-fg/80 transition-colors",
+                    active && "bg-ui-controls text-base-fg",
                   )}
                   onClick={() => option.onClick()}
                 >
                   <DynamicIcon
                     icon={option.icon}
-                    className="text-[11px] text-white/50"
+                    className="text-[11px] text-base-fg/60"
                   />
                   {option.label}
                 </button>

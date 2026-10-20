@@ -25,6 +25,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
+    "./theme": "./src/theme.ts",
     "./atlas": "./src/atlas.ts",
     "./pet": "./src/pet.ts",
     "./runtime": "./src/runtime.ts",

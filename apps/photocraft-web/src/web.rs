@@ -9,10 +9,10 @@ use photocraft_doc::Document;
 use photocraft_ui_egui::i18n;
 use photocraft_ui_egui::served_fonts;
 use photocraft_ui_egui::theme::ThemeKind;
-use photocraft_ui_egui::{FileDialogAnswer, FileDialogRequest, PhotocraftApp, Services};
+use photocraft_ui_egui::{FileDialogAnswer, FileDialogRequest, Inbox, PhotocraftApp, Services};
 use wasm_bindgen::JsCast as _;
 
-type Inbox = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
+mod host;
 
 /// Everything File › Open reads: PhotoCraft, Photoshop, OpenRaster, Krita and Affinity documents, flat images, and
 /// Photoshop brushes (.abr), gradients (.grd) and swatches (.aco, .ase), which go to the preset libraries.
@@ -59,6 +59,12 @@ pub fn start() {
         };
         let q = query();
         let force_cpu = q.contains("cpu");
+        let host = q
+            .split(['?', '&'])
+            .any(|part| part == "host=parent")
+            .then(host::Bridge::new)
+            .flatten();
+        let startup_host = host.clone();
         let mut options = eframe::WebOptions::default();
         photocraft_ui_egui::gpu_canvas::use_adapter_limits(&mut options.wgpu_options.wgpu_setup);
         if q.contains("webgl")
@@ -83,13 +89,18 @@ pub fn start() {
                 canvas,
                 options,
                 Box::new(move |cc| {
+                    let host = host.clone();
                     PhotocraftApp::setup_context(&cc.egui_ctx, ThemeKind::Pro);
                     let inbox: Inbox = Arc::default();
                     let served: Served = Arc::default();
                     load_font_manifest(served.clone(), cc.egui_ctx.clone());
                     let (session, warnings) = crate::preset_bridge::session(presets.clone());
                     preset_warnings.extend(warnings);
-                    let mut app = PhotocraftApp::new(session, services(inbox.clone()));
+                    if let Some(bridge) = &host {
+                        bridge.listen(inbox.clone(), cc.egui_ctx.clone());
+                        bridge.post_ready();
+                    }
+                    let mut app = PhotocraftApp::new(session, services(inbox.clone(), host.clone()));
                     if !preset_warnings.is_empty() {
                         photocraft_ui_egui::notices::post(
                             &mut app,
@@ -126,7 +137,12 @@ pub fn start() {
         if let Some(el) = document.get_element_by_id("photocraft_loading") {
             match result {
                 Ok(()) => el.remove(),
-                Err(e) => el.set_inner_html(&format!("<p>The Images workspace failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>")),
+                Err(e) => {
+                    if let Some(bridge) = &startup_host {
+                        bridge.post_failed(&format!("{e:?}"));
+                    }
+                    el.set_inner_html(&format!("<p>The Images workspace failed to start: {e:?}</p><p>A browser with WebGPU or WebGL2 is required.</p>"));
+                }
             }
         }
     });
@@ -409,7 +425,8 @@ impl eframe::App for WebShell {
     }
 }
 
-fn services(inbox: Inbox) -> Services {
+fn services(inbox: Inbox, host: Option<host::Bridge>) -> Services {
+    let writer_host = host;
     Services {
         screen_pick: screen_color_service(),
         import: Some(Box::new(
@@ -490,7 +507,13 @@ fn services(inbox: Inbox) -> Services {
                 reply.send(Some(FileDialogAnswer::SaveTo(name)));
             }
         })),
-        write: Some(Box::new(|path: &str, bytes: &[u8]| download(path, bytes))),
+        write: Some(Box::new(move |path: &str, bytes: &[u8]| {
+            if let Some(bridge) = &writer_host {
+                bridge.save(path, bytes)
+            } else {
+                download(path, bytes)
+            }
+        })),
         encode_png: Some(Box::new(|w, h, rgba| {
             let img = Image::from_u8(w, h, ChannelLayout::Rgba, rgba.to_vec())
                 .map_err(|e| e.to_string())?;

@@ -19,7 +19,7 @@ export const AuthButtons = ({
       <>
         <div className="flex items-center gap-2">
           <button
-            className="flex h-8 items-center gap-1.5 rounded-[3px] bg-white px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/80"
+            className="flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-foreground transition-colors hover:bg-primary/90"
             onClick={() => {
               loginSignUpPressed();
             }}

@@ -25,6 +25,40 @@ const ENV = {
   DEPLOY_PRIME_URL: "https://studio.storyteller.ai",
 };
 
+const themeRoot = document.documentElement;
+const allowedThemes = [
+  "light",
+  "dark",
+  "gray",
+  "black",
+  "aurora",
+  "sunset",
+  "gradient",
+];
+let storedTheme = "dark";
+try {
+  storedTheme = (localStorage.getItem("st-theme") || "dark").trim();
+} catch {
+  // A blocked localStorage should not prevent the editor from rendering.
+}
+const initialTheme = allowedThemes.includes(storedTheme)
+  ? storedTheme === "gradient"
+    ? "aurora"
+    : storedTheme
+  : "dark";
+for (let index = themeRoot.classList.length - 1; index >= 0; index--) {
+  const themeClass = themeRoot.classList.item(index);
+  if (themeClass?.startsWith("theme-")) themeRoot.classList.remove(themeClass);
+}
+themeRoot.classList.add(`theme-${initialTheme}`);
+
+const syncM3Mode = () => {
+  const dark = !themeRoot.classList.contains("theme-light");
+  themeRoot.classList.toggle("dark", dark);
+  themeRoot.classList.toggle("light", !dark);
+};
+syncM3Mode();
+
 const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   console.log("GlobalSettingsManager()");
 
@@ -35,6 +69,15 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   useSignalEffect(() => {
     persistLogin();
   });
+
+  useEffect(() => {
+    const observer = new MutationObserver(syncM3Mode);
+    observer.observe(themeRoot, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   /// Initizations that depends on ENV vars ///
   function PostHogInit() {
@@ -53,33 +96,6 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     }
     PostHogInit();
   }, [env]);
-
-  // Apply stored theme early on mount
-  useEffect(() => {
-    const key = "st-theme";
-    const value = (localStorage.getItem(key) || "gray").trim();
-    const allowed = ["light", "gray", "black", "aurora", "sunset", "gradient"];
-    const normalized = value === "gradient" ? "aurora" : value;
-    const theme = allowed.includes(value) ? (normalized as string) : "gray";
-    const root = document.documentElement;
-    const toRemove: string[] = [];
-    root.classList.forEach((c) => {
-      if (c.startsWith("theme-")) toRemove.push(c);
-    });
-    toRemove.forEach((c) => root.classList.remove(c));
-    root.classList.add(`theme-${theme}`);
-    const syncM3Mode = () => {
-      const dark = !root.classList.contains("theme-light");
-      if (root.classList.contains("dark") !== dark)
-        root.classList.toggle("dark", dark);
-      if (root.classList.contains("light") === dark)
-        root.classList.toggle("light", !dark);
-    };
-    syncM3Mode();
-    const observer = new MutationObserver(syncM3Mode);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
 
   /// Initizations that run only once on 1ST mount ///
   function setPage() {

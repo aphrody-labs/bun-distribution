@@ -131,6 +131,24 @@ async function run(cmd: string[], env: Record<string, string> = {}) {
     throw new Error(`${cmd.slice(0, 4).join(" ")} exited with ${code}`);
 }
 
+function prepareTrunkHtml(source: string, app: Craft, bin: string): string {
+  let hasRustLink = false;
+  const html = source.replace(/<link\b[^>]*\bdata-trunk\b[^>]*>/gi, (tag) => {
+    const rel = /\brel="([^"]+)"/i.exec(tag)?.[1];
+    if (rel === "rust") {
+      hasRustLink = true;
+      return `<script type="module">import init from "./${bin}.js"; await init({ module_or_path: "./${bin}_bg.wasm" });</script>`;
+    }
+    if (rel === "css") return '<link rel="stylesheet" href="./theme.css" />';
+    if (rel === "icon") return '<link rel="icon" href="./aphrody-icon.png" />';
+    if (rel === "copy-file") return "";
+    throw new Error(`${app.crate}: unsupported Trunk asset ${tag}`);
+  });
+  if (!hasRustLink)
+    throw new Error(`${app.crate}: no Trunk rust link found in index.html`);
+  return html;
+}
+
 function findFile(dir: string, name: string): string | undefined {
   if (!existsSync(dir)) return undefined;
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -199,6 +217,8 @@ if (buildCode !== 0)
 const targetDir = join(root, "target");
 const bindgen = await tool("wasm-bindgen", "wasm-bindgen");
 const wasmOpt = await tool("binaryen", "wasm-opt");
+const shellDir = join(work, "m3-shell");
+await run(["bun", "scripts/craft-web-shell.ts", apps[0]!.crate, shellDir]);
 if (wanted.length) {
   // A package-qualified build replaces only those packages; the other studios stay installable.
   for (const app of apps)
@@ -283,15 +303,11 @@ for (const app of apps) {
     const src = await Bun.file(
       join(root, "apps", app.crate, "index.html"),
     ).text();
-    const loader = `<script type="module">import init from "./${bin}.js"; await init({ module_or_path: "./${bin}_bg.wasm" });</script>`;
-    const html = src.replace(
-      /<link[^>]*data-trunk[^>]*rel="rust"[^>]*>|<link[^>]*rel="rust"[^>]*data-trunk[^>]*>/,
-      loader,
-    );
-    if (html === src)
-      throw new Error(`${app.crate}: no Trunk rust link found in index.html`);
+    const html = prepareTrunkHtml(src, app, bin);
     await Bun.write(join(dest, "index.html"), html);
   }
+  await cp(join(shellDir, "theme.css"), join(dest, "theme.css"));
+  await cp(join(shellDir, "aphrody-icon.png"), join(dest, "aphrody-icon.png"));
   const cargo = await Bun.file(
     join(root, "apps", app.crate, "Cargo.toml"),
   ).text();

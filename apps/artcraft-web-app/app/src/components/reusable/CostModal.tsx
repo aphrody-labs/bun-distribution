@@ -37,9 +37,9 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         transition={{ duration: 0.1, ease: "easeOut" }}
         drag
         dragMomentum={false}
-        className="pointer-events-auto z-10 flex w-72 flex-col overflow-hidden border border-white/15 bg-ui-panel"
+        className="pointer-events-auto z-10 flex w-72 flex-col overflow-hidden rounded-[var(--md-sys-shape-corner-large)] border border-ui-panel-border bg-ui-panel text-base-fg shadow-2xl"
       >
-        <div className="flex cursor-move select-none items-center justify-between border-b border-white/15 px-4 py-3">
+        <div className="flex cursor-move select-none items-center justify-between border-b border-ui-divider px-4 py-3">
           <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg">
             <CoinsIcon className="text-primary" />
             Cost Breakdown
@@ -53,7 +53,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
         </div>
 
         <div className="space-y-4 bg-ui-panel p-4">
-          <div className="border border-white/15 bg-white/5 p-3">
+          <div className="rounded-[var(--md-sys-shape-corner-medium)] border border-ui-panel-border bg-ui-controls p-3">
             <div className="mb-1 flex items-center justify-between">
               <span className="text-sm text-base-fg/80">Total Cost</span>
               <span className="text-lg font-semibold tabular-nums tracking-tight text-base-fg">
@@ -77,7 +77,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
             />
           </div>
 
-          <div className="mt-2 border-t border-white/15 pt-3 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/40">
+          <div className="mt-2 border-t border-ui-divider pt-3 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/60">
             1 Credit = $0.01 USD
           </div>
         </div>

@@ -64,12 +64,20 @@ async function scan(
 const apps = await scan("apps", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
   const cargo = Bun.file(join(p, "Cargo.toml"));
+  const html = Bun.file(join(p, "index.html"));
+  const trunk = Bun.file(join(p, "Trunk.toml"));
+  if (
+    !(await pkg.exists()) &&
+    !(await cargo.exists()) &&
+    !(await html.exists()) &&
+    !(await trunk.exists())
+  )
+    return undefined;
   let d = "";
   if (await pkg.exists()) d = (await pkg.json()).description ?? "";
   if (!d && (await cargo.exists())) d = tomlDesc(await cargo.text());
   const kind =
-    (await Bun.file(join(p, "index.html")).exists()) ||
-    (await Bun.file(join(p, "Trunk.toml")).exists())
+    (await html.exists()) || (await trunk.exists())
       ? "web"
       : (await pkg.exists())
         ? "js"
@@ -79,14 +87,15 @@ const apps = await scan("apps", async (p) => {
 
 const packages = await scan("packages", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
-  if (!(await pkg.exists())) return { d: "" };
+  if (!(await pkg.exists())) return undefined;
   const j = await pkg.json();
   return { d: j.description ?? "" };
 });
 
 const crates = await scan("crates", async (p) => {
   const cargo = Bun.file(join(p, "Cargo.toml"));
-  return { d: (await cargo.exists()) ? tomlDesc(await cargo.text()) : "" };
+  if (!(await cargo.exists())) return undefined;
+  return { d: tomlDesc(await cargo.text()) };
 });
 
 // Hostnames owned by Aphrody Infra (docs/APP-DOMAINS.md): canonical host and library alias per capability.

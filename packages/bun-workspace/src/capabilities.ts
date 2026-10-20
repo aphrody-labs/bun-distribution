@@ -1,5 +1,15 @@
 import type { Config } from "./index.ts";
 
+export type CraftHostId = "cad" | "deck" | "grid" | "pdf" | "photo";
+
+/** Verified file protocol implemented by a Craft WebOS iframe host. */
+export interface WebOsCraftFileBridge {
+  id: CraftHostId;
+  protocol: string;
+  extensions: readonly string[];
+  maxFileBytes: number;
+}
+
 export interface AppCapability {
   id: string;
   libraryId: string;
@@ -7,6 +17,8 @@ export interface AppCapability {
   description: string;
   /** Installable Web OS package when this owner has a browser build. */
   webosPackageId?: string;
+  /** Present only when the browser app implements the same-origin open/save protocol. */
+  webosFileBridge?: WebOsCraftFileBridge;
 }
 
 const capabilities: readonly AppCapability[] = [
@@ -29,6 +41,67 @@ const capabilities: readonly AppCapability[] = [
     title: "Images",
     description: "Image editing and processing.",
     webosPackageId: "craft-photo",
+    webosFileBridge: {
+      id: "photo",
+      protocol: "photocraft",
+      extensions: [
+        "pcraft",
+        "pdn",
+        "ora",
+        "kra",
+        "krz",
+        "psd",
+        "psb",
+        "psdt",
+        "png",
+        "jpg",
+        "jpeg",
+        "tif",
+        "tiff",
+        "webp",
+        "gif",
+        "bmp",
+        "tga",
+        "ico",
+        "qoi",
+        "exr",
+        "hdr",
+        "pbm",
+        "pgm",
+        "ppm",
+        "pam",
+        "pfm",
+        "dds",
+        "fits",
+        "fit",
+        "fts",
+        "dpx",
+        "heic",
+        "heif",
+        "hif",
+        "dng",
+        "cr2",
+        "cr3",
+        "nef",
+        "nrw",
+        "arw",
+        "pef",
+        "orf",
+        "rw2",
+        "raf",
+        "abr",
+        "grd",
+        "svg",
+        "svgz",
+        "aco",
+        "ase",
+        "af",
+        "afdesign",
+        "afphoto",
+        "afpub",
+      ],
+      maxFileBytes: 64 * 1024 * 1024,
+    },
   },
   {
     id: "vectors",
@@ -57,6 +130,12 @@ const capabilities: readonly AppCapability[] = [
     title: "PDF",
     description: "PDF reading and processing.",
     webosPackageId: "craft-pdf",
+    webosFileBridge: {
+      id: "pdf",
+      protocol: "pdfcraft",
+      extensions: ["pdf"],
+      maxFileBytes: 64 * 1024 * 1024,
+    },
   },
   {
     id: "documents",
@@ -85,6 +164,12 @@ const capabilities: readonly AppCapability[] = [
     title: "CAD",
     description: "Drafting and technical geometry.",
     webosPackageId: "craft-cad",
+    webosFileBridge: {
+      id: "cad",
+      protocol: "cadcraft",
+      extensions: ["dxf", "dwg"],
+      maxFileBytes: 64 * 1024 * 1024,
+    },
   },
   {
     id: "slides",
@@ -92,6 +177,12 @@ const capabilities: readonly AppCapability[] = [
     title: "Slides",
     description: "Presentation composition.",
     webosPackageId: "craft-deck",
+    webosFileBridge: {
+      id: "deck",
+      protocol: "deckcraft",
+      extensions: ["deckcraft", "slidecraft", "pptx", "potx", "ppsx"],
+      maxFileBytes: 64 * 1024 * 1024,
+    },
   },
   {
     id: "tables",
@@ -99,6 +190,12 @@ const capabilities: readonly AppCapability[] = [
     title: "Tables",
     description: "Spreadsheet processing.",
     webosPackageId: "craft-grid",
+    webosFileBridge: {
+      id: "grid",
+      protocol: "gridcraft",
+      extensions: ["xlsx"],
+      maxFileBytes: 64 * 1024 * 1024,
+    },
   },
   {
     id: "interface-layouts",
@@ -108,6 +205,23 @@ const capabilities: readonly AppCapability[] = [
     webosPackageId: "craft-fig",
   },
 ];
+
+/** The currently implemented file hosts; unlisted apps remain launch-only in WebOS. */
+export function webosCraftFileBridges(): Array<{
+  packageId: string;
+  bridge: WebOsCraftFileBridge;
+}> {
+  return capabilities.flatMap((capability) =>
+    capability.webosPackageId && capability.webosFileBridge
+      ? [
+          {
+            packageId: capability.webosPackageId,
+            bridge: capability.webosFileBridge,
+          },
+        ]
+      : [],
+  );
+}
 
 /** Canonical product catalog for desktop, Bun packages, and browser OS surfaces. */
 export function allAppCapabilities(): AppCapability[] {
