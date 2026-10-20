@@ -96,16 +96,21 @@ export async function inspectWorkspaceManifests(root: string) {
   const manifests: Record<string, unknown>[] = [];
   const parsedManifests = new Map<string, CargoManifest | PackageManifest>();
   const failures: { path: string; error: string }[] = [];
+  const omittedManifests: { path: string; sourceOwner: string; reason: string }[] = [];
   for (let offset = 0; offset < paths.length; offset += 16) {
     await Promise.all(paths.slice(offset, offset + 16).map(async path => {
       try {
         const directory = dirname(path).replaceAll("\\", "/");
         const rust = path.endsWith("Cargo.toml");
+        const submodule = submodules.filter(item => directory === item.path || directory.startsWith(`${item.path}/`)).sort((a, b) => b.path.length - a.path.length)[0];
+        if (submodule && submodule.initialized && !await Bun.file(join(root, path)).exists()) {
+          omittedManifests.push({ path, sourceOwner: submodule.path, reason: "tracked-but-not-materialized-in-working-tree" });
+          return;
+        }
         const content = await Bun.file(join(root, path)).text();
         const parsed = rust ? Bun.TOML.parse(content) as CargoManifest : JSON.parse(content) as PackageManifest;
         parsedManifests.set(path, parsed);
         const name = rust ? (parsed as CargoManifest).package?.name : (parsed as PackageManifest).name;
-        const submodule = submodules.filter(item => directory === item.path || directory.startsWith(`${item.path}/`)).sort((a, b) => b.path.length - a.path.length)[0];
         manifests.push({ path, directory, type: rust ? "cargo" : "bun-package", name: name ?? null,
           version: rust ? (parsed as CargoManifest).package?.version ?? null : (parsed as PackageManifest).version ?? null,
           workspaceBoundary: Boolean(rust ? (parsed as CargoManifest).workspace : (parsed as PackageManifest).workspaces),
@@ -281,11 +286,11 @@ export async function inspectWorkspaceManifests(root: string) {
   return {
     schemaVersion: 1,
     rootRevision: rootRevision.trim(),
-    coverage: "Tracked root and initialized recursive submodule manifests, plus nonignored untracked root manifests. Git source declarations are recursive through initialized owners; unavailable owners are recorded from their parent contract without inventing nested manifests.",
-    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, rootSubmodules: submodules.filter(item => item.depth === 1).length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, unavailableRootSubmodules: submodules.filter(item => item.depth === 1 && !item.initialized).length, unpinnedSubmodules: submodules.filter(item => item.revision === null).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
+    coverage: "Tracked root and materialized initialized recursive submodule manifests, plus nonignored untracked root manifests. Tracked manifests omitted by sparse checkouts are listed separately; unavailable owners are recorded from their parent contract without inventing nested manifests.",
+    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, rootSubmodules: submodules.filter(item => item.depth === 1).length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, unavailableRootSubmodules: submodules.filter(item => item.depth === 1 && !item.initialized).length, unpinnedSubmodules: submodules.filter(item => item.revision === null).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length, omittedManifests: omittedManifests.length },
     ownershipCoverage: "Owners follow explicit package.workspace or nearest ancestor workspace within the Git source boundary. Cargo implicit path-dependency membership is unverified without Cargo metadata. Source roles are path-based labels; all parsed manifests remain listed.",
     ownershipConflicts,
-    componentInventory, manifests, submodules, missingMembers, failures,
+    componentInventory, manifests, submodules, missingMembers, failures, omittedManifests,
     unpinnedSubmodules: submodules.filter(item => item.revision === null).map(item => ({ path: item.path, repository: item.repository, state: "declaration-without-index-gitlink", disposition: "review-active-source-contracts-before-removal" })),
     undeclaredGitlinks: pins.filter(pin => !submodules.some(item => item.path === pin.path)),
     vendorConsumerCoverage: "Literal forward-slash paths in tracked root text files, excluding vendor, toolchains, docs and lockfiles. References are candidates, not proven runtime consumers; absent references do not prove a vendor removable.",

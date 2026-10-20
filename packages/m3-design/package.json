@@ -16,10 +16,14 @@
   "files": [
     "README.md",
     "design-systems",
+    "intelligence",
     "src"
   ],
   "type": "module",
   "main": "src/index.ts",
+  "bin": {
+    "m3-design": "intelligence/ui-ux-pro-max/scripts/search.ts"
+  },
   "publishConfig": {
     "access": "public"
   },

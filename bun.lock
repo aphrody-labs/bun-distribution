@@ -9,6 +9,7 @@
         "@aphrody/bun-artifacts": "workspace:*",
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
+        "@aphrody/m3-design": "workspace:*",
         "@aphrody/tauri": "catalog:",
       },
       "devDependencies": {

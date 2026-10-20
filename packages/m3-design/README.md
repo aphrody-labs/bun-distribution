@@ -2,6 +2,28 @@
 
 # @aphrody/m3-design
 
+## Product design intelligence
+
+This package is the shared design-system owner for Bun OS and Aphrody Labs.
+Material 3 tokens, themes and components remain the source of truth for product
+UI. The bundled `intelligence/ui-ux-pro-max` skill adds searchable design,
+accessibility, responsive-layout and interaction guidance, with M3 selected as
+the default product implementation stack. Its searchable data and references
+ship with this package and are exposed through `bunos mcp` as the
+`ui-ux-pro-max` skill. The source skill and supporting files are retained,
+with a product-specific M3 design contract appended to the skill. The local
+source did not include a license or upstream repository metadata.
+
+Run the MCP server from a Bun OS checkout with `bunos mcp`. To search the
+bundled design guidance directly, run:
+
+```sh
+bunos tool m3-design --help
+```
+
+The design engine below generates artifacts against the same M3 component and
+token system; do not introduce a parallel product palette when extending it.
+
 `@aphrody/m3-design` is the natural-language design compiler of the **material-web** Material Design 3 monorepo. It turns raw, natural-language design briefs directly into **Material Design 3 (M3)** React scaffolds, emitting a production-ready `index.tsx` layout tree built on `@aphrody/m3-react` components, plus an HCT tonal-palette theme stylesheet and W3C design-token JSON.
 
 It is meant to be a fast, deterministic scaffold generator for autonomous agents and tooling: it replaces manual visual-configuration forms with a semantic parser and a native HCT tonal theme engine backed by the `aphrody-m3-tokens` Rust implementation.

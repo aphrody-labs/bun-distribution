@@ -80,6 +80,11 @@ define(
     usage: "[native MCP arguments]",
     passthroughHelp: true,
     ...native("mcp"),
+    run: (args) => spawn([process.execPath, "mcp", ...args], {
+      env: {
+        BUN_MCP_SKILLS_PATH: abs("packages/m3-design/intelligence"),
+      },
+    }),
   },
   {
     group: "",

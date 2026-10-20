@@ -45,9 +45,10 @@ logs do not define the current state; use Git history for prior batches.
    3,639 manifests (2,052 Cargo and 1,567 Bun), 326 recursive submodule
    declarations (166 at the root; 104 unavailable at the root and 170 across
    all visible levels), and 140 vendor roots. It reports 12 ownership
-   conflicts and seven manifest parse failures; six are intentionally invalid
-   runtime fixtures and one is an unavailable nested `vendor/rea` manifest.
-   Keep counts derived from this inventory rather than prose.
+   conflicts and six manifest parse failures, all intentionally invalid Bun
+   runtime fixtures. One tracked `vendor/rea` manifest is absent from the
+   initialized sparse `unblob` checkout and is recorded separately as an
+   omitted manifest. Keep counts derived from this inventory rather than prose.
    Regenerate `docs/aphrody/ecosystem/` only when both owner checkouts are
    available and complete; the available Aphrody checkout is missing, so the
    generator's zero-entry result is not a valid replacement for its current

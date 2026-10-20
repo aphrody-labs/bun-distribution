@@ -162,21 +162,42 @@ fn msrdc_windows() -> Result<Value> {
 /// `wsl.exe` output is UTF-16LE on Windows; plain UTF-8 elsewhere.
 #[must_use]
 pub fn decode_wsl_output(bytes: &[u8]) -> String {
-    if bytes.len() >= 2
+    let (body, endian) = if let Some(body) = bytes.strip_prefix(&[0xff, 0xfe]) {
+        (body, Some(true))
+    } else if let Some(body) = bytes.strip_prefix(&[0xfe, 0xff]) {
+        (body, Some(false))
+    } else if bytes.len() >= 2
         && bytes.len().is_multiple_of(2)
         && bytes.iter().skip(1).step_by(2).all(|b| *b == 0)
     {
-        let units: Vec<u16> = bytes
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|pair| u16::from_le_bytes(*pair))
-            .collect();
-        String::from_utf16_lossy(&units)
+        (bytes, Some(true))
     } else {
-        String::from_utf8_lossy(bytes).into_owned()
-    }
-    .replace('\0', "")
+        (bytes, None)
+    };
+
+    let decoded = if let Some(little_endian) = endian {
+        let mut chunks = body.chunks_exact(2);
+        let units: Vec<u16> = chunks
+            .by_ref()
+            .map(|pair| {
+                let pair = [pair[0], pair[1]];
+                if little_endian {
+                    u16::from_le_bytes(pair)
+                } else {
+                    u16::from_be_bytes(pair)
+                }
+            })
+            .collect();
+        let mut decoded = String::from_utf16_lossy(&units);
+        if !chunks.remainder().is_empty() {
+            decoded.push('\u{fffd}');
+        }
+        decoded
+    } else {
+        String::from_utf8_lossy(body).into_owned()
+    };
+
+    decoded.trim_start_matches('\u{feff}').replace('\0', "")
 }
 
 /// First distribution in `wsl.exe --list --quiet` order that is not docker-desktop.

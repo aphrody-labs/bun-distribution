@@ -11,7 +11,7 @@
  *   bun scripts/aphrody/build/rust/vps-cargo.ts sync [--pull]           snapshot + checkout on the VPS
  *   bun scripts/aphrody/build/rust/vps-cargo.ts run [--jobs N] [--pull] -- <cargo args>
  *   bun scripts/aphrody/build/rust/vps-cargo.ts logs <job>              replay a remote job log
- *   bun scripts/aphrody/build/rust/vps-cargo.ts fetch --bin <name> [--profile release] [--dest <dir>]
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts fetch --bin <name> [--profile release] [--target <triple>] [--dest <dir>]
  *   bun scripts/aphrody/build/rust/vps-cargo.ts attach                  attach the remote tmux session
  *
  * `--repo <name>` (sync, run, fetch) builds an external repository declared under `repositories` in the config
@@ -783,8 +783,11 @@ function flag(args: readonly string[], name: string): string | undefined {
 
 async function fetchArtifact(config: VpsCargoConfig, args: readonly string[], root = ROOT): Promise<number> {
   const bin = flag(args, "--bin");
-  if (!bin) throw new Error("fetch needs --bin <name>");
+  if (!bin || !/^[A-Za-z0-9_.+-]+$/.test(bin)) throw new Error("fetch needs --bin <name>");
   const profile = flag(args, "--profile") ?? "release";
+  if (!/^[A-Za-z0-9_-]+$/.test(profile)) throw new Error("fetch --profile must be a Cargo profile name");
+  const target = flag(args, "--target");
+  if (target && !/^[A-Za-z0-9_.-]+$/.test(target)) throw new Error("fetch --target must be a target triple");
   const sha = (await $`git rev-parse ${config.snapshotRef}`.cwd(root).text()).trim();
   const defaultDest =
     process.platform === "win32"
@@ -796,7 +799,7 @@ async function fetchArtifact(config: VpsCargoConfig, args: readonly string[], ro
         )
       : `~/.local/lib/aphrody/workspace-${sha.slice(0, 12)}`;
   const dest = expandHome(flag(args, "--dest") ?? defaultDest);
-  const remote = `${config.remoteTargetDir}/${profile}/${bin}`;
+  const remote = `${config.remoteTargetDir}/${target ? `${target}/` : ""}${profile}/${bin}`;
   await mkdir(dest, { recursive: true });
   const control = `ControlPath=${expandHome(config.controlPath)}`;
   const copy = Bun.spawn(
@@ -814,9 +817,19 @@ async function fetchArtifact(config: VpsCargoConfig, args: readonly string[], ro
   });
   const remoteDigest = (await new Response(remoteSum.stdout).text()).split(/\s+/)[0];
   if (digest !== remoteDigest) throw new Error(`sha256 mismatch for ${bin}`);
-  // A WebAssembly module or a shared library is a verified copy, not something to execute.
-  if (/\.(wasm|so|dll|dylib)$/.test(bin)) {
-    console.log(`${local} sha256=${digest} (not executed)`);
+  // Non-executable artifacts and target-qualified binaries are copies, not local programs to execute.
+  // In particular, a Linux ELF fetched by the Windows workstation must be qualified on the VPS/container.
+  const targetParts = target?.split("-") ?? [];
+  const targetOS = ["android", "windows", "darwin", "freebsd", "linux"].find((part) => targetParts.includes(part));
+  const localOS = process.platform === "win32" ? "windows" : process.platform === "darwin" ? "darwin" : process.platform;
+  const targetArch = targetParts[0];
+  const localArch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : process.arch;
+  if (
+    /\.(wasm|so|dll|dylib)$/.test(bin) ||
+    (target && (targetOS !== localOS || targetArch !== localArch)) ||
+    (!target && process.platform === "win32")
+  ) {
+    console.log(`${local} sha256=${digest} (not executed${target ? `; target=${target}` : ""})`);
     return 0;
   }
   const runs = Bun.spawnSync([local, "--version"], { windowsHide: true }).exitCode === 0;
@@ -825,7 +838,7 @@ async function fetchArtifact(config: VpsCargoConfig, args: readonly string[], ro
 }
 
 const USAGE =
-  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N|auto] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
+  "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N|auto] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--target <triple>] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
 
 export function cargoJobsSetting(
   requested: string | undefined,

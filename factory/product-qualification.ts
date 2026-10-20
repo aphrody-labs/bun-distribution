@@ -106,11 +106,12 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     { jsonrpc: "2.0", id: 3, method: "resources/list", params: {} },
     { jsonrpc: "2.0", id: 4, method: "resources/read", params: { uri: "bun://skills/bun-native" } },
     { jsonrpc: "2.0", id: 5, method: "prompts/list", params: {} },
+    { jsonrpc: "2.0", id: 6, method: "resources/read", params: { uri: "bun://skills/ui-ux-pro-max" } },
   ];
   const mcpInput = new TextEncoder().encode(mcpMessages.map(message => JSON.stringify(message)).join("\n") + "\n");
   const mcpResult = await runProcess([resolve(executable), ...mcpArgs], workspace, {
     timeoutMs: 60_000, maxOutputBytes: 16 * 1024 * 1024, input: mcpInput,
-    env: { ...Bun.env, HOME: isolatedHome, BUN_MCP_PROFILE: "codex", BUN_MCP_SKILLS_PATH: undefined,
+    env: { ...Bun.env, HOME: isolatedHome, BUN_MCP_PROFILE: "codex", BUN_MCP_SKILLS_PATH: join(workspace, "packages/m3-design/intelligence"),
       BUN_MCP_MEMORY_DB: undefined, REDIS_URL: undefined, VALKEY_URL: undefined, CODEX_HOME: undefined,
       BUN_BE_BUN: undefined },
   });
@@ -139,17 +140,20 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   const resources = response(3).resources ?? [];
   const skill = response(4).contents?.[0];
   const prompts = response(5).prompts ?? [];
+  const uiUxSkill = response(6).contents?.[0];
   const toolNames = tools.map(tool => tool.name);
   if (initialized.protocolVersion !== "2025-06-18" || initialized.serverInfo?.name !== "bun" || !initialized.capabilities?.tools ||
     !["docs_search", "skills_list", "skill_read", "graph_query"].every(name => toolNames.includes(name)) ||
     !resources.some(resource => resource.uri === "bun://docs/llms.txt") ||
     skill?.uri !== "bun://skills/bun-native" || typeof skill.text !== "string" || !skill.text.trim() ||
-    !prompts.some(prompt => prompt.name === "bun-native"))
-    throw new Error("Product MCP protocol, tools, docs, embedded plugin skill or prompts are incomplete");
+    uiUxSkill?.uri !== "bun://skills/ui-ux-pro-max" || typeof uiUxSkill.text !== "string" || !uiUxSkill.text.includes("Material 3 contract") ||
+    !prompts.some(prompt => prompt.name === "bun-native") || !prompts.some(prompt => prompt.name === "ui-ux-pro-max"))
+    throw new Error("Product MCP protocol, tools, docs, Bun and M3 design skills or prompts are incomplete");
   evidence.push({ args: mcpArgs, exitCode: mcpResult.code,
     stdoutSHA256: new Bun.CryptoHasher("sha256").update(mcpResult.stdout).digest("hex"),
     protocolVersion: initialized.protocolVersion, toolCount: tools.length, resourceCount: resources.length,
-    embeddedSkill: skill.uri, skillBytes: new TextEncoder().encode(skill.text).length, promptCount: prompts.length });
+    embeddedSkill: skill.uri, skillBytes: new TextEncoder().encode(skill.text).length,
+    productDesignSkill: uiUxSkill.uri, productDesignSkillBytes: new TextEncoder().encode(uiUxSkill.text).length, promptCount: prompts.length });
   await verifyProductPayload(workspace, receiptPath, expected);
   if (!sameProductIdentity(await productIdentity(executable), receipt.runtime))
     throw new Error("Product runtime changed during CLI qualification");
