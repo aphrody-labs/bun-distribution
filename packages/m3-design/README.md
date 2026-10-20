@@ -18,7 +18,8 @@ Run the MCP server from a Bun OS checkout with `bunos mcp`. To search the
 bundled design guidance directly, run:
 
 ```sh
-bunos tool m3-design --help
+bunos design --help
+bunos design compile --prompt "Responsive M3 monitoring dashboard for an operator"
 ```
 
 The design engine below generates artifacts against the same M3 component and
