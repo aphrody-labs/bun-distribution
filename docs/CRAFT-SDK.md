@@ -7,7 +7,7 @@ qualified CLI artifact; `runCraftLibrary` runs that owner's CLI with its origina
 arguments and bounded process output. It does not translate the different CLI,
 CLI-JSON, JSON-lines and MCP-stdio contracts into a new command language.
 
-`craft-control.ts` contains a separate Bun-native JSON-lines client for the
+`@aphrody/bun-workspace/craft-control` exports a separate Bun-native JSON-lines client for the
 documented loopback control servers of CADCraft, DeckCraft, DesignCraft,
 EffectCraft, FigCraft, FilmCraft, GridCraft, LightCraft, PhotoCraft, SoundCraft,
 VectorCraft and WordCraft. These servers are opt-in when each app starts. The

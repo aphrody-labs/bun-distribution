@@ -145,7 +145,7 @@ function encodeFrame(value: object): Uint8Array {
   return frame;
 }
 
-function parseReply(line: string, expectedId: string | number, maxResponseBytes: number): CraftControlReply {
+function parseReply(line: string, expectedId: string | number): CraftControlReply {
   let value: unknown;
   try {
     value = JSON.parse(line);
@@ -201,7 +201,9 @@ export async function callCraftControl(
   let responseBytes = 0;
   let responseText = "";
   let exchange: "auth" | "request" = authFrame ? "auth" : "request";
-  const decoder = new TextDecoder();
+  // JSON-lines is UTF-8. Do not silently replace malformed bytes: that can turn
+  // a corrupt owner response into apparently valid JSON with damaged strings.
+  const decoder = new TextDecoder("utf-8", { fatal: true });
   activeConnections++;
 
   const result = new Promise<CraftControlReply>((resolve, reject) => {
@@ -248,7 +250,12 @@ export async function callCraftControl(
             finish(new CraftControlError("RESPONSE_TOO_LARGE", `Craft control response exceeds ${maxResponseBytes} bytes.`));
             return;
           }
-          responseText += decoder.decode(chunk, { stream: true });
+          try {
+            responseText += decoder.decode(chunk, { stream: true });
+          } catch (cause) {
+            finish(new CraftControlError("INVALID_RESPONSE", "Craft control returned malformed UTF-8.", undefined, { cause }));
+            return;
+          }
           const newline = responseText.indexOf("\n");
           if (newline < 0) return;
           const line = responseText.slice(0, newline).replace(/\r$/, "");
@@ -259,7 +266,7 @@ export async function callCraftControl(
           }
           try {
             if (exchange === "auth") {
-              const auth = parseReply(line, "auth", maxResponseBytes);
+              const auth = parseReply(line, "auth");
               if (!auth.ok) throw new CraftControlError("OWNER_ERROR", "PhotoCraft authentication failed.", auth);
               exchange = "request";
               responseBytes = 0;
@@ -269,7 +276,7 @@ export async function callCraftControl(
                 finish(new CraftControlError("CONNECT_FAILED", "Craft control request could not be written completely."));
               return;
             }
-            finish(undefined, parseReply(line, id, maxResponseBytes));
+            finish(undefined, parseReply(line, id));
           } catch (error) {
             finish(error instanceof CraftControlError ? error : new CraftControlError("INVALID_RESPONSE", "Craft control response could not be read.", undefined, { cause: error }));
           }
