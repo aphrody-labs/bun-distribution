@@ -3,6 +3,10 @@ name: Aphrody Sites
 on:
   push:
     branches: [os]
+  schedule:
+    # Reconcile the public WebOS hosts hourly as well as immediately on every
+    # canonical source push. Concurrency below serializes overlapping runs.
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
