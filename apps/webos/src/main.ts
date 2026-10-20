@@ -16,8 +16,13 @@ import { linuxApp } from "./apps/linux";
 import { inspectorApp } from "./apps/inspector";
 import { storeApp } from "./apps/store";
 import { terminalApp } from "./apps/terminal";
+import {
+  attachCraftHost,
+  type CraftHost,
+  type CraftHostId,
+} from "./apps/craft-host";
 import { h, icon } from "./dom";
-import { catalog, HOME } from "./os";
+import { catalog, HOME, webos } from "./os";
 import {
   installed,
   reconcile,
@@ -41,6 +46,12 @@ interface Builtin {
 
 const desk = h("main", { class: "desk" });
 const wm = new WindowManager(desk);
+const craftHosts = new Map<string, CraftHost>();
+const CRAFT_HOSTS: Record<string, CraftHostId> = {
+  "craft-cad": "cad",
+  "craft-grid": "grid",
+  "craft-pdf": "pdf",
+};
 const dock = h("nav", { class: "dock", "aria-label": "Dock" });
 const clock = h("time", { class: "clock" });
 const bar = h("header", { class: "topbar" });
@@ -95,7 +106,8 @@ const builtins: Builtin[] = [
     icon: "folder",
     desc: "Your files, saved in this browser",
     group: "core",
-    mount: (root) => loading(root, filesApp(root, openEditor)),
+    mount: (root) =>
+      loading(root, filesApp(root, openEditor, { openCraft: openCraftFile })),
   },
   {
     id: "browser",
@@ -144,7 +156,13 @@ const builtins: Builtin[] = [
     // Keep browser Drive on the same Rust VFS as Files. Projects saved here
     // remain available in both windows across WebOS sessions.
     mount: (root) =>
-      loading(root, filesApp(root, openEditor, `${HOME}/Projects`)),
+      loading(
+        root,
+        filesApp(root, openEditor, {
+          start: `${HOME}/Projects`,
+          openCraft: openCraftFile,
+        }),
+      ),
   },
   {
     id: "settings",
@@ -330,6 +348,7 @@ function launchPackage(e: RegistryEntry) {
     return;
   }
   const content = h("div", { class: "fill" });
+  let craftHost: CraftHost | undefined;
   wm.open({
     id: `pkg:${e.id}`,
     title: e.name,
@@ -337,18 +356,61 @@ function launchPackage(e: RegistryEntry) {
     width: 960,
     height: 640,
     content,
+    onClose: () => {
+      craftHost?.dispose();
+      if (craftHosts.get(e.id) === craftHost) craftHosts.delete(e.id);
+    },
   });
   if (!content.hasChildNodes()) {
-    content.append(
-      h("iframe", {
-        class: "appframe",
-        src: `/apps/${e.id}/`,
-        title: e.name,
-        allow:
-          "fullscreen; gamepad; autoplay; clipboard-read; clipboard-write; cross-origin-isolated",
-      }),
-    );
+    const hostId = CRAFT_HOSTS[e.id];
+    const frame = h("iframe", {
+      class: "appframe",
+      src: `/apps/${e.id}/${hostId ? "?host=parent" : ""}`,
+      title: e.name,
+      allow:
+        "fullscreen; gamepad; autoplay; clipboard-read; clipboard-write; cross-origin-isolated",
+    }) as HTMLIFrameElement;
+    if (hostId) {
+      craftHost = attachCraftHost(frame, hostId, (name, bytes) =>
+        saveCraftFile(hostId, name, bytes),
+      );
+      craftHosts.set(e.id, craftHost);
+    }
+    content.append(frame);
   }
+}
+
+function openCraftFile(
+  id: CraftHostId,
+  name: string,
+  bytes: Uint8Array,
+): boolean {
+  const packageId = `craft-${id}`;
+  const entry = installedEntries().find((item) => item.id === packageId);
+  if (!entry) {
+    launchBuiltin(builtins.find((item) => item.id === "apps")!);
+    return false;
+  }
+  launchPackage(entry);
+  return craftHosts.get(packageId)?.open(name, bytes) ?? false;
+}
+
+async function saveCraftFile(id: CraftHostId, name: string, bytes: Uint8Array) {
+  const os = await webos();
+  const root = `${HOME}/Projects/Craft`;
+  const directory = `${root}/${id}`;
+  try {
+    os.fs.stat(root);
+  } catch {
+    os.fs.mkdir(root);
+  }
+  try {
+    os.fs.stat(directory);
+  } catch {
+    os.fs.mkdir(directory);
+  }
+  os.fs.write(`${directory}/${name}`, bytes);
+  await os.flush();
 }
 function refreshApps() {
   renderDock();

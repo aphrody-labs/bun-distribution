@@ -11,7 +11,6 @@ import {
   copyTo,
   emptyTrash,
   exists,
-  extOf,
   fmtSize,
   inTrash,
   isInside,
@@ -25,6 +24,12 @@ import {
   usage,
 } from "./files-ops";
 import { type Context, type ContentHit, byPath, call, loadContext, sdPath, searchContents, searchFiles } from "./files-wire";
+import { craftHostForPath, type CraftHostId } from "./craft-host";
+
+export interface FilesAppOptions {
+  start?: string;
+  openCraft?: (id: CraftHostId, name: string, bytes: Uint8Array) => boolean;
+}
 
 type SortKey = "name" | "size" | "kind";
 interface Prefs {
@@ -99,8 +104,13 @@ interface MenuItem {
  * Explorer over the Rust VFS (aphrody-shell-vfs) persisted in OPFS.
  * `openText(path, text)` receives text files opened with Enter or double click.
  */
-export async function filesApp(root: HTMLElement, openText: (path: string, text: string) => void, start: string = HOME) {
+export async function filesApp(
+  root: HTMLElement,
+  openText: (path: string, text: string) => void,
+  options: FilesAppOptions = {},
+) {
   const os = await webos();
+  const start = options.start ?? HOME;
   const prefs = loadPrefs();
   let cwd = start;
   const back: string[] = [];
@@ -611,6 +621,15 @@ export async function filesApp(root: HTMLElement, openText: (path: string, text:
   async function open(e: Entry) {
     if (e.kind === "dir") return go(e.path);
     try {
+      const craft = craftHostForPath(e.path);
+      const openCraft = options.openCraft;
+      if (craft && openCraft) {
+        if (e.size > 64 * 1024 * 1024)
+          return toast("Craft can open files up to 64 MiB from Drive", true);
+        if (!openCraft(craft, e.name, os.fs.read(e.path)))
+          return toast(`Install ${craft} from Apps, then open this file again`, true);
+        return;
+      }
       if (isMedia(e, "image") || isMedia(e, "audio") || isMedia(e, "video")) {
         prefs.preview = true;
         savePrefs();
