@@ -49,5 +49,9 @@ jobs:
           bun scripts/node-modules.ts
       - name: Require production credential
         run: test -n "$CLOUDFLARE_API_TOKEN"
+      - name: Compile the complete installable Craft suite
+        run: |
+          rustup target add wasm32-unknown-unknown
+          CARGO_BUILD_JOBS=4 APHRODY_CARGO_JOBS=4 bun apps/webos/build-craft.ts
       - name: Build, deploy and verify all unified Worker hosts
         run: bun apps/webos/deploy.ts

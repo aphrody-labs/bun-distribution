@@ -83,7 +83,8 @@ export async function storeApp(
         ),
       );
       if (r.kind === "apps") {
-        const host = data.hosts[r.id];
+        const host =
+          data.hosts[r.id] ?? data.hosts[r.id.replace(/-web(?:-app)?$/, "")];
         if (host)
           actions.push(
             h(
@@ -140,12 +141,29 @@ export async function storeApp(
         "header",
         { class: "catalog-intro" },
         h("h1", {}, "Build, create, explore."),
-        h("p", {}, "The Bun OS source catalog: real applications, packages and Rust crates from this release. Installable browser apps are available in Apps."),
+        h(
+          "p",
+          {},
+          "The Bun OS source catalog: real applications, packages and Rust crates from this release. Installable browser apps are available in Apps.",
+        ),
         h(
           "div",
           { class: "sact" },
-          h("button", { class: "btn", onclick: () => launch("app", "apps") }, "Browse installable apps"),
-          h("button", { class: "btn tonal", onclick: () => launch("app", "creative") }, "Creative workspace"),
+          h(
+            "button",
+            { class: "btn", onclick: () => launch("app", "apps") },
+            "Browse installable apps",
+          ),
+          h(
+            "button",
+            { class: "btn tonal", onclick: () => launch("app", "creative") },
+            "Creative workspace",
+          ),
+          h(
+            "button",
+            { class: "btn tonal", onclick: () => launch("app", "linux") },
+            "Start Alpine Linux",
+          ),
         ),
       ),
       h("div", { class: "files-bar" }, search),

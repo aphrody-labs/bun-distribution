@@ -207,7 +207,11 @@ const buildCode = await runNative(
     cwd: root,
     runtimePolicy: "development",
     timeoutMs: 1_800_000,
-    env: { CARGO_BUILD_JOBS: "4" },
+    env: {
+      CARGO_BUILD_JOBS: "4",
+      CRAFT_FONTS_DIR: Bun.env.CRAFT_FONTS_DIR ?? root,
+      CRAFT_FONTS_REQUIRED: "1",
+    },
   },
 );
 if (buildCode !== 0)

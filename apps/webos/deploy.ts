@@ -2,6 +2,7 @@
 // Deploy one pushed WebOS revision, then qualify every public hostname on that Worker.
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { allAppCapabilities } from "@aphrody/bun-workspace/capabilities";
 
 const root = resolve(import.meta.dir, "../..");
 const workerRoot = import.meta.dir;
@@ -68,9 +69,11 @@ if (
     ({ binding, service }) => binding === "LEGACY" && service === "aphrody-app",
   )
 )
-  throw new Error("Expected WebOS to own the public hosts and bind the legacy API Worker.");
+  throw new Error(
+    "Expected WebOS to own the public hosts and bind the legacy API Worker.",
+  );
 const hosts = [
-  ...new Set(config.routes.map(({ pattern }) => pattern.replace(/\/\*$/, ""))),
+  ...new Set(config.routes.map(({ pattern }) => pattern.replace(/\/\*?$/, ""))),
 ];
 if (hosts.length < 30)
   throw new Error(
@@ -111,11 +114,37 @@ async function run(command: string[]) {
 }
 
 await run([process.execPath, join(workerRoot, "build-product.ts")]);
+const registry = (await Bun.file(
+  join(workerRoot, "dist/registry.json"),
+).json()) as {
+  packages: { id: string }[];
+};
+for (const capability of allAppCapabilities()) {
+  const id = capability.webosPackageId;
+  if (!id) continue;
+  if (!registry.packages.some((entry) => entry.id === id))
+    throw new Error(
+      `Missing installable ${id}; build Craft before production assembly.`,
+    );
+  const manifest = (await Bun.file(
+    join(workerRoot, "dist/apps", id, "app.json"),
+  ).json()) as {
+    files: { path: string; bytes: number }[];
+  };
+  if (
+    !manifest.files.some(
+      (file) => file.path.endsWith(".wasm") && file.bytes > 0,
+    )
+  )
+    throw new Error(`${id} has no executable WebAssembly artifact.`);
+}
 await run([
   join(root, "node_modules/.bin/wrangler"),
   "deploy",
   "--config",
   join(workerRoot, "wrangler.jsonc"),
+  "--var",
+  `SOURCE_COMMIT:${commit}`,
 ]);
 
 const checks = await Promise.all(

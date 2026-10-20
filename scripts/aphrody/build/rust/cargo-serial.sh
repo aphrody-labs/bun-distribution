@@ -8,7 +8,11 @@ if (($# == 0)); then
 fi
 
 source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-factory_config="$source_root/tools/aphrody/config/build-factory.json"
+factory_config="${APHRODY_FACTORY_CONFIG:-$source_root/tools/aphrody/config/build-factory.json}"
+if [[ -n "${APHRODY_FACTORY_CONFIG:-}" && ( "$factory_config" != /* || ! -r "$factory_config" ) ]]; then
+    echo "APHRODY_FACTORY_CONFIG must select a readable absolute configuration path" >&2
+    exit 64
+fi
 cargo_command="${1#+}"
 if [[ "$1" == +* ]]; then cargo_command="${2:-}"; fi
 help_only=false

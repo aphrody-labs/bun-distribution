@@ -12,6 +12,7 @@
   "services": [{ "binding": "LEGACY", "service": "aphrody-app" }],
   "r2_buckets": [{ "binding": "VM", "bucket_name": "aphrody-assets" }],
   "routes": [
+    { "pattern": "craft.aphrody.app/", "zone_name": "aphrody.app" },
     { "pattern": "aphrody.com/*", "zone_name": "aphrody.com" },
     { "pattern": "www.aphrody.com/*", "zone_name": "aphrody.com" },
     { "pattern": "play.aphrody.app/*", "zone_name": "aphrody.app" },
@@ -20,7 +21,10 @@
     { "pattern": "app-images.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-vectors.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-compositing.aphrody.app/*", "zone_name": "aphrody.app" },
-    { "pattern": "app-photo-processing.aphrody.app/*", "zone_name": "aphrody.app" },
+    {
+      "pattern": "app-photo-processing.aphrody.app/*",
+      "zone_name": "aphrody.app",
+    },
     { "pattern": "app-pdf.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-documents.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-audio.aphrody.app/*", "zone_name": "aphrody.app" },
@@ -28,7 +32,10 @@
     { "pattern": "app-cad.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-slides.aphrody.app/*", "zone_name": "aphrody.app" },
     { "pattern": "app-tables.aphrody.app/*", "zone_name": "aphrody.app" },
-    { "pattern": "app-interface-layouts.aphrody.app/*", "zone_name": "aphrody.app" },
+    {
+      "pattern": "app-interface-layouts.aphrody.app/*",
+      "zone_name": "aphrody.app",
+    },
     { "pattern": "aphrody.app", "custom_domain": true },
     { "pattern": "www.aphrody.app", "custom_domain": true },
     { "pattern": "filmcraft.aphrody.app", "custom_domain": true },
@@ -46,7 +53,7 @@
     { "pattern": "gridcraft.aphrody.app", "custom_domain": true },
     { "pattern": "figcraft.aphrody.app", "custom_domain": true },
     { "pattern": "apt.aphrody.app", "custom_domain": true },
-    { "pattern": "desktop.aphrody.app", "custom_domain": true }
+    { "pattern": "desktop.aphrody.app", "custom_domain": true },
   ],
   "workers_dev": false,
   "observability": { "enabled": true },

@@ -11,6 +11,7 @@ interface R2ObjectBodyLike {
   range?: { offset: number; length: number };
 }
 interface Env {
+  SOURCE_COMMIT?: string;
   ASSETS: { fetch(request: Request): Promise<Response> };
   /** The former aphrody-app Worker, kept as the private backend of the merged API routes (service binding). */
   LEGACY: { fetch(request: Request): Promise<Response> };
@@ -240,6 +241,7 @@ const LEGACY_ORIGIN = "https://aphrody.app";
 
 /** Old product hosts redirect to the Web OS; each Craft capability opens its package. */
 const CRAFT_PACKAGE: Record<string, string> = {
+  craft: "creative",
   filmcraft: "craft-film",
   video: "craft-film",
   artcraft: "creative",
@@ -327,6 +329,7 @@ export default {
         {
           ok: true,
           service: "aphrody-webos",
+          sourceCommit: env.SOURCE_COMMIT ?? null,
           colo: cf?.colo ?? null,
           time: new Date().toISOString(),
         },
