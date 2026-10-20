@@ -35,9 +35,26 @@ async function scan(
   dir: string,
   read: (path: string) => Promise<{ d: string; k?: string } | undefined>,
 ) {
+  const tracked = Bun.spawnSync(["git", "ls-files", "--", dir], { cwd: root });
+  if (tracked.exitCode !== 0)
+    throw new Error(
+      `Could not list tracked ${dir} sources for the product catalog`,
+    );
+  const trackedChildren = new Set(
+    new TextDecoder()
+      .decode(tracked.stdout)
+      .split("\n")
+      .filter(Boolean)
+      .map((path) => path.split("/")[1]),
+  );
   const out: Entry[] = [];
   for (const e of await readdir(join(root, dir), { withFileTypes: true })) {
-    if (!e.isDirectory() || e.name.startsWith(".")) continue;
+    if (
+      !e.isDirectory() ||
+      e.name.startsWith(".") ||
+      !trackedChildren.has(e.name)
+    )
+      continue;
     const meta = await read(join(root, dir, e.name));
     if (meta) out.push({ id: e.name, ...meta });
   }
