@@ -22,3 +22,8 @@ Craft compilation uses the root serialized Cargo owner and four compiler jobs.
 
 `build:shell` assembles the site from an already staged App UI artifact.
 `superapp deploy` runs the product build before the existing Cloudflare deploy.
+
+For local serving, set `BUN_OS_API_ORIGIN` to the existing API backend's HTTP(S)
+origin. The production Worker uses its service binding instead. Local API
+routes return HTTP 503 when no backend is configured; request credentials and
+origin headers are forwarded unchanged, and redirects remain visible to clients.

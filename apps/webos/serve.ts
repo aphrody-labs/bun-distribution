@@ -4,6 +4,17 @@ import { join } from "node:path";
 import worker from "./worker/index";
 
 const dist = join(import.meta.dir, "dist");
+const apiOrigin = Bun.env.BUN_OS_API_ORIGIN ? new URL(Bun.env.BUN_OS_API_ORIGIN) : undefined;
+if (apiOrigin && (!/^https?:$/.test(apiOrigin.protocol) || apiOrigin.username || apiOrigin.password ||
+  apiOrigin.pathname !== "/" || apiOrigin.search || apiOrigin.hash))
+  throw new Error("BUN_OS_API_ORIGIN must be an HTTP(S) origin without credentials, path, query or fragment.");
+const api = {
+  async fetch(request: Request): Promise<Response> {
+    if (!apiOrigin) return Response.json({ error: "API backend unavailable." }, { status: 503 });
+    const url = new URL(request.url);
+    return fetch(new Request(new URL(url.pathname + url.search, apiOrigin), request), { redirect: "manual" });
+  },
+};
 // Local stand-in for the R2 bucket: the ISO that vm.ts cached under build/web-vm.
 const isoPath = join(import.meta.dir, "../../build/web-vm/alpine-virt-3.24.2-x86.iso");
 const vm = {
@@ -35,7 +46,7 @@ const server = Bun.serve({
   port: Number(Bun.argv[2] ?? 8788),
   hostname: "127.0.0.1",
   fetch: async request => {
-    const res = await worker.fetch(request, { ASSETS: assets, VM: vm });
+    const res = await worker.fetch(request, { ASSETS: assets, VM: vm, LEGACY: api });
     if (new URL(request.url).pathname.startsWith("/vm/alpine"))
       console.log(request.method, request.headers.get("range"), request.headers.get("if-range"), "->", res.status);
     return res;
