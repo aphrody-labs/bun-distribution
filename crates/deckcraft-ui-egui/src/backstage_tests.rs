@@ -197,7 +197,7 @@ fn every_page_renders() {
         (Page::SaveAs, "Not saved yet"),
         (Page::Print, "Print Hidden Slides"),
         (Page::Export, "Create PDF Document"),
-        (Page::Account, "About DeckCraft"),
+        (Page::Account, "About Slides"),
     ];
     for (p, marker) in checks {
         h.state_mut()

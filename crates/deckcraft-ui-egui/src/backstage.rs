@@ -1669,8 +1669,8 @@ fn account(app: &mut SlideApp, ui: &mut Ui) {
             if task(
                 ui,
                 Icon::Help,
-                "About DeckCraft",
-                "About DeckCraft",
+                "About Slides",
+                "About Slides",
                 "The version, the people and models who built it, and where to find us.",
                 true,
             ) {

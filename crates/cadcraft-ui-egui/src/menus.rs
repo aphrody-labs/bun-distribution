@@ -222,8 +222,8 @@ pub const UI_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("ui.dialog.dsettings", "Drafting Settings...", &[], None),
     (
         "ui.dialog.about",
-        "About CADCraft",
-        &["Help", "About CADCraft"],
+        "About Drafting",
+        &["Help", "About Drafting"],
         None,
     ),
     (

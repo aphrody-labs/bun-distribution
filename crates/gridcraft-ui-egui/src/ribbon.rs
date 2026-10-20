@@ -3346,7 +3346,7 @@ fn automate(app: &mut SheetApp, ui: &mut Ui) {
     let __k = big_button(
         ui,
         Icon::Script,
-        "About\nGridCraft",
+        "About\nTables",
         "Version, contributors and the AI models that helped",
         false,
     );

@@ -478,7 +478,7 @@ pub const UI_COMMANDS: &[UiCommand] = &[
         ["Help"],
         None
     ),
-    uic!("app.about", "About FilmCraft", ["Help"], None),
+    uic!("app.about", "About Video", ["Help"], None),
     uic!(
         "app.keyboardShortcuts",
         "Keyboard Shortcuts…",

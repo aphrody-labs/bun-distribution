@@ -1084,7 +1084,7 @@ mod tests {
             (quit.label.as_str(), quit.shortcut.as_deref()),
             ("Quit PhotoCraft", Some("Cmd+Q"))
         );
-        assert_eq!(l.bar.find("help.about").unwrap().label, "About PhotoCraft");
+        assert_eq!(l.bar.find("help.about").unwrap().label, "About Images");
     }
 
     #[test]

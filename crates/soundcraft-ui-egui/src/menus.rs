@@ -67,7 +67,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, Option<&str>)] = &[
     ),
     ("window.session_info", "Session Info", "", None),
     ("window.audio_health", "Session Audio Health", "", None),
-    ("window.about", "About SoundCraft", "", None),
+    ("window.about", "About Audio", "", None),
     (
         "window.close",
         "Close Window",
@@ -455,7 +455,7 @@ pub fn menu_bar(app: &mut SoundApp, ui: &mut egui::Ui) {
         .show(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("SoundCraft", |ui| {
-                    if ui.button("About SoundCraft").clicked() {
+                    if ui.button("About Audio").clicked() {
                         app.ui.show_about = true;
                     }
                     if ui.button("Session Info").clicked() {

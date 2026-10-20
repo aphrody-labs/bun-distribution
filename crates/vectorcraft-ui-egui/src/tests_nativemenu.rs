@@ -134,7 +134,7 @@ fn vectorcraft_gets_a_mac_app_menu() {
         let it = find(&bar, command);
         (it.label.as_str(), it.shortcut)
     };
-    assert_eq!(shown("help.about"), ("About VectorCraft", None));
+    assert_eq!(shown("help.about"), ("About Vectors", None));
     assert_eq!(
         shown("app.quit"),
         ("Quit VectorCraft", Some("Cmd+Q")),

@@ -36,9 +36,9 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     paint_logo(&p, brand);
     let bresp = ui.interact(brand, egui::Id::new("brand"), Sense::click());
     app.auto
-        .add_response("header.about", &bresp, "About EffectCraft");
+        .add_response("header.about", &bresp, "About Compositing");
     widgets::focus_outline(ui, &bresp, &t);
-    if bresp.on_hover_text(tr("About EffectCraft")).clicked() {
+    if bresp.on_hover_text(tr("About Compositing")).clicked() {
         app.dialog = Some(Dialog::About);
     }
     x += 32.0;

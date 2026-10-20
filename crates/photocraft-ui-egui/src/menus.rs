@@ -277,7 +277,7 @@ pub const UI_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("help.github", "PhotoCraft on GitHub", &["Help"], None),
     ("help.reportIssue", "Report an Issue…", &["Help"], None),
     ("help.systemInfo", "System Info…", &["Help"], None),
-    ("help.about", "About PhotoCraft", &["Help"], None),
+    ("help.about", "About Images", &["Help"], None),
 ];
 
 /// Window › <document>: the open documents, listed at the end of the Window menu as in Photoshop.
@@ -2576,7 +2576,7 @@ mod tests {
                 h.run_steps(3);
             };
             let open = |h: &Harness<'_, PhotocraftApp>| {
-                h.query_by_label_contains("About PhotoCraft").is_some()
+                h.query_by_label_contains("About Images").is_some()
             };
             let field_id = egui::Id::new("help-menu-search").with("field");
             let help = h.get_by_label("Help").rect().center();

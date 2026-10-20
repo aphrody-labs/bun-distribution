@@ -804,7 +804,7 @@ pub const UI_COMMANDS: &[(&str, &str, &str, &str)] = &[
         "",
         "{} opens the Save PDF dialog; with params = document.exportPdf options written to path (asked when missing; viewAfterSaving opens the file) → {path, bytes, warnings}",
     ),
-    ("help.about", "About VectorCraft", "", "{}"),
+    ("help.about", "About Vectors", "", "{}"),
     (
         "help.commandPalette",
         "Search Commands…",
@@ -2904,7 +2904,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
             // gives the first menu the App role.
             "VectorCraft",
             vec![
-                c("About VectorCraft", "help.about"),
+                c("About Vectors", "help.about"),
                 c("Join Our Discord", "help.discord"),
             ],
         ),
@@ -3744,7 +3744,7 @@ pub fn menu_tree_named(english_names: bool) -> Vec<(&'static str, Vec<Item>)> {
                 c("Search Commands…", "help.commandPalette"),
                 todos("VectorCraft Help…", "F1"),
                 Sep,
-                c("About VectorCraft", "help.about"),
+                c("About Vectors", "help.about"),
             ],
         ),
     ]
