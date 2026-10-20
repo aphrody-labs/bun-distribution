@@ -73,8 +73,11 @@ Format references: [Debian binary archives](https://manpages.debian.org/unstable
 them from a flat local APT repository. Repository names, mirror templates, the
 x86-64 level and signing keys come from the factory catalogs
 (`factory/arch/cachyos/integration.json`, `factory/arch/omarchy/integration.json`
-and `pacmanRepositories()` in `factory/arch/index.ts`); the order is the
-pacman.conf order, so the first repository that has a name wins.
+and `pacmanRepositories()` in `factory/arch/index.ts`). The order is the
+pacman.conf order, so the first repository that has a name wins. Omarchy's
+catalog remains inert until its integration is enabled, qualified, and marked
+executable; it is currently omitted from sync. The Arch lock resolver remains
+restricted to dated official Arch archive repositories.
 
 ```sh
 pacman2apt sync                       # pacman .files databases + Ubuntu index into bun:sqlite

@@ -195,12 +195,20 @@ const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map(
   }),
 );
 
-/** Binary repositories in pacman.conf order: CachyOS optimized, CachyOS generic, Arch, Omarchy. */
+/** Binary repositories available to the package index, in pacman.conf order. */
 export function pacmanRepositories(): PacmanRepository[] {
+  // Keep reference catalogs inert until the owning product integration has
+  // explicitly enabled, qualified, and authorized execution of its repo.
+  const omarchyRepositories =
+    omarchyIntegration.enabled === true &&
+    omarchyIntegration.qualified === true &&
+    omarchyIntegration.executable === true
+      ? (omarchyIntegration.repositories as PacmanRepository[])
+      : [];
   return [
     ...(cachyosIntegration.repositories as PacmanRepository[]),
     ...archOfficial,
-    ...(omarchyIntegration.repositories as PacmanRepository[]),
+    ...omarchyRepositories,
   ];
 }
 
