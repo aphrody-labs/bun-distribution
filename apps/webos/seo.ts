@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // SEO for the Web OS: robots.txt, sitemap.xml, llms.txt, llms-full.txt, one static landing page per app
-// (dist/a/<id>/index.html), the 1200x630 Open Graph image, the noscript fallback and the UI sounds.
+// (dist/a/<id>/index.html), the share image, the noscript fallback and the UI sounds.
 import { cp, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { deflateSync as zlibSync } from "node:zlib";
 
 const ORIGIN = "https://aphrody.com";
 const root = resolve(import.meta.dir, "../..");
@@ -28,7 +27,11 @@ interface Item {
 }
 
 const esc = (s: string) =>
-  s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 const ld = (o: unknown) => JSON.stringify(o).replaceAll("<", "\\u003c");
 const mb = (n: number) => `${(n / 1e6).toFixed(n > 1e7 ? 0 : 1)} MB`;
 
@@ -36,9 +39,16 @@ const mb = (n: number) => `${(n / 1e6).toFixed(n > 1e7 ? 0 : 1)} MB`;
 async function builtins(): Promise<Item[]> {
   const src = await Bun.file(join(import.meta.dir, "src/main.ts")).text();
   const out: Item[] = [];
-  const re = /id: "([\w-]+)",\s*name: "([^"]+)",[\s\S]*?desc: "([^"]+)",\s*group: "(\w+)"/g;
+  const re =
+    /id: "([\w-]+)",\s*name: "([^"]+)",[\s\S]*?desc: "([^"]+)",\s*group: "(\w+)"/g;
   for (const m of src.matchAll(re))
-    out.push({ id: m[1]!, name: m[2]!, description: m[3]!, kind: "builtin", category: m[4]! });
+    out.push({
+      id: m[1]!,
+      name: m[2]!,
+      description: m[3]!,
+      kind: "builtin",
+      category: m[4]!,
+    });
   return out;
 }
 
@@ -46,7 +56,7 @@ async function packages(dist: string): Promise<Item[]> {
   const f = Bun.file(join(dist, "registry.json"));
   if (!(await f.exists())) return [];
   const reg = (await f.json()) as { packages: any[] };
-  return reg.packages.map(p => ({
+  return reg.packages.map((p) => ({
     id: p.id,
     name: p.name,
     description: p.description,
@@ -70,7 +80,9 @@ function features(i: Item): string[] {
   const f: string[] = [];
   if (i.kind === "builtin") f.push("Included with Bun OS, nothing to install.");
   else {
-    f.push("Installs from the App Store into your browser with a SHA-256 verified download.");
+    f.push(
+      "Installs from the App Store into your browser with a SHA-256 verified download.",
+    );
     f.push("Works offline after the first launch.");
     if (i.size) f.push(`Download size about ${mb(i.size)}.`);
     if (i.threads) f.push("Uses several threads (cross-origin isolated).");
@@ -95,7 +107,9 @@ function landing(i: Item): string {
     applicationCategory: SCHEMA_CATEGORY[i.category] ?? "MultimediaApplication",
     operatingSystem: "Any (web browser)",
     ...(i.version ? { softwareVersion: i.version } : {}),
-    ...(i.license ? { license: `https://spdx.org/licenses/${i.license.split(" ")[0]}` } : {}),
+    ...(i.license
+      ? { license: `https://spdx.org/licenses/${i.license.split(" ")[0]}` }
+      : {}),
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     isPartOf: { "@type": "WebApplication", name: SITE, url: `${ORIGIN}/` },
     publisher: { "@type": "Organization", name: "Aphrody", url: ORIGIN },
@@ -116,8 +130,7 @@ function landing(i: Item): string {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${ORIGIN}/og-image.png">
-<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <meta name="twitter:image" content="${ORIGIN}/og-image.png">
@@ -135,7 +148,7 @@ nav a{color:#6750a4}img{border-radius:22%}
 <p><a class="open" href="${open}">Open ${esc(i.name)} in Bun OS</a></p>
 <h2>Features</h2>
 <ul>${features(i)
-    .map(f => `<li>${esc(f)}</li>`)
+    .map((f) => `<li>${esc(f)}</li>`)
     .join("")}</ul>
 <p>${SITE} is a desktop that runs in your browser: windows, workspaces, files, terminal and apps. <a href="/llms.txt">Full app list</a>.</p>
 </main></body></html>
@@ -143,70 +156,24 @@ nav a{color:#6750a4}img{border-radius:22%}
 }
 
 function noscript(items: Item[]): string {
-  const li = (i: Item) => `<li><a href="/a/${i.id}/">${esc(i.name)}</a>: ${esc(i.description)}</li>`;
-  const group = (t: string, l: Item[]) => (l.length ? `<h2>${t}</h2><ul>${l.map(li).join("")}</ul>` : "");
-  return `<main><h1>${SITE}</h1><p>${esc(TAGLINE)} This desktop needs JavaScript to run.</p>${group("Built-in apps", items.filter(i => i.kind === "builtin"))}${group("Installable apps", items.filter(i => i.kind === "package"))}</main>`;
+  const li = (i: Item) =>
+    `<li><a href="/a/${i.id}/">${esc(i.name)}</a>: ${esc(i.description)}</li>`;
+  const group = (t: string, l: Item[]) =>
+    l.length ? `<h2>${t}</h2><ul>${l.map(li).join("")}</ul>` : "";
+  return `<main><h1>${SITE}</h1><p>${esc(TAGLINE)} This desktop needs JavaScript to run.</p>${group(
+    "Built-in apps",
+    items.filter((i) => i.kind === "builtin"),
+  )}${group(
+    "Installable apps",
+    items.filter((i) => i.kind === "package"),
+  )}</main>`;
 }
 
-/** Minimal PNG writer (RGBA, 8 bit): Bun.Image decodes and encodes but cannot wrap raw pixels. */
-function png(width: number, height: number, rgba: Uint8Array): Uint8Array {
-  const raw = new Uint8Array((width * 4 + 1) * height);
-  for (let y = 0; y < height; y++) raw.set(rgba.subarray(y * width * 4, (y + 1) * width * 4), y * (width * 4 + 1) + 1);
-  const chunk = (type: string, data: Uint8Array) => {
-    const out = new Uint8Array(12 + data.length);
-    const v = new DataView(out.buffer);
-    v.setUint32(0, data.length);
-    out.set(new TextEncoder().encode(type), 4);
-    out.set(data, 8);
-    v.setUint32(8 + data.length, Bun.hash.crc32(out.subarray(4, 8 + data.length)) >>> 0);
-    return out;
-  };
-  const head = new Uint8Array(13);
-  const hv = new DataView(head.buffer);
-  hv.setUint32(0, width);
-  hv.setUint32(4, height);
-  head.set([8, 6, 0, 0, 0], 8);
-  return Buffer.concat([
-    new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk("IHDR", head),
-    chunk("IDAT", zlibSync(raw)),
-    chunk("IEND", new Uint8Array(0)),
-  ]);
-}
-
-/** 1200x630 card: M3 purple gradient with the real logo. Falls back to the logo itself without Bun.Image. */
+/** Use the real app icon as the share image; Bun 1.4.4 has no raw-RGBA terminal for compositing. */
 async function ogImage(dist: string) {
   const logo = join(root, "apps/aphrody-app/icons/icon.png");
-  const W = 1200;
-  const H = 630;
-  const S = 440;
-  if (typeof Bun.Image !== "function") {
-    await cp(logo, join(dist, "og-image.png"));
-    return "fallback";
-  }
-  const sprite = await (new Bun.Image(await Bun.file(logo).bytes()).resize(S, S) as any).rgba();
-  const buf = new Uint8Array(W * H * 4);
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const t = (x / W + y / H) / 2;
-      const o = (y * W + x) * 4;
-      buf[o] = 0x14 + (0x67 - 0x14) * t;
-      buf[o + 1] = 0x12 + (0x50 - 0x12) * t;
-      buf[o + 2] = 0x18 + (0xa4 - 0x18) * t;
-      buf[o + 3] = 255;
-    }
-  const ox = (W - S) >> 1;
-  const oy = (H - S) >> 1;
-  const px = sprite.data as Uint8Array;
-  for (let y = 0; y < S; y++)
-    for (let x = 0; x < S; x++) {
-      const s = (y * S + x) * 4;
-      const d = ((oy + y) * W + ox + x) * 4;
-      const a = px[s + 3]! / 255;
-      for (let c = 0; c < 3; c++) buf[d + c] = px[s + c]! * a + buf[d + c]! * (1 - a);
-    }
-  await Bun.write(join(dist, "og-image.png"), png(W, H, buf));
-  return "rendered";
+  await cp(logo, join(dist, "og-image.png"));
+  return "logo";
 }
 
 async function sounds(dist: string) {
@@ -215,8 +182,14 @@ async function sounds(dist: string) {
   // Spacedrive UI sounds (packages/assets, FSL-1.1-ALv2): the license text travels with them.
   for (const f of ["pairing", "copy", "job-done"])
     for (const ext of ["ogg", "mp3"])
-      await cp(join(root, "packages/assets/sounds", `${f}.${ext}`), join(dir, `${f}.${ext}`));
-  await cp(join(root, "packages/assets/LICENSE.spacedrive"), join(dir, "LICENSE.spacedrive"));
+      await cp(
+        join(root, "packages/assets/sounds", `${f}.${ext}`),
+        join(dir, `${f}.${ext}`),
+      );
+  await cp(
+    join(root, "packages/assets/LICENSE.spacedrive"),
+    join(dir, "LICENSE.spacedrive"),
+  );
   await Bun.write(
     join(dir, "NOTICE.txt"),
     "UI sounds (pairing, copy, job-done) come from @aphrody/assets, the Spacedrive @sd/assets set,\nlicensed FSL-1.1-ALv2 (see LICENSE.spacedrive).\n",
@@ -232,11 +205,14 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
     await Bun.write(join(dist, "a", i.id, "index.html"), landing(i));
   }
 
-  const urls = [`${ORIGIN}/`, ...items.map(i => `${ORIGIN}/a/${i.id}/`)];
+  const urls = [`${ORIGIN}/`, ...items.map((i) => `${ORIGIN}/a/${i.id}/`)];
   await Bun.write(
     join(dist, "sitemap.xml"),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-      .map((u, n) => `<url><loc>${u}</loc><lastmod>${day}</lastmod><priority>${n ? "0.6" : "1.0"}</priority></url>`)
+      .map(
+        (u, n) =>
+          `<url><loc>${u}</loc><lastmod>${day}</lastmod><priority>${n ? "0.6" : "1.0"}</priority></url>`,
+      )
       .join("\n")}\n</urlset>\n`,
   );
   await Bun.write(
@@ -244,10 +220,12 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
     `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /v1/\nDisallow: /mcp\nDisallow: /vm/\n\nSitemap: ${ORIGIN}/sitemap.xml\n`,
   );
 
-  const line = (i: Item) => `- [${i.name}](${ORIGIN}/a/${i.id}/): ${i.description}`;
-  const section = (t: string, l: Item[]) => (l.length ? [`## ${t}`, "", ...l.map(line), ""] : []);
-  const b = items.filter(i => i.kind === "builtin");
-  const p = items.filter(i => i.kind === "package");
+  const line = (i: Item) =>
+    `- [${i.name}](${ORIGIN}/a/${i.id}/): ${i.description}`;
+  const section = (t: string, l: Item[]) =>
+    l.length ? [`## ${t}`, "", ...l.map(line), ""] : [];
+  const b = items.filter((i) => i.kind === "builtin");
+  const p = items.filter((i) => i.kind === "package");
   await Bun.write(
     join(dist, "llms.txt"),
     [
@@ -278,7 +256,7 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
       "",
       TAGLINE,
       "",
-      ...items.flatMap(i => [
+      ...items.flatMap((i) => [
         `## ${i.name}`,
         `URL: ${ORIGIN}/a/${i.id}/`,
         `Open: ${ORIGIN}/?app=${i.id}`,
@@ -286,7 +264,7 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
         "",
         i.description,
         "",
-        ...features(i).map(f => `- ${f}`),
+        ...features(i).map((f) => `- ${f}`),
         "",
       ]),
     ].join("\n"),
@@ -298,5 +276,7 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
   const index = Bun.file(join(dist, "index.html"));
   const html = await index.text();
   await Bun.write(index, html.replace("<!--seo:noscript-->", noscript(items)));
-  console.log(`seo: ${urls.length} urls, ${items.length} landing pages, og-image ${og}`);
+  console.log(
+    `seo: ${urls.length} urls, ${items.length} landing pages, og-image ${og}`,
+  );
 }
