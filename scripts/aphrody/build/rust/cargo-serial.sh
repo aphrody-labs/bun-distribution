@@ -7,8 +7,8 @@ if (($# == 0)); then
     exit 64
 fi
 
-source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
-factory_config="$source_root/tools/config/build-factory.json"
+source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+factory_config="$source_root/tools/aphrody/config/build-factory.json"
 cargo_command="${1#+}"
 if [[ "$1" == +* ]]; then cargo_command="${2:-}"; fi
 help_only=false
@@ -26,7 +26,7 @@ case "$cargo_command" in
         fi
         if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_BUILD_HOST:-}" != dbfr && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "$is_cloud" == false ]]; then
             # The Workspace build-factory owner interprets the factory contract.
-            factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
+            factory_route="$(bun "$source_root/packages/bun-workspace/src/automation/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
                 echo "Heavy Cargo never runs in WSL. Exact worktree state: bun scripts/aphrody/build/rust/vps-cargo.ts run -- <arguments>; pushed main revision: aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/aphrody/build/rust/cargo-serial.sh <arguments>." >&2
                 echo "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic." >&2
@@ -44,7 +44,7 @@ esac
 # A resource marker is a routing hint, never proof of ownership. The owner checks
 # the actual kernel FLOCK and process ancestry before reusing the heavy lease.
 if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-}" == vps || -n "${APHRODY_FACTORY_RESOURCE:-}" ) ]]; then
-    resource_owner="$source_root/packages/infra/workspace/src/build-factory-cleanup.ts"
+    resource_owner="$source_root/packages/bun-workspace/src/automation/build-factory-cleanup.ts"
     if ! bun "$resource_owner" --held "$factory_config"; then
         if [[ "${APHRODY_BUILD_HOST:-}" != vps ]]; then
             echo "Factory resource marker has no inherited heavy lock" >&2
@@ -60,15 +60,15 @@ if [[ ! "$available_cpus" =~ ^[1-9][0-9]*$ ]]; then
     echo "Cannot determine the executing host's available CPUs" >&2
     exit 64
 fi
-default_jobs=6
+default_jobs=4
 if ((available_cpus < default_jobs)); then default_jobs="$available_cpus"; fi
 jobs="${APHRODY_CARGO_JOBS:-$default_jobs}"
 if [[ "$jobs" == auto ]]; then
-    # Explicit operator request: use every CPU available to this process.
+    # Respect the host affinity and the owner's four-compiler limit per factory lane.
     # Keep the factory lease and shared Cargo lock; concurrent owners retain them.
-    jobs="$available_cpus"
-elif [[ ! "$jobs" =~ ^[1-9][0-9]{0,3}$ ]] || ((jobs > 1024)); then
-    echo "APHRODY_CARGO_JOBS must be an integer from 1 through 1024, or auto for all available CPUs" >&2
+    jobs="$default_jobs"
+elif [[ ! "$jobs" =~ ^[1-4]$ ]]; then
+    echo "APHRODY_CARGO_JOBS must be an integer from 1 through 4, or auto (at most four available CPUs)" >&2
     exit 64
 fi
 if ((jobs > available_cpus)); then
@@ -78,8 +78,8 @@ fi
 
 for arg in "$@"; do
     case "$arg" in
-        -j|--jobs|-j[0-9]*|--jobs=*)
-            echo "Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..1024 or auto instead" >&2
+        -j*|--jobs|--jobs=*)
+            echo "Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..4 or auto instead" >&2
             exit 64
             ;;
     esac
@@ -119,7 +119,7 @@ fi
 # the shared daemon may have timed out during a preceding Bun job. Compiler requests
 # retain the client's job TMPDIR; only persistent server startup metadata is sanitized.
 if [[ "$help_only" == false && -n "${APHRODY_FACTORY_RESOURCE:-}" && ( "${RUSTC_WRAPPER:-}" == sccache || "${RUSTC_WRAPPER:-}" == */sccache ) ]]; then
-    bun "$source_root/packages/infra/workspace/src/build-factory-cleanup.ts" --sccache "$factory_config" "$(command -v "$RUSTC_WRAPPER")"
+    bun "$source_root/packages/bun-workspace/src/automation/build-factory-cleanup.ts" --sccache "$factory_config" "$(command -v "$RUSTC_WRAPPER")"
 fi
 # sccache refuses every compile while CARGO_INCREMENTAL is set. APHRODY_CARGO_INCREMENTAL=1 unsets it instead
 # of forcing 0: the profile default then keeps edit loops incremental for workspace members and sccache still
