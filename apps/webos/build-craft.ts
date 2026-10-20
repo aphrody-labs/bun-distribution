@@ -86,6 +86,12 @@ const ALL: Craft[] = [
     web: true,
   },
   {
+    id: "effect",
+    crate: "effectcraft-web",
+    glyph: "FX",
+    web: true,
+  },
+  {
     id: "light",
     crate: "lightcraft-web",
     glyph: "Lgt",

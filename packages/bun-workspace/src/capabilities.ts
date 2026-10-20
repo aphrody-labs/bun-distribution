@@ -42,6 +42,7 @@ const capabilities: readonly AppCapability[] = [
     libraryId: "effectcraft",
     title: "Compositing",
     description: "Motion graphics and compositing.",
+    webosPackageId: "craft-effect",
   },
   {
     id: "photo-processing",
