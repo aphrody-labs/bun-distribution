@@ -70,13 +70,14 @@ logs do not define the current state; use Git history for prior batches.
 - Product discovery proves CLI command targets, and a separate CLI-WASM gate
   verifies module initialization and pure-command help. The root `mcp` command
   dispatches Bun's native MCP server; it does not package or qualify the
-  Rust `aphrody-mcp` server. The CLI-WASM artifacts are now mandatory in the
-  frozen product payload, and the product qualification path executes WASM
-  initialization and pure-command help. That gate still needs VPS execution.
-  MCP protocol initialization/tool listing, plugin resources and FFI ABI loading
-  need their own receipt-bound gates before claiming complete product
-  qualification. FFI companions and the Alpine/Ubuntu/gaming image owners also
-  still need integration with the frozen product receipt.
+  Rust `aphrody-mcp` server. The CLI-WASM artifacts are mandatory in the frozen
+  payload; qualification executes WASM initialization and pure-command help.
+  FFI artifacts and their release manifest are now mandatory payload inputs, and
+  qualification loads the library and checks each exported ABI. These gates
+  still need VPS execution. MCP protocol initialization/tool listing and plugin
+  resources need receipt-bound gates before claiming complete product
+  qualification. The Alpine/Ubuntu/gaming image owners also need integration
+  with the frozen product receipt.
 - The source-only audit of all 92 uninitialized root submodules found zero
   proven removals: 24 have implementation/manifest consumers and 67 retain
   catalog/owner contracts. Material Design Icons has a concrete packaging gap:

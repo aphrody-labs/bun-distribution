@@ -11,7 +11,7 @@ import type { RuntimeReceipt } from "../src/distribution.ts";
 import {
   productIdentity, sameProductIdentity, productPath, sourceEntries, entryTreeHash,
   verifySourceEntries, verifyLinks, verifyInstalledAdditions, verifyProductPayload,
-  validatePreparedProductPath, validateProductWasmInputs,
+  validatePreparedProductPath, validateProductWasmInputs, validateProductNativeInputs,
   productModesSHA256,
   type ProductPayloadReceipt,
 } from "../container/product-payload.ts";
@@ -29,7 +29,7 @@ export interface ProductPayloadOptions {
   signal?: AbortSignal;
 }
 
-function validateRuntime(runtime: RuntimeReceipt): LinuxTarget {
+function validateRuntime(runtime: RuntimeReceipt): asserts runtime is RuntimeReceipt & { target: LinuxTarget; abi: "gnu" } {
   const target = process.arch === "x64" ? "linux-x64" : process.arch === "arm64" ? "linux-arm64" : undefined;
   if (process.platform !== "linux" || !target || runtime.target !== target || runtime.schemaVersion !== 1 ||
     runtime.repository !== "aphrody-labs/bun" || runtime.abi !== "gnu" || !/^[a-f0-9]{40}$/.test(runtime.revision) ||
@@ -37,7 +37,6 @@ function validateRuntime(runtime: RuntimeReceipt): LinuxTarget {
     typeof runtime.version !== "string" || !runtime.version || runtime.qualification?.passed !== true ||
     !Array.isArray(runtime.qualification.gates) || !runtime.qualification.gates.includes("native-runtime"))
     throw new Error("Product installation requires the qualified native Linux runtime on its matching VPS target");
-  return target;
 }
 
 async function execute(executable: string, args: string[], cwd: string, options: ProductPayloadOptions, env?: Record<string, string | undefined>) {
@@ -59,7 +58,8 @@ export async function prepareProductPayload(output: string, options: ProductPayl
     sources: { ...options.sources, lock: structuredClone(options.sources.lock) },
     preparedInputs: structuredClone(options.preparedInputs ?? []),
   };
-  const target = validateRuntime(options.runtime);
+  validateRuntime(options.runtime);
+  const target = options.runtime.target;
   const configuredCache = options.installCache ?? Bun.env.BUN_INSTALL_CACHE_DIR;
   if (!configuredCache || !isAbsolute(configuredCache))
     throw new Error("Configure an existing absolute shared Bun install cache via installCache or BUN_INSTALL_CACHE_DIR");
@@ -105,7 +105,7 @@ export async function prepareProductPayload(output: string, options: ProductPayl
   await verifyLinks(workspace, entries);
   const preparedInputs: ProductPayloadReceipt["preparedInputs"] = [];
   for (const input of options.preparedInputs ?? []) {
-    await validatePreparedProductPath(workspace, input.path, entries);
+    await validatePreparedProductPath(workspace, input.path, entries, target);
     if (!isAbsolute(input.artifact) || !/^[a-f0-9]{64}$/.test(input.sha256) || input.sourceRevision !== owner.revision ||
       preparedInputs.some(entry => entry.path === input.path))
       throw new Error("Prepared inputs require unique paths, absolute artifacts and matching source revision/checksum");
@@ -128,6 +128,7 @@ export async function prepareProductPayload(output: string, options: ProductPayl
     preparedInputs.push({ path: input.path, ...source, sourceRevision: input.sourceRevision });
   }
   await validateProductWasmInputs(workspace, preparedInputs);
+  await validateProductNativeInputs(workspace, preparedInputs, entries, target, owner.revision);
   const frozenLock = await productIdentity(join(workspace, "bun.lock"));
   const installHome = join(root, ".install-home");
   await mkdir(installHome);
@@ -159,7 +160,8 @@ export async function prepareProductPayload(output: string, options: ProductPayl
   const receipt: ProductPayloadReceipt = {
     schemaVersion: 1, kind: "bun-os-product-payload", root: "sources/bun-os",
     sourceRepository: "aphrody-labs/bun-distribution", sourceRevision: owner.revision, target,
-    runtime: { revision: options.runtime.revision, version: options.runtime.version, sha256: options.runtime.sha256, bytes: options.runtime.bytes },
+    runtime: { revision: options.runtime.revision, version: options.runtime.version, target, abi: options.runtime.abi,
+      sha256: options.runtime.sha256, bytes: options.runtime.bytes },
     lock: frozenLock, sourceReceipt: await productIdentity(join(root, "sources.receipt.json")),
     sourceEntries: entries, preparedInputs, sourceTreeSHA256, installedTreeSHA256: installed.treeSHA256,
     installedModesSHA256: await productModesSHA256(workspace),

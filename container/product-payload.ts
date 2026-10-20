@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { lstat, readdir, readlink, realpath } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 import { sourceIntegrity } from "./source-integrity.ts";
 type FileIdentity = { sha256: string; bytes: number };
 export type SourceEntry = [string, "directory"] | [string, "symlink", string] | [string, "file", number, string];
@@ -13,7 +14,7 @@ export interface ProductPayloadReceipt {
   sourceRepository: "aphrody-labs/bun-distribution";
   sourceRevision: string;
   target: LinuxTarget;
-  runtime: { revision: string; version: string; sha256: string; bytes: number };
+  runtime: { revision: string; version: string; target: string; abi: "gnu"; sha256: string; bytes: number };
   lock: FileIdentity;
   sourceReceipt: FileIdentity;
   sourceEntries: SourceEntry[];
@@ -164,12 +165,12 @@ export async function verifyInstalledAdditions(root: string, sources: SourceEntr
 }
 
 /** Generated sidecars belong to an existing root workspace member and never replace source. */
-export async function validatePreparedProductPath(root: string, path: string, sources: SourceEntry[]) {
+export async function validatePreparedProductPath(root: string, path: string, sources: SourceEntry[], target?: string) {
   productPath(root, path);
   if (sources.some(entry => entry[0] === path)) throw new Error(`Prepared input replaces frozen source: ${path}`);
   if (/^build\/packages\/[A-Za-z0-9][A-Za-z0-9._-]*\.tgz$/.test(path)) return;
   const parts = path.split("/");
-  if (parts.length < 4 || parts[0] !== "packages" || !["dist", "wasm"].includes(parts[2]!) ||
+  if (parts.length < 4 || parts[0] !== "packages" || !["dist", "wasm", "native"].includes(parts[2]!) ||
     parts.some(part => !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part)))
     throw new Error(`Prepared input must be a package archive or workspace build sidecar: ${path}`);
   const member = parts.slice(0, 2).join("/");
@@ -198,11 +199,18 @@ export async function validatePreparedProductPath(root: string, path: string, so
       parts.length !== 4 || !files.has(parts[3]!))
       throw new Error(`Prepared WASM input is not a generated artifact of the declared CLI-WASM owner: ${path}`);
   }
+  if (parts[2] === "native") {
+    const triple = target === "linux-x64" ? "x86_64-unknown-linux-gnu"
+      : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
+    if (member !== "packages/aphrody-bun" || !triple || parts.length !== 5 || parts[3] !== triple ||
+      !["libaphrody_ffi.so", "manifest.json"].includes(parts[4]!))
+      throw new Error(`Prepared native input is not a product-target artifact of the @aphrody/bun owner: ${path}`);
+  }
 }
 
 export interface ProductPayloadExpected {
   target: string;
-  runtime: { sha256: string; revision: string };
+  runtime: { sha256: string; revision: string; abi: "gnu" };
 }
 
 const CLI_WASM_INPUTS = [
@@ -229,6 +237,44 @@ export async function validateProductWasmInputs(
   if (missing.length) throw new Error(`Frozen product is missing required CLI-WASM inputs: ${missing.join(", ")}`);
 }
 
+const nativeFfiInputs = (target: string) => {
+  const triple = target === "linux-x64" ? "x86_64-unknown-linux-gnu"
+    : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
+  if (!triple) throw new Error(`Unsupported native FFI product target: ${target}`);
+  const base = `packages/aphrody-bun/native/${triple}`;
+  return { triple, artifact: `${base}/libaphrody_ffi.so`, manifest: `${base}/manifest.json` };
+};
+
+/** Verify the release FFI companion against its existing ABI, provenance and consumer-smoke contract. */
+export async function validateProductNativeInputs(
+  root: string,
+  inputs: readonly { path: string }[],
+  sources: SourceEntry[],
+  target: string,
+  sourceRevision: string,
+): Promise<void> {
+  const pkg = await Bun.file(join(root, "packages/aphrody-bun/package.json")).json() as { name?: string; version?: string };
+  if (pkg.name !== "@aphrody/bun" || typeof pkg.version !== "string")
+    throw new Error("Frozen product has an invalid native FFI owner manifest");
+  const expected = nativeFfiInputs(target);
+  const paths = new Set(inputs.map(input => input.path));
+  for (const path of [expected.artifact, expected.manifest]) {
+    if (!paths.has(path)) throw new Error(`Frozen product is missing required native FFI input: ${path}`);
+    await validatePreparedProductPath(root, path, sources, target);
+  }
+  const artifactPath = productPath(root, expected.artifact);
+  const nativeArtifact = await import(pathToFileURL(join(root, "packages/aphrody-bun/src/native-artifact.ts")).href);
+  const manifest = nativeArtifact.parseNativeArtifactManifest(
+    await Bun.file(productPath(root, expected.manifest)).json(), artifactPath, pkg.version, expected.triple, false,
+  );
+  const lock = await productIdentity(join(root, "Cargo.lock"));
+  if (manifest.buildSourceHead !== sourceRevision || manifest.cargoLockSha256 !== lock.sha256)
+    throw new Error("Frozen product native FFI provenance does not match its source revision and Cargo.lock");
+  const actual = nativeArtifact.hashNativeArtifact(artifactPath);
+  if (actual.bytes !== manifest.bytes || actual.sha256 !== manifest.sha256)
+    throw new Error("Frozen product native FFI artifact does not match its release manifest");
+}
+
 /** Offline verification of a copied workspace and its separate producer receipt. */
 export async function verifyProductPayload(
   payloadRoot: string,
@@ -236,7 +282,7 @@ export async function verifyProductPayload(
   expected: ProductPayloadExpected,
 ): Promise<ProductPayloadReceipt> {
   expected = structuredClone(expected);
-  if (!["linux-x64", "linux-arm64"].includes(expected.target) ||
+  if (!["linux-x64", "linux-arm64"].includes(expected.target) || expected.runtime?.abi !== "gnu" ||
     !/^[a-f0-9]{40}$/.test(expected.runtime?.revision) || !/^[a-f0-9]{64}$/.test(expected.runtime?.sha256))
     throw new Error("Product verification requires an exact Linux target and runtime identity");
   const root = resolve(payloadRoot);
@@ -248,6 +294,7 @@ export async function verifyProductPayload(
     receipt.sourceRepository !== "aphrody-labs/bun-distribution" || !/^[a-f0-9]{40}$/.test(receipt.sourceRevision) ||
     !["linux-x64", "linux-arm64"].includes(receipt.target) || receipt.target !== expected.target ||
     receipt.runtime?.revision !== expected.runtime.revision || receipt.runtime.sha256 !== expected.runtime.sha256 ||
+    receipt.runtime.abi !== "gnu" || receipt.runtime.abi !== expected.runtime.abi || receipt.runtime.target !== receipt.target ||
     !/^[a-f0-9]{40}$/.test(receipt.runtime.revision) || !/^[a-f0-9]{64}$/.test(receipt.runtime.sha256) ||
     !Number.isSafeInteger(receipt.runtime.bytes) || receipt.runtime.bytes <= 0 ||
     typeof receipt.runtime.version !== "string" || !receipt.runtime.version ||
@@ -267,13 +314,14 @@ export async function verifyProductPayload(
   await verifySourceEntries(root, receipt.sourceEntries);
   const preparedPaths = new Set<string>();
   for (const input of receipt.preparedInputs) {
-    await validatePreparedProductPath(root, input.path, receipt.sourceEntries);
+    await validatePreparedProductPath(root, input.path, receipt.sourceEntries, receipt.target);
     if (preparedPaths.has(input.path) || input.sourceRevision !== receipt.sourceRevision ||
       !sameProductIdentity(input, await productIdentity(productPath(root, input.path))))
       throw new Error("Prepared product archive differs from its pinned inputs");
     preparedPaths.add(input.path);
   }
   await validateProductWasmInputs(root, receipt.preparedInputs);
+  await validateProductNativeInputs(root, receipt.preparedInputs, receipt.sourceEntries, receipt.target, receipt.sourceRevision);
   await verifyLinks(root, receipt.sourceEntries);
   await verifyInstalledAdditions(root, receipt.sourceEntries, receipt.preparedInputs);
   for (const file of ["src/cli.ts", "src/cli/main.ts", "src/cli/commands.ts", "package.json"])

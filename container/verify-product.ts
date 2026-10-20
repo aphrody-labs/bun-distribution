@@ -18,7 +18,7 @@ export async function verifyQualifiedProduct(
   workspace: string,
   receiptPath: string,
   qualificationPath: string,
-  expected: { target: string; runtime: { sha256: string; revision: string } },
+  expected: { target: string; runtime: { sha256: string; revision: string; abi: "gnu" } },
 ) {
   const receipt = await verifyProductPayload(workspace, receiptPath, expected);
   const qualification = await Bun.file(qualificationPath).json() as ProductQualification;
@@ -30,7 +30,7 @@ export async function verifyQualifiedProduct(
     qualification.installedModesSHA256 !== receipt.installedModesSHA256 ||
     qualification.runtimeSHA256 !== receipt.runtime.sha256 ||
     !Array.isArray(qualification.gates) || !qualification.gates.includes("product-cli") ||
-    !qualification.gates.includes("cli-wasm")
-  ) throw new Error("Product payload requires passed CLI and CLI-WASM gates bound to its source, runtime and installed tree");
+    !qualification.gates.includes("cli-wasm") || !qualification.gates.includes("ffi")
+  ) throw new Error("Product payload requires passed CLI, CLI-WASM and FFI gates bound to its source, runtime and installed tree");
   return { receipt, qualification };
 }

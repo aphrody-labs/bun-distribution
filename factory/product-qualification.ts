@@ -64,6 +64,21 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   evidence.push({ args: wasmArgs, exitCode: wasmResult.code,
     stdoutSHA256: new Bun.CryptoHasher("sha256").update(wasmResult.stdout).digest("hex"),
     wasmVersion: wasmReport.version, wasmAbi: wasmReport.abi, pureHelp: true });
+  const ffiArgs = ["--no-env-file", "-e", [
+    'import { loadNativeLibrary } from "./packages/aphrody-bun/src/library.ts";',
+    "const ffi = loadNativeLibrary();",
+    'console.log(JSON.stringify({ aphrody: ffi.symbols.aphrody_abi_version(), web: ffi.symbols.aphrody_web_bridge_abi_version(), bun: ffi.symbols.bun_rs_abi_version(), zerocopy: ffi.symbols.aphrody_zerocopy_abi_version() }));',
+  ].join("\n")];
+  const ffiResult = await runProcess([resolve(executable), ...ffiArgs], workspace, {
+    timeoutMs: 60_000, maxOutputBytes: 16 * 1024 * 1024,
+    env: { ...Bun.env, BUN_BE_BUN: undefined, APHRODY_FFI_LIB: undefined, APHRODY_FFI_DEV: undefined },
+  });
+  if (ffiResult.code !== 0) throw new Error(`Product FFI qualification failed: ${ffiResult.stderr.slice(-3000)}`);
+  const ffiAbi = JSON.parse(ffiResult.stdout) as Record<string, unknown>;
+  if (ffiAbi.aphrody !== 1 || ffiAbi.web !== 5 || ffiAbi.bun !== 1 || ffiAbi.zerocopy !== 1)
+    throw new Error("Product FFI returned an incompatible native ABI");
+  evidence.push({ args: ffiArgs, exitCode: ffiResult.code,
+    stdoutSHA256: new Bun.CryptoHasher("sha256").update(ffiResult.stdout).digest("hex"), ffiAbi });
   await verifyProductPayload(workspace, receiptPath, expected);
   if (!sameProductIdentity(await productIdentity(executable), receipt.runtime))
     throw new Error("Product runtime changed during CLI qualification");
@@ -72,7 +87,7 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     target: receipt.target, sourceRevision: receipt.sourceRevision,
     installedTreeSHA256: receipt.installedTreeSHA256, runtimeSHA256: receipt.runtime.sha256,
     installedModesSHA256: receipt.installedModesSHA256,
-    gates: ["product-cli", "cli-wasm"],
+    gates: ["product-cli", "cli-wasm", "ffi"],
   };
   await mkdir(dirname(output), { recursive: true });
   const parent = await realpath(dirname(output));
@@ -82,7 +97,7 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   const file = await open(output, "wx");
   try {
     await file.writeFile(JSON.stringify({ ...qualification,
-      scope: "CLI discovery, route targets, CLI-WASM initialization and pure-command help", evidence,
+      scope: "CLI discovery, route targets, CLI-WASM initialization and pure-command help, native FFI load and ABI", evidence,
       commandCount: commands.length, nativeCommandsQualified: false, fullProductQualified: false }, null, 2) + "\n");
   } finally { await file.close(); }
   await verifyQualifiedProduct(workspace, receiptPath, output, expected);

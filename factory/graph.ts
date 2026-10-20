@@ -620,9 +620,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     catalog: "product payload + product CLI qualification receipts",
     dependsOn: ["product:payload"],
     state: "blocked",
-    reasons: ["Execute CLI discovery, route-target and CLI-WASM runtime gates on the matching Linux factory runtime. Native commands and the full product retain separate qualification."],
-    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli and cli-wasm gates bound to installed bytes, permissions, runtime and source revision")],
-    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery, route targets, CLI-WASM initialization and pure-command help" },
+    reasons: ["Execute CLI discovery, route-target, CLI-WASM and native FFI load/ABI gates on the matching Linux factory runtime. Remaining native commands and the full product retain separate qualification."],
+    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli, cli-wasm and ffi gates bound to installed bytes, permissions, runtime and source revision")],
+    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery, route targets, CLI-WASM initialization/help, native FFI load and ABI" },
   });
   nodes.find(node => node.id === "arch:payload")?.dependsOn.push("qualification:product-cli");
   const imageStage = factoryArch.graph.find(stage => stage.id === "arch:image");

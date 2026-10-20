@@ -8,6 +8,7 @@ import {
   productModesSHA256,
   sourceEntries,
   validatePreparedProductPath,
+  validateProductNativeInputs,
   validateProductWasmInputs,
   verifyInstalledAdditions,
   verifyLinks,
@@ -144,3 +145,67 @@ test("prepared build inputs require a declared root member and cannot overwrite 
   await verifyInstalledAdditions(root, original, [{ path }]);
   await expect(verifyInstalledAdditions(root, original, [])).rejects.toThrow("non-dependency product path");
 });
+
+test.skipIf(process.platform !== "linux" || !["x64", "arm64"].includes(process.arch))(
+  "product FFI inputs must match the native target, clean release manifest and artifact hash",
+  async () => {
+    const root = await tempDir();
+    const target = process.arch === "x64" ? "linux-x64" : "linux-arm64";
+    const triple = target === "linux-x64" ? "x86_64-unknown-linux-gnu" : "aarch64-unknown-linux-gnu";
+    const directory = join(root, "packages/aphrody-bun/native", triple);
+    await mkdir(directory, { recursive: true });
+    const helperDirectory = join(root, "packages/aphrody-bun/src");
+    await mkdir(helperDirectory, { recursive: true });
+    await Bun.write(join(helperDirectory, "native-artifact.ts"), await Bun.file(join(import.meta.dir, "../packages/aphrody-bun/src/native-artifact.ts")).bytes());
+    await Bun.write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+    await Bun.write(join(root, "packages/aphrody-bun/package.json"), JSON.stringify({ name: "@aphrody/bun", version: "1.4.4" }));
+    const cargoLock = "# test lockfile\n";
+    await Bun.write(join(root, "Cargo.lock"), cargoLock);
+    const cargoLockSha256 = new Bun.CryptoHasher("sha256").update(cargoLock).digest("hex");
+    const original = await sourceEntries(root);
+    const artifact = new Uint8Array([1, 2, 3, 4, 5]);
+    await Bun.write(join(directory, "libaphrody_ffi.so"), artifact);
+    const manifest = {
+      schemaVersion: 1,
+      package: "@aphrody/bun",
+      crate: "aphrody-ffi",
+      version: "0.1.0",
+      packageVersion: "1.4.4",
+      target: triple,
+      libc: "gnu",
+      profile: "release",
+      features: ["gpu"],
+      artifact: "libaphrody_ffi.so",
+      sha256: new Bun.CryptoHasher("sha256").update(artifact).digest("hex"),
+      bytes: artifact.length,
+      abi: {
+        aphrody_abi_version: 1,
+        aphrody_web_bridge_abi_version: 5,
+        bun_rs_abi_version: 1,
+        node2bun_abi_version: 2,
+        aphrody_oxc_abi_version: 1,
+      },
+      provenance: "cargo-build",
+      buildSourceHead: "a".repeat(40),
+      observedSourceHead: "a".repeat(40),
+      observedSourceDirty: false,
+      cargoLockSha256,
+      rustc: "rustc 1.90.0",
+      consumerSmoke: "passed",
+    };
+    await Bun.write(join(directory, "manifest.json"), JSON.stringify(manifest));
+    const inputs = [
+      { path: `packages/aphrody-bun/native/${triple}/libaphrody_ffi.so` },
+      { path: `packages/aphrody-bun/native/${triple}/manifest.json` },
+    ];
+    const otherTarget = target === "linux-x64" ? "linux-arm64" : "linux-x64";
+    await validateProductNativeInputs(root, inputs, original, target, "a".repeat(40));
+    await expect(validateProductNativeInputs(root, inputs, original, otherTarget, "a".repeat(40)))
+      .rejects.toThrow("missing required native FFI input");
+    await expect(validateProductNativeInputs(root, inputs, original, target, "c".repeat(40)))
+      .rejects.toThrow("provenance does not match");
+    await Bun.write(join(directory, "libaphrody_ffi.so"), new Uint8Array([9]));
+    await expect(validateProductNativeInputs(root, inputs, original, target, "a".repeat(40)))
+      .rejects.toThrow("artifact does not match its release manifest");
+  },
+);
