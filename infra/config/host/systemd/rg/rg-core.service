@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
-# rg-core — the single Rose Griffon VPS service: one Bun single-file binary (apps/rg-bot/src/core.ts)
+# rg-core — the single Rose Griffon VPS service: one Bun single-file binary
+# (aphrody-labs/rosegriffon/apps/rg-bot/src/core.ts)
 # running the Discord gateway of the `rg` profile (and the `azalee` profile as a supervised child),
 # the Achilléa ranked Colyseus server with the unified API in process, the in-process cron
 # (packages/rg-cron registry, Bun.cron) and nie-model-serve (crates/aphrody-nie-model-serve) as a
 # supervised loopback child. One port, 127.0.0.1:8810, behind nginx (nginx/rg/rg-core.conf,
 # nginx/nie/nie.aphrody.app.conf). Replaces nie-model-serve.service.
 #
-# Build on the host (Linux checkout /home/ubuntu/src/bun-os; @napi-rs/canvas needs its linux .node):
-#   cd apps/rg-bot && bun run compile:core
-#   sudo install -m 755 apps/rg-bot/dist/rg-core /usr/local/bin/rg-core
+# The executable is provisioned from the Rose Griffon source/release owner; this
+# Bun OS checkout no longer contains the application build source.
 # /etc/aphrody/rg-core.env (root:ubuntu 0640) holds the production environment: Discord tokens,
 # Supabase session pooler (DATABASE_URL), Neon `inagle` (INAGLE_DATABASE_URL), JWT_SECRET_KEY,
 # CRON_SECRET, BOT_ADMIN_TOKEN, NIE_* paths and RG_MEDIA_ROOT.

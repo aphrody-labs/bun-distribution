@@ -10,9 +10,9 @@ use the public `@rosegriffon/assets`, `@rosegriffon/config`, `@rosegriffon/db`
 and `@rosegriffon/i18n` packages at the versions declared in the root Bun
 catalog.
 
-Rose Griffon provides a tagged-release workflow for self-hosted Linux x64 and
-Windows x64 binaries. The [binary workflow](https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml)
-embeds the site's standalone build and publishes SHA-256 checksums. As of
-2026-10-20, GitHub reports no latest release yet; use the [releases page](https://github.com/aphrody-labs/rosegriffon/releases)
-when an artifact is published. Bun OS does not bundle a second copy of that
+The canonical repository defines a tagged-release workflow for self-hosted
+Linux x64 and Windows x64 binaries. It builds and smoke-checks each executable,
+then publishes SHA-256 checksums. See the [binary workflow](https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml)
+and [releases page](https://github.com/aphrody-labs/rosegriffon/releases) for
+the current artifact state. Bun OS does not bundle a second copy of that
 application or its source.

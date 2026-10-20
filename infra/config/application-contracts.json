@@ -15,43 +15,25 @@
   },
   "applications": {
     "rg": {
-      "role": "externally-owned-product",
+      "role": "external-source-owner",
       "sourceRepository": "https://github.com/aphrody-labs/rosegriffon",
-      "binaryDistribution": {
-        "workflow": "https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml",
-        "releases": "https://github.com/aphrody-labs/rosegriffon/releases",
-        "targets": ["linux-x64", "windows-x64"],
-        "artifacts": ["rosegriffon-linux-x64", "rosegriffon-windows-x64.exe", "SHA256SUMS"],
-        "latestReleaseAvailable": false,
-        "checkedAt": "2026-10-20"
-      },
-      "website": {
-        "runtime": "rosegriffon tagged-release binary",
-        "source": "apps/rg-website in aphrody-labs/rosegriffon",
-        "libraries": ["@rosegriffon/assets", "@rosegriffon/config", "@rosegriffon/i18n"]
-      },
-      "api": {
-        "runtime": "vercel-function-bun-elysia",
-        "database": "@rosegriffon/db",
-        "auth": "@rosegriffon/auth",
-        "contract": "@rosegriffon/types"
-      },
-      "bot": { "runtime": "bun-discord.js", "api": "rg-api", "database": "postgresql" },
-      "data": {
-        "primary": "supabase-postgresql",
-        "realtime": "supabase-realtime-broadcast",
-        "storage": "supabase-storage",
-        "search": "@rosegriffon/search"
-      }
+      "binaryWorkflow": "https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml",
+      "releases": "https://github.com/aphrody-labs/rosegriffon/releases",
+      "libraries": [
+        "@rosegriffon/assets",
+        "@rosegriffon/config",
+        "@rosegriffon/db",
+        "@rosegriffon/i18n"
+      ]
     },
     "shenron": {
-      "role": "application-namespace-on-rg-plane",
+      "role": "external-product",
       "source": "aphrody-labs/shenron",
       "website": {
         "runtime": "next-bun",
         "package": "@shenron/site",
-        "ui": "reuse-rg-ui-contract",
-        "auth": "reuse-rg-better-auth-boundary",
+        "ui": "@shenron/ui",
+        "auth": "@shenron/auth",
         "api": "shenron-bot"
       },
       "api": {

@@ -1,4 +1,9 @@
-# Rose Griffon — free-tier load allocation
+# Rose Griffon — historical free-tier load allocation
+
+This is an operational snapshot dated 2026-10-17. Its source paths describe
+the Rose Griffon layout at that time; application source is now owned by the
+separate `aphrody-labs/rosegriffon` repository. Do not use these old paths as
+current build or deployment instructions.
 
 Rose Griffon runs on four platforms: Vercel (Hobby), Supabase (Free), Neon (Free) and the VPS behind
 Cloudflare. The rule is simple: **everything stateful, long-lived or heavy runs on the VPS; the three

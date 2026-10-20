@@ -4,11 +4,10 @@
  *
  * Bun OS owns the IEVR libraries and game data; Rose Griffon product apps live
  * in the separate `aphrody-labs/rosegriffon` repository. The checkouts are
- * siblings (`../iecode` and `../rosegriffon`). Environment overrides keep
- * relocated or legacy checkouts working without hard-coded host paths.
+ * siblings (`../iecode` and `../rosegriffon`). Environment overrides support
+ * relocated checkouts without hard-coded workstation paths.
  */
 
-import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,12 +52,9 @@ export function rgRoot(): string {
   return firstEnv(["APHRODY_RG_ROOT", "RG_REPO_ROOT"]) ?? path.resolve(iecodeRoot(), "../rosegriffon");
 }
 
-/** Rose Griffon website root in the canonical repository, with the old layout as a fallback. */
+/** Rose Griffon website root in the canonical repository. */
 export function rgWebsiteRoot(): string {
-  const root = rgRoot();
-  const current = path.join(root, "apps", "rg-website");
-  const legacy = path.join(root, "apps", "website");
-  return existsSync(current) || !existsSync(legacy) ? current : legacy;
+  return path.join(rgRoot(), "apps", "rg-website");
 }
 
 /** Path inside the Rose Griffon website root. */

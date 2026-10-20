@@ -5,7 +5,7 @@ at `m3/`; its product UI is `m3/packages/app-ui`. Yolo and IECODE keep their
 own pinned consumer mount points. Shenron UI lives here as `packages/shenron-ui`.
 
 - `packages/*`: Bun workspace packages (`@aphrody/m3*`, `@aphrody/app-ui`,
-  `@shenron/ui`, `@rosegriffon/ui`, `@aphrody/material-design-icons`, ...). Private; consumed
+  `@shenron/ui`, `@aphrody/material-design-icons`, ...). Private; consumed
   through Aphrody's workspace glob `m3/packages/*`, never published.
 - Framework: `docs/guides/FRAMEWORK.md` (package map, yolo orchestration, theme install per OS). Root scripts
   `build`, `serve`, `compile`, `test`, `lint`, `typecheck`, `install:theme` run through the yolo CLI.

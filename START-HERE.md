@@ -26,7 +26,7 @@ Start with the native help and read-only plan:
 
 ```sh
 bun src/cli.ts --help
-bun src/cli.ts factory --action plan --composition server --snapshot 2026-10-16
+bun src/cli.ts factory --action plan --composition server --snapshot <YYYY-MM-DD>
 bun src/cli.ts graph --composition server
 bun src/cli.ts plan --profile full --target linux-x64
 bun infra/app-build.ts plan apt --config infra/apps.json --target windows-x64
@@ -44,7 +44,6 @@ the VPS with the local MCP context, or delete protected .local/provider stores.
 
 ---
 
-Read AGENTS.md, GOAL.md and PLAN.md. Install our Bun 1.4.4 runtime.
-Run `bun run setup`, then invoke `bun check`, `bun lint`, `bun fmt` and
-`bun n2b` directly as documented in README.md. Native binaries require
-separate host qualification.
+Install the repository's declared Bun runtime, then run `bun run setup`.
+Invoke `bun check`, `bun lint`, `bun fmt` and `bun n2b` directly as documented
+in README.md. Native binaries require separate host qualification.

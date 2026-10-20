@@ -117,9 +117,6 @@ const rootKeys = [
 ];
 const targets = [
   { dir: "", file: ".env", keys: rootKeys },
-  { dir: "apps/rg-bot", file: ".env" },
-  { dir: "apps/rg-website", file: ".env.local" },
-  { dir: "packages/rg-cron", file: ".env" },
   { dir: "packages/inagle", file: ".env" },
 ];
 

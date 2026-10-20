@@ -2478,13 +2478,13 @@
     {
       "submodule": null,
       "component": "iecode-rg",
-      "path": "apps/rg-bot, apps/rg-website, apps/azalee-web, packages/rg-*, packages/achillea-*, packages/azalee",
+      "path": null,
       "type": "bun-apps",
       "source": {
         "repository": "aphrody-labs/rosegriffon",
         "visibility": "public",
         "revision": "0d68a2e6dece2deec223b2d8b75de5a97daa993c",
-        "path": "apps/rg-website, apps/rg-bot, apps/azalee-web, packages/rg-*, packages/achillea-*, packages/azalee, crates/aphrody-rg-server"
+        "path": "apps/rg-website, apps/rg-bot, apps/azalee-web, apps/rosegriffon, packages/rg-*, packages/achillea-*, packages/azalee, crates/aphrody-rg-server"
       },
       "migrationState": "migrated",
       "notes": "The canonical source and history live in aphrody-labs/rosegriffon. Bun OS no longer carries these copies; packages/inagle and packages/inagle-cross remain Bun OS owners."

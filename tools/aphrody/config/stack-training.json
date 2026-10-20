@@ -105,17 +105,17 @@
     },
     {
       "id": "rg",
-      "role": "canonical Next/Bun/UI/Auth/API/DB platform",
-      "source": "https://github.com/rose-griffon/rg",
-      "production": true
+      "role": "canonical Rose Griffon application source and self-hosted binary owner",
+      "source": "https://github.com/aphrody-labs/rosegriffon",
+      "production": true,
+      "monorepoPaths": "apps/rg-website, apps/rg-bot, apps/azalee-web, apps/rosegriffon, packages/rg-*, packages/achillea-*, packages/azalee, crates/aphrody-rg-server"
     },
     {
       "id": "shenron",
-      "role": "Dragon Ball domain application on the RG runtime plane",
+      "role": "independent Dragon Ball domain application",
       "source": "https://github.com/aphrody-labs/shenron",
       "production": true,
-      "monorepoPaths": "apps/site, apps/bot, packages/* (aphrody-labs/shenron, extracted from the Aphrody monorepo on 2026-10-05 with history)",
-      "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The vps release 4cac743f (now under ~/apps/shenron/releases) is a self-contained artifact."
+      "note": "Source remains in aphrody-labs/shenron; deployment is managed separately from the Rose Griffon product."
     },
     {
       "id": "aphrody-discord",

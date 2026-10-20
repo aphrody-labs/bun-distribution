@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-# Rose Griffon website (apps/rg-website, Next standalone) behind nginx on rosegriffon.fr
-# (nginx/rg/rosegriffon.fr.conf). Built in the bun-os checkout with
-#   set -a; . /etc/rg/rg.env; set +a; cd apps/rg-website && bun run build
-# then the standalone tree is synced to /home/ubuntu/apps/rg/current.
+# Rose Griffon website (aphrody-labs/rosegriffon/apps/rg-website, Next standalone)
+# behind nginx on rosegriffon.fr (nginx/rg/rosegriffon.fr.conf). The deployed
+# standalone tree is synced to /home/ubuntu/apps/rg/current by its source owner.
 # /etc/rg/rg.env holds the production environment (root:ubuntu 0640).
 [Unit]
 Description=Rose Griffon website (rosegriffon.fr)

@@ -21,7 +21,7 @@
           "health": "http://127.0.0.1:8792/health"
         }
       ],
-      "sourceRepo": "bun-os",
+      "sourceRepo": "rg",
       "workingDirectory": "/var/lib/rg-core",
       "environmentFile": "/etc/aphrody/rg-core.env",
       "publicProxy": "nginx",
@@ -43,7 +43,7 @@
       "unit": "rg-website.service",
       "health": "http://127.0.0.1:3100/",
       "port": 3100,
-      "sourceRepo": "bun-os",
+      "sourceRepo": "rg",
       "workingDirectory": "/home/ubuntu/apps/rg/current/apps/rg-website",
       "environmentFile": "/etc/rg/rg.env",
       "publicOrigin": "https://rosegriffon.fr",

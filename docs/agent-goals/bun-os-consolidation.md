@@ -116,8 +116,9 @@ as a renamed Arch installation and not as a Bun application layered onto an
 unowned host image.
 
 The current owner direction is to use the **Arch Linux family/model as the
-primary distribution reference**, subject to repository-local validation before
-irreversible implementation. The reason is the fit with a fast-moving Rust,
+primary distribution reference**. This direction is established by the owner;
+implementation and qualification still require repository evidence. The reason
+is the fit with a fast-moving Rust,
 kernel, Mesa/Vulkan, LLVM/Clang, WebKit/JSC and gaming stack. Preserve Bun OS
 identity, its own package/build/qualification policy and its own release cadence.
 
@@ -382,7 +383,6 @@ bun-distribution/
   root Cargo workspace + lock/toolchain owner
   apps/
   crates/
-  libraries/
   packages/
   toolchains/
   factory/
