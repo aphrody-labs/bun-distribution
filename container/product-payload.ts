@@ -169,9 +169,9 @@ export async function validatePreparedProductPath(root: string, path: string, so
   if (sources.some(entry => entry[0] === path)) throw new Error(`Prepared input replaces frozen source: ${path}`);
   if (/^build\/packages\/[A-Za-z0-9][A-Za-z0-9._-]*\.tgz$/.test(path)) return;
   const parts = path.split("/");
-  if (parts.length < 4 || parts[0] !== "packages" || parts[2] !== "dist" ||
+  if (parts.length < 4 || parts[0] !== "packages" || !["dist", "wasm"].includes(parts[2]!) ||
     parts.some(part => !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part)))
-    throw new Error(`Prepared input must be a package archive or workspace dist sidecar: ${path}`);
+    throw new Error(`Prepared input must be a package archive or workspace build sidecar: ${path}`);
   const member = parts.slice(0, 2).join("/");
   if (!sources.some(entry => entry[0] === `${member}/package.json` && entry[1] === "file"))
     throw new Error(`Prepared sidecar has no frozen workspace manifest: ${path}`);
@@ -181,6 +181,23 @@ export async function validatePreparedProductPath(root: string, path: string, so
   const members = Array.isArray(workspace.workspaces) ? workspace.workspaces : workspace.workspaces?.packages ?? [];
   if (!members.some(pattern => new Bun.Glob(pattern.replace(/\/$/, "")).match(member)))
     throw new Error(`Prepared sidecar does not belong to a declared root workspace member: ${path}`);
+  if (parts[2] === "wasm") {
+    const files = new Set([
+      "aphrody_command_wasm.js",
+      "aphrody_command_wasm.d.ts",
+      "aphrody_command_wasm_bg.wasm",
+      "aphrody_command_wasm_bg.wasm.d.ts",
+      "provenance.json",
+    ]);
+    const manifest = await Bun.file(join(root, member, "package.json")).json() as {
+      name?: string;
+      imports?: Record<string, string>;
+    };
+    if (member !== "packages/cli-wasm" || manifest.name !== "@aphrody/cli-wasm" ||
+      manifest.imports?.["#cli-wasm-glue"] !== "./wasm/aphrody_command_wasm.js" ||
+      parts.length !== 4 || !files.has(parts[3]!))
+      throw new Error(`Prepared WASM input is not a generated artifact of the declared CLI-WASM owner: ${path}`);
+  }
 }
 
 export interface ProductPayloadExpected {

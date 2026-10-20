@@ -258,8 +258,8 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
               sha256: await sha256File(join(app, "src/index.ts")),
             },
             stage: {
-              path: "scripts/release/stage-cli-wasm.ts",
-              sha256: await sha256File(join(root, "scripts/release/stage-cli-wasm.ts")),
+              path: "scripts/aphrody/release/stage-cli-wasm.ts",
+              sha256: await sha256File(join(root, "scripts/aphrody/release/stage-cli-wasm.ts")),
             },
           },
           build: provenance,

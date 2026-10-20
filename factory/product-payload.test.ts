@@ -99,13 +99,18 @@ test.skipIf(process.platform !== "linux")("relative installed dependencies remai
   expect(await Bun.file(join(relocated, "node_modules/library/index.js")).text()).toContain("value = 42");
 });
 
-test("prepared dist inputs require a declared root member and cannot overwrite frozen source", async () => {
+test("prepared build inputs require a declared root member and cannot overwrite frozen source", async () => {
   const root = await tempDir();
-  await Bun.write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/declared"] }));
+  await Bun.write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
   for (const name of ["declared", "undeclared"]) {
     await mkdir(join(root, "packages", name, "dist"), { recursive: true });
     await Bun.write(join(root, "packages", name, "package.json"), JSON.stringify({ name }));
   }
+  await mkdir(join(root, "packages/cli-wasm/wasm"), { recursive: true });
+  await Bun.write(join(root, "packages/cli-wasm/package.json"), JSON.stringify({
+    name: "@aphrody/cli-wasm",
+    imports: { "#cli-wasm-glue": "./wasm/aphrody_command_wasm.js" },
+  }));
   await Bun.write(join(root, "packages/declared/dist/tracked.js"), "export const tracked = true;\n");
   const original = await sourceEntries(root);
 
@@ -116,6 +121,11 @@ test("prepared dist inputs require a declared root member and cannot overwrite f
     .rejects.toThrow("no frozen workspace manifest");
   await expect(validatePreparedProductPath(root, "packages/declared/dist/tracked.js", original))
     .rejects.toThrow("replaces frozen source");
+  await validatePreparedProductPath(root, "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm", original);
+  await expect(validatePreparedProductPath(root, "packages/declared/wasm/unowned.wasm", original))
+    .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
+  await expect(validatePreparedProductPath(root, "packages/cli-wasm/wasm/unlisted.wasm", original))
+    .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
   expect(await Bun.file(join(root, "packages/declared/dist/tracked.js")).text()).toBe("export const tracked = true;\n");
 
   const path = "packages/declared/dist/generated.js";
