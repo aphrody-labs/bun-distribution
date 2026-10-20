@@ -79,6 +79,8 @@ struct ChatMessage {
 pub(crate) struct ChatRequest {
     messages: Vec<ChatMessage>,
     model: Option<String>,
+    #[serde(rename = "maxOutputTokens")]
+    max_output_tokens: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -799,6 +801,57 @@ fn shenron_rank_terms(query: &str) -> Vec<String> {
         "son",
         "sa",
         "ses",
+        // Function words must not consume the bounded lexical query or expand
+        // its OR candidates to most of the corpus before the ranking step.
+        "pourquoi",
+        "comment",
+        "quand",
+        "comme",
+        "ce",
+        "cet",
+        "cette",
+        "ces",
+        "que",
+        "ne",
+        "pas",
+        "se",
+        "sont",
+        "etre",
+        "avoir",
+        "nous",
+        "vous",
+        "ils",
+        "elles",
+        "on",
+        "leur",
+        "leurs",
+        "mais",
+        "donc",
+        "lorsque",
+        "why",
+        "when",
+        "where",
+        "which",
+        "do",
+        "did",
+        "has",
+        "have",
+        "had",
+        "be",
+        "been",
+        "being",
+        "can",
+        "could",
+        "would",
+        "should",
+        "there",
+        "their",
+        "its",
+        "it",
+        "you",
+        "your",
+        "than",
+        "not",
     ];
     let folded = shenron_fold(query);
     let mut terms = Vec::<String>::new();
@@ -831,6 +884,7 @@ fn shenron_rank_terms(query: &str) -> Vec<String> {
     for word in query.to_lowercase().split(|ch: char| !ch.is_alphanumeric()) {
         if word.chars().count() >= 2
             && shenron_fold(word) != word
+            && !IGNORED.contains(&shenron_fold(word).as_str())
             && !terms.iter().any(|term| term == word)
         {
             terms.push(word.to_owned());
@@ -1351,6 +1405,15 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
 }
 
 async fn shenron_llm_chat_core(request: ChatRequest) -> Response {
+    if request
+        .max_output_tokens
+        .is_some_and(|budget| !(1..=8192).contains(&budget))
+    {
+        return shenron_error(
+            StatusCode::BAD_REQUEST,
+            "maxOutputTokens must be in 1..=8192",
+        );
+    }
     if request.messages.is_empty()
         || request.messages.len() > 32
         || request.messages.iter().any(|message| {
@@ -1371,6 +1434,12 @@ async fn shenron_llm_chat_core(request: ChatRequest) -> Response {
         || (request.model.is_none()
             && std::env::var("APHRODY_SHENRON_LLM_PROVIDER").as_deref() == Ok("gemini-web"))
     {
+        if request.max_output_tokens.is_some() {
+            return shenron_error(
+                StatusCode::BAD_REQUEST,
+                "Gemini Web does not support output token budgets",
+            );
+        }
         let configured_model = std::env::var("APHRODY_SHENRON_GEMINI_MODEL").ok();
         let raw_model = request.model.as_deref().or(configured_model.as_deref());
         return gemini_web_chat(&request.messages, raw_model, false).await;
@@ -1379,7 +1448,8 @@ async fn shenron_llm_chat_core(request: ChatRequest) -> Response {
         Ok(payload) => response(payload, "no-store"),
         Err((status, message)) => {
             #[cfg(not(target_arch = "wasm32"))]
-            if fallback && status != StatusCode::BAD_REQUEST {
+            if fallback && status != StatusCode::BAD_REQUEST && request.max_output_tokens.is_none()
+            {
                 let configured_model = std::env::var("APHRODY_SHENRON_GEMINI_MODEL").ok();
                 return gemini_web_chat(&request.messages, configured_model.as_deref(), true).await;
             }
@@ -1463,12 +1533,7 @@ async fn shenron_llm_local(request: &ChatRequest) -> Result<Value, (StatusCode, 
         "{}/chat/completions",
         url.path().trim_end_matches('/')
     ));
-    let messages = request
-        .messages
-        .iter()
-        .map(|message| json!({"role": message.role, "content": message.content}))
-        .collect::<Vec<_>>();
-    let body = json!({"model": model, "messages": messages, "stream": false});
+    let body = shenron_chat_payload(request, &model);
     let payload = backend::post_chat_json_with_retry(&url, &body, Duration::from_secs(90))
         .await
         .map_err(|failure| failure.describe("LLM"))?;
@@ -1489,6 +1554,19 @@ async fn shenron_llm_local(request: &ChatRequest) -> Result<Value, (StatusCode, 
         out["usage"] = usage.clone();
     }
     Ok(out)
+}
+
+fn shenron_chat_payload(request: &ChatRequest, model: &str) -> Value {
+    let messages = request
+        .messages
+        .iter()
+        .map(|message| json!({"role": message.role, "content": message.content}))
+        .collect::<Vec<_>>();
+    let mut body = json!({"model": model, "messages": messages, "stream": false});
+    if let Some(budget) = request.max_output_tokens {
+        body["max_tokens"] = json!(budget);
+    }
+    body
 }
 
 /// The chat/code/reasoning/small capability's base URL. No literal port is
@@ -2593,6 +2671,40 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn shenron_chat_output_budget_is_bounded_before_backend_selection() {
+        for budget in [0, 8193] {
+            let request: ChatRequest = serde_json::from_value(json!({
+                "messages": [{"role":"user", "content":"hello"}],
+                "maxOutputTokens": budget
+            }))
+            .unwrap();
+            assert_eq!(
+                shenron_llm_chat_core(request).await.status(),
+                StatusCode::BAD_REQUEST
+            );
+        }
+    }
+
+    #[test]
+    fn shenron_chat_preserves_the_optional_openai_output_budget() {
+        let request: ChatRequest = serde_json::from_value(json!({
+            "messages": [{"role":"user", "content":"hello"}],
+            "maxOutputTokens": 128
+        }))
+        .unwrap();
+        let body = shenron_chat_payload(&request, "shenron-chat-v2");
+        assert_eq!(body["max_tokens"], 128);
+        assert_eq!(body["model"], "shenron-chat-v2");
+        assert_eq!(body["messages"][0]["content"], "hello");
+        let legacy: ChatRequest = serde_json::from_value(json!({"messages": []})).unwrap();
+        assert!(
+            shenron_chat_payload(&legacy, "local")
+                .get("max_tokens")
+                .is_none()
+        );
+    }
+
+    #[tokio::test]
     async fn local_mcp_tools_share_validation_without_http_token() {
         let search: ShenronSearchQuery = serde_json::from_value(json!({"q": ""})).unwrap();
         let search_result: Value =
@@ -2686,6 +2798,27 @@ mod tests {
             ["granolah", "granola"]
         );
         assert_eq!(shenron_rank_terms("Qui est Goku ?"), ["goku"]);
+    }
+
+    #[test]
+    fn lexical_search_omits_grammar_before_applying_its_term_budget() {
+        assert_eq!(
+            shenron_rank_terms("Pourquoi est-ce que cette tour ne serait pas sur cette planète ?"),
+            ["tour", "serait", "planete", "planète"]
+        );
+        assert_eq!(
+            shenron_rank_terms("Why did their spaceship not have an engine?"),
+            ["spaceship", "engine"]
+        );
+        assert_eq!(
+            shenron_rank_terms("Why would you have been there?"),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            shenron_rank_terms("Cell, Buu and Hit"),
+            ["cell", "buu", "hit"]
+        );
+        assert!(shenron_rank_terms("Être ou ne pas être ?").is_empty());
     }
 
     #[test]
