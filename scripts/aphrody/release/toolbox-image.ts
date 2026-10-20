@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * aphrody:toolbox (tools/config/container/toolbox/Dockerfile) from the toolbox build of the vps. Runs ON the vps:
+ * aphrody:toolbox (tools/aphrody/config/container/toolbox/Dockerfile) from the toolbox build of the vps. Runs ON the vps:
  *
  *   bun scripts/aphrody/release/toolbox-image.ts [--binary ~/.local/bin/aphrody] [--ship dbfr-wg]...
  *
@@ -19,7 +19,7 @@ import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dir, "../../..");
-const DOCKERFILE = join(ROOT, "tools/config/container/toolbox/Dockerfile");
+const DOCKERFILE = join(ROOT, "tools/aphrody/config/container/toolbox/Dockerfile");
 
 export function parseArgs(argv: string[]) {
   const options = {
