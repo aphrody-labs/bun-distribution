@@ -772,24 +772,6 @@
       "initialized": false
     },
     {
-      "revision": "2439016d2e8d3a0d8aebcd243f29604a91f201c9",
-      "pinVerified": true,
-      "action": "reused",
-      "forkParent": "CachyOS/linux",
-      "id": "linux-aurora",
-      "role": "Exact source commit declared by the pinned kernel recipe; not fetched or built",
-      "upstream": "aurora-silicon/linux",
-      "defaultBranch": "7.0/cachy",
-      "forkSource": "torvalds/linux",
-      "repository": "aphrody-labs/cachyos-linux",
-      "mount": "vendor/cachyos-linux",
-      "checkoutRevision": "b0ce79ee33ddd93d513f77341167956e1355758e",
-      "sourceExportReady": false,
-      "referenceRevision": "2439016d2e8d3a0d8aebcd243f29604a91f201c9",
-      "checkoutMatchesReference": false,
-      "initialized": false
-    },
-    {
       "revision": "dd99802c8b0c384169bb36293c9517fa67238e47",
       "pinVerified": true,
       "action": "created",
