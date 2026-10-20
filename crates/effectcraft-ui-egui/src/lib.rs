@@ -2642,3 +2642,6 @@ mod appearance_tests {
         assert_eq!(app.ui.theme, ThemeKind::Darker);
     }
 }
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

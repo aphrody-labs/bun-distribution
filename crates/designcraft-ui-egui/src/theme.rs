@@ -20,20 +20,14 @@ pub enum Brightness {
 }
 
 impl Brightness {
-    pub const ALL: [Brightness; 5] = [
-        Brightness::Dark,
-        Brightness::MediumDark,
-        Brightness::MediumLight,
-        Brightness::Light,
-        Brightness::HighContrast,
-    ];
+    pub const ALL: [Brightness; 3] = [Brightness::Dark, Brightness::Light, Brightness::HighContrast];
     pub fn label(self) -> &'static str {
         match self {
-            Brightness::Dark => "Dark",
-            Brightness::MediumDark => "Medium Dark",
-            Brightness::MediumLight => "Medium Light",
-            Brightness::Light => "Light",
-            Brightness::HighContrast => "High Contrast",
+            Brightness::Dark => "M3 Dark",
+            Brightness::MediumDark => "M3 Dark",
+            Brightness::MediumLight => "M3 Light",
+            Brightness::Light => "M3 Light",
+            Brightness::HighContrast => "M3 High Contrast",
         }
     }
     pub fn id(self) -> &'static str {

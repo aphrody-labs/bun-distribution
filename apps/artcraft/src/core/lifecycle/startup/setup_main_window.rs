@@ -9,7 +9,7 @@ pub async fn setup_main_window(
 
   let win_builder =
       WebviewWindowBuilder::new(app, MAIN_WINDOW_NAME, WebviewUrl::default())
-          .title("ArtCraft")
+          .title("Aphrody / Bun Studio")
           .resizable(true)
           .fullscreen(false)
           .background_color(Color(0, 0, 0, 0))
@@ -51,7 +51,7 @@ fn install_macos_app_menu(app: &AppHandle) -> AnyhowResult<()> {
 
   let app_submenu = Submenu::with_items(
     app,
-    "ArtCraft",
+    "Aphrody / Bun Studio",
     true,
     &[
       &PredefinedMenuItem::about(app, None, None)?,

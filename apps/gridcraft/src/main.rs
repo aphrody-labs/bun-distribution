@@ -279,11 +279,9 @@ fn open_with_system(target: &str) {
 
 fn icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
-    let bytes = include_bytes!("../../../assets/gridcraft/app-icon/gridcraft-macos-512.png");
+    let bytes = gridcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
-    let bytes = include_bytes!(
-        "../../../assets/gridcraft/app-icon/hicolor/256x256/apps/ai.storyteller.gridcraft.png"
-    );
+    let bytes = gridcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     let img = image::load_from_memory(bytes).ok()?.to_rgba8();
     Some(egui::IconData {
         width: img.width(),

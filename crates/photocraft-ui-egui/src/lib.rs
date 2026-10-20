@@ -3512,3 +3512,6 @@ mod channel_tint_tests {
         assert_eq!(channel_tint(Rgb, 0, 77, false), Color32::from_gray(77));
     }
 }
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

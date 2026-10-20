@@ -633,11 +633,9 @@ fn open_file(path: &str) -> Result<(), String> {
 fn app_icon() -> egui::IconData {
     #[cfg(target_os = "macos")]
     let png: &[u8] =
-        include_bytes!("../../../assets/vectorcraft/app-icon/vectorcraft-macos-512.png");
+        vectorcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!(
-        "../../../assets/vectorcraft/app-icon/hicolor/256x256/apps/ai.storyteller.vectorcraft.png"
-    );
+    let png: &[u8] = vectorcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
 }
 

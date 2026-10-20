@@ -282,11 +282,9 @@ const APP_ID: &str = "ai.storyteller.designcraft";
 fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
     let png: &[u8] =
-        include_bytes!("../../../assets/designcraft/app-icon/designcraft-macos-512.png");
+        designcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!(
-        "../../../assets/designcraft/app-icon/hicolor/256x256/apps/ai.storyteller.designcraft.png"
-    );
+    let png: &[u8] = designcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     eframe::icon_data::from_png_bytes(png)
         .map_err(|e| log::warn!("app icon: {e}"))
         .ok()

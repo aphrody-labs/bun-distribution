@@ -225,11 +225,9 @@ fn services() -> Services {
 /// elsewhere the full tile. Regenerate with `packaging/icons.sh`.
 fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../../../assets/soundcraft/app-icon/soundcraft-macos-512.png");
+    let png: &[u8] = soundcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!(
-        "../../../assets/soundcraft/app-icon/hicolor/256x256/apps/ai.storyteller.soundcraft.png"
-    );
+    let png: &[u8] = soundcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     eframe::icon_data::from_png_bytes(png)
         .map_err(|e| log::warn!("app icon: {e}"))
         .ok()

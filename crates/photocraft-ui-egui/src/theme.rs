@@ -58,39 +58,9 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 14] = [
-        ThemeKind::Pro,
-        ThemeKind::ProMedium,
-        ThemeKind::ProLightGray,
-        ThemeKind::ProLight,
-        ThemeKind::Studio,
-        ThemeKind::StudioLight,
-        ThemeKind::Classic,
-        ThemeKind::SolarizedDark,
-        ThemeKind::Adwaita,
-        ThemeKind::AdwaitaDark,
-        ThemeKind::BreezeLight,
-        ThemeKind::BreezeDark,
-        ThemeKind::SoftDark,
-        ThemeKind::SoftLight,
-    ];
+    pub const ALL: [ThemeKind; 2] = [ThemeKind::ProMedium, ThemeKind::ProLight];
     pub fn label(self) -> &'static str {
-        match self {
-            ThemeKind::Pro => "Pro (Dark)",
-            ThemeKind::ProMedium => "Pro (Medium Gray)",
-            ThemeKind::ProLightGray => "Pro (Light Gray)",
-            ThemeKind::ProLight => "Pro (Light)",
-            ThemeKind::Studio => "Studio (Dark)",
-            ThemeKind::StudioLight => "Studio (Light)",
-            ThemeKind::Classic => "Classic",
-            ThemeKind::Adwaita => "Adwaita (Light)",
-            ThemeKind::AdwaitaDark => "Adwaita (Dark)",
-            ThemeKind::SolarizedDark => "Solarized Dark",
-            ThemeKind::BreezeLight => "Breeze Light",
-            ThemeKind::BreezeDark => "Breeze Dark",
-            ThemeKind::SoftDark => "Soft Dark",
-            ThemeKind::SoftLight => "Soft Light",
-        }
+        if matches!(self, Self::Pro | Self::ProMedium | Self::Studio | Self::AdwaitaDark | Self::SolarizedDark | Self::BreezeDark | Self::SoftDark) { "M3 Dark" } else { "M3 Light" }
     }
     /// The canonical name: `ui.set {theme}` accepts it and the Window › Theme commands are
     /// `window.theme.<id>`.

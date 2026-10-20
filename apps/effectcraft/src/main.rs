@@ -43,14 +43,12 @@ use serde_json::json;
 /// `packaging/icons.sh`). macOS gets the padded variant so it sits on Apple's icon grid in the Dock.
 /// The 256 px app icon (Windows, Linux; the AppImage's desktop integration installs it too).
 #[cfg(not(target_os = "macos"))]
-const ICON_PNG: &[u8] = include_bytes!(
-    "../../../assets/effectcraft/app-icon/hicolor/256x256/apps/ai.storyteller.effectcraft.png"
-);
+const ICON_PNG: &[u8] = effectcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
 
 fn app_icon() -> egui::IconData {
     #[cfg(target_os = "macos")]
     let png: &[u8] =
-        include_bytes!("../../../assets/effectcraft/app-icon/effectcraft-macos-512.png");
+        effectcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
     let png: &[u8] = ICON_PNG;
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()

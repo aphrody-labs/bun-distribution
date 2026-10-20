@@ -1,15 +1,12 @@
-//! The ArtCraft wordmark (first-party trademark, used with permission; see `docs/brand/` and
-//! AGENTS.md §1.8), decoded once and kept as a texture.
+//! Canonical Aphrody/Bun emblem; the legacy wordmark API remains source-compatible.
 
-const LOGO_LIGHT_INK: &[u8] =
-    include_bytes!("../../../docs/libraries/filmcraft/brand/artcraft-logo-white.png");
-const LOGO_DARK_INK: &[u8] =
-    include_bytes!("../../../docs/libraries/filmcraft/brand/artcraft-logo.png");
+const LOGO_LIGHT_INK: &[u8] = craft_ui::brand::ICON_PNG;
+const LOGO_DARK_INK: &[u8] = craft_ui::brand::ICON_PNG;
 
 /// The wordmark for a dark (`dark = true`) or light UI: light ink on dark themes. Its aspect
 /// ratio is width / height of the returned texture.
 pub fn wordmark(ctx: &egui::Context, dark: bool) -> Option<egui::TextureHandle> {
-    let id = egui::Id::new(("artcraft-wordmark", dark));
+    let id = egui::Id::new(("aphrody-bun-wordmark", dark));
     if let Some(t) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(id)) {
         return Some(t);
     }
@@ -23,7 +20,7 @@ pub fn wordmark(ctx: &egui::Context, dark: bool) -> Option<egui::TextureHandle> 
         [img.width() as usize, img.height() as usize],
         img.as_raw(),
     );
-    let tex = ctx.load_texture("artcraft-wordmark", color, egui::TextureOptions::LINEAR);
+    let tex = ctx.load_texture("aphrody-bun-wordmark", color, egui::TextureOptions::LINEAR);
     ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
     Some(tex)
 }

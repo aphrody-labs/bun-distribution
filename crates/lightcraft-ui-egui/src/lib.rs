@@ -2391,3 +2391,6 @@ mod tests_model_setup;
 
 #[cfg(test)]
 mod tests_docking_acceptance;
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

@@ -1483,3 +1483,6 @@ pub fn now_ms() -> f64 {
 pub fn cell(r: u32, c: u32) -> CellRef {
     CellRef::new(r, c)
 }
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

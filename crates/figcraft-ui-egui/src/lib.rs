@@ -1402,3 +1402,6 @@ impl FigApp {
         })
     }
 }
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

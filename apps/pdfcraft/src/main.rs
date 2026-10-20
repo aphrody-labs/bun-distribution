@@ -57,11 +57,9 @@ const APP_ID: &str = "ai.storyteller.pdfcraft";
 /// The app icon (assets/app-icon/README.md). macOS gets the version on Apple's icon grid, with a
 /// transparent margin; Windows and Linux get the full-bleed tile.
 #[cfg(target_os = "macos")]
-const APP_ICON_PNG: &[u8] = include_bytes!("../../../assets/pdfcraft/app-icon/pdfcraft-1024.png");
+const APP_ICON_PNG: &[u8] = pdfcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
 #[cfg(not(target_os = "macos"))]
-const APP_ICON_PNG: &[u8] = include_bytes!(
-    "../../../assets/pdfcraft/app-icon/hicolor/256x256/apps/ai.storyteller.pdfcraft.png"
-);
+const APP_ICON_PNG: &[u8] = pdfcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
 
 /// The app was called PrintCraft before; settings saved then are under this key.
 const LEGACY_STORAGE_KEY: &str = "printcraft";

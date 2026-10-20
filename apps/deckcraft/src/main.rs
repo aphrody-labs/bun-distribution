@@ -163,9 +163,7 @@ fn services() -> Services {
 const APP_ID: &str = "ai.storyteller.deckcraft";
 
 fn app_icon() -> Option<egui::IconData> {
-    let png: &[u8] = include_bytes!(
-        "../../../assets/deckcraft/app-icon/hicolor/256x256/apps/ai.storyteller.deckcraft.png"
-    );
+    let png: &[u8] = deckcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     eframe::icon_data::from_png_bytes(png)
         .map_err(|e| log::warn!("app icon: {e}"))
         .ok()

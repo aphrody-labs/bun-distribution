@@ -48,7 +48,7 @@ fn main() -> eframe::Result {
 
 /// The window and taskbar icon.
 fn app_icon() -> Option<egui::IconData> {
-    const ICON: &[u8] = include_bytes!("../../artcraft/icons/icon.png");
+    const ICON: &[u8] = craft_ui::brand::WINDOW_ICON_PNG;
     let rgba = image::load_from_memory(ICON).ok()?.into_rgba8();
     Some(egui::IconData {
         width: rgba.width(),

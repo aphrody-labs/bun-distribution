@@ -239,11 +239,9 @@ fn services(file_dialog: file_dialogs::Hook, ctx: &egui::Context) -> Services {
 /// Window, Dock and taskbar icon.
 fn app_icon() -> Option<egui::IconData> {
     #[cfg(target_os = "macos")]
-    let png: &[u8] = include_bytes!("../../../assets/wordcraft/app-icon/wordcraft-macos-512.png");
+    let png: &[u8] = wordcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     #[cfg(not(target_os = "macos"))]
-    let png: &[u8] = include_bytes!(
-        "../../../assets/wordcraft/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png"
-    );
+    let png: &[u8] = wordcraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
     eframe::icon_data::from_png_bytes(png)
         .map_err(|e| log::warn!("app icon: {e}"))
         .ok()

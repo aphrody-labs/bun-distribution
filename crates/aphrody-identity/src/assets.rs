@@ -21,6 +21,13 @@
 use crate::{Error, Frame, Pet, Rect};
 use std::io::Cursor;
 
+/// Canonical product emblem, shared by native window chrome and application headers.
+pub const BRAND_ICON_PNG: &[u8] = include_bytes!("../assets/brand/icon-128.png");
+/// High-DPI native window emblem, independent of the host application.
+pub const BRAND_WINDOW_ICON_PNG: &[u8] = include_bytes!("../assets/brand/icon-512.png");
+/// Canonical Windows product icon; application identifiers remain host-owned.
+pub const BRAND_ICON_ICO: &[u8] = include_bytes!("../assets/brand/favicon.ico");
+
 /// Tailles produites par défaut, et à quoi chacune sert.
 ///
 /// Ce ne sont pas des puissances de deux choisies au hasard : 180 est l'`apple-touch-icon`,

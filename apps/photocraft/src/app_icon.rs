@@ -27,11 +27,9 @@ pub fn window_icon() -> egui::IconData {
 }
 
 #[cfg(target_os = "macos")]
-const PNG: &[u8] = include_bytes!("../../../assets/photocraft/app-icon/photocraft-1024.png");
+const PNG: &[u8] = photocraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
 #[cfg(not(target_os = "macos"))]
-const PNG: &[u8] = include_bytes!(
-    "../../../assets/photocraft/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png"
-);
+const PNG: &[u8] = photocraft_ui_egui::aphrody_brand::WINDOW_ICON_PNG;
 
 #[cfg(test)]
 mod tests {

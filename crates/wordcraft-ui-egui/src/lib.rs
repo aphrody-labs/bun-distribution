@@ -5805,3 +5805,6 @@ mod tests {
         assert_eq!(h.state().dialog.as_ref().map(|d| d.name()), Some("find"));
     }
 }
+
+/// Canonical Aphrody/Bun product identity for native application hosts.
+pub use craft_ui::brand as aphrody_brand;

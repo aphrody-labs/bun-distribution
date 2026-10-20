@@ -13,6 +13,7 @@
 //! from Aphrody identity and M3 through [`theme::aphrody`]; no application engine is required.
 
 pub mod buttons;
+pub mod brand;
 pub mod docking;
 pub mod icons;
 pub mod layout;

@@ -99,12 +99,7 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 4] = [
-        ThemeKind::Charcoal,
-        ThemeKind::Midnight,
-        ThemeKind::Silver,
-        ThemeKind::Paper,
-    ];
+    pub const ALL: [ThemeKind; 2] = [ThemeKind::Charcoal, ThemeKind::Paper];
 
     pub fn is_dark(self) -> bool {
         matches!(self, ThemeKind::Charcoal | ThemeKind::Midnight)
@@ -123,10 +118,10 @@ impl ThemeKind {
     /// The English display name.
     pub fn label(self) -> &'static str {
         match self {
-            ThemeKind::Charcoal => "Charcoal",
-            ThemeKind::Midnight => "Midnight",
-            ThemeKind::Silver => "Silver",
-            ThemeKind::Paper => "Paper",
+            ThemeKind::Charcoal => "M3 Dark",
+            ThemeKind::Midnight => "M3 Dark",
+            ThemeKind::Silver => "M3 Light",
+            ThemeKind::Paper => "M3 Light",
         }
     }
 }
