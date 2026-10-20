@@ -3,6 +3,7 @@
 /** Restore the pinned Shenron chat backend through Infra, without exposing a public listener. */
 import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { availableParallelism } from "node:os";
 
 export const CHAT_DIGESTS = {
   base: "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
@@ -47,7 +48,7 @@ export function chatRecoveryCompose(options: ChatRecoveryOptions) {
         security_opt: ["no-new-privileges:true"],
         restart: "unless-stopped",
         mem_limit: "4500m",
-        cpus: 4,
+        cpus: 5,
         environment: { HOME: "/tmp", LD_LIBRARY_PATH: "/llama" },
         volumes: [
           `${options.runtime}:/llama:ro`,
@@ -72,6 +73,8 @@ export function chatRecoveryCompose(options: ChatRecoveryOptions) {
           "1",
           "--threads",
           "4",
+          "--threads-batch",
+          "5",
           "--n-gpu-layers",
           "0",
         ],
@@ -133,6 +136,10 @@ async function main() {
   if (!args.includes("--apply")) return;
   if (process.getuid?.() !== 0)
     throw new Error("Apply requires the Infra root execution path");
+  if (availableParallelism() < 6)
+    throw new Error(
+      "Chat requires six host CPUs to reserve one for product services",
+    );
   for (const [kind, path] of [
     ["base", options.base],
     ["adapter", options.adapter],
