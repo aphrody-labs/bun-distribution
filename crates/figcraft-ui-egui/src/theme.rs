@@ -243,8 +243,8 @@ fn visuals(t: Tokens) -> Visuals {
     v.faint_bg_color = t.hover;
     v.override_text_color = Some(t.text);
     v.window_stroke = Stroke::new(1.0, t.border);
-    v.window_corner_radius = egui::CornerRadius::same(13);
-    v.menu_corner_radius = egui::CornerRadius::same(13);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.selection.bg_fill = t.accent.gamma_multiply(0.3);
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.hyperlink_color = t.accent_text;
@@ -255,7 +255,7 @@ fn visuals(t: Tokens) -> Visuals {
         &mut v.widgets.open,
         &mut v.widgets.noninteractive,
     ] {
-        w.corner_radius = egui::CornerRadius::same(5);
+        w.corner_radius = craft_ui::theme::shape::CONTROL;
         w.fg_stroke = Stroke::new(1.0, t.text);
     }
     v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, t.border);

@@ -488,8 +488,8 @@ pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
     v.extreme_bg_color = t.field;
     v.faint_bg_color = t.inset;
     v.window_stroke = Stroke::new(1.0, t.button_border);
-    v.window_corner_radius = CornerRadius::same(6);
-    v.menu_corner_radius = CornerRadius::same(6);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.selection.bg_fill = t.accent.gamma_multiply(0.6);
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.override_text_color = Some(t.text_label);
@@ -514,7 +514,11 @@ pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
         active: t.pressed,
         open: t.hover,
     }
-    .apply_to(w, CornerRadius::same(4), Stroke::new(1.0, t.text_label));
+    .apply_to(
+        w,
+        craft_ui::theme::shape::CONTROL,
+        Stroke::new(1.0, t.text_label),
+    );
     w.noninteractive.bg_stroke = Stroke::new(1.0, t.divider);
     w.inactive.bg_stroke = Stroke::new(1.0, t.button_border);
     ctx.set_visuals_of(egui::Theme::Dark, v.clone());

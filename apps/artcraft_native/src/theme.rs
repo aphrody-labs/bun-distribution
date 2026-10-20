@@ -135,8 +135,8 @@ pub fn badge_beta() -> Color32 {
         .color(craft_ui::theme::aphrody::Role::Tertiary)
 }
 
-/// 3 px: buttons, inputs, menus and the prompt box.
-pub const RADIUS: CornerRadius = CornerRadius::same(3);
+/// M3 small corner for buttons, inputs and the prompt box.
+pub const RADIUS: CornerRadius = craft_ui::theme::shape::CONTROL;
 
 /// Height of toolbar buttons (`py-1.5` + 14 px text + hairline).
 pub const CONTROL_H: f32 = 34.0;
@@ -199,8 +199,8 @@ fn visuals() -> Visuals {
     v.faint_bg_color = controls();
     v.code_bg_color = sunken();
     v.window_stroke = hairline();
-    v.window_corner_radius = RADIUS;
-    v.menu_corner_radius = RADIUS;
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.window_shadow = shadow();
     v.popup_shadow = shadow();
     v.override_text_color = Some(ink());

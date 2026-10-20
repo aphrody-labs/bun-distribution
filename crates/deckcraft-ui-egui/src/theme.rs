@@ -153,8 +153,8 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     v.extreme_bg_color = t.field_bg;
     v.faint_bg_color = t.hover;
     v.window_stroke = Stroke::new(1.0, t.card_border);
-    v.window_corner_radius = CornerRadius::same(10);
-    v.menu_corner_radius = CornerRadius::same(8);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.selection.bg_fill = t.accent.gamma_multiply(0.85);
     v.selection.stroke = Stroke::new(1.0, t.accent_text);
     v.hyperlink_color = t.accent;
@@ -166,7 +166,7 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
         &mut v.widgets.active,
         &mut v.widgets.open,
     ] {
-        w.corner_radius = CornerRadius::same(5);
+        w.corner_radius = craft_ui::theme::shape::CONTROL;
     }
     v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, t.separator);
     v.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;

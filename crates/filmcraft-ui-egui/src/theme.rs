@@ -561,8 +561,8 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
     v.selection.stroke = Stroke::new(1.0, Color32::WHITE);
     v.hyperlink_color = t.accent;
     v.window_stroke = Stroke::new(1.0, t.field_border);
-    v.window_corner_radius = egui::CornerRadius::same(6);
-    v.menu_corner_radius = egui::CornerRadius::same(6);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.popup_shadow = egui::epaint::Shadow {
         offset: [0, 4],
         blur: 16,
@@ -577,7 +577,7 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
         &mut v.widgets.active,
         &mut v.widgets.open,
     ] {
-        w.corner_radius = egui::CornerRadius::same(t.radius_sm as u8);
+        w.corner_radius = craft_ui::theme::shape::CONTROL;
     }
     v.widgets.noninteractive.bg_fill = t.panel_bg;
     v.widgets.noninteractive.weak_bg_fill = t.panel_bg;

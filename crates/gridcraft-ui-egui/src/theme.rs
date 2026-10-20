@@ -828,8 +828,8 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
         v.widgets.hovered.weak_bg_fill = t.hover;
         v.widgets.active.weak_bg_fill = t.pressed;
         v.widgets.inactive.bg_stroke = Stroke::new(1.0, t.input_border);
-        v.window_corner_radius = egui::CornerRadius::same(10);
-        v.menu_corner_radius = egui::CornerRadius::same(8);
+        v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+        v.menu_corner_radius = craft_ui::theme::shape::MENU;
         v.popup_shadow = egui::epaint::Shadow {
             offset: [0, 4],
             blur: 16,

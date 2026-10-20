@@ -263,7 +263,7 @@ impl Tokens {
             .unwrap_or_else(|| Tokens::for_brightness(Brightness::MediumDark))
     }
     pub fn cr(&self) -> CornerRadius {
-        CornerRadius::same(self.radius)
+        craft_ui::theme::shape::CONTROL
     }
 }
 
@@ -373,8 +373,8 @@ pub fn apply(ctx: &egui::Context, b: Brightness) {
     v.extreme_bg_color = t.input;
     v.faint_bg_color = t.panel_darker;
     v.window_stroke = Stroke::new(1.0, t.border);
-    v.window_corner_radius = CornerRadius::same(6);
-    v.menu_corner_radius = CornerRadius::same(6);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.selection.bg_fill = t.accent.gamma_multiply(0.55);
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.hyperlink_color = t.accent;

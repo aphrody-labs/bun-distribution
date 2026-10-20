@@ -485,8 +485,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.hyperlink_color = t.accent_text;
     v.override_text_color = Some(t.text);
-    v.window_corner_radius = CornerRadius::same(10);
-    v.menu_corner_radius = CornerRadius::same(8);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.window_shadow = egui::Shadow {
         offset: [0, 8],
         blur: 28,
@@ -506,7 +506,7 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
         &mut v.widgets.active,
         &mut v.widgets.open,
     ] {
-        w.corner_radius = CornerRadius::same(t.radius);
+        w.corner_radius = craft_ui::theme::shape::CONTROL;
         w.fg_stroke.color = t.text;
     }
     v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, t.divider);

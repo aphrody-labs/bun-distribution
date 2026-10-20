@@ -503,8 +503,8 @@ fn visuals(theme: Theme) -> Visuals {
         spread: 0,
         color: shadow,
     };
-    v.window_corner_radius = egui::CornerRadius::same(6);
-    v.menu_corner_radius = egui::CornerRadius::same(5);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v
 }
 

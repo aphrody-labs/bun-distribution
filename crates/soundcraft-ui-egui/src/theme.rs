@@ -452,8 +452,8 @@ pub fn apply(ctx: &egui::Context, light: bool) {
     v.widgets.hovered.weak_bg_fill = t.button_hi;
     v.widgets.noninteractive.fg_stroke.color = t.text;
     v.widgets.inactive.fg_stroke.color = t.text;
-    v.window_corner_radius = egui::CornerRadius::same(6);
-    v.menu_corner_radius = egui::CornerRadius::same(4);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     // Keep receiving native OS appearance changes even when our palette is manual. On macOS,
     // pinning egui's theme also pins the window appearance and hides later OS changes.
     ctx.set_theme(egui::ThemePreference::System);

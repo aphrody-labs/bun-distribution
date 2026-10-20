@@ -1061,8 +1061,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.hyperlink_color = t.accent;
     v.warn_fg_color = t.warning;
     v.error_fg_color = t.danger;
-    v.window_corner_radius = CornerRadius::same(t.radius_lg as u8);
-    v.menu_corner_radius = CornerRadius::same(t.radius as u8);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.window_shadow = egui::Shadow {
         offset: [0, 10],
         blur: 32,
@@ -1084,7 +1084,7 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.slider_trailing_fill = true;
     v.handle_shape = egui::style::HandleShape::Circle;
     v.striped = false;
-    let r = CornerRadius::same(t.radius_sm as u8);
+    let r = craft_ui::theme::shape::CONTROL;
     let w = &mut v.widgets;
     w.noninteractive.bg_fill = t.card;
     w.noninteractive.weak_bg_fill = t.card;

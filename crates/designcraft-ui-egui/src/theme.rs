@@ -408,14 +408,14 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     } else {
         Visuals::light()
     };
-    let r = CornerRadius::same(t.radius);
+    let r = craft_ui::theme::shape::CONTROL;
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
     v.extreme_bg_color = t.input;
     v.faint_bg_color = t.panel_darker;
     v.window_stroke = Stroke::new(1.0, t.divider);
-    v.window_corner_radius = CornerRadius::same(4);
-    v.menu_corner_radius = CornerRadius::same(4);
+    v.window_corner_radius = craft_ui::theme::shape::WINDOW;
+    v.menu_corner_radius = craft_ui::theme::shape::MENU;
     v.selection.bg_fill = t.accent_strong;
     v.selection.stroke = Stroke::new(1.0, t.text_strong);
     v.hyperlink_color = t.accent;

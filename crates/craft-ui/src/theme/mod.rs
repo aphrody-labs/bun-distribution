@@ -6,6 +6,7 @@
 use egui::{Color32, CornerRadius, Stroke, style::Widgets};
 
 pub mod aphrody;
+pub mod shape;
 
 /// Background colors for egui's five widget interaction states.
 ///
