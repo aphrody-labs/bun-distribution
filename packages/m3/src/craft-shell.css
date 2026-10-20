@@ -34,6 +34,18 @@ canvas {
   pointer-events: none;
 }
 
+#loading[role="status"] {
+  flex-direction: column;
+  gap: 14px;
+}
+
+#loading .err {
+  max-inline-size: 70ch;
+  color: var(--md-sys-color-error);
+  white-space: pre-wrap;
+  pointer-events: auto;
+}
+
 .aphrody-identity {
   inline-size: 3rem;
   block-size: 3rem;
