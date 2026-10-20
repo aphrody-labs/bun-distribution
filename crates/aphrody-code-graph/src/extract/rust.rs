@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use tree_sitter::{Node, Parser};
 
 use super::{
-    FileExtract, NodeClass, RawCall, RawEdge, RawNode,
+    FileExtract, NodeClass, RawCall, RawEdge, RawNode, decode_text,
     ids::{file_stem, make_id},
 };
 use crate::graph::Confidence;
@@ -277,7 +277,8 @@ struct Ctx<'a> {
 }
 
 fn text<'a>(node: Node<'_>, src: &'a [u8]) -> &'a str {
-    std::str::from_utf8(&src[node.start_byte()..node.end_byte()]).unwrap_or("")
+    std::str::from_utf8(&src[node.start_byte()..node.end_byte()])
+        .expect("tree-sitter node ranges must be UTF-8 boundaries")
 }
 
 fn line(node: Node<'_>) -> usize {
@@ -1089,6 +1090,12 @@ impl<'a> Ctx<'a> {
 /// Extract one Rust file.
 #[must_use]
 pub fn extract(rel_path: &str, source: &[u8]) -> FileExtract {
+    if let Err(error) = decode_text(source) {
+        return FileExtract {
+            error: Some(error),
+            ..FileExtract::default()
+        };
+    }
     let mut parser = Parser::new();
     if let Err(error) = parser.set_language(&tree_sitter_rust::LANGUAGE.into()) {
         return FileExtract {

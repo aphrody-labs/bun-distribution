@@ -17,7 +17,13 @@ use serde::{Deserialize, Serialize};
 use crate::graph::Confidence;
 
 /// Version of the per-file extraction format; cached rows of another version are re-extracted.
-pub const EXTRACT_VERSION: u32 = 2;
+pub const EXTRACT_VERSION: u32 = 3;
+
+/// Decode one textual source file without silently replacing or dropping malformed bytes.
+pub(super) fn decode_text(source: &[u8]) -> Result<&str, String> {
+    std::str::from_utf8(source)
+        .map_err(|error| format!("source is not valid UTF-8 at byte {}", error.valid_up_to()))
+}
 
 /// What a raw node is; corpus resolution folds stubs only onto types.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -187,4 +193,25 @@ pub fn extract_file(rel_path: &str, source: &[u8]) -> FileExtract {
     };
     out.version = EXTRACT_VERSION;
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{EXTRACT_VERSION, extract_file};
+
+    #[test]
+    fn malformed_utf8_is_reported_for_every_text_extractor() {
+        for path in ["broken.rs", "broken.ts", "broken.md"] {
+            let result = extract_file(path, b"# valid prefix\n\xff");
+            assert_eq!(
+                result.error.as_deref(),
+                Some("source is not valid UTF-8 at byte 15"),
+                "unexpected result for {path}",
+            );
+            assert!(result.nodes.is_empty(), "partial nodes for {path}");
+            assert!(result.edges.is_empty(), "partial edges for {path}");
+            assert!(result.imports.is_empty(), "partial imports for {path}");
+            assert_eq!(result.version, EXTRACT_VERSION);
+        }
+    }
 }

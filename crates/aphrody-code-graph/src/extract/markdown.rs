@@ -3,7 +3,7 @@
 //! relative `[text](path.md)`), so a notes or memory folder becomes a navigable graph.
 
 use super::{
-    FileExtract, ImportKind, NodeClass, RawEdge, RawImport, RawNode,
+    FileExtract, ImportKind, NodeClass, RawEdge, RawImport, RawNode, decode_text,
     ids::{file_stem, make_id},
 };
 use crate::graph::Confidence;
@@ -49,7 +49,15 @@ fn md_links(line: &str, out: &mut Vec<String>) {
 /// Extract one Markdown file.
 #[must_use]
 pub fn extract(rel_path: &str, source: &[u8]) -> FileExtract {
-    let text = String::from_utf8_lossy(source);
+    let text = match decode_text(source) {
+        Ok(text) => text,
+        Err(error) => {
+            return FileExtract {
+                error: Some(error),
+                ..FileExtract::default()
+            };
+        }
+    };
     let file_id = make_id(&[rel_path]);
     let stem = file_stem(rel_path);
     let mut out = FileExtract::default();

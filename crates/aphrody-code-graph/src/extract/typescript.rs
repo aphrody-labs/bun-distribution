@@ -20,7 +20,7 @@ use oxc_span::SourceType;
 use oxc_syntax::scope::ScopeFlags;
 
 use super::{
-    FileExtract, ImportKind, NodeClass, RawCall, RawEdge, RawImport, RawNode,
+    FileExtract, ImportKind, NodeClass, RawCall, RawEdge, RawImport, RawNode, decode_text,
     ids::{file_stem, make_id},
 };
 use crate::graph::Confidence;
@@ -366,11 +366,14 @@ fn parse_source_types(rel_path: &str) -> Vec<SourceType> {
 /// Extract named functions and plain calls from one JS/TS source file.
 #[must_use]
 pub fn extract(rel_path: &str, source: &[u8]) -> FileExtract {
-    let Ok(source) = std::str::from_utf8(source) else {
-        return FileExtract {
-            error: Some("source is not valid UTF-8".to_owned()),
-            ..FileExtract::default()
-        };
+    let source = match decode_text(source) {
+        Ok(source) => source,
+        Err(error) => {
+            return FileExtract {
+                error: Some(error),
+                ..FileExtract::default()
+            };
+        }
     };
     let types = parse_source_types(rel_path);
     if types.is_empty() {
