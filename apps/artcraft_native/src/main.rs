@@ -18,7 +18,7 @@ const APP_ID: &str = "ai.artcraft.native";
 fn main() -> eframe::Result {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let mut viewport = egui::ViewportBuilder::default()
-        .with_title("ArtCraft")
+        .with_title(craft_ui::brand::app_title("Generation Studio"))
         .with_app_id(APP_ID)
         .with_inner_size([1440.0, 900.0])
         .with_min_inner_size([960.0, 640.0]);
@@ -40,7 +40,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "ArtCraft",
+        &craft_ui::brand::app_title("Generation Studio"),
         options,
         Box::new(|cc| Ok(Box::new(app::ArtcraftApp::new(cc)))),
     )

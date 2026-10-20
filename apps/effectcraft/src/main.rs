@@ -156,7 +156,7 @@ fn main() -> eframe::Result {
     let notice = launch.notice.take();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("EffectCraft")
+            .with_title(effectcraft_ui_egui::aphrody_brand::app_title("Compositing"))
             .with_inner_size(window::DEFAULT_SIZE)
             .with_min_inner_size(window::MIN_SIZE)
             .with_drag_and_drop(true)

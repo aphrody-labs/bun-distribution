@@ -355,7 +355,7 @@ fn native_options(
     renderer: eframe::Renderer,
 ) -> eframe::NativeOptions {
     let mut viewport = egui::ViewportBuilder::default()
-        .with_title("PdfCraft")
+        .with_title(pdfcraft_ui_egui::aphrody_brand::app_title("PDF"))
         .with_inner_size([1440.0, 920.0])
         .with_min_inner_size([820.0, 520.0])
         .with_drag_and_drop(true)

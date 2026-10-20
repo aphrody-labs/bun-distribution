@@ -7,3 +7,8 @@ pub use aphrody_identity::assets::{
 };
 
 pub const PRODUCT: &str = "Aphrody / Bun";
+
+/// Shared window and page title for a Craft capability, without changing its engine ID.
+pub fn app_title(capability: &str) -> String {
+    format!("{PRODUCT} · {capability}")
+}
