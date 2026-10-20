@@ -13,7 +13,7 @@ export interface ProductQualification {
   gates: string[];
 }
 
-/** Preparation is not CLI qualification. Bind the independent gate to these exact bytes. */
+/** Preparation is not runtime-surface qualification. Bind all independent gates to these exact bytes. */
 export async function verifyQualifiedProduct(
   workspace: string,
   receiptPath: string,
@@ -30,7 +30,8 @@ export async function verifyQualifiedProduct(
     qualification.installedModesSHA256 !== receipt.installedModesSHA256 ||
     qualification.runtimeSHA256 !== receipt.runtime.sha256 ||
     !Array.isArray(qualification.gates) || !qualification.gates.includes("product-cli") ||
-    !qualification.gates.includes("cli-wasm") || !qualification.gates.includes("ffi")
-  ) throw new Error("Product payload requires passed CLI, CLI-WASM and FFI gates bound to its source, runtime and installed tree");
+    !qualification.gates.includes("cli-wasm") || !qualification.gates.includes("ffi") ||
+    !qualification.gates.includes("agent-plugin") || !qualification.gates.includes("mcp")
+  ) throw new Error("Product payload requires passed CLI, CLI-WASM, FFI, agent-plugin and MCP gates bound to its source, runtime and installed tree");
   return { receipt, qualification };
 }

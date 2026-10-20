@@ -614,24 +614,24 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     metadata: { route: ["build", "product"], configured: Boolean(options.config?.productPayload), nativeCommandsQualified: false },
   });
   add({
-    id: "qualification:product-cli",
+    id: "qualification:product-surfaces",
     kind: "qualification",
     owner: "factory/product-qualification.ts qualifyProductPayload",
     catalog: "product payload + product CLI qualification receipts",
     dependsOn: ["product:payload"],
     state: "blocked",
-    reasons: ["Execute CLI discovery, route-target, CLI-WASM and native FFI load/ABI gates on the matching Linux factory runtime. Remaining native commands and the full product retain separate qualification."],
-    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli, cli-wasm and ffi gates bound to installed bytes, permissions, runtime and source revision")],
-    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery, route targets, CLI-WASM initialization/help, native FFI load and ABI" },
+    reasons: ["Execute CLI discovery, route-target, CLI-WASM, native FFI, all agent-plugin provider adapters and MCP protocol/resource gates on the matching Linux factory runtime. Remaining native commands and the full product retain separate qualification."],
+    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli, cli-wasm, ffi, agent-plugin and mcp gates bound to installed bytes, permissions, runtime and source revision")],
+    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery, CLI-WASM, native FFI, all plugin adapters dry-run, MCP tools/resources/prompts" },
   });
-  nodes.find(node => node.id === "arch:payload")?.dependsOn.push("qualification:product-cli");
+  nodes.find(node => node.id === "arch:payload")?.dependsOn.push("qualification:product-surfaces");
   const imageStage = factoryArch.graph.find(stage => stage.id === "arch:image");
   add({
     id: "image:composition",
     kind: "image",
     owner: imageStage?.owner ?? "src/distribution.ts buildImage",
     catalog: "factory/profile.json + distribution.json + Arch package lock",
-    dependsOn: [...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]), "toolchain:bun", "qualification:product-cli"],
+    dependsOn: [...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]), "toolchain:bun", "qualification:product-surfaces"],
     state: "blocked",
     reasons: [
       "Arch rootfs and staged Bun payload must bind the exact package lock, source/runtime identity, target and selected composition.",
