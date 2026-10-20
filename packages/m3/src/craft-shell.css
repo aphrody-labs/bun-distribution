@@ -9,9 +9,10 @@ body {
   overflow: hidden;
   background: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
-  font:
-    1rem/1.5 system-ui,
-    sans-serif;
+  font-family: var(--md-sys-typescale-body-large-font, system-ui), sans-serif;
+  font-size: var(--md-sys-typescale-body-large-size, 1rem);
+  font-weight: var(--md-sys-typescale-body-large-weight, 400);
+  line-height: var(--md-sys-typescale-body-large-line-height, 1.5);
 }
 
 canvas {
@@ -33,7 +34,7 @@ canvas {
   pointer-events: none;
 }
 
-.craft-identity {
+.aphrody-identity {
   inline-size: 3rem;
   block-size: 3rem;
   object-fit: contain;

@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark" />
     <meta
       name="description"
-      content="EffectCraft: motion graphics and visual effects in the browser"
+      content="Aphrody / Bun · Compositing studio for motion graphics and visual effects"
     />
     <title>Aphrody / Bun · Compositing</title>
     <link rel="icon" href="aphrody-icon.png" type="image/png" />
@@ -113,7 +113,7 @@
     <canvas id="effectcraft_canvas"></canvas>
     <div id="loading" role="status">
       <img
-        class="craft-identity"
+        class="aphrody-identity"
         src="aphrody-icon.png"
         alt=""
         width="48"
@@ -198,7 +198,8 @@
         if (s) {
           s.className = "err";
           s.textContent =
-            "The Compositing workspace failed to start:\n" + ((e && e.stack) || e);
+            "The Compositing workspace failed to start:\n" +
+            ((e && e.stack) || e);
         }
         window.effectcraftLoad.error = String(e);
         throw e;
