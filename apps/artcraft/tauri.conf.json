@@ -4,7 +4,7 @@
   "version": "0.42.0",
   "identifier": "ai.artcraft.app",
   "build": {
-    "frontendDist": "../../../frontend/apps/artcraft/dist",
+    "frontendDist": "../artcraft-web-app/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "bun run dev",
     "beforeBuildCommand": "bun run build"

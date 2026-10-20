@@ -655,7 +655,7 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
                                         egui::Button::new(
                                             egui::RichText::new("Auto")
                                                 .size(11.5)
-                                                .color(theme::ACCENT_INK),
+                                                .color(theme::accent_ink()),
                                         )
                                         .frame(false),
                                     )
@@ -776,7 +776,7 @@ fn reference_row(
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
         if m.audio_refs_max > 0 {
-            icons::icon(ui, Icon::Music, 14.0, theme::MUTED);
+            icons::icon(ui, Icon::Music, 14.0, theme::muted());
             ui.label(
                 egui::RichText::new(format!(
                     "Audio Track ({}/{})",
@@ -784,10 +784,14 @@ fn reference_row(
                     m.audio_refs_max
                 ))
                 .size(12.5)
-                .color(theme::MUTED),
+                .color(theme::muted()),
             );
             if m.audio.requires_audio_ref && refs.audios.is_empty() {
-                ui.label(egui::RichText::new("required").size(12.5).color(theme::BAD));
+                ui.label(
+                    egui::RichText::new("required")
+                        .size(12.5)
+                        .color(theme::bad()),
+                );
             }
             for (i, r) in refs.audios.iter().enumerate() {
                 audio_tile(ui, i, r, playing == Some(r.id), actions);
@@ -819,7 +823,11 @@ fn reference_row(
         }
         if m.image_refs_max > 0 {
             ui.add_space(8.0);
-            ui.label(egui::RichText::new("Image").size(12.5).color(theme::MUTED));
+            ui.label(
+                egui::RichText::new("Image")
+                    .size(12.5)
+                    .color(theme::muted()),
+            );
             match refs.images.first() {
                 Some(r) => image_tile(ui, r, image, actions),
                 None => {
@@ -853,9 +861,9 @@ fn audio_tile(
             r.duration_secs.round() as i64
         )
     };
-    let galley = ui
-        .painter()
-        .layout_no_wrap(text, FontId::new(12.5, theme::medium()), theme::INK);
+    let galley =
+        ui.painter()
+            .layout_no_wrap(text, FontId::new(12.5, theme::medium()), theme::ink());
     let (rect, _) = ui.allocate_exact_size(
         vec2(
             6.0 + 24.0 + 8.0 + galley.size().x + 6.0 + 20.0 + 6.0,
@@ -866,13 +874,13 @@ fn audio_tile(
     ui.painter().rect(
         rect,
         theme::RADIUS,
-        theme::CONTROLS,
-        Stroke::new(1.0, theme::LINE),
+        theme::controls(),
+        Stroke::new(1.0, theme::line()),
         egui::StrokeKind::Inside,
     );
     let play = Rect::from_center_size(pos2(rect.left() + 18.0, rect.center().y), vec2(24.0, 24.0));
     if uploading {
-        icons::paint_spinner(ui, play.shrink(4.0), theme::MUTED);
+        icons::paint_spinner(ui, play.shrink(4.0), theme::muted());
     } else {
         let resp = ui
             .interact(play, Id::new(("audio-ref-play", r.id)), Sense::click())
@@ -880,9 +888,9 @@ fn audio_tile(
         let label = if playing { "Stop" } else { "Play" };
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
         let fill = match (playing, resp.hovered()) {
-            (true, _) => theme::ACCENT,
-            (false, true) => theme::WASH_HOVER,
-            (false, false) => theme::WASH,
+            (true, _) => theme::accent(),
+            (false, true) => theme::wash_hover(),
+            (false, false) => theme::wash(),
         };
         ui.painter().circle_filled(play.center(), 12.0, fill);
         if playing {
@@ -896,7 +904,7 @@ fn audio_tile(
                 ui.painter(),
                 play.shrink(7.0).translate(vec2(1.0, 0.0)),
                 Icon::Play,
-                theme::INK,
+                theme::ink(),
             );
         }
         if resp.clicked() {
@@ -906,7 +914,7 @@ fn audio_tile(
     ui.painter().galley(
         pos2(play.right() + 8.0, rect.center().y - galley.size().y / 2.0),
         galley,
-        theme::INK,
+        theme::ink(),
     );
     let remove =
         Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(20.0, 20.0));
@@ -932,8 +940,8 @@ fn image_tile(
     ui.painter().rect(
         rect,
         theme::RADIUS,
-        theme::CONTROLS,
-        Stroke::new(1.0, theme::LINE),
+        theme::controls(),
+        Stroke::new(1.0, theme::line()),
         egui::StrokeKind::Inside,
     );
     if let Some(t) = texture {
@@ -967,7 +975,7 @@ fn style_row(ui: &mut Ui, style: &mut String) {
     hairline(ui);
     ui.add_space(6.0);
     ui.horizontal(|ui| {
-        icons::icon(ui, Icon::Tags, 14.0, theme::DIM);
+        icons::icon(ui, Icon::Tags, 14.0, theme::dim());
         let clear_w = if style.is_empty() { 0.0 } else { 28.0 };
         ui.add(
             egui::TextEdit::singleline(style)
@@ -992,7 +1000,7 @@ fn x_button(ui: &mut Ui, rect: Rect, id: Id, label: &str, shown: bool) -> bool {
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
     if shown || resp.hovered() {
         let fill = if resp.hovered() {
-            theme::fade(theme::DANGER, 0.7)
+            theme::fade(theme::danger(), 0.7)
         } else {
             Color32::from_black_alpha(128)
         };
@@ -1014,9 +1022,9 @@ fn x_button(ui: &mut Ui, rect: Rect, id: Id, label: &str, shown: bool) -> bool {
 fn choice_chip(ui: &mut Ui, label: &str, selected: bool, width: f32, tooltip: &str) -> Response {
     let (rect, resp) = ui.allocate_exact_size(vec2(width, 28.0), Sense::click());
     let (fill, border) = match (selected, resp.hovered()) {
-        (true, _) => (theme::WASH_HOVER, theme::fade(Color32::WHITE, 0.8)),
-        (false, true) => (theme::WASH, theme::LINE_STRONG),
-        (false, false) => (Color32::TRANSPARENT, theme::LINE),
+        (true, _) => (theme::wash_hover(), theme::fade(Color32::WHITE, 0.8)),
+        (false, true) => (theme::wash(), theme::line_strong()),
+        (false, false) => (Color32::TRANSPARENT, theme::line()),
     };
     ui.painter().rect(
         rect,
@@ -1030,7 +1038,11 @@ fn choice_chip(ui: &mut Ui, label: &str, selected: bool, width: f32, tooltip: &s
         Align2::CENTER_CENTER,
         label,
         FontId::new(12.5, theme::medium()),
-        if selected { theme::INK } else { theme::MUTED },
+        if selected {
+            theme::ink()
+        } else {
+            theme::muted()
+        },
     );
     resp.widget_info(|| {
         egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label)
@@ -1073,7 +1085,7 @@ fn full_slider<N: egui::emath::Numeric>(
 }
 
 fn setting_name(ui: &mut Ui, name: &str) {
-    ui.label(egui::RichText::new(name).size(12.0).color(theme::MUTED));
+    ui.label(egui::RichText::new(name).size(12.0).color(theme::muted()));
 }
 
 fn setting_value(ui: &mut Ui, value: &str) {
@@ -1081,7 +1093,7 @@ fn setting_value(ui: &mut Ui, value: &str) {
         egui::RichText::new(value)
             .size(12.0)
             .family(theme::semibold())
-            .color(theme::INK),
+            .color(theme::ink()),
     );
 }
 

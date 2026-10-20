@@ -371,6 +371,10 @@ fn web(args: &[String]) -> Result<(), String> {
         std::fs::rename(&opt, &bg).map_err(|e| e.to_string())?;
     }
     let web = std::path::Path::new("apps/effectcraft-web/web");
+    run(Command::new("bun")
+        .arg("scripts/craft-web-shell.ts")
+        .arg("effectcraft-web")
+        .arg(&dist))?;
     for e in std::fs::read_dir(web).map_err(|e| e.to_string())?.flatten() {
         let name = e.file_name().to_string_lossy().to_string();
         if !name.ends_with(".attribution") {

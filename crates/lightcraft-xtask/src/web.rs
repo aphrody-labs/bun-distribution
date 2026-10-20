@@ -219,6 +219,13 @@ pub fn run(args: &[&str]) -> Result<(), String> {
         std::fs::copy(root().join("apps/lightcraft-web").join(f), out.join(f))
             .map_err(|e| format!("copy {f}: {e}"))?;
     }
+    let mut shell = Command::new("bun");
+    shell
+        .current_dir(root())
+        .arg("scripts/craft-web-shell.ts")
+        .arg("lightcraft-web")
+        .arg(&out);
+    step(shell, "Aphrody M3 startup shell")?;
     let chinese_font = copy_chinese_font(&out)?;
 
     // precompressed copies (skipped for --dev: they'd only slow the edit loop down)

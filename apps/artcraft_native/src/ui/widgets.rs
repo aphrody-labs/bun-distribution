@@ -102,9 +102,9 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
     let font = FontId::new(14.0, theme::medium());
     let galley = ui
         .painter()
-        .layout_no_wrap(label.to_owned(), font, theme::INK);
+        .layout_no_wrap(label.to_owned(), font, theme::ink());
     let caption = match leading {
-        Leading::Caption(c) => Some(caps(ui, c, 9.0, theme::mono_bold(), 0.6, theme::DIM)),
+        Leading::Caption(c) => Some(caps(ui, c, 9.0, theme::mono_bold(), 0.6, theme::dim())),
         _ => None,
     };
     let lead_w = match (&leading, &caption) {
@@ -117,14 +117,14 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
     let hovered = resp.hovered() && enabled;
     let p = ui.painter();
     let fill = if open || hovered {
-        blend(theme::CONTROLS, theme::WASH_HOVER)
+        blend(theme::controls(), theme::wash_hover())
     } else {
-        theme::CONTROLS
+        theme::controls()
     };
     let stroke = if open {
-        theme::LINE_STRONG
+        theme::line_strong()
     } else {
-        theme::LINE
+        theme::line()
     };
     p.rect(
         rect,
@@ -133,7 +133,11 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
         Stroke::new(1.0, stroke),
         egui::StrokeKind::Inside,
     );
-    let ink = if enabled { theme::INK } else { theme::FAINT };
+    let ink = if enabled {
+        theme::ink()
+    } else {
+        theme::faint()
+    };
     let mut x = rect.left() + 12.0;
     let lead_rect = Rect::from_center_size(pos2(x + 7.0, rect.center().y), vec2(14.0, 14.0));
     match leading {
@@ -145,7 +149,7 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
         }
         Leading::Caption(_) => {
             if let Some(c) = caption {
-                p.galley(pos2(x, rect.center().y - c.size().y / 2.0), c, theme::DIM);
+                p.galley(pos2(x, rect.center().y - c.size().y / 2.0), c, theme::dim());
             }
         }
     }
@@ -168,8 +172,11 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
 pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bool) -> Response {
     let enabled = ui.is_enabled();
     let galley = label.map(|l| {
-        ui.painter()
-            .layout_no_wrap(l.to_owned(), FontId::new(14.0, theme::medium()), theme::INK)
+        ui.painter().layout_no_wrap(
+            l.to_owned(),
+            FontId::new(14.0, theme::medium()),
+            theme::ink(),
+        )
     });
     let w = match &galley {
         Some(g) => 10.0 + 15.0 + 6.0 + g.size().x + 10.0,
@@ -179,12 +186,12 @@ pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bo
     let hovered = resp.hovered() && enabled;
     let p = ui.painter();
     if hovered || active {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH);
+        p.rect_filled(rect, theme::RADIUS, theme::wash());
     }
     let ink = match (enabled, hovered || active) {
-        (false, _) => theme::fade(theme::DIM, 0.5),
-        (true, true) => theme::INK,
-        (true, false) => theme::DIM,
+        (false, _) => theme::fade(theme::dim(), 0.5),
+        (true, true) => theme::ink(),
+        (true, false) => theme::dim(),
     };
     match galley {
         Some(g) => {
@@ -251,9 +258,9 @@ pub fn generate_button(ui: &mut Ui, enabled: bool, loading: bool, tip: &str) -> 
     );
     let hovered = resp.hovered() && enabled;
     let fill = match (enabled, hovered) {
-        (false, _) => theme::fade(theme::ACCENT, 0.4),
-        (true, true) => theme::ACCENT_400,
-        (true, false) => theme::ACCENT,
+        (false, _) => theme::fade(theme::accent(), 0.4),
+        (true, true) => theme::accent_400(),
+        (true, false) => theme::accent(),
     };
     ui.painter().circle_filled(rect.center(), 18.0, fill);
     let ink = if enabled {
@@ -306,7 +313,7 @@ pub fn button(
         theme::HUD_SIZE,
         theme::mono_bold(),
         theme::LABEL_SPACING,
-        theme::INK,
+        theme::ink(),
     );
     let icon_w = if icon.is_some() { 13.0 + 8.0 } else { 0.0 };
     let size = vec2((galley.size().x + icon_w + 40.0).max(width), height);
@@ -314,29 +321,29 @@ pub fn button(
     let hovered = resp.hovered() && enabled;
     let (fill, stroke, ink) = match kind {
         Kind::Primary => (
-            theme::fade(theme::INVERT_BG, if hovered { 0.88 } else { 1.0 }),
+            theme::fade(theme::invert_bg(), if hovered { 0.88 } else { 1.0 }),
             Stroke::NONE,
-            theme::INVERT_FG,
+            theme::invert_fg(),
         ),
         Kind::Accent => (
             if hovered {
-                theme::ACCENT_400
+                theme::accent_400()
             } else {
-                theme::ACCENT
+                theme::accent()
             },
             Stroke::NONE,
             Color32::WHITE,
         ),
         Kind::Danger => (
-            theme::fade(theme::DANGER, if hovered { 0.85 } else { 1.0 }),
+            theme::fade(theme::danger(), if hovered { 0.85 } else { 1.0 }),
             Stroke::NONE,
             Color32::WHITE,
         ),
-        Kind::Secondary if hovered => (theme::INVERT_BG, Stroke::NONE, theme::INVERT_FG),
+        Kind::Secondary if hovered => (theme::invert_bg(), Stroke::NONE, theme::invert_fg()),
         Kind::Secondary => (
             Color32::TRANSPARENT,
-            Stroke::new(1.0, theme::LINE_STRONG),
-            theme::INK,
+            Stroke::new(1.0, theme::line_strong()),
+            theme::ink(),
         ),
     };
     let dim = |c: Color32| if enabled { c } else { theme::fade(c, 0.5) };
@@ -374,7 +381,7 @@ pub fn button(
 
 /// Fine registration marks at a panel's corners (the landing page's section corners).
 pub fn corner_marks(painter: &Painter, rect: Rect) {
-    let stroke = Stroke::new(1.0, theme::LINE_STRONG);
+    let stroke = Stroke::new(1.0, theme::line_strong());
     for c in [
         rect.left_top(),
         rect.right_top(),
@@ -389,7 +396,7 @@ pub fn corner_marks(painter: &Painter, rect: Rect) {
 /// The frame of popovers and menus: the controls surface, a hairline and a soft shadow.
 pub fn popover_frame() -> Frame {
     Frame::new()
-        .fill(theme::CONTROLS)
+        .fill(theme::controls())
         .stroke(theme::hairline())
         .corner_radius(theme::RADIUS)
         .shadow(theme::shadow())
@@ -404,13 +411,13 @@ pub fn menu_header(ui: &mut Ui, text: &str) {
         theme::HUD_SIZE,
         theme::mono_bold(),
         theme::LABEL_SPACING,
-        theme::fade(theme::INK, 0.5),
+        theme::fade(theme::ink(), 0.5),
     );
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 28.0), Sense::hover());
     ui.painter().galley(
         pos2(rect.left() + 8.0, rect.center().y - galley.size().y / 2.0),
         galley,
-        theme::INK,
+        theme::ink(),
     );
 }
 
@@ -442,9 +449,13 @@ pub fn menu_row(
     let on = (resp.hovered() && enabled) || highlighted;
     let p = ui.painter();
     if on {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH_HOVER);
+        p.rect_filled(rect, theme::RADIUS, theme::wash_hover());
     }
-    let ink = if enabled { theme::INK } else { theme::FAINT };
+    let ink = if enabled {
+        theme::ink()
+    } else {
+        theme::faint()
+    };
     let mut x = rect.left() + 8.0;
     match lead {
         RowLead::None => {}
@@ -469,9 +480,9 @@ pub fn menu_row(
         RowLead::Logo(texture) => {
             let tile = Rect::from_center_size(pos2(x + 18.0, rect.center().y), vec2(36.0, 36.0));
             let (fill, border) = if selected {
-                (theme::WASH_HOVER, Color32::WHITE)
+                (theme::wash_hover(), Color32::WHITE)
             } else {
-                (theme::WASH, theme::LINE)
+                (theme::wash(), theme::line())
             };
             p.rect(
                 tile,
@@ -508,7 +519,7 @@ pub fn menu_row(
                 Align2::LEFT_CENTER,
                 sub,
                 FontId::new(11.5, egui::FontFamily::Proportional),
-                theme::MUTED,
+                theme::muted(),
             );
         }
         None => {
@@ -524,9 +535,9 @@ pub fn menu_row(
     let trail =
         Rect::from_center_size(pos2(rect.right() - 14.0, rect.center().y), vec2(13.0, 13.0));
     if selected {
-        icons::paint(p, trail, Icon::Check, theme::INK);
+        icons::paint(p, trail, Icon::Check, theme::ink());
     } else if submenu {
-        icons::paint(p, trail, Icon::ChevronRight, theme::DIM);
+        icons::paint(p, trail, Icon::ChevronRight, theme::dim());
     }
     resp.widget_info(|| {
         egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, title)
@@ -548,12 +559,12 @@ pub fn blend(bg: Color32, fg: Color32) -> Color32 {
 
 /// A thin square progress bar (`h-1 bg-white/10`, filled in `primary-400`).
 pub fn progress_bar(painter: &Painter, rect: Rect, fraction: f32) {
-    painter.rect_filled(rect, CornerRadius::same(2), theme::WASH_HOVER);
+    painter.rect_filled(rect, CornerRadius::same(2), theme::wash_hover());
     let fill = Rect::from_min_size(
         rect.min,
         vec2(rect.width() * fraction.clamp(0.0, 1.0), rect.height()),
     );
-    painter.rect_filled(fill, CornerRadius::same(2), theme::ACCENT_400);
+    painter.rect_filled(fill, CornerRadius::same(2), theme::accent_400());
 }
 
 /// A heading in the display face (Archivo 620, tracked in like the site's `tracking-[-0.03em]`).
@@ -561,7 +572,7 @@ pub fn heading(text: &str, size: f32) -> egui::RichText {
     egui::RichText::new(text)
         .size(size)
         .family(theme::display())
-        .color(theme::INK)
+        .color(theme::ink())
         .extra_letter_spacing(-0.03 * size)
 }
 
@@ -569,7 +580,7 @@ pub fn heading(text: &str, size: f32) -> egui::RichText {
 /// (backdrop click or Escape).
 pub fn modal(ctx: &egui::Context, id: egui::Id, width: f32, content: impl FnOnce(&mut Ui)) -> bool {
     let frame = Frame::new()
-        .fill(theme::PANEL)
+        .fill(theme::panel())
         .stroke(theme::hairline())
         .inner_margin(Margin::same(16))
         .shadow(theme::shadow());
@@ -591,13 +602,13 @@ pub fn hud_link(ui: &mut Ui, text: &str, url: &str) -> Response {
         theme::HUD_SIZE,
         theme::mono(),
         theme::HUD_SPACING,
-        theme::MUTED,
+        theme::muted(),
     );
     let (rect, resp) = ui.allocate_exact_size(galley.size(), Sense::click());
     let color = if resp.hovered() {
-        theme::INK_STRONG
+        theme::ink_strong()
     } else {
-        theme::MUTED
+        theme::muted()
     };
     ui.painter()
         .galley_with_override_text_color(rect.min, galley, color);

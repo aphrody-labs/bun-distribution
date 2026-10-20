@@ -7,6 +7,8 @@ import { createRoot } from "react-dom/client";
 import "./styles/normalize.css";
 import "./styles/tailwind.css";
 import "./styles/base.css";
+import "m3:theme.css";
+import "./styles/aphrody.css";
 import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
@@ -66,6 +68,17 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     });
     toRemove.forEach((c) => root.classList.remove(c));
     root.classList.add(`theme-${theme}`);
+    const syncM3Mode = () => {
+      const dark = !root.classList.contains("theme-light");
+      if (root.classList.contains("dark") !== dark)
+        root.classList.toggle("dark", dark);
+      if (root.classList.contains("light") === dark)
+        root.classList.toggle("light", !dark);
+    };
+    syncM3Mode();
+    const observer = new MutationObserver(syncM3Mode);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   /// Initizations that run only once on 1ST mount ///

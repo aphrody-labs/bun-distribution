@@ -256,7 +256,7 @@ pub fn selection_bar(
         .fixed_pos(pos)
         .show(ui.ctx(), |ui| {
             egui::Frame::new()
-                .fill(theme::fade(theme::PANEL, 0.95))
+                .fill(theme::fade(theme::panel(), 0.95))
                 .stroke(theme::hairline())
                 .corner_radius(egui::CornerRadius::same(24))
                 .inner_margin(egui::Margin::symmetric(10, 8))
@@ -333,7 +333,11 @@ fn empty_state(
         ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 52.0))));
     child.label(widgets::heading(title, 48.0));
     child.add_space(12.0);
-    child.label(egui::RichText::new(subtitle).size(16.0).color(theme::MUTED));
+    child.label(
+        egui::RichText::new(subtitle)
+            .size(16.0)
+            .color(theme::muted()),
+    );
     if !env.signed_in {
         child.add_space(24.0);
         if widgets::button(
@@ -355,7 +359,7 @@ fn empty_state(
 fn bottom_fade(ui: &Ui, area: Rect) {
     let band = Rect::from_min_max(pos2(area.left(), area.bottom() - 192.0), area.max);
     let mut mesh = Mesh::default();
-    let (top, bottom) = (Color32::TRANSPARENT, theme::BG);
+    let (top, bottom) = (Color32::TRANSPARENT, theme::bg());
     mesh.colored_vertex(band.left_top(), top);
     mesh.colored_vertex(band.right_top(), top);
     mesh.colored_vertex(band.right_bottom(), bottom);

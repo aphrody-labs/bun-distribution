@@ -272,7 +272,7 @@ pub fn tokens_css(seed: u32, variant: Variant, contrast: f64) -> String {
         light = block(&[":root"], &light, ""),
         shadcn = block(&[":root"], &shadcn, ""),
         tailwind = block(&["@theme inline"], &tailwind, ""),
-        media = indent(&block(&[":root"], &dark, "")),
+        media = indent(&block(&[":root:not(.light)"], &dark, "")),
         dark = block(&[":root.dark", ".dark"], &dark, ""),
     )
 }

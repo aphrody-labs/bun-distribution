@@ -256,8 +256,37 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.title_bar = palette.color(Role::Surface);
+        self.ribbon = palette.color(Role::SurfaceContainer);
+        self.tab_strip = palette.color(Role::SurfaceContainerLow);
+        self.panel = palette.color(Role::SurfaceContainer);
+        self.border = palette.color(Role::OutlineVariant);
+        self.border_strong = palette.color(Role::Outline);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.checked = palette.color(Role::SecondaryContainer);
+        self.accent = palette.color(Role::Primary);
+        self.accent_text = palette.color(Role::Primary);
+        self.on_accent = palette.color(Role::OnPrimary);
+        self.input = palette.color(Role::SurfaceContainerHighest);
+        self.input_border = palette.color(Role::Outline);
+        self.group_label = palette.color(Role::OnSurfaceVariant);
+        self.ruler_tick = palette.color(Role::OnSurfaceVariant);
+        self.status_bar = palette.color(Role::SurfaceContainerLow);
+        self.caret = palette.color(Role::Primary);
+        self.menu = palette.color(Role::SurfaceContainer);
+        self
+    }
+
     pub fn light() -> Self {
-        Tokens {
+        let tokens = (|| Tokens {
             dark: false,
             title_bar: Color32::from_rgb(0xF0, 0xF0, 0xF0),
             ribbon: Color32::from_rgb(0xF9, 0xF9, 0xF9),
@@ -294,48 +323,52 @@ impl Tokens {
             red: Color32::from_rgb(0xD1, 0x3B, 0x3B),
             green: Color32::from_rgb(0x2E, 0x8B, 0x57),
             orange: Color32::from_rgb(0xE0, 0x7B, 0x1F),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
     pub fn dark() -> Self {
-        Tokens {
-            dark: true,
-            title_bar: Color32::from_rgb(0x1F, 0x1F, 0x1F),
-            ribbon: Color32::from_rgb(0x29, 0x29, 0x29),
-            tab_strip: Color32::from_rgb(0x1F, 0x1F, 0x1F),
-            canvas: Color32::from_rgb(0x14, 0x14, 0x14),
-            panel: Color32::from_rgb(0x26, 0x26, 0x26),
-            border: Color32::from_rgb(0x3A, 0x3A, 0x3A),
-            border_strong: Color32::from_rgb(0x55, 0x55, 0x55),
-            text: Color32::from_rgb(0xEE, 0xEE, 0xEE),
-            text_dim: Color32::from_rgb(0xC8, 0xC8, 0xC8),
-            text_disabled: Color32::from_rgb(0x6A, 0x6A, 0x6A),
-            icon: Color32::from_rgb(0xDD, 0xDD, 0xDD),
-            hover: Color32::from_rgb(0x3D, 0x3D, 0x3D),
-            pressed: Color32::from_rgb(0x4A, 0x4A, 0x4A),
-            checked: Color32::from_rgb(0x2E, 0x3A, 0x66),
-            accent: Color32::from_rgb(0x7A, 0x93, 0xF0),
-            accent_text: Color32::from_rgb(0x9C, 0xB0, 0xF5),
-            // Dark text on the light dark-theme accent: white on #7a93f0 is only 2.9:1 (#655).
-            on_accent: Color32::from_rgb(0x11, 0x16, 0x2E),
-            input: Color32::from_rgb(0x1E, 0x1E, 0x1E),
-            input_border: Color32::from_rgb(0x7A, 0x7A, 0x7A),
-            group_label: Color32::from_rgb(0xA0, 0xA0, 0xA0),
-            ruler: Color32::from_rgb(0x2E, 0x2E, 0x2E),
-            ruler_margin: Color32::from_rgb(0x45, 0x45, 0x45),
-            ruler_tick: Color32::from_rgb(0xA0, 0xA0, 0xA0),
-            status_bar: Color32::from_rgb(0x1F, 0x1F, 0x1F),
-            selection: Color32::from_rgba_unmultiplied(0x7A, 0x93, 0xF0, 0x55),
-            find_highlight: Color32::from_rgba_unmultiplied(0xC8, 0xA8, 0x00, 0x70),
-            caret: Color32::BLACK,
-            page_shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 0x60),
-            handle: Color32::from_rgb(0xF2, 0xF2, 0xF2),
-            handle_shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 0x5A),
-            menu: Color32::from_rgb(0x2B, 0x2B, 0x2B),
-            blue: Color32::from_rgb(0x6C, 0x9B, 0xEA),
-            red: Color32::from_rgb(0xEE, 0x6A, 0x6A),
-            green: Color32::from_rgb(0x5B, 0xC0, 0x8A),
-            orange: Color32::from_rgb(0xF0, 0xA0, 0x50),
-        }
+        let tokens = (|| {
+            Tokens {
+                dark: true,
+                title_bar: Color32::from_rgb(0x1F, 0x1F, 0x1F),
+                ribbon: Color32::from_rgb(0x29, 0x29, 0x29),
+                tab_strip: Color32::from_rgb(0x1F, 0x1F, 0x1F),
+                canvas: Color32::from_rgb(0x14, 0x14, 0x14),
+                panel: Color32::from_rgb(0x26, 0x26, 0x26),
+                border: Color32::from_rgb(0x3A, 0x3A, 0x3A),
+                border_strong: Color32::from_rgb(0x55, 0x55, 0x55),
+                text: Color32::from_rgb(0xEE, 0xEE, 0xEE),
+                text_dim: Color32::from_rgb(0xC8, 0xC8, 0xC8),
+                text_disabled: Color32::from_rgb(0x6A, 0x6A, 0x6A),
+                icon: Color32::from_rgb(0xDD, 0xDD, 0xDD),
+                hover: Color32::from_rgb(0x3D, 0x3D, 0x3D),
+                pressed: Color32::from_rgb(0x4A, 0x4A, 0x4A),
+                checked: Color32::from_rgb(0x2E, 0x3A, 0x66),
+                accent: Color32::from_rgb(0x7A, 0x93, 0xF0),
+                accent_text: Color32::from_rgb(0x9C, 0xB0, 0xF5),
+                // Dark text on the light dark-theme accent: white on #7a93f0 is only 2.9:1 (#655).
+                on_accent: Color32::from_rgb(0x11, 0x16, 0x2E),
+                input: Color32::from_rgb(0x1E, 0x1E, 0x1E),
+                input_border: Color32::from_rgb(0x7A, 0x7A, 0x7A),
+                group_label: Color32::from_rgb(0xA0, 0xA0, 0xA0),
+                ruler: Color32::from_rgb(0x2E, 0x2E, 0x2E),
+                ruler_margin: Color32::from_rgb(0x45, 0x45, 0x45),
+                ruler_tick: Color32::from_rgb(0xA0, 0xA0, 0xA0),
+                status_bar: Color32::from_rgb(0x1F, 0x1F, 0x1F),
+                selection: Color32::from_rgba_unmultiplied(0x7A, 0x93, 0xF0, 0x55),
+                find_highlight: Color32::from_rgba_unmultiplied(0xC8, 0xA8, 0x00, 0x70),
+                caret: Color32::BLACK,
+                page_shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 0x60),
+                handle: Color32::from_rgb(0xF2, 0xF2, 0xF2),
+                handle_shadow: Color32::from_rgba_unmultiplied(0, 0, 0, 0x5A),
+                menu: Color32::from_rgb(0x2B, 0x2B, 0x2B),
+                blue: Color32::from_rgb(0x6C, 0x9B, 0xEA),
+                red: Color32::from_rgb(0xEE, 0x6A, 0x6A),
+                green: Color32::from_rgb(0x5B, 0xC0, 0x8A),
+                orange: Color32::from_rgb(0xF0, 0xA0, 0x50),
+            }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
     pub fn get(ctx: &egui::Context) -> Tokens {
         if ctx.global_style().visuals.dark_mode {

@@ -158,7 +158,7 @@ pub fn reference_deck(
                 pos2(stack.right() + 2.0, stack.top() + 2.0),
                 vec2(8.0 + 7.0 * badge_text.len() as f32, 18.0),
             );
-            painter.rect_filled(badge, CornerRadius::same(9), theme::ACCENT);
+            painter.rect_filled(badge, CornerRadius::same(9), theme::accent());
             painter.text(
                 badge.center(),
                 Align2::CENTER_CENTER,
@@ -180,16 +180,16 @@ pub fn reference_deck(
                 plus.center(),
                 if hovered { 13.0 } else { 12.0 },
                 widgets::blend(
-                    theme::CONTROLS,
+                    theme::controls(),
                     if hovered {
-                        theme::WASH_HOVER
+                        theme::wash_hover()
                     } else {
                         Color32::TRANSPARENT
                     },
                 ),
-                Stroke::new(1.0, theme::LINE),
+                Stroke::new(1.0, theme::line()),
             );
-            icons::paint(&painter, plus.shrink(6.0), Icon::Plus, theme::INK);
+            icons::paint(&painter, plus.shrink(6.0), Icon::Plus, theme::ink());
             if resp.clicked() {
                 actions.push(DeckAction::Upload {
                     kinds: open_kinds.clone(),
@@ -346,7 +346,7 @@ fn slot_card(
                     Align2::CENTER_CENTER,
                     label,
                     FontId::new(9.0, theme::medium()),
-                    theme::MUTED,
+                    theme::muted(),
                 );
             }
             None => {
@@ -390,7 +390,7 @@ fn expanded_panel(
                 egui::RichText::new(format!("{n} reference{}", if n == 1 { "" } else { "s" }))
                     .size(11.0)
                     .family(theme::medium())
-                    .color(theme::MUTED),
+                    .color(theme::muted()),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let resp = ui.add(
@@ -493,7 +493,7 @@ fn paint_card(
     let corners = rotated_corners(rect, rot);
     painter.add(Shape::convex_polygon(
         corners.to_vec(),
-        theme::fade(theme::CONTROLS, 0.95),
+        theme::fade(theme::controls(), 0.95),
         Stroke::NONE,
     ));
     let texture = item
@@ -529,9 +529,9 @@ fn paint_card(
                 Rect::from_center_size(rect.center(), vec2(20.0, 20.0)),
                 icon,
                 if playing {
-                    theme::ACCENT_INK
+                    theme::accent_ink()
                 } else {
-                    theme::MUTED
+                    theme::muted()
                 },
             );
         }
@@ -598,7 +598,7 @@ fn remove_button(ui: &mut Ui, id: Id, card: Rect, card_hovered: bool) -> bool {
         return false;
     }
     let fill = if resp.hovered() {
-        theme::fade(theme::DANGER, 0.7)
+        theme::fade(theme::danger(), 0.7)
     } else {
         Color32::from_black_alpha(128)
     };
@@ -635,13 +635,13 @@ fn paint_dashed_tile(
 ) {
     let rot = Rot2::from_angle(tilt.to_radians());
     let corners = rotated_corners(rect, rot);
-    let fill = theme::fade(theme::CONTROLS, if hovered { 0.6 } else { 0.4 });
+    let fill = theme::fade(theme::controls(), if hovered { 0.6 } else { 0.4 });
     painter.add(Shape::convex_polygon(corners.to_vec(), fill, Stroke::NONE));
     let mut path = corners.to_vec();
     path.push(corners[0]);
     painter.extend(Shape::dashed_line(
         &path,
-        Stroke::new(2.0, theme::LINE_DASHED),
+        Stroke::new(2.0, theme::line_dashed()),
         4.0,
         3.0,
     ));
@@ -652,21 +652,21 @@ fn paint_dashed_tile(
                 painter,
                 Rect::from_center_size(c - vec2(0.0, 6.0), vec2(18.0, 18.0)),
                 Icon::Plus,
-                theme::fade(theme::INK, 0.8),
+                theme::fade(theme::ink(), 0.8),
             );
             painter.text(
                 c + vec2(0.0, 12.0),
                 Align2::CENTER_CENTER,
                 label,
                 FontId::new(8.5, theme::medium()),
-                theme::fade(theme::INK, 0.7),
+                theme::fade(theme::ink(), 0.7),
             );
         }
         None => icons::paint(
             painter,
             Rect::from_center_size(c, vec2(20.0, 20.0)),
             Icon::Plus,
-            theme::fade(theme::INK, 0.8),
+            theme::fade(theme::ink(), 0.8),
         ),
     }
 }
@@ -765,7 +765,7 @@ fn hover_menu(
                                 egui::RichText::new(group.kind.noun().to_uppercase())
                                     .size(10.0)
                                     .family(theme::semibold())
-                                    .color(theme::FAINT),
+                                    .color(theme::faint()),
                             );
                             if let Some(hint) = &group.hint {
                                 ui.with_layout(
@@ -775,7 +775,7 @@ fn hover_menu(
                                             egui::RichText::new(hint)
                                                 .size(10.0)
                                                 .family(theme::medium())
-                                                .color(theme::FAINT),
+                                                .color(theme::faint()),
                                         );
                                     },
                                 );
@@ -816,20 +816,20 @@ fn menu_entry(ui: &mut Ui, icon: Icon, label: &str) -> bool {
     let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 30.0), Sense::click());
     let p = ui.painter();
     if resp.hovered() {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH_HOVER);
+        p.rect_filled(rect, theme::RADIUS, theme::wash_hover());
     }
     icons::paint(
         p,
         Rect::from_center_size(pos2(rect.left() + 17.0, rect.center().y), vec2(14.0, 14.0)),
         icon,
-        theme::fade(theme::INK, 0.6),
+        theme::fade(theme::ink(), 0.6),
     );
     p.text(
         pos2(rect.left() + 34.0, rect.center().y),
         Align2::LEFT_CENTER,
         label,
         FontId::new(13.0, theme::medium()),
-        theme::INK,
+        theme::ink(),
     );
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
         .clicked()

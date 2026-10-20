@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DesignCraft</title>
     <link
       data-trunk
@@ -14,40 +11,32 @@
       data-wasm-opt="z"
       data-weak-refs
     />
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #262626;
-      }
-      #designcraft_canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      #designcraft_loading {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #b8b8b8;
-        font:
-          14px system-ui,
-          sans-serif;
-        pointer-events: none;
-      }
-    </style>
+    <link
+      data-trunk
+      rel="css"
+      href="../../build/craft-web/designcraft-web/theme.css"
+    />
+    <link
+      data-trunk
+      rel="icon"
+      href="../../packages/identity/assets/icon-64.png"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="../../build/craft-web/designcraft-web/aphrody-icon.png"
+    />
   </head>
   <body>
-    <canvas id="designcraft_canvas"></canvas>
-    <div id="designcraft_loading">Loading DesignCraft&hellip;</div>
+    <canvas id="designcraft_canvas" aria-label="designcraft editor"></canvas>
+    <div id="designcraft_loading" role="status">
+      <img
+        class="craft-identity"
+        src="aphrody-icon.png"
+        alt=""
+        width="48"
+        height="48"
+      />Loading DesignCraft&hellip;
+    </div>
   </body>
 </html>

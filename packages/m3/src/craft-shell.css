@@ -1,0 +1,45 @@
+@import "m3:theme.css";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: hidden;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font:
+    1rem/1.5 system-ui,
+    sans-serif;
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  display: block;
+}
+
+[role="status"] {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+  pointer-events: none;
+}
+
+.craft-identity {
+  inline-size: 3rem;
+  block-size: 3rem;
+  object-fit: contain;
+}
+
+canvas:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: -2px;
+}

@@ -189,13 +189,13 @@ pub fn titlebar(
     let hovered = mark_resp.hovered();
     if hovered {
         ui.painter()
-            .rect_filled(mark_rect, theme::RADIUS, theme::WASH);
+            .rect_filled(mark_rect, theme::RADIUS, theme::wash());
     }
     ui.painter().image(
         mark.id(),
         Rect::from_center_size(mark_rect.center(), vec2(18.0, 16.0)),
         Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-        theme::ACCENT,
+        theme::accent(),
     );
     if mark_resp
         .on_hover_text("Home")
@@ -252,7 +252,7 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAc
     }
     for (title, pages) in SECTIONS {
         ui.add_space(10.0);
-        widgets::section_label(ui, title, theme::SIDEBAR_INK);
+        widgets::section_label(ui, title, theme::sidebar_ink());
         for &p in pages {
             if nav_row(ui, p, page == p) {
                 action = Some(ShellAction::Navigate(p));
@@ -260,7 +260,7 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAc
         }
     }
     ui.add_space(10.0);
-    widgets::section_label(ui, "Resources", theme::SIDEBAR_INK);
+    widgets::section_label(ui, "Resources", theme::sidebar_ink());
     for (label, icon, url) in [
         ("Tutorials", Icon::Play, TUTORIALS_URL),
         ("Discord", Icon::Globe, DISCORD_URL),
@@ -313,19 +313,19 @@ fn nav_row(ui: &mut Ui, page: Page, selected: bool) -> bool {
     let hovered = resp.hovered();
     let p = ui.painter();
     if selected {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH_SELECTED);
+        p.rect_filled(rect, theme::RADIUS, theme::wash_selected());
         p.rect_filled(
             Rect::from_min_size(pos2(rect.left() - 8.0, rect.top() + 7.0), vec2(2.0, 18.0)),
             0.0,
             Color32::WHITE,
         );
     } else if hovered {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH);
+        p.rect_filled(rect, theme::RADIUS, theme::wash());
     }
     let ink = if selected || hovered {
         Color32::WHITE
     } else {
-        theme::SIDEBAR_INK
+        theme::sidebar_ink()
     };
     let ready = page.is_ready();
     let ink = if ready { ink } else { theme::fade(ink, 0.7) };
@@ -356,7 +356,7 @@ fn nav_row(ui: &mut Ui, page: Page, selected: bool) -> bool {
             ui,
             pos2(rect.right() - 6.0, rect.center().y),
             "Soon",
-            theme::FAINT,
+            theme::faint(),
         );
     }
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -369,12 +369,12 @@ fn link_row(ui: &mut Ui, label: &str, icon: Icon) -> bool {
     let hovered = resp.hovered();
     let p = ui.painter();
     if hovered {
-        p.rect_filled(rect, theme::RADIUS, theme::WASH);
+        p.rect_filled(rect, theme::RADIUS, theme::wash());
     }
     let ink = if hovered {
         Color32::WHITE
     } else {
-        theme::SIDEBAR_INK
+        theme::sidebar_ink()
     };
     icons::paint(
         p,
@@ -393,7 +393,7 @@ fn link_row(ui: &mut Ui, label: &str, icon: Icon) -> bool {
         p,
         Rect::from_center_size(pos2(rect.right() - 12.0, rect.center().y), vec2(11.0, 11.0)),
         Icon::ExternalLink,
-        theme::FAINT,
+        theme::faint(),
     );
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
         .clicked()
@@ -407,16 +407,16 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
         rect,
         theme::RADIUS,
         if hovered {
-            theme::WASH_HOVER
+            theme::wash_hover()
         } else {
-            theme::WASH
+            theme::wash()
         },
         theme::hairline(),
         egui::StrokeKind::Inside,
     );
     let avatar =
         Rect::from_center_size(pos2(rect.left() + 22.0, rect.center().y), vec2(28.0, 28.0));
-    p.circle_filled(avatar.center(), 14.0, theme::ACCENT);
+    p.circle_filled(avatar.center(), 14.0, theme::accent());
     let initial = name
         .chars()
         .next()
@@ -434,7 +434,7 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
         Align2::LEFT_CENTER,
         name,
         FontId::new(13.5, theme::medium()),
-        theme::INK,
+        theme::ink(),
     );
     let sub = credits.map_or_else(
         || "Account".to_owned(),
@@ -445,13 +445,13 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
         Align2::LEFT_CENTER,
         sub,
         FontId::new(11.5, egui::FontFamily::Proportional),
-        theme::MUTED,
+        theme::muted(),
     );
     icons::paint(
         p,
         Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(14.0, 14.0)),
         Icon::Settings,
-        theme::DIM,
+        theme::dim(),
     );
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
         .on_hover_text("Settings")
@@ -484,21 +484,21 @@ pub fn page_header(
     let ui = &mut bar;
     ui.spacing_mut().item_spacing.x = 8.0;
     let (section, leaf) = page.crumbs();
-    widgets::hud(ui, section, theme::MUTED);
+    widgets::hud(ui, section, theme::muted());
     let (chev, _) = ui.allocate_exact_size(vec2(10.0, 10.0), Sense::hover());
-    icons::paint(ui.painter(), chev, Icon::ChevronRight, theme::FAINT);
+    icons::paint(ui.painter(), chev, Icon::ChevronRight, theme::faint());
     let galley = widgets::caps(
         ui,
         leaf,
         theme::HUD_SIZE,
         theme::mono(),
         theme::HUD_SPACING,
-        theme::BG,
+        theme::bg(),
     );
     let (crumb, _) = ui.allocate_exact_size(galley.size() + vec2(12.0, 8.0), Sense::hover());
-    ui.painter().rect_filled(crumb, 0.0, theme::INK);
+    ui.painter().rect_filled(crumb, 0.0, theme::ink());
     ui.painter()
-        .galley(crumb.center() - galley.size() / 2.0, galley, theme::BG);
+        .galley(crumb.center() - galley.size() / 2.0, galley, theme::bg());
     if let Some(t) = feed_toggles {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if let Some(m) = view_toggle(ui, t.mode) {
@@ -541,16 +541,16 @@ fn credits_pill(ui: &mut Ui, credits: u64) -> egui::Response {
     let text = group_thousands(credits);
     let galley =
         ui.painter()
-            .layout_no_wrap(text, FontId::new(13.0, theme::semibold()), theme::INK);
+            .layout_no_wrap(text, FontId::new(13.0, theme::semibold()), theme::ink());
     let (rect, resp) = ui.allocate_exact_size(vec2(galley.size().x + 40.0, 30.0), Sense::click());
     let hovered = resp.hovered();
     ui.painter().rect(
         rect,
         theme::RADIUS,
         if hovered {
-            theme::WASH_HOVER
+            theme::wash_hover()
         } else {
-            theme::WASH
+            theme::wash()
         },
         theme::hairline(),
         egui::StrokeKind::Inside,
@@ -559,12 +559,12 @@ fn credits_pill(ui: &mut Ui, credits: u64) -> egui::Response {
         ui.painter(),
         Rect::from_center_size(pos2(rect.left() + 16.0, rect.center().y), vec2(14.0, 14.0)),
         Icon::Coins,
-        theme::INK,
+        theme::ink(),
     );
     ui.painter().galley(
         pos2(rect.left() + 28.0, rect.center().y - galley.size().y / 2.0),
         galley,
-        theme::INK,
+        theme::ink(),
     );
     resp.on_hover_text("Your credit balance \u{b7} Buy credits")
         .on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -579,7 +579,7 @@ fn account_menu(ui: &mut Ui, account: &Account<'_>) -> Option<ShellAction> {
     ui.painter().circle(
         rect.center(),
         15.0,
-        theme::ACCENT,
+        theme::accent(),
         Stroke::new(if resp.hovered() { 2.0 } else { 0.0 }, Color32::WHITE),
     );
     let initial = name
@@ -610,7 +610,7 @@ fn account_menu(ui: &mut Ui, account: &Account<'_>) -> Option<ShellAction> {
                 ui.label(
                     egui::RichText::new(format!("@{u}"))
                         .size(11.5)
-                        .color(theme::MUTED),
+                        .color(theme::muted()),
                 );
             }
             ui.add_space(4.0);
@@ -684,13 +684,17 @@ fn segmented(ui: &mut Ui, buttons: &[(Icon, &str, bool)]) -> Option<usize> {
             .on_hover_cursor(egui::CursorIcon::PointingHand);
         if *active || resp.hovered() {
             ui.painter()
-                .rect_filled(b, theme::RADIUS, theme::WASH_HOVER);
+                .rect_filled(b, theme::RADIUS, theme::wash_hover());
         }
         icons::paint(
             ui.painter(),
             b.shrink(5.0),
             *icon,
-            if *active { Color32::WHITE } else { theme::DIM },
+            if *active {
+                Color32::WHITE
+            } else {
+                theme::dim()
+            },
         );
         if resp.clicked() {
             clicked = Some(i);

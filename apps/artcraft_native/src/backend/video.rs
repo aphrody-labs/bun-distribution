@@ -125,7 +125,7 @@ impl VideoPlayer {
                     Align2::CENTER_CENTER,
                     format!("Couldn't play this video: {err}"),
                     FontId::new(13.0, egui::FontFamily::Proportional),
-                    theme::BAD,
+                    theme::bad(),
                 );
             }
             (Some(texture), None) => {
@@ -173,7 +173,7 @@ impl VideoPlayer {
 
     fn controls(&mut self, ui: &mut Ui, bar: Rect) {
         let p = ui.painter().clone();
-        p.rect_filled(bar, 0.0, theme::fade(theme::PANEL, 0.95));
+        p.rect_filled(bar, 0.0, theme::fade(theme::panel(), 0.95));
         let playing = self.stream.is_some();
         let button =
             Rect::from_center_size(pos2(bar.left() + 22.0, bar.center().y), vec2(28.0, 28.0));
@@ -190,11 +190,11 @@ impl VideoPlayer {
                 p.rect_filled(
                     Rect::from_center_size(button.center() + vec2(dx, 0.0), vec2(3.0, 12.0)),
                     0.0,
-                    theme::INK,
+                    theme::ink(),
                 );
             }
         } else {
-            icons::paint(&p, button.shrink(7.0), Icon::Play, theme::INK);
+            icons::paint(&p, button.shrink(7.0), Icon::Play, theme::ink());
         }
         if resp.clicked() {
             self.toggle_pause();
@@ -206,7 +206,7 @@ impl VideoPlayer {
             Align2::LEFT_CENTER,
             time,
             FontId::new(11.5, egui::FontFamily::Monospace),
-            theme::MUTED,
+            theme::muted(),
         );
         let mute =
             Rect::from_center_size(pos2(bar.right() - 22.0, bar.center().y), vec2(28.0, 28.0));
@@ -226,7 +226,7 @@ impl VideoPlayer {
             } else {
                 Icon::Volume
             },
-            theme::INK,
+            theme::ink(),
         );
         if mute_resp.clicked() {
             self.muted = !self.muted;
@@ -247,7 +247,7 @@ impl VideoPlayer {
             )
             .on_hover_cursor(egui::CursorIcon::PointingHand);
         let line = Rect::from_center_size(track.center(), vec2(track.width(), 4.0));
-        p.rect_filled(line, egui::CornerRadius::same(2), theme::WASH_HOVER);
+        p.rect_filled(line, egui::CornerRadius::same(2), theme::wash_hover());
         let fraction = if duration > 0.0 {
             (self.position / duration).clamp(0.0, 1.0) as f32
         } else {
@@ -256,7 +256,7 @@ impl VideoPlayer {
         p.rect_filled(
             Rect::from_min_size(line.min, vec2(line.width() * fraction, line.height())),
             egui::CornerRadius::same(2),
-            theme::ACCENT_400,
+            theme::accent_400(),
         );
         if (scrub.clicked() || scrub.drag_stopped()) && duration > 0.0 {
             if let Some(pos) = scrub.interact_pointer_pos() {

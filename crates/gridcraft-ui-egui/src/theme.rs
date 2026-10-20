@@ -53,8 +53,31 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.ribbon = palette.color(Role::SurfaceContainer);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.accent = palette.color(Role::Primary);
+        self.accent_dark = palette.color(Role::Primary);
+        self.accent_soft = palette.color(Role::PrimaryContainer);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.separator = palette.color(Role::OutlineVariant);
+        self.header_bg = palette.color(Role::SurfaceContainerLow);
+        self.header_text = palette.color(Role::OnSurface);
+        self.input_border = palette.color(Role::Outline);
+        self.tab_bar = palette.color(Role::SurfaceContainerLow);
+        self.tab_active = palette.color(Role::SecondaryContainer);
+        self.status_bar = palette.color(Role::SurfaceContainerLow);
+        self.danger = palette.color(Role::Error);
+        self
+    }
+
     pub fn light() -> Tokens {
-        Tokens {
+        let tokens = (|| Tokens {
             dark: false,
             window: Color32::from_rgb(0xF3, 0xF3, 0xF3),
             ribbon: Color32::from_rgb(0xFF, 0xFF, 0xFF),
@@ -92,11 +115,12 @@ impl Tokens {
             notice_warn_border: Color32::from_rgb(0xF0, 0xC3, 0x6E),
             notice_info_bg: Color32::from_rgb(0xEA, 0xF2, 0xFB),
             notice_info_border: Color32::from_rgb(0xB9, 0xD2, 0xEC),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
 
     pub fn dark() -> Tokens {
-        Tokens {
+        let tokens = (|| Tokens {
             dark: true,
             window: Color32::from_rgb(0x29, 0x29, 0x29),
             ribbon: Color32::from_rgb(0x33, 0x33, 0x33),
@@ -134,7 +158,8 @@ impl Tokens {
             notice_warn_border: Color32::from_rgb(0x7A, 0x67, 0x30),
             notice_info_bg: Color32::from_rgb(0x24, 0x33, 0x44),
             notice_info_border: Color32::from_rgb(0x3B, 0x55, 0x72),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {

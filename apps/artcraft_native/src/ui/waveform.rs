@@ -93,14 +93,14 @@ pub fn player(
         format_time(position),
         duration.map_or_else(|| "-:--".to_owned(), format_time)
     );
-    let galley = ui
-        .painter()
-        .layout_no_wrap(time, FontId::new(11.0, theme::mono()), theme::MUTED);
+    let galley =
+        ui.painter()
+            .layout_no_wrap(time, FontId::new(11.0, theme::mono()), theme::muted());
     let time_x = volume_rect.left() - 8.0 - galley.size().x;
     ui.painter().galley(
         pos2(time_x, rect.center().y - galley.size().y / 2.0),
         galley,
-        theme::MUTED,
+        theme::muted(),
     );
 
     // The waveform between them.
@@ -150,7 +150,7 @@ fn volume(ui: &mut Ui, id: Id, rect: Rect, audio: &mut AudioPlayer) {
         .on_hover_cursor(egui::CursorIcon::PointingHand);
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Volume"));
     if resp.hovered() || open {
-        ui.painter().rect_filled(rect, theme::RADIUS, theme::WASH);
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::wash());
     }
     let level = audio.track_volume();
     icons::paint(
@@ -162,9 +162,9 @@ fn volume(ui: &mut Ui, id: Id, rect: Rect, audio: &mut AudioPlayer) {
             Icon::Volume
         },
         if resp.hovered() || open {
-            theme::INK
+            theme::ink()
         } else {
-            theme::DIM
+            theme::dim()
         },
     );
     let mut percent = (level * 100.0).round() as u32;
@@ -177,7 +177,7 @@ fn volume(ui: &mut Ui, id: Id, rect: Rect, audio: &mut AudioPlayer) {
                 egui::RichText::new(percent.to_string())
                     .size(11.0)
                     .family(theme::mono())
-                    .color(theme::MUTED),
+                    .color(theme::muted()),
             );
             ui.add_space(4.0);
         });
@@ -244,12 +244,12 @@ pub fn placeholder_bars(url: &str) -> Vec<f32> {
 pub fn music_tile(ui: &Ui, rect: Rect, round: bool) {
     let p = ui.painter();
     if round {
-        p.circle_filled(rect.center(), rect.width() / 2.0, theme::WASH_HOVER);
+        p.circle_filled(rect.center(), rect.width() / 2.0, theme::wash_hover());
     } else {
         p.rect(
             rect,
             theme::RADIUS,
-            theme::WASH,
+            theme::wash(),
             theme::hairline(),
             egui::StrokeKind::Inside,
         );

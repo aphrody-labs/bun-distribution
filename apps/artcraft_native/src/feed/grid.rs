@@ -173,7 +173,7 @@ pub fn show(
                     vec2(24.0, 24.0),
                 );
                 if view.loading {
-                    icons::paint_spinner(ui, spinner, theme::MUTED);
+                    icons::paint_spinner(ui, spinner, theme::muted());
                 }
                 if !view.loading && viewport.max.y + LOAD_MORE_MARGIN >= total {
                     actions.push(FeedAction::LoadMore);
@@ -339,21 +339,21 @@ fn failed_card(
         p,
         Rect::from_center_size(c - vec2(0.0, 18.0), vec2(24.0, 24.0)),
         Icon::AlertCircle,
-        theme::BAD,
+        theme::bad(),
     );
     p.text(
         c + vec2(0.0, 6.0),
         Align2::CENTER_CENTER,
         &job.reason,
         FontId::new(12.0, theme::medium()),
-        theme::BAD,
+        theme::bad(),
     );
     if let Some(msg) = job.message.as_deref().filter(|m| *m != job.reason) {
         let galley = clamp_lines(
             ui,
             msg,
             10.0,
-            theme::fade(theme::BAD, 0.6),
+            theme::fade(theme::bad(), 0.6),
             rect.width() - 32.0,
             3,
         );
@@ -372,9 +372,9 @@ fn failed_card(
         button,
         theme::RADIUS,
         if resp.hovered() {
-            theme::WASH_HOVER
+            theme::wash_hover()
         } else {
-            theme::WASH
+            theme::wash()
         },
     );
     let ink = if resp.hovered() {
@@ -448,11 +448,11 @@ fn item_card(
     }
     let selected = view.selected.contains(&item.token);
     let ring = if selected {
-        Some(Stroke::new(2.0, theme::ACCENT_400))
+        Some(Stroke::new(2.0, theme::accent_400()))
     } else if hovered {
-        Some(Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.6)))
+        Some(Stroke::new(2.0, theme::fade(theme::accent_400(), 0.6)))
     } else if view.last_viewed == Some(item.token.as_str()) {
-        Some(Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.5)))
+        Some(Stroke::new(2.0, theme::fade(theme::accent_400(), 0.5)))
     } else {
         None
     };
@@ -463,7 +463,7 @@ fn item_card(
     if view.selecting {
         let chip = Rect::from_min_size(rect.min + vec2(8.0, 8.0), vec2(20.0, 20.0));
         let (fill, border) = if selected {
-            (theme::ACCENT_400, theme::ACCENT_400)
+            (theme::accent_400(), theme::accent_400())
         } else {
             (
                 Color32::from_black_alpha(102),
@@ -582,7 +582,7 @@ fn visual_face(
     ratios: &mut RatioCache,
 ) {
     ui.painter()
-        .rect_filled(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
+        .rect_filled(rect, theme::RADIUS, theme::fade(theme::controls(), 0.4));
     // Videos play their animated preview when previews are on (the still shows while it loads).
     let animated = item
         .animated
@@ -609,7 +609,7 @@ fn visual_face(
             ui.painter(),
             Rect::from_center_size(rect.center(), vec2(28.0, 28.0)),
             kind_icon(item.kind),
-            theme::FAINT,
+            theme::faint(),
         ),
     }
     if item.kind == MediaKind::Video && !(view.autoplay && item.animated.is_some()) {
@@ -636,8 +636,8 @@ fn audio_face(
 ) {
     let mut mesh = Mesh::default();
     let (top, bottom) = (
-        theme::fade(theme::ACCENT, 0.14),
-        theme::fade(theme::CONTROLS, 0.6),
+        theme::fade(theme::accent(), 0.14),
+        theme::fade(theme::controls(), 0.6),
     );
     mesh.colored_vertex(rect.left_top(), top);
     mesh.colored_vertex(rect.right_top(), top);
@@ -758,10 +758,10 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
     } else {
         job.prompt.as_str()
     };
-    let galley = clamp_lines(ui, prompt, 14.0, theme::INK, w, 2);
+    let galley = clamp_lines(ui, prompt, 14.0, theme::ink(), w, 2);
     let gh = galley.size().y;
     ui.painter()
-        .galley(pos2(x, thumb.top()), galley, theme::INK);
+        .galley(pos2(x, thumb.top()), galley, theme::ink());
     let meta_y = thumb.top() + gh + 14.0;
     let mx = model_chip(
         ui,
@@ -769,7 +769,7 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
         job.model_id.as_deref().unwrap_or_default(),
         names,
         12.0,
-        theme::MUTED,
+        theme::muted(),
     );
     if job.batch_count > 1 {
         ui.painter().text(
@@ -777,7 +777,7 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
             Align2::LEFT_CENTER,
             format!("\u{b7} {} {}", job.batch_count, job.kind.plural()),
             FontId::new(12.0, FontFamily::Proportional),
-            theme::MUTED,
+            theme::muted(),
         );
     }
     let bar = Rect::from_min_size(pos2(x, meta_y + 16.0), vec2(w.min(320.0), 4.0));
@@ -787,7 +787,7 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
         Align2::LEFT_CENTER,
         format!("{progress}% \u{b7} {label}"),
         FontId::new(11.0, FontFamily::Monospace),
-        theme::FAINT,
+        theme::faint(),
     );
     row_divider(ui, rect);
 }
@@ -810,23 +810,23 @@ fn failed_row(
         ui.painter(),
         Rect::from_center_size(thumb.center(), vec2(24.0, 24.0)),
         Icon::AlertCircle,
-        theme::BAD,
+        theme::bad(),
     );
     let x = thumb.right() + 16.0;
     let w = rect.right() - x - 100.0;
-    let galley = clamp_lines(ui, &job.prompt, 14.0, theme::INK, w, 2);
+    let galley = clamp_lines(ui, &job.prompt, 14.0, theme::ink(), w, 2);
     let gh = galley.size().y;
     ui.painter()
-        .galley(pos2(x, thumb.top()), galley, theme::INK);
+        .galley(pos2(x, thumb.top()), galley, theme::ink());
     ui.painter().text(
         pos2(x, thumb.top() + gh + 14.0),
         Align2::LEFT_CENTER,
         &job.reason,
         FontId::new(12.0, theme::medium()),
-        theme::BAD,
+        theme::bad(),
     );
     if let Some(msg) = job.message.as_deref().filter(|m| *m != job.reason) {
-        let g = clamp_lines(ui, msg, 11.0, theme::fade(theme::BAD, 0.6), w, 2);
+        let g = clamp_lines(ui, msg, 11.0, theme::fade(theme::bad(), 0.6), w, 2);
         ui.painter()
             .galley(pos2(x, thumb.top() + gh + 24.0), g, Color32::WHITE);
     }
@@ -836,7 +836,7 @@ fn failed_row(
         job.model_id.as_deref().unwrap_or_default(),
         names,
         12.0,
-        theme::FAINT,
+        theme::faint(),
     );
     let button = Rect::from_min_size(pos2(rect.right() - 92.0, thumb.top()), vec2(92.0, 28.0));
     let resp = ui
@@ -850,9 +850,9 @@ fn failed_row(
         button,
         theme::RADIUS,
         if resp.hovered() {
-            theme::WASH_HOVER
+            theme::wash_hover()
         } else {
-            theme::WASH
+            theme::wash()
         },
     );
     ui.painter().text(
@@ -860,7 +860,7 @@ fn failed_row(
         Align2::CENTER_CENTER,
         "Dismiss",
         FontId::new(12.0, FontFamily::Proportional),
-        theme::MUTED,
+        theme::muted(),
     );
     if resp.clicked() {
         actions.push(FeedAction::DismissFailed(job.job_token.clone()));
@@ -891,7 +891,7 @@ fn item_row(
     }
     let thumb = Rect::from_min_size(rect.min + vec2(0.0, 12.0), vec2(LIST_THUMB, LIST_THUMB));
     ui.painter()
-        .rect_filled(thumb, theme::RADIUS, theme::fade(theme::CONTROLS, 0.4));
+        .rect_filled(thumb, theme::RADIUS, theme::fade(theme::controls(), 0.4));
     let is_audio = item.kind == MediaKind::Audio;
     if is_audio {
         waveform::music_tile(ui, thumb, false);
@@ -906,7 +906,7 @@ fn item_row(
         ui.painter().rect_stroke(
             thumb,
             theme::RADIUS,
-            Stroke::new(2.0, theme::ACCENT_400),
+            Stroke::new(2.0, theme::accent_400()),
             egui::StrokeKind::Inside,
         );
     }
@@ -919,8 +919,15 @@ fn item_row(
     match prompt {
         Some(text) => {
             // Audio keeps room for its player under the text.
-            let g = clamp_lines(ui, text, 14.0, theme::INK, w, if is_audio { 2 } else { 3 });
-            ui.painter().galley(pos2(x, thumb.top()), g, theme::INK);
+            let g = clamp_lines(
+                ui,
+                text,
+                14.0,
+                theme::ink(),
+                w,
+                if is_audio { 2 } else { 3 },
+            );
+            ui.painter().galley(pos2(x, thumb.top()), g, theme::ink());
         }
         None if item.prompt_token.is_some() => {
             for (i, frac) in [1.0, 0.7].iter().enumerate() {
@@ -930,7 +937,7 @@ fn item_row(
                         vec2(w * frac, 12.0),
                     ),
                     CornerRadius::same(2),
-                    theme::WASH,
+                    theme::wash(),
                 );
             }
         }
@@ -940,7 +947,7 @@ fn item_row(
                 Align2::LEFT_CENTER,
                 fallback_title(item),
                 FontId::new(14.0, FontFamily::Proportional),
-                theme::MUTED,
+                theme::muted(),
             );
         }
     }
@@ -961,13 +968,13 @@ fn item_row(
     let meta_y = thumb.bottom() - 10.0;
     let mut mx = x;
     if let Some(model) = item.model_id.as_deref() {
-        mx = model_chip(ui, pos2(x, meta_y), model, names, 12.0, theme::MUTED);
+        mx = model_chip(ui, pos2(x, meta_y), model, names, 12.0, theme::muted());
         ui.painter().text(
             pos2(mx + 6.0, meta_y),
             Align2::LEFT_CENTER,
             format!("\u{b7} {}", item.kind.label()),
             FontId::new(12.0, FontFamily::Proportional),
-            theme::MUTED,
+            theme::muted(),
         );
     }
     let _ = mx;
@@ -976,7 +983,7 @@ fn item_row(
         Align2::RIGHT_CENTER,
         time_ago(item.created_at, now),
         FontId::new(11.0, FontFamily::Proportional),
-        theme::FAINT,
+        theme::faint(),
     );
     let mut action_clicked = false;
     if hovered && !view.selecting {

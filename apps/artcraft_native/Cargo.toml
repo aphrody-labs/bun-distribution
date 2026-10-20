@@ -10,6 +10,7 @@ name = "artcraft-native"
 path = "src/main.rs"
 
 [dependencies]
+craft-ui = { workspace = true }
 artcraft_api_defs = { path = "../../crates/artcraft_api_defs" }
 artcraft_client = { path = "../../crates/artcraft_client" }
 artcraft_router = { path = "../../crates/artcraft_router" }

@@ -174,90 +174,115 @@ impl Default for Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.chrome = palette.color(Role::SurfaceContainer);
+        self.divider = palette.color(Role::OutlineVariant);
+        self.inset = palette.color(Role::SurfaceContainerHighest);
+        self.field = palette.color(Role::SurfaceContainerHighest);
+        self.field_border = palette.color(Role::Outline);
+        self.button = palette.color(Role::SurfaceContainerHigh);
+        self.button_border = palette.color(Role::Outline);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.tool_active = palette.color(Role::SecondaryContainer);
+        self.text = palette.color(Role::OnSurface);
+        self.text_label = palette.color(Role::OnSurfaceVariant);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.accent = palette.color(Role::Primary);
+        self
+    }
+
     /// The tokens of `kind`. Metrics are shared; only colours change.
     pub fn for_kind(kind: ThemeKind) -> Tokens {
-        let rgb = |v: u32| Color32::from_rgb((v >> 16) as u8, (v >> 8) as u8, v as u8);
-        let base = Tokens::default();
-        match kind {
-            ThemeKind::Charcoal => base,
-            ThemeKind::Midnight => Tokens {
-                chrome: rgb(0x1e1e1e),
-                canvas: rgb(0x121212),
-                grid_bg: rgb(0x080808),
-                cell: rgb(0x121212),
-                cell_selected: rgb(0x262626),
-                divider: rgb(0x0e0e0e),
-                inset: rgb(0x181818),
-                field: rgb(0x161616),
-                field_border: rgb(0x333333),
-                button: rgb(0x191919),
-                button_border: rgb(0x404040),
-                hover: rgb(0x2e2e2e),
-                pressed: rgb(0x343434),
-                tool_active: rgb(0x343434),
-                ..base
-            },
-            ThemeKind::Silver => Tokens {
-                chrome: rgb(0xe6e6e6),
-                canvas: rgb(0xcfcfcf),
-                grid_bg: rgb(0xd9d9d9),
-                cell: rgb(0xcbcbcb),
-                cell_selected: rgb(0xb4b4b4),
-                divider: rgb(0xc4c4c4),
-                inset: rgb(0xdcdcdc),
-                field: rgb(0xf6f6f6),
-                field_border: rgb(0xb8b8b8),
-                button: rgb(0xf2f2f2),
-                button_border: rgb(0xb0b0b0),
-                hover: rgb(0xd2d2d2),
-                pressed: rgb(0xc4c4c4),
-                tool_active: rgb(0xcacaca),
-                text: rgb(0x1c1c1c),
-                text_label: rgb(0x383838),
-                text_dim: rgb(0x6a6a6a),
-                text_disabled: rgb(0xa2a2a2),
-                icon: rgb(0x555555),
-                track: rgb(0xa8a8a8),
-                thumb: rgb(0x5e5e5e),
-                thumb_hover: rgb(0x262626),
-                accent: rgb(0x0a62d0),
-                star: rgb(0x3a3a3a),
-                pick: rgb(0x2a2a2a),
-                reject: rgb(0xc83434),
-                caution: rgb(0xb0761a),
-                ..base
-            },
-            ThemeKind::Paper => Tokens {
-                chrome: rgb(0xfafafa),
-                canvas: rgb(0xececec),
-                grid_bg: rgb(0xf2f2f2),
-                cell: rgb(0xe8e8e8),
-                cell_selected: rgb(0xd2d2d2),
-                divider: rgb(0xe0e0e0),
-                inset: rgb(0xf0f0f0),
-                field: rgb(0xffffff),
-                field_border: rgb(0xcccccc),
-                button: rgb(0xffffff),
-                button_border: rgb(0xc6c6c6),
-                hover: rgb(0xebebeb),
-                pressed: rgb(0xdedede),
-                tool_active: rgb(0xe2e2e2),
-                text: rgb(0x161616),
-                text_label: rgb(0x343434),
-                text_dim: rgb(0x707070),
-                text_disabled: rgb(0xababab),
-                icon: rgb(0x585858),
-                track: rgb(0xbdbdbd),
-                thumb: rgb(0x606060),
-                thumb_hover: rgb(0x202020),
-                accent: rgb(0x0a62d0),
-                star: rgb(0x3a3a3a),
-                pick: rgb(0x2a2a2a),
-                reject: rgb(0xc83434),
-                caution: rgb(0xb0761a),
-                ..base
-            },
-        }
+        let tokens = (|| {
+            let rgb = |v: u32| Color32::from_rgb((v >> 16) as u8, (v >> 8) as u8, v as u8);
+            let base = Tokens::default();
+            match kind {
+                ThemeKind::Charcoal => base,
+                ThemeKind::Midnight => Tokens {
+                    chrome: rgb(0x1e1e1e),
+                    canvas: rgb(0x121212),
+                    grid_bg: rgb(0x080808),
+                    cell: rgb(0x121212),
+                    cell_selected: rgb(0x262626),
+                    divider: rgb(0x0e0e0e),
+                    inset: rgb(0x181818),
+                    field: rgb(0x161616),
+                    field_border: rgb(0x333333),
+                    button: rgb(0x191919),
+                    button_border: rgb(0x404040),
+                    hover: rgb(0x2e2e2e),
+                    pressed: rgb(0x343434),
+                    tool_active: rgb(0x343434),
+                    ..base
+                },
+                ThemeKind::Silver => Tokens {
+                    chrome: rgb(0xe6e6e6),
+                    canvas: rgb(0xcfcfcf),
+                    grid_bg: rgb(0xd9d9d9),
+                    cell: rgb(0xcbcbcb),
+                    cell_selected: rgb(0xb4b4b4),
+                    divider: rgb(0xc4c4c4),
+                    inset: rgb(0xdcdcdc),
+                    field: rgb(0xf6f6f6),
+                    field_border: rgb(0xb8b8b8),
+                    button: rgb(0xf2f2f2),
+                    button_border: rgb(0xb0b0b0),
+                    hover: rgb(0xd2d2d2),
+                    pressed: rgb(0xc4c4c4),
+                    tool_active: rgb(0xcacaca),
+                    text: rgb(0x1c1c1c),
+                    text_label: rgb(0x383838),
+                    text_dim: rgb(0x6a6a6a),
+                    text_disabled: rgb(0xa2a2a2),
+                    icon: rgb(0x555555),
+                    track: rgb(0xa8a8a8),
+                    thumb: rgb(0x5e5e5e),
+                    thumb_hover: rgb(0x262626),
+                    accent: rgb(0x0a62d0),
+                    star: rgb(0x3a3a3a),
+                    pick: rgb(0x2a2a2a),
+                    reject: rgb(0xc83434),
+                    caution: rgb(0xb0761a),
+                    ..base
+                },
+                ThemeKind::Paper => Tokens {
+                    chrome: rgb(0xfafafa),
+                    canvas: rgb(0xececec),
+                    grid_bg: rgb(0xf2f2f2),
+                    cell: rgb(0xe8e8e8),
+                    cell_selected: rgb(0xd2d2d2),
+                    divider: rgb(0xe0e0e0),
+                    inset: rgb(0xf0f0f0),
+                    field: rgb(0xffffff),
+                    field_border: rgb(0xcccccc),
+                    button: rgb(0xffffff),
+                    button_border: rgb(0xc6c6c6),
+                    hover: rgb(0xebebeb),
+                    pressed: rgb(0xdedede),
+                    tool_active: rgb(0xe2e2e2),
+                    text: rgb(0x161616),
+                    text_label: rgb(0x343434),
+                    text_dim: rgb(0x707070),
+                    text_disabled: rgb(0xababab),
+                    icon: rgb(0x585858),
+                    track: rgb(0xbdbdbd),
+                    thumb: rgb(0x606060),
+                    thumb_hover: rgb(0x202020),
+                    accent: rgb(0x0a62d0),
+                    star: rgb(0x3a3a3a),
+                    pick: rgb(0x2a2a2a),
+                    reject: rgb(0xc83434),
+                    caution: rgb(0xb0761a),
+                    ..base
+                },
+            }
+        })();
+        tokens.with_aphrody(kind.is_dark(), false)
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {

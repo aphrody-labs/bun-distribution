@@ -8,3 +8,8 @@ filehash = true
 [serve]
 addresses = ["127.0.0.1"]
 port = 8771
+
+[[hooks]]
+stage = "pre_build"
+command = "bun"
+command_arguments = ["../../scripts/craft-web-shell.ts", "cadcraft-web"]

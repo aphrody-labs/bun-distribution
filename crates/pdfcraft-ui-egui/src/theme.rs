@@ -71,8 +71,33 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.titlebar = palette.color(Role::Surface);
+        self.chrome = palette.color(Role::SurfaceContainer);
+        self.panel = palette.color(Role::SurfaceContainer);
+        self.pasteboard = palette.color(Role::SurfaceContainerLowest);
+        self.card = palette.color(Role::SurfaceContainerHigh);
+        self.border = palette.color(Role::OutlineVariant);
+        self.divider = palette.color(Role::OutlineVariant);
+        self.text = palette.color(Role::OnSurface);
+        self.text_muted = palette.color(Role::OnSurfaceVariant);
+        self.text_faint = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.selected = palette.color(Role::SecondaryContainer);
+        self.accent = palette.color(Role::Primary);
+        self.accent_text = palette.color(Role::Primary);
+        self.accent_soft = palette.color(Role::PrimaryContainer);
+        self.field = palette.color(Role::SurfaceContainerHighest);
+        self
+    }
+
     pub fn for_kind(kind: ThemeKind) -> Self {
-        match kind {
+        let tokens = (|| match kind {
             ThemeKind::Light => Self {
                 kind,
                 titlebar: Color32::from_rgb(0xE9, 0xE9, 0xEB),
@@ -121,7 +146,8 @@ impl Tokens {
                 page_shadow: Color32::from_black_alpha(120),
                 radius: 6,
             },
-        }
+        })();
+        tokens.with_aphrody(tokens.dark(), false)
     }
 
     pub fn get(ctx: &egui::Context) -> Self {

@@ -98,7 +98,7 @@ impl LibraryPicker {
             ui.horizontal(|ui| {
                 ui.label(widgets::heading("Pick from library", 22.0));
                 ui.add_space(8.0);
-                widgets::hud(ui, noun, theme::MUTED);
+                widgets::hud(ui, noun, theme::muted());
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
                         actions.push(PickerAction::Close);
@@ -146,7 +146,7 @@ impl LibraryPicker {
                             Align2::CENTER_CENTER,
                             format!("No {noun} in your library yet"),
                             FontId::new(14.0, egui::FontFamily::Proportional),
-                            theme::MUTED,
+                            theme::muted(),
                         );
                     }
                     if self.loading {
@@ -156,7 +156,7 @@ impl LibraryPicker {
                                 origin + vec2(w / 2.0, total + 24.0),
                                 vec2(24.0, 24.0),
                             ),
-                            theme::MUTED,
+                            theme::muted(),
                         );
                     } else if self.has_more && viewport.max.y + 300.0 >= total {
                         actions.push(PickerAction::LoadMore);
@@ -167,7 +167,7 @@ impl LibraryPicker {
                 widgets::hud(
                     ui,
                     &format!("{}/{} selected", self.selected.len(), self.max),
-                    theme::MUTED,
+                    theme::muted(),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let any = !self.selected.is_empty();
@@ -259,7 +259,7 @@ fn tile_ui(
         },
     );
     let p = ui.painter();
-    p.rect_filled(rect, 0.0, theme::fade(theme::CONTROLS, 0.6));
+    p.rect_filled(rect, 0.0, theme::fade(theme::controls(), 0.6));
     match item.thumbnail(256).map(|u| cache.get(ui.ctx(), &u)) {
         Some(Lookup::Ready(t)) => {
             let image = egui::Image::new(&t).uv(cover_uv(t.size_vec2()));
@@ -280,7 +280,7 @@ fn tile_ui(
                 ui.painter(),
                 Rect::from_center_size(rect.center(), vec2(26.0, 26.0)),
                 icon,
-                theme::FAINT,
+                theme::faint(),
             );
         }
     }
@@ -312,11 +312,11 @@ fn tile_ui(
         p.rect_stroke(
             rect,
             0.0,
-            Stroke::new(2.0, theme::ACCENT_400),
+            Stroke::new(2.0, theme::accent_400()),
             egui::StrokeKind::Inside,
         );
         let chip = Rect::from_min_size(rect.min + vec2(8.0, 8.0), vec2(22.0, 22.0));
-        p.rect_filled(chip, theme::RADIUS, theme::ACCENT_400);
+        p.rect_filled(chip, theme::RADIUS, theme::accent_400());
         p.text(
             chip.center(),
             Align2::CENTER_CENTER,
@@ -328,7 +328,7 @@ fn tile_ui(
         p.rect_stroke(
             rect,
             0.0,
-            Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.6)),
+            Stroke::new(2.0, theme::fade(theme::accent_400(), 0.6)),
             egui::StrokeKind::Inside,
         );
     }

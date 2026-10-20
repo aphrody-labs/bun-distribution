@@ -23,6 +23,7 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
+craft-ui = { workspace = true }
 figcraft-geom = { path = "../figcraft-geom" }
 figcraft-color = { path = "../figcraft-color" }
 figcraft-doc = { path = "../figcraft-doc" }

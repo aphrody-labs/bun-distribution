@@ -127,7 +127,7 @@ impl CharactersModal {
                     egui::RichText::new(format!(
                         "\u{201c}{name}\u{201d} will be removed from your characters."
                     ))
-                    .color(theme::MUTED),
+                    .color(theme::muted()),
                 );
                 ui.add_space(16.0);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -231,12 +231,12 @@ impl CharactersModal {
                 ui.painter().rect_filled(
                     create,
                     theme::RADIUS,
-                    theme::fade(theme::CONTROLS, if resp.hovered() { 0.7 } else { 0.4 }),
+                    theme::fade(theme::controls(), if resp.hovered() { 0.7 } else { 0.4 }),
                 );
                 icons::dashed_rect(
                     ui.painter(),
                     create.shrink(1.0),
-                    Stroke::new(1.5, theme::LINE_DASHED),
+                    Stroke::new(1.5, theme::line_dashed()),
                     5.0,
                     4.0,
                 );
@@ -244,14 +244,14 @@ impl CharactersModal {
                     ui.painter(),
                     Rect::from_center_size(create.center() - vec2(0.0, 10.0), vec2(22.0, 22.0)),
                     Icon::Plus,
-                    theme::INK,
+                    theme::ink(),
                 );
                 ui.painter().text(
                     create.center() + vec2(0.0, 16.0),
                     Align2::CENTER_CENTER,
                     "Create New",
                     FontId::new(13.0, theme::medium()),
-                    theme::INK,
+                    theme::ink(),
                 );
                 if resp.clicked() {
                     self.name.clear();
@@ -261,11 +261,11 @@ impl CharactersModal {
                 }
                 for (i, name) in pending.iter().enumerate() {
                     let r = cell(1 + i);
-                    ui.painter().rect_filled(r, theme::RADIUS, theme::WASH);
+                    ui.painter().rect_filled(r, theme::RADIUS, theme::wash());
                     icons::paint_spinner(
                         ui,
                         Rect::from_center_size(r.center(), vec2(24.0, 24.0)),
-                        theme::MUTED,
+                        theme::muted(),
                     );
                     caption(ui, r, name, "Creating...");
                 }
@@ -282,7 +282,7 @@ impl CharactersModal {
                         ui.painter().rect_stroke(
                             r,
                             theme::RADIUS,
-                            Stroke::new(2.0, theme::fade(theme::ACCENT_400, 0.7)),
+                            Stroke::new(2.0, theme::fade(theme::accent_400(), 0.7)),
                             egui::StrokeKind::Inside,
                         );
                     }
@@ -352,7 +352,7 @@ impl CharactersModal {
                             egui::Button::new(
                                 egui::RichText::new("View full size")
                                     .size(12.0)
-                                    .color(theme::ACCENT_INK),
+                                    .color(theme::accent_ink()),
                             )
                             .frame(false),
                         )
@@ -410,7 +410,7 @@ impl CharactersModal {
         self.header(ui, "New Character", true, actions);
         ui.horizontal_top(|ui| {
             ui.vertical(|ui| {
-                widgets::hud(ui, "Reference", theme::FAINT);
+                widgets::hud(ui, "Reference", theme::faint());
                 ui.add_space(6.0);
                 let (r, resp) = ui.allocate_exact_size(vec2(240.0, 240.0), Sense::click());
                 match &self.image {
@@ -433,12 +433,12 @@ impl CharactersModal {
                         ui.painter().rect_filled(
                             r,
                             theme::RADIUS,
-                            theme::fade(theme::CONTROLS, if resp.hovered() { 0.7 } else { 0.4 }),
+                            theme::fade(theme::controls(), if resp.hovered() { 0.7 } else { 0.4 }),
                         );
                         icons::dashed_rect(
                             ui.painter(),
                             r.shrink(1.0),
-                            Stroke::new(1.5, theme::LINE_DASHED),
+                            Stroke::new(1.5, theme::line_dashed()),
                             5.0,
                             4.0,
                         );
@@ -446,14 +446,14 @@ impl CharactersModal {
                             ui.painter(),
                             Rect::from_center_size(r.center() - vec2(0.0, 12.0), vec2(24.0, 24.0)),
                             Icon::Upload,
-                            theme::INK,
+                            theme::ink(),
                         );
                         ui.painter().text(
                             r.center() + vec2(0.0, 18.0),
                             Align2::CENTER_CENTER,
                             "Upload reference image",
                             FontId::new(13.0, theme::medium()),
-                            theme::INK,
+                            theme::ink(),
                         );
                     }
                 }
@@ -550,18 +550,18 @@ impl CharactersModal {
 
 /// The name and description inputs shared by create and edit.
 fn fields(ui: &mut Ui, name: &mut String, description: &mut String) {
-    widgets::hud(ui, "Character name", theme::FAINT);
+    widgets::hud(ui, "Character name", theme::faint());
     ui.add_space(4.0);
     input_frame(ui, |ui| {
         ui.add(
             egui::TextEdit::singleline(name)
                 .frame(egui::Frame::NONE)
                 .desired_width(f32::INFINITY)
-                .hint_text(egui::RichText::new("Character name").color(theme::FAINT)),
+                .hint_text(egui::RichText::new("Character name").color(theme::faint())),
         )
     });
     ui.add_space(10.0);
-    widgets::hud(ui, "Description", theme::FAINT);
+    widgets::hud(ui, "Description", theme::faint());
     ui.add_space(4.0);
     input_frame(ui, |ui| {
         ui.add(
@@ -569,14 +569,14 @@ fn fields(ui: &mut Ui, name: &mut String, description: &mut String) {
                 .frame(egui::Frame::NONE)
                 .desired_width(f32::INFINITY)
                 .desired_rows(4)
-                .hint_text(egui::RichText::new("Description...").color(theme::FAINT)),
+                .hint_text(egui::RichText::new("Description...").color(theme::faint())),
         )
     });
 }
 
 fn input_frame(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> egui::Response) {
     egui::Frame::new()
-        .fill(theme::SUNKEN)
+        .fill(theme::sunken())
         .stroke(theme::hairline())
         .corner_radius(theme::RADIUS)
         .inner_margin(egui::Margin::symmetric(10, 8))
@@ -584,7 +584,7 @@ fn input_frame(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> egui::Response) {
 }
 
 fn thumbnail(ui: &Ui, rect: Rect, url: Option<&str>, cache: &mut MediaCache) {
-    ui.painter().rect_filled(rect, theme::RADIUS, theme::WASH);
+    ui.painter().rect_filled(rect, theme::RADIUS, theme::wash());
     match url.map(|u| cache.get(ui.ctx(), u)) {
         Some(Lookup::Ready(t)) => {
             egui::Image::new(&t)
@@ -595,13 +595,13 @@ fn thumbnail(ui: &Ui, rect: Rect, url: Option<&str>, cache: &mut MediaCache) {
         Some(Lookup::Loading) => icons::paint_spinner(
             ui,
             Rect::from_center_size(rect.center(), vec2(20.0, 20.0)),
-            theme::FAINT,
+            theme::faint(),
         ),
         _ => icons::paint(
             ui.painter(),
             Rect::from_center_size(rect.center(), vec2(28.0, 28.0)),
             Icon::User,
-            theme::FAINT,
+            theme::faint(),
         ),
     }
 }
@@ -612,7 +612,7 @@ fn caption(ui: &Ui, tile: Rect, name: &str, note: &str) {
     let galley = ui.painter().layout_no_wrap(
         name.to_owned(),
         FontId::new(13.0, theme::medium()),
-        theme::INK,
+        theme::ink(),
     );
     let w = galley.size().x.min(tile.width());
     ui.painter()
@@ -623,7 +623,7 @@ fn caption(ui: &Ui, tile: Rect, name: &str, note: &str) {
         .galley(
             pos2(tile.left(), y - galley.size().y / 2.0),
             galley,
-            theme::INK,
+            theme::ink(),
         );
     if !note.is_empty() {
         ui.painter().text(
@@ -631,7 +631,7 @@ fn caption(ui: &Ui, tile: Rect, name: &str, note: &str) {
             Align2::LEFT_CENTER,
             note,
             FontId::new(11.5, egui::FontFamily::Proportional),
-            theme::MUTED,
+            theme::muted(),
         );
     }
 }

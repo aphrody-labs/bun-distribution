@@ -1,9 +1,11 @@
-//! Theme mechanisms for egui widgets, with palettes and theme selection owned by applications.
+//! Theme mechanisms for egui widgets and the shared Aphrody M3 palette adapter.
 //!
 //! This module does not install fonts, store a theme, or change global visuals. Applications
-//! decide their colors, borders, typography, spacing and saved preferences independently.
+//! retain typography, spacing and saved preferences; chrome uses canonical semantic roles.
 
 use egui::{Color32, CornerRadius, Stroke, style::Widgets};
+
+pub mod aphrody;
 
 /// Background colors for egui's five widget interaction states.
 ///

@@ -54,49 +54,85 @@ pub const DEV_CHANGED: Color32 = Color32::from_rgb(0xD9, 0x7A, 0x06);
 pub const DEV_COMPLETED: Color32 = Color32::from_rgb(0x6E, 0x6E, 0x73);
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.bg = palette.color(Role::Surface);
+        self.panel = palette.color(Role::SurfaceContainer);
+        self.border = palette.color(Role::OutlineVariant);
+        self.border_strong = palette.color(Role::Outline);
+        self.text = palette.color(Role::OnSurface);
+        self.text_secondary = palette.color(Role::OnSurfaceVariant);
+        self.text_tertiary = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.icon_secondary = palette.color(Role::OnSurfaceVariant);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.field = palette.color(Role::SurfaceContainerHighest);
+        self.field_hover_border = palette.color(Role::Outline);
+        self.accent = palette.color(Role::Primary);
+        self.accent_hover = palette.color(Role::Primary);
+        self.accent_text = palette.color(Role::Primary);
+        self.selected_row = palette.color(Role::SecondaryContainer);
+        self.selected_row_child = palette.color(Role::PrimaryContainer);
+        self.danger = palette.color(Role::Error);
+        self.tab_bar = palette.color(Role::SurfaceContainerLow);
+        self.tab_active = palette.color(Role::SecondaryContainer);
+        self.menu = palette.color(Role::SurfaceContainer);
+        self.menu_text = palette.color(Role::OnSurface);
+        self.menu_hover = palette.color(Role::SurfaceContainerHighest);
+        self.menu_dim = palette.color(Role::OnSurfaceVariant);
+        self.focus = palette.color(Role::Primary);
+        self
+    }
+
     pub fn light() -> Self {
-        Self {
-            dark: false,
-            bg: Color32::from_rgb(0xFF, 0xFF, 0xFF),
-            panel: Color32::from_rgb(0xFF, 0xFF, 0xFF),
-            canvas: Color32::from_rgb(0xF5, 0xF5, 0xF5),
-            border: Color32::from_rgb(0xE6, 0xE6, 0xE6),
-            border_strong: Color32::from_rgb(0xD9, 0xD9, 0xD9),
-            text: Color32::from_rgb(0x1E, 0x1E, 0x1E),
-            // 4.7:1 on fields and hovered rows (#F5F5F5), 4.6:1 on selected rows: WCAG AA.
-            text_secondary: Color32::from_rgb(0x6E, 0x6E, 0x6E),
-            text_tertiary: Color32::from_rgb(0xB3, 0xB3, 0xB3),
-            icon: Color32::from_rgb(0x1E, 0x1E, 0x1E),
-            icon_secondary: Color32::from_rgb(0x75, 0x75, 0x75),
-            hover: Color32::from_rgb(0xF5, 0xF5, 0xF5),
-            pressed: Color32::from_rgb(0xE6, 0xE6, 0xE6),
-            field: Color32::from_rgb(0xF5, 0xF5, 0xF5),
-            field_hover_border: Color32::from_rgb(0xE6, 0xE6, 0xE6),
-            accent: ACCENT,
-            accent_hover: Color32::from_rgb(0x00, 0x7B, 0xE5),
-            // 5.2:1 on white, 4.6:1 on selected rows: WCAG AA for text.
-            accent_text: Color32::from_rgb(0x00, 0x6B, 0xD1),
-            selected_row: Color32::from_rgb(0xE5, 0xF4, 0xFF),
-            selected_row_child: Color32::from_rgb(0xF2, 0xF9, 0xFF),
-            component: COMPONENT,
-            component_row: Color32::from_rgb(0xF1, 0xE9, 0xFF),
-            danger: Color32::from_rgb(0xF2, 0x48, 0x22),
-            success: Color32::from_rgb(0x14, 0xAE, 0x5C),
-            warning: Color32::from_rgb(0xFF, 0xCD, 0x29),
-            guide: Color32::from_rgb(0xF2, 0x48, 0x22),
-            tab_bar: Color32::from_rgb(0xE8, 0xE8, 0xE8),
-            tab_active: Color32::from_rgb(0xFF, 0xFF, 0xFF),
-            shadow: Color32::from_black_alpha(40),
-            menu: Color32::from_rgb(0x1E, 0x1E, 0x1E),
-            menu_text: Color32::from_rgb(0xFF, 0xFF, 0xFF),
-            menu_hover: ACCENT,
-            menu_dim: Color32::from_rgb(0x9A, 0x9A, 0x9A),
-            focus: Color32::from_rgb(0x00, 0x6B, 0xD1),
-        }
+        let tokens = (|| {
+            Self {
+                dark: false,
+                bg: Color32::from_rgb(0xFF, 0xFF, 0xFF),
+                panel: Color32::from_rgb(0xFF, 0xFF, 0xFF),
+                canvas: Color32::from_rgb(0xF5, 0xF5, 0xF5),
+                border: Color32::from_rgb(0xE6, 0xE6, 0xE6),
+                border_strong: Color32::from_rgb(0xD9, 0xD9, 0xD9),
+                text: Color32::from_rgb(0x1E, 0x1E, 0x1E),
+                // 4.7:1 on fields and hovered rows (#F5F5F5), 4.6:1 on selected rows: WCAG AA.
+                text_secondary: Color32::from_rgb(0x6E, 0x6E, 0x6E),
+                text_tertiary: Color32::from_rgb(0xB3, 0xB3, 0xB3),
+                icon: Color32::from_rgb(0x1E, 0x1E, 0x1E),
+                icon_secondary: Color32::from_rgb(0x75, 0x75, 0x75),
+                hover: Color32::from_rgb(0xF5, 0xF5, 0xF5),
+                pressed: Color32::from_rgb(0xE6, 0xE6, 0xE6),
+                field: Color32::from_rgb(0xF5, 0xF5, 0xF5),
+                field_hover_border: Color32::from_rgb(0xE6, 0xE6, 0xE6),
+                accent: ACCENT,
+                accent_hover: Color32::from_rgb(0x00, 0x7B, 0xE5),
+                // 5.2:1 on white, 4.6:1 on selected rows: WCAG AA for text.
+                accent_text: Color32::from_rgb(0x00, 0x6B, 0xD1),
+                selected_row: Color32::from_rgb(0xE5, 0xF4, 0xFF),
+                selected_row_child: Color32::from_rgb(0xF2, 0xF9, 0xFF),
+                component: COMPONENT,
+                component_row: Color32::from_rgb(0xF1, 0xE9, 0xFF),
+                danger: Color32::from_rgb(0xF2, 0x48, 0x22),
+                success: Color32::from_rgb(0x14, 0xAE, 0x5C),
+                warning: Color32::from_rgb(0xFF, 0xCD, 0x29),
+                guide: Color32::from_rgb(0xF2, 0x48, 0x22),
+                tab_bar: Color32::from_rgb(0xE8, 0xE8, 0xE8),
+                tab_active: Color32::from_rgb(0xFF, 0xFF, 0xFF),
+                shadow: Color32::from_black_alpha(40),
+                menu: Color32::from_rgb(0x1E, 0x1E, 0x1E),
+                menu_text: Color32::from_rgb(0xFF, 0xFF, 0xFF),
+                menu_hover: ACCENT,
+                menu_dim: Color32::from_rgb(0x9A, 0x9A, 0x9A),
+                focus: Color32::from_rgb(0x00, 0x6B, 0xD1),
+            }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
 
     pub fn dark() -> Self {
-        Self {
+        let tokens = (|| Self {
             dark: true,
             bg: Color32::from_rgb(0x2C, 0x2C, 0x2C),
             panel: Color32::from_rgb(0x2C, 0x2C, 0x2C),
@@ -131,7 +167,8 @@ impl Tokens {
             menu_hover: ACCENT,
             menu_dim: Color32::from_rgb(0x9A, 0x9A, 0x9A),
             focus: ACCENT,
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
 
     pub fn get(ctx: &Context) -> Tokens {
