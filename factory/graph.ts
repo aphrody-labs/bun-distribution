@@ -3,6 +3,7 @@ import { appCapabilities } from "../packages/bun-workspace/src/capabilities.ts";
 import type { Config as LibraryConfig } from "../packages/bun-workspace/src/index.ts";
 import { packageRoot, type Config, type Profile, type Target } from "../src/distribution.ts";
 import { planArchDistribution, type Composition } from "./arch/index.ts";
+import { inspectGitSourceOwners } from "../src/workspace-manifests.ts";
 
 export interface FactoryGraphOptions {
   root?: string;
@@ -88,17 +89,6 @@ interface SourceLock {
   repositories: { id: string; repository: string; revision: string; mount: string; parent?: string }[];
 }
 
-interface VendorSourceOwner {
-  path: string;
-  revision: string;
-  origin: string;
-  initialized: boolean;
-}
-
-interface VendorSourceRegistry {
-  rootGitOwners: VendorSourceOwner[];
-}
-
 interface ArchSourceReference {
   id: string;
   repository: string;
@@ -136,7 +126,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   const native = await read<NativeCatalog>("factory/native-targets.json");
   const applications = await read<AppCatalog>("infra/apps.json");
   const product = await read<BunManifest>("package.json");
-  const vendorSources = await read<VendorSourceRegistry>("vendor/sources.json");
+  const gitSources = await inspectGitSourceOwners(root);
   const cargo = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
     workspace: { members: string[] };
   };
@@ -203,7 +193,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       ],
     });
   }
-  if (!Array.isArray(vendorSources.rootGitOwners) || !Array.isArray(factoryArch.sources.sources))
+  if (!Array.isArray(gitSources.submodules) || !Array.isArray(factoryArch.sources.sources))
     throw new Error("Vendor Git owners and Arch source references are missing.");
   const archReferences = (factoryArch.sources.sources as ArchSourceReference[]).map(source => ({
     id: source.id,
@@ -214,37 +204,37 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     checkoutRevision: source.checkoutRevision,
   }));
   const vendorIds = new Map<string, string>();
-  for (const source of vendorSources.rootGitOwners) {
+  for (const source of gitSources.submodules.filter(source => source.path.startsWith("vendor/"))) {
     if (
-      !/^[A-Za-z0-9._-]+$/.test(source.path) ||
-      !/^[a-f0-9]{40}$/.test(source.revision) ||
-      typeof source.origin !== "string" ||
-      !source.origin ||
+      !/^vendor\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(source.path) ||
+      !source.revision || !/^[a-f0-9]{40}$/.test(source.revision) ||
+      typeof source.repository !== "string" ||
+      !source.repository ||
       typeof source.initialized !== "boolean"
     )
       throw new Error("Invalid flat vendor Git owner.");
-    const path = `vendor/${source.path}`;
+    const path = source.path;
     const key = path.toLowerCase();
     if (vendorIds.has(key)) throw new Error(`Duplicate vendor source owner: ${path}`);
-    const id = `vendor:${source.path}`;
+    const id = `vendor:${source.path.slice("vendor/".length)}`;
     vendorIds.set(key, id);
     add({
       id,
       kind: "source",
-      owner: source.origin,
-      catalog: "vendor/sources.json rootGitOwners",
+      owner: source.repository,
+      catalog: "Git index + .gitmodules",
       path,
       dependsOn: ["workspace:sources"],
       state: source.initialized ? "source-only" : "blocked",
       reasons: [
         source.initialized
-          ? "Registry declares an initialized source checkout; Git state and artifact qualification are not inspected by this plan."
+          ? "Git metadata is present; checkout revision, worktree state and artifact qualification still need verification."
           : "Lazy source owner is registered but uninitialized; no checkout, fetch or build is started by this plan.",
       ],
       metadata: {
-        checkoutRevision: source.revision,
+        pinnedRevision: source.revision,
         initialized: source.initialized,
-        remotes: { origin: source.origin },
+        remotes: { declared: source.repository },
         sourceOnly: true,
         lazy: !source.initialized,
         references: archReferences.filter(reference => reference.mount === path),
@@ -260,8 +250,35 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   const archSourceOwners = [
     ...new Set(
       archReferences.map(source => {
-        const id = vendorIds.get(source.mount.toLowerCase());
-        if (!id) throw new Error(`Arch source has no registered vendor owner: ${source.mount}`);
+        let declaration = gitSources.submodules.find(owner => owner.path === source.mount);
+        if (!declaration) {
+          const candidates = gitSources.submodules.filter(owner => owner.path.startsWith("vendor/") &&
+            owner.repository?.replace(/^(?:https?:\/\/github\.com\/|git@github\.com:)/, "").replace(/\.git$/, "") === source.repository);
+          if (candidates.length === 1) declaration = candidates[0];
+        }
+        const id = declaration && vendorIds.get(declaration.path.toLowerCase());
+        if (!id || !declaration) {
+          const missing = `source:unresolved-arch-${source.id}`;
+          diagnostics.push(`Arch source has no indexed Git owner: ${source.mount}`);
+          add({ id: missing, kind: "source", owner: source.repository, catalog: "factory/arch/sources.json",
+            path: source.mount, dependsOn: ["workspace:sources"], state: "blocked",
+            reasons: ["The source contract has no unambiguous indexed Git owner."],
+            metadata: { expectedRevision: source.revision },
+          });
+          return missing;
+        }
+        const node = nodes.find(node => node.id === id)!;
+        if (declaration.path !== source.mount) {
+          diagnostics.push(`Arch source mount requires reconciliation: ${source.mount} -> ${declaration.path}`);
+          node.state = "blocked";
+          node.reasons.push(`Factory mount ${source.mount} differs from the indexed owner ${declaration.path}.`);
+          node.metadata = { ...node.metadata, references: [...(node.metadata?.references as ArchSourceReference[] ?? []), source] };
+        }
+        if (declaration.revision !== source.revision) {
+          diagnostics.push(`Arch source pin differs from indexed owner: ${source.id}`);
+          node.state = "blocked";
+          node.reasons.push(`Factory pin ${source.revision} differs from index pin ${declaration.revision}.`);
+        }
         return id;
       }),
     ),

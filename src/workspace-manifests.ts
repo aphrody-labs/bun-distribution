@@ -7,17 +7,43 @@ type CargoManifest = {
 };
 type PackageManifest = { name?: string; version?: string; private?: boolean; workspaces?: string[] | { packages?: string[] } };
 
+async function inventoryGit(root: string, args: string[]) {
+  const result = await runProcess(["git", "-c", "core.fsmonitor=false", ...args], root, {
+    timeoutMs: 30_000,
+    maxOutputBytes: 32 * 1024 * 1024,
+    env: { ...Bun.env, GIT_OPTIONAL_LOCKS: "0", GIT_NO_LAZY_FETCH: "1", GIT_TERMINAL_PROMPT: "0" },
+  });
+  if (result.code !== 0) throw new Error(`Cannot inventory Git sources: ${result.stderr}`);
+  return result.stdout;
+}
+
+/** Live root-index source pins and their declarations; no manifest scan or build. */
+export async function inspectGitSourceOwners(root: string, preloaded: { staged?: string; modules?: string } = {}) {
+  const [staged, modules] = await Promise.all([
+    preloaded.staged ?? inventoryGit(root, ["ls-files", "--stage", "-z"]),
+    preloaded.modules ?? Bun.file(join(root, ".gitmodules")).text(),
+  ]);
+  const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^\[]*)/g)].map(match => ({
+    name: match[1],
+    path: /^\s*path\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? "",
+    repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? null,
+  }));
+  const indexEntries = staged.split("\0").filter(Boolean);
+  const pins = indexEntries.filter(line => line.startsWith("160000 ")).map(line => {
+    const tab = line.indexOf("\t");
+    return { path: line.slice(tab + 1), revision: line.slice(7, 47) };
+  });
+  const submodules = await Promise.all(declarations.map(async declaration => ({
+    ...declaration,
+    revision: pins.find(pin => pin.path === declaration.path)?.revision ?? null,
+    initialized: await Bun.file(join(root, declaration.path, ".git")).exists() || await Bun.file(join(root, declaration.path, ".git/HEAD")).exists(),
+  })));
+  return { submodules, pins };
+}
+
 /** Read source manifests, including initialized pinned sources, without scanning caches or running builds. */
 export async function inspectWorkspaceManifests(root: string) {
-  async function git(args: string[]) {
-    const result = await runProcess(["git", "-c", "core.fsmonitor=false", ...args], root, {
-      timeoutMs: 30_000,
-      maxOutputBytes: 32 * 1024 * 1024,
-      env: { ...Bun.env, GIT_OPTIONAL_LOCKS: "0", GIT_NO_LAZY_FETCH: "1", GIT_TERMINAL_PROMPT: "0" },
-    });
-    if (result.code !== 0) throw new Error(`Cannot inventory Git sources: ${result.stderr}`);
-    return result.stdout;
-  }
+  const git = (args: string[]) => inventoryGit(root, args);
   const [tracked, untracked, staged, modules, rootCargo, rootBun] = await Promise.all([
     git(["ls-files", "--cached", "--recurse-submodules", "-z", "--", "Cargo.toml", "package.json", ":(glob)**/Cargo.toml", ":(glob)**/package.json"]),
     git(["ls-files", "--others", "--exclude-standard", "-z", "--", "Cargo.toml", "package.json", ":(glob)**/Cargo.toml", ":(glob)**/package.json"]),
@@ -29,22 +55,8 @@ export async function inspectWorkspaceManifests(root: string) {
   const cargoWorkspace = (Bun.TOML.parse(rootCargo) as CargoManifest).workspace ?? {};
   const bunMembers = Array.isArray(rootBun.workspaces) ? rootBun.workspaces : rootBun.workspaces?.packages ?? [];
   const matches = (path: string, patterns: string[]) => patterns.some(pattern => new Bun.Glob(pattern.replace(/\/$/, "")).match(path));
-  const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^\[]*)/g)].map(match => ({
-    name: match[1],
-    path: /^\s*path\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? "",
-    repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? null,
-  }));
-  const indexEntries = staged.split("\0").filter(Boolean);
-  const indexedPaths = indexEntries.map(line => line.slice(line.indexOf("\t") + 1));
-  const pins = indexEntries.filter(line => line.startsWith("160000 ")).map(line => {
-    const tab = line.indexOf("\t");
-    return { path: line.slice(tab + 1), revision: line.slice(7, 47) };
-  });
-  const submodules = await Promise.all(declarations.map(async declaration => ({
-    ...declaration,
-    revision: pins.find(pin => pin.path === declaration.path)?.revision ?? null,
-    initialized: await Bun.file(join(root, declaration.path, ".git")).exists() || await Bun.file(join(root, declaration.path, ".git/HEAD")).exists(),
-  })));
+  const { submodules, pins } = await inspectGitSourceOwners(root, { staged, modules });
+  const indexedPaths = staged.split("\0").filter(Boolean).map(line => line.slice(line.indexOf("\t") + 1));
   const paths = [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort();
   const manifests: Record<string, unknown>[] = [];
   const parsedManifests = new Map<string, CargoManifest | PackageManifest>();
@@ -168,7 +180,7 @@ export async function inspectWorkspaceManifests(root: string) {
     ownershipConflicts,
     manifests, submodules, missingMembers, failures,
     unpinnedSubmodules: submodules.filter(item => item.revision === null).map(item => ({ path: item.path, repository: item.repository, state: "declaration-without-index-gitlink", disposition: "review-active-source-contracts-before-removal" })),
-    undeclaredGitlinks: pins.filter(pin => !declarations.some(item => item.path === pin.path)),
+    undeclaredGitlinks: pins.filter(pin => !submodules.some(item => item.path === pin.path)),
     vendorConsumerCoverage: "Literal forward-slash paths in tracked root text files, excluding vendor, toolchains, docs and lockfiles. References are candidates, not proven runtime consumers; absent references do not prove a vendor removable.",
     vendorRoots: vendorInventory,
   };
