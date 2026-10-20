@@ -13,7 +13,10 @@ test("the exact adapter runs on loopback with read-only weights and bounded reso
   expect(service.command).toContain("shenron-chat-v2");
   expect(service.volumes.every((m) => m.endsWith(":ro"))).toBe(true);
   expect(service.mem_limit).toBe("4500m");
-  expect(service.cpus).toBe(4);
+  expect(service.cpus).toBe(5);
+  expect(
+    service.command.slice(service.command.indexOf("--threads-batch"), -2),
+  ).toEqual(["--threads-batch", "5"]);
   expect(service.read_only).toBe(true);
   expect(service.user).toBe("1000:1000");
   expect(CHAT_DIGESTS.adapter).toBe(
