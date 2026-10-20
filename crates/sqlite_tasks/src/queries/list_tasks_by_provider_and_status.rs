@@ -1,5 +1,5 @@
 use crate::connection::TaskDbConnection;
-use crate::error::SqliteTasksError;
+use crate::error::{decode_task_enum, SqliteTasksError};
 use crate::queries::task::{RawTask, Task};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_model_type::TaskModelType;
@@ -67,20 +67,21 @@ pub async fn list_tasks_by_provider_and_status(
   let mut tasks: Vec<Task> = Vec::new();
 
   for task in results {
+    let task_id = task.id;
     tasks.push(Task {
-      id: TaskId::new_from_str(&task.id),
-      status: TaskStatus::from_str(&task.task_status)?,
-      task_type: TaskType::from_str(&task.task_type)?,
+      id: TaskId::new_from_str(&task_id),
+      status: decode_task_enum(&task_id, "task_status", &task.task_status, TaskStatus::from_str)?,
+      task_type: decode_task_enum(&task_id, "task_type", &task.task_type, TaskType::from_str)?,
       model_type: task.model_type
-          .map(|model| TaskModelType::from_str(&model))
+          .map(|model| decode_task_enum(&task_id, "model_type", &model, TaskModelType::from_str))
           .transpose()?,
-      provider: GenerationProvider::from_str(&task.provider)?,
+      provider: decode_task_enum(&task_id, "provider", &task.provider, GenerationProvider::from_str)?,
       provider_job_id: task.provider_job_id,
       queue_status_url: task.queue_status_url,
       queue_response_url: task.queue_response_url,
       prompt_token: task.prompt_token,
       frontend_caller: task.frontend_caller
-          .map(|caller| TauriCommandCaller::from_str(&caller))
+          .map(|caller| decode_task_enum(&task_id, "frontend_caller", &caller, TauriCommandCaller::from_str))
           .transpose()?,
       frontend_subscriber_id: task.frontend_subscriber_id,
       frontend_subscriber_payload: task.frontend_subscriber_payload,

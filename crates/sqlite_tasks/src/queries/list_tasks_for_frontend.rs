@@ -1,5 +1,5 @@
 use crate::connection::TaskDbConnection;
-use crate::error::SqliteTasksError;
+use crate::error::{decode_task_enum, SqliteTasksError};
 use chrono::{DateTime, Utc};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_failure_type::TaskFailureType;
@@ -74,31 +74,32 @@ pub async fn list_tasks_for_frontend(
   let mut tasks = Vec::with_capacity(result.len());
 
   for raw in result.into_iter() {
+    let task_id = raw.id;
     tasks.push(TaskItem {
-      id: TaskId::new(raw.id),
-      status: TaskStatus::from_str(&raw.task_status)?,
-      task_type: TaskType::from_str(&raw.task_type)?,
+      id: TaskId::new(task_id.clone()),
+      status: decode_task_enum(&task_id, "task_status", &raw.task_status, TaskStatus::from_str)?,
+      task_type: decode_task_enum(&task_id, "task_type", &raw.task_type, TaskType::from_str)?,
       model_type: raw.model_type
-          .map(|model| TaskModelType::from_str(&model))
+          .map(|model| decode_task_enum(&task_id, "model_type", &model, TaskModelType::from_str))
           .transpose()?,
       provider: raw.provider
-          .map(|provider| GenerationProvider::from_str(&provider))
+          .map(|provider| decode_task_enum(&task_id, "provider", &provider, GenerationProvider::from_str))
           .transpose()?,
       provider_job_id: raw.provider_job_id,
       frontend_caller: raw.frontend_caller
-          .map(|caller| TauriCommandCaller::from_str(&caller))
+          .map(|caller| decode_task_enum(&task_id, "frontend_caller", &caller, TauriCommandCaller::from_str))
           .transpose()?,
       frontend_subscriber_id: raw.frontend_subscriber_id,
       frontend_subscriber_payload: raw.frontend_subscriber_payload,
       on_complete_primary_media_file_token: raw.on_complete_primary_media_file_token.map(|t| MediaFileToken::new_from_str(&t)),
       on_complete_primary_media_file_class: raw.on_complete_primary_media_file_class
-          .map(|c| TaskMediaFileClass::from_str(&c))
+          .map(|c| decode_task_enum(&task_id, "on_complete_primary_media_file_class", &c, TaskMediaFileClass::from_str))
           .transpose()?,
       on_complete_batch_token: raw.on_complete_batch_token.map(|t| BatchGenerationToken::new_from_str(&t)),
       on_complete_primary_media_file_cdn_url: raw.on_complete_primary_media_file_cdn_url,
       on_complete_primary_media_file_thumbnail_url_template: raw.on_complete_primary_media_file_thumbnail_url_template,
       on_failure_type: raw.on_failure_type
-          .map(|t| TaskFailureType::from_str(&t))
+          .map(|t| decode_task_enum(&task_id, "on_failure_type", &t, TaskFailureType::from_str))
           .transpose()?,
       on_failure_message: raw.on_failure_message,
       created_at: raw.created_at,
