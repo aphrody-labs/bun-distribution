@@ -19,29 +19,50 @@
 
 @layer components {
   .filter-tab {
-    @apply text-nowrap rounded-[3px] border border-white/15 bg-white/5 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition-colors duration-150 hover:border-white/25 hover:bg-white/[0.07] hover:text-white;
+    @apply text-nowrap rounded-md border px-3 font-mono text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-150;
+    min-height: 44px;
+    border-color: var(--md-sys-color-outline-variant);
+    background-color: var(--md-sys-color-surface-container-low);
+    color: var(--md-sys-color-on-surface-variant);
   }
 
   .filter-tab.active {
-    @apply border-white bg-white text-black hover:border-white hover:bg-white hover:text-black;
+    border-color: var(--md-sys-color-primary);
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+  }
+
+  .filter-tab:hover:not(:disabled) {
+    border-color: var(--md-sys-color-outline);
+    background-color: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-on-surface);
+  }
+
+  .filter-tab.active:hover:not(:disabled) {
+    border-color: var(--md-sys-color-primary);
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+  }
+
+  .filter-tab:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
   }
 
   .filter-tab:disabled {
-    @apply border-transparent bg-white/[0.03] text-white/30 hover:border-transparent hover:bg-white/[0.03];
+    border-color: transparent;
+    background-color: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface);
+    opacity: 0.38;
+    cursor: not-allowed;
   }
 
-  /* Brutalist system: former "glass" surfaces are flat near-black panels
-     with white/15 hairline borders (class name kept for lib compatibility). */
+  /* Compatibility surface for existing callers, now backed by M3 roles. */
   .glass {
-    @apply relative rounded-[3px] border border-white/15 backdrop-blur-sm transition-colors duration-300;
-    @apply bg-[#1E1F22]/95!;
-  }
-
-  /* Light theme: the glass surface must be a light panel, not the dark
-     hard-coded fill above. Tint + border swapped to read on a light bg. */
-  .theme-light .glass {
-    @apply border-black/15!;
-    background-color: rgb(248 248 248 / 0.95) !important;
+    @apply relative rounded-md border backdrop-blur-sm transition-colors duration-300;
+    border-color: var(--md-sys-color-outline-variant);
+    background-color: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-on-surface);
   }
 }
 
