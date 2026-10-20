@@ -119,7 +119,7 @@
         width="48"
         height="48"
       />
-      <div id="status">Loading EffectCraft…</div>
+      <div id="status">Loading Compositing…</div>
     </div>
     <script type="module">
       import init, * as ec from "./effectcraft_web.js";
@@ -198,7 +198,7 @@
         if (s) {
           s.className = "err";
           s.textContent =
-            "EffectCraft failed to start:\n" + ((e && e.stack) || e);
+            "The Compositing workspace failed to start:\n" + ((e && e.stack) || e);
         }
         window.effectcraftLoad.error = String(e);
         throw e;

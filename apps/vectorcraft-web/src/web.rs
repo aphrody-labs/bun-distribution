@@ -151,7 +151,7 @@ async fn run(host: Host, canvas: web_sys::HtmlCanvasElement, moving: Option<Movi
             }
         }
         (Err(e), None) => notice(&[
-            &format!("VectorCraft failed to start: {}", js_err(e)),
+            &format!("The Vectors workspace failed to start: {}", js_err(e)),
             "A browser with WebGPU or WebGL2 is required.",
         ]),
         (Err(e), Some(kept)) => {
@@ -188,7 +188,7 @@ fn detect_language() {
     i18n::set_system_locales(tags.as_slice());
     if let Some(el) = element(LOADING_ID) {
         el.set_text_content(Some(
-            i18n::message(i18n::system_lang(), "Loading VectorCraft…").as_str(),
+            i18n::message(i18n::system_lang(), "Loading Vectors…").as_str(),
         ));
     }
 }

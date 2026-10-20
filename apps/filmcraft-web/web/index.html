@@ -101,11 +101,11 @@
         width="48"
         height="48"
       />
-      <div id="status">Loading FilmCraft…</div>
+      <div id="status">Loading Video…</div>
     </div>
     <div id="fatal" role="alertdialog" aria-labelledby="fatal-title">
       <div class="box">
-        <h1 id="fatal-title">FilmCraft stopped working</h1>
+        <h1 id="fatal-title">Video workspace stopped working</h1>
         <div>
           Unsaved changes are kept in the browser every few seconds and come
           back when you reload.
@@ -189,7 +189,7 @@
           const s = document.getElementById("status");
           if (s) {
             s.className = "err";
-            s.textContent = "FilmCraft failed to start:\n" + text;
+            s.textContent = "The Video workspace failed to start:\n" + text;
           }
         }
         throw e;
