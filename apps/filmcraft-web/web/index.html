@@ -13,11 +13,12 @@
         display: none;
         align-items: center;
         justify-content: center;
-        background: rgba(20, 20, 22, 0.88);
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-scrim) 88%,
+          transparent
+        );
         color: var(--md-sys-color-on-surface);
-        font:
-          14px/1.45 system-ui,
-          sans-serif;
         z-index: 10;
       }
       #fatal.on {
@@ -25,30 +26,37 @@
       }
       #fatal .box {
         max-width: min(78ch, calc(100vw - 32px));
-        padding: 20px 24px;
+        padding: 24px;
+        border: 1px solid var(--md-sys-color-outline-variant);
         background: var(--md-sys-color-surface-container-high);
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
       }
       #fatal h1 {
         margin: 0 0 8px;
-        font-size: 17px;
+        font-size: var(--md-sys-typescale-title-medium-size);
         color: var(--md-sys-color-error);
       }
       #fatal pre {
         max-height: 40vh;
         overflow: auto;
         white-space: pre-wrap;
-        font-size: 12px;
+        font-family: var(--md-ref-typeface-code);
+        font-size: var(--md-sys-typescale-body-small-size);
         color: var(--md-sys-color-on-surface-variant);
       }
       #fatal button {
         font: inherit;
-        padding: 6px 14px;
+        min-block-size: 44px;
+        padding-inline: 16px;
         border: 0;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-full);
         background: var(--md-sys-color-primary);
         color: var(--md-sys-color-on-primary);
         cursor: pointer;
+      }
+      #fatal button:focus-visible {
+        outline: 2px solid var(--md-sys-color-on-surface);
+        outline-offset: 2px;
       }
     </style>
     <link rel="stylesheet" href="theme.css" />
