@@ -11,6 +11,7 @@
     ".": "./src/index.ts",
     "./assets": "./src/assets.ts",
     "./capabilities": "./src/capabilities.ts",
+    "./libraries": "./src/craft.ts",
     "./craft": "./src/craft.ts",
     "./craft-control": "./src/craft-control.ts",
     "./coverage": "./src/coverage.ts",

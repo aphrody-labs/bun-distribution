@@ -13,7 +13,7 @@ import {
 import { runProcess } from "./process.ts";
 import { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 
-export { appCapabilities, appCapabilityFor, appHostname, capabilityFor, type AppCapability } from "./capabilities.ts";
+export { allAppCapabilities, appCapabilities, appCapabilityFor, appHostname, capabilityFor, type AppCapability } from "./capabilities.ts";
 export { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 export { hashContent, hashFile, hashStream, type FileHashOptions } from "./hash.ts";
 export {

@@ -2,7 +2,7 @@
 // Video Studio: a declarative composition (clips, text/image overlays, one audio track) rendered per frame
 // on a canvas, the model of Remotion/HyperFrames (HyperFrames: data-start / data-duration / data-track-index
 // per element; Remotion: a pure function of the frame number). The project is a small JSON document, not
-// FilmCraft's `.fcproj` (schema v13, integer ticks, an items map, read only by `filmcraft-format`, which
+// Aphrody Video's `.fcproj` (schema v13, integer ticks, an items map, read only by `filmcraft-format`, which
 // is not in the webos-wasm build); the hand-off button therefore passes the media, not the project, to
 // the installed craft-film package (`window.filmcraft.importFiles`). Preview: HTMLVideoElement frames drawn
 // on a Canvas. Audio: WebAudio. Export: MediaRecorder on `canvas.captureStream` (real time) into WebM.
@@ -10,7 +10,7 @@ import { h, ask } from "../dom";
 import { webos, HOME } from "../os";
 
 export interface VideoOptions {
-  /** Open (or focus) the installed FilmCraft package window (`pkg:craft-film`). */
+  /** Open (or focus) the installed Aphrody Video package window (`pkg:craft-film`). */
   openFilm?: () => void;
 }
 
@@ -523,7 +523,7 @@ export async function videoApp(root: HTMLElement, opts: VideoOptions = {}) {
   }
   let lastExport: Blob | undefined;
 
-  // ---- hand-off to the installed FilmCraft package ----
+  // ---- hand-off to the installed Aphrody Video package ----
   async function handOff() {
     const path = await save();
     const files: File[] = [];
@@ -532,9 +532,9 @@ export async function videoApp(root: HTMLElement, opts: VideoOptions = {}) {
       if (s) files.push(new File([s.blob], s.name, { type: s.blob.type }));
     }
     if (lastExport) files.push(new File([lastExport], `${p.name}.webm`, { type: "video/webm" }));
-    if (!opts.openFilm) return say(`Saved ${path}. Install Video (FilmCraft) from the App Store to continue.`);
+    if (!opts.openFilm) return say(`Saved ${path}. Install Aphrody Video from the App Store to continue.`);
     opts.openFilm();
-    say("Opening FilmCraft...");
+    say("Opening Aphrody Video...");
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 500));
       const frame = document.querySelector<HTMLIFrameElement>('iframe[src^="/apps/craft-film"]');
@@ -543,13 +543,13 @@ export async function videoApp(root: HTMLElement, opts: VideoOptions = {}) {
       if (api?.importFiles) {
         try {
           await api.importFiles(files);
-          return say(`Sent ${files.length} media file(s) to FilmCraft`);
+          return say(`Sent ${files.length} media file(s) to Aphrody Video`);
         } catch (error) {
-          return say(`FilmCraft import failed: ${String(error)}`);
+          return say(`Aphrody Video import failed: ${String(error)}`);
         }
       }
     }
-    say("FilmCraft did not become ready; import the media from Files");
+    say("Aphrody Video did not become ready; import the media from Files");
   }
 
   // ---- UI ----
@@ -892,7 +892,7 @@ export async function videoApp(root: HTMLElement, opts: VideoOptions = {}) {
         if (path) await open(path);
       }),
       btn("Export WebM", () => void exportWebm(), "prime", "Record the composition to WebM in Files"),
-      btn("Open in FilmCraft", () => void handOff(), "", "Save, then send the media to the FilmCraft editor"),
+      btn("Open in Aphrody Video", () => void handOff(), "", "Save, then send the media to the Aphrody Video editor"),
       device,
       imagePick,
     ),

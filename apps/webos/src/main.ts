@@ -3,6 +3,7 @@ import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { activityApp } from "./apps/activity";
 import { appStore } from "./apps/appstore";
 import { calculatorApp } from "./apps/calculator";
+import { creativeApp } from "./apps/creative";
 import { mediaApp } from "./apps/media";
 import { storageApp } from "./apps/storage";
 import { openWebApp, webApps, webAppsApp } from "./apps/webapps";
@@ -115,6 +116,41 @@ const builtins: Builtin[] = [
     width: 860,
     height: 600,
     mount: (root) => loading(root, appStore(root, refreshApps, launchPackage)),
+  },
+  {
+    id: "creative",
+    name: "Aphrody Creative",
+    icon: "pen",
+    desc: "Creative apps, projects and shared Drive files",
+    group: "core",
+    width: 980,
+    height: 680,
+    mount: (root) =>
+      loading(
+        root,
+        creativeApp(root, refreshApps, launchPackage, () =>
+          launchBuiltin(builtins.find((entry) => entry.id === "drive")!),
+        ),
+      ),
+  },
+  {
+    id: "drive",
+    name: "Aphrody Drive",
+    icon: "folder",
+    desc: "Projects, assets and files in your Aphrody workspace",
+    group: "core",
+    width: 1120,
+    height: 740,
+    mount: (root) =>
+      root.append(
+        h("iframe", {
+          class: "appframe",
+          src: "/workspace/studio?section=drive",
+          title: "Aphrody Drive",
+          allow:
+            "clipboard-read; clipboard-write; fullscreen; cross-origin-isolated",
+        }),
+      ),
   },
   {
     id: "settings",
