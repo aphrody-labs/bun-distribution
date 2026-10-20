@@ -3337,19 +3337,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-rg-server"
-version = "1.4.4"
-dependencies = [
- "ed25519-dalek 2.1.1",
- "hex",
- "http-body-util",
- "reqwest 0.13.5",
- "serde_json",
- "tokio",
- "vercel_runtime",
-]
-
-[[package]]
 name = "aphrody-rollout"
 version = "1.4.4"
 dependencies = [
@@ -22266,7 +22253,6 @@ dependencies = [
  "socket2 0.6.5",
  "system-configuration",
  "tokio",
- "tower-layer",
  "tower-service",
  "tracing",
  "windows-registry 0.6.1",
@@ -43315,27 +43301,6 @@ dependencies = [
  "rayon",
  "thread_local",
  "vello_common 0.2.0",
-]
-
-[[package]]
-name = "vercel_runtime"
-version = "2.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3721700ab7190d585557944a5ba789c8e81ffdb8ce049a514a27a309e138609c"
-dependencies = [
- "base64 0.22.1",
- "http-body",
- "http-body-util",
- "hyper",
- "hyper-util",
- "lazy_static",
- "libc",
- "serde",
- "serde_json",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower",
 ]
 
 [[package]]
