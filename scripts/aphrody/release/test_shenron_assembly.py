@@ -19,6 +19,26 @@ spec.loader.exec_module(assembly)
 
 
 class AssemblyPrivacyTests(unittest.TestCase):
+    def test_release_includes_canonical_cdn_vfs_vhost(self):
+        owner = pathlib.Path(__file__).resolve().parents[3]
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            nginx, public = root / "nginx", root / "public"
+            nginx.mkdir()
+            public.mkdir()
+
+            assembly.copy_nginx_assets(owner, nginx, public)
+
+            source = owner / "infra/config/host/nginx/shenron/cdn.dragonballfr.com.conf"
+            bundled = nginx / source.name
+            self.assertTrue(bundled.is_file())
+            self.assertEqual(bundled.read_bytes(), source.read_bytes())
+            self.assertIn(
+                b"/api/v1/vfs/file?path=$shenron_vfs_asset_path",
+                bundled.read_bytes(),
+            )
+            self.assertTrue((public / "50x.html").is_file())
+
     def test_shenron_memory_limits_include_observed_oom_headroom(self):
         self.assertEqual(assembly.MEMORY_LIMITS["bot"], "640m")
         self.assertEqual(assembly.MEMORY_LIMITS["site"], "1024m")

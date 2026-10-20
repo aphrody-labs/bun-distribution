@@ -70,6 +70,14 @@ def configure_native_cache(service):
     )
 
 
+def copy_nginx_assets(owner, nginx, public):
+    source_root = pathlib.Path(owner) / "infra/config/host/nginx/shenron"
+    for source in source_root.glob("*.conf"):
+        shutil.copy2(source, nginx / source.name)
+    for source in (source_root / "errorpages/dragonballfr").glob("*.html"):
+        shutil.copy2(source, public / source.name)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("release", type=pathlib.Path)
@@ -181,15 +189,10 @@ def main():
     release.mkdir(parents=True)
     nginx = release / "nginx"
     nginx.mkdir()
-    owner = pathlib.Path(__file__).resolve().parents[2]
-    for source in (owner / "tools/config/host/nginx/shenron").glob("*.conf"):
-        shutil.copy2(source, nginx / source.name)
+    owner = pathlib.Path(__file__).resolve().parents[3]
     public = release / "public"
     public.mkdir()
-    for source in (owner / "tools/config/host/nginx/shenron/errorpages/dragonballfr").glob(
-        "*.html"
-    ):
-        shutil.copy2(source, public / source.name)
+    copy_nginx_assets(owner, nginx, public)
     gateway = hardened(args.gateway_image_id, "0:0")
     gateway.update(
         cap_add=["NET_BIND_SERVICE", "SETUID", "SETGID"],
