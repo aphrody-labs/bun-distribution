@@ -154,9 +154,9 @@ mod tests {
 
     fn fixture() -> tempfile::TempDir {
         let root = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(root.path().join("m3/templates")).unwrap();
-        std::fs::write(root.path().join("m3/templates/stack.toml"), "").unwrap();
-        let ui = root.path().join("crates/ui/app/ui-dist");
+        std::fs::create_dir_all(root.path().join("packages/m3-templates")).unwrap();
+        std::fs::write(root.path().join("packages/m3-templates/stack.toml"), "").unwrap();
+        let ui = root.path().join("packages/app-ui/dist");
         std::fs::create_dir_all(ui.join("fonts")).unwrap();
         std::fs::write(ui.join("index.html"), "<div id=\"root\">canonical app-ui</div><script type=\"module\" src=\"/app.js\"></script>").unwrap();
         std::fs::write(ui.join("app.js"), "canonical_bundle").unwrap();
@@ -194,7 +194,7 @@ mod tests {
             } else {
                 assert_eq!(
                     body.as_ref(),
-                    std::fs::read(root.path().join("crates/ui/app/ui-dist/index.html")).unwrap()
+                    std::fs::read(root.path().join("packages/app-ui/dist/index.html")).unwrap()
                 );
             }
         }
@@ -259,7 +259,7 @@ mod tests {
     #[test]
     fn missing_canonical_artifact_is_an_explicit_error() {
         let root = fixture();
-        std::fs::remove_file(root.path().join("crates/ui/app/ui-dist/app.js")).unwrap();
+        std::fs::remove_file(root.path().join("packages/app-ui/dist/app.js")).unwrap();
         assert!(router(root.path(), None).is_err());
     }
 

@@ -7,7 +7,8 @@ rust-version.workspace = true
 authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
-license.workspace      = true
+license                = "Apache-2.0"
+license-file           = "../../LICENSE-APACHE"
 description            = "wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage, patch apply, document search and language detection over existing crates, and the terminal."
 
 [lib]

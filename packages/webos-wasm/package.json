@@ -6,7 +6,8 @@
   "files": [
     "src",
     "wasm",
-    "README.md"
+    "README.md",
+    "stage-notices.ts"
   ],
   "type": "module",
   "imports": {
@@ -24,7 +25,7 @@
     "access": "public"
   },
   "scripts": {
-    "build:wasm": "wasm-pack build ../../crates/aphrody-webos-wasm --target web --out-dir ../../packages/webos-wasm/wasm --release -- --locked",
+    "build:wasm": "wasm-pack build ../../crates/aphrody-webos-wasm --target web --out-dir ../../packages/webos-wasm/wasm --release -- --locked && bun stage-notices.ts",
     "typecheck": "bun check --noEmit",
     "test": "bun test"
   },

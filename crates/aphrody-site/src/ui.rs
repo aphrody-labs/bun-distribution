@@ -27,8 +27,8 @@ impl AppUi {
     pub fn for_workspace(workspace: &Path) -> io::Result<Self> {
         let root = std::env::var_os("APHRODY_UI_DIR")
             .filter(|value| !value.is_empty())
-            .map(PathBuf::from)
-            .unwrap_or_else(|| workspace.join("crates/ui/app/ui-dist"));
+            .map(|path| workspace.join(path))
+            .unwrap_or_else(|| workspace.join("packages/app-ui/dist"));
         Self::load(&root)
     }
 

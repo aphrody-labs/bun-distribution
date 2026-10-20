@@ -7,6 +7,7 @@ import { buildPackages } from "./packages";
 import { buildSeo } from "./seo";
 import { stageVm } from "./vm";
 import { buildDocs } from "./docs";
+import { stageWorkspace } from "./workspace";
 
 const root = resolve(import.meta.dir, "../..");
 const dist = join(import.meta.dir, "dist");
@@ -18,7 +19,7 @@ interface Entry {
 }
 
 const tomlDesc = (text: string) => {
-  const line = text.split("\n").find(l => l.startsWith("description"));
+  const line = text.split("\n").find((l) => l.startsWith("description"));
   const start = line?.indexOf('"') ?? -1;
   const end = line?.lastIndexOf('"') ?? -1;
   return line && end > start
@@ -29,7 +30,10 @@ const tomlDesc = (text: string) => {
     : "";
 };
 
-async function scan(dir: string, read: (path: string) => Promise<{ d: string; k?: string } | undefined>) {
+async function scan(
+  dir: string,
+  read: (path: string) => Promise<{ d: string; k?: string } | undefined>,
+) {
   const out: Entry[] = [];
   for (const e of await readdir(join(root, dir), { withFileTypes: true })) {
     if (!e.isDirectory() || e.name.startsWith(".")) continue;
@@ -39,14 +43,15 @@ async function scan(dir: string, read: (path: string) => Promise<{ d: string; k?
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }
 
-const apps = await scan("apps", async p => {
+const apps = await scan("apps", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
   const cargo = Bun.file(join(p, "Cargo.toml"));
   let d = "";
   if (await pkg.exists()) d = (await pkg.json()).description ?? "";
   if (!d && (await cargo.exists())) d = tomlDesc(await cargo.text());
   const kind =
-    (await Bun.file(join(p, "index.html")).exists()) || (await Bun.file(join(p, "Trunk.toml")).exists())
+    (await Bun.file(join(p, "index.html")).exists()) ||
+    (await Bun.file(join(p, "Trunk.toml")).exists())
       ? "web"
       : (await pkg.exists())
         ? "js"
@@ -54,14 +59,14 @@ const apps = await scan("apps", async p => {
   return { d, k: kind };
 });
 
-const packages = await scan("packages", async p => {
+const packages = await scan("packages", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
   if (!(await pkg.exists())) return { d: "" };
   const j = await pkg.json();
   return { d: j.description ?? "" };
 });
 
-const crates = await scan("crates", async p => {
+const crates = await scan("crates", async (p) => {
   const cargo = Bun.file(join(p, "Cargo.toml"));
   return { d: (await cargo.exists()) ? tomlDesc(await cargo.text()) : "" };
 });
@@ -72,8 +77,16 @@ const hosts: Record<string, { name: string; host: string; alias: string }> = {
   artcraft: { name: "Generation", host: "app-generation", alias: "artcraft" },
   photocraft: { name: "Images", host: "app-images", alias: "photocraft" },
   vectorcraft: { name: "Vectors", host: "app-vectors", alias: "vectorcraft" },
-  effectcraft: { name: "Compositing", host: "app-compositing", alias: "effectcraft" },
-  lightcraft: { name: "Photo processing", host: "app-photo-processing", alias: "lightcraft" },
+  effectcraft: {
+    name: "Compositing",
+    host: "app-compositing",
+    alias: "effectcraft",
+  },
+  lightcraft: {
+    name: "Photo processing",
+    host: "app-photo-processing",
+    alias: "lightcraft",
+  },
   pdfcraft: { name: "PDF", host: "app-pdf", alias: "pdfcraft" },
   wordcraft: { name: "Documents", host: "app-documents", alias: "wordcraft" },
   soundcraft: { name: "Audio", host: "app-audio", alias: "soundcraft" },
@@ -81,12 +94,20 @@ const hosts: Record<string, { name: string; host: string; alias: string }> = {
   cadcraft: { name: "CAD", host: "app-cad", alias: "cadcraft" },
   deckcraft: { name: "Slides", host: "app-slides", alias: "deckcraft" },
   gridcraft: { name: "Tables", host: "app-tables", alias: "gridcraft" },
-  figcraft: { name: "Interface layouts", host: "app-interface-layouts", alias: "figcraft" },
+  figcraft: {
+    name: "Interface layouts",
+    host: "app-interface-layouts",
+    alias: "figcraft",
+  },
 };
 
 const catalog = {
   generated: new Date().toISOString(),
-  counts: { apps: apps.length, packages: packages.length, crates: crates.length },
+  counts: {
+    apps: apps.length,
+    packages: packages.length,
+    crates: crates.length,
+  },
   apps,
   packages,
   crates,
@@ -105,7 +126,10 @@ const tokens = [
 await Bun.write(join(dist, "m3.css"), tokens);
 
 const result = await Bun.build({
-  entrypoints: [join(import.meta.dir, "src/main.ts"), join(import.meta.dir, "src/sw.ts")],
+  entrypoints: [
+    join(import.meta.dir, "src/main.ts"),
+    join(import.meta.dir, "src/sw.ts"),
+  ],
   outdir: dist,
   target: "browser",
   minify: true,
@@ -119,26 +143,37 @@ if (!result.success) {
 }
 
 const wasmDir = join(root, "packages/webos-wasm/wasm");
-await cp(join(wasmDir, "aphrody_webos_wasm_bg.wasm"), join(dist, "wasm/aphrody_webos_wasm_bg.wasm"));
+await cp(
+  join(wasmDir, "aphrody_webos_wasm_bg.wasm"),
+  join(dist, "wasm/aphrody_webos_wasm_bg.wasm"),
+);
+await cp(join(root, "LICENSE-APACHE"), join(dist, "wasm/LICENSE-APACHE"));
 // @aphrody/m3-fonts: Google Sans Flex / Code and Material Symbols, subset to the faces the shell uses.
 const fontSrc = join(root, "packages/m3-fonts/fonts");
 await mkdir(join(dist, "fonts"), { recursive: true });
 for (const [from, to] of [
   ["web/GoogleSansFlex-latin.woff2", "GoogleSansFlex-latin.woff2"],
   ["web/GoogleSansCode-latin.woff2", "GoogleSansCode-latin.woff2"],
-  ["upstream/material-symbols/material-symbols-rounded.woff2", "material-symbols-rounded.woff2"],
+  [
+    "upstream/material-symbols/material-symbols-rounded.woff2",
+    "material-symbols-rounded.woff2",
+  ],
 ])
   await cp(join(fontSrc, from!), join(dist, "fonts", to!));
-const faces = (await Bun.file(join(root, "packages/m3-fonts/src/fonts.css")).text())
+const faces = (
+  await Bun.file(join(root, "packages/m3-fonts/src/fonts.css")).text()
+)
   .split("@font-face")
-  .filter(f => /Google Sans (Flex|Code)/.test(f.split("}")[0]!));
-const symbols = (await Bun.file(join(root, "packages/m3-fonts/src/fonts-symbols.css")).text())
+  .filter((f) => /Google Sans (Flex|Code)/.test(f.split("}")[0]!));
+const symbols = (
+  await Bun.file(join(root, "packages/m3-fonts/src/fonts-symbols.css")).text()
+)
   .split("@font-face")
-  .filter(f => f.includes("Rounded"));
+  .filter((f) => f.includes("Rounded"));
 await Bun.write(
   join(dist, "fonts.css"),
   [...faces, ...symbols]
-    .map(f => "@font-face" + f.split("}")[0] + "}")
+    .map((f) => "@font-face" + f.split("}")[0] + "}")
     .join(String.fromCharCode(10))
     .replaceAll("../fonts/web/", "/fonts/")
     .replaceAll("../fonts/upstream/material-symbols/", "/fonts/"),
@@ -203,7 +238,10 @@ const FILE_ICONS = [
   "Sync",
 ];
 for (const name of FILE_ICONS)
-  await cp(join(root, "packages/assets/icons", name + ".png"), join(dist, "icons", name + ".png"));
+  await cp(
+    join(root, "packages/assets/icons", name + ".png"),
+    join(dist, "icons", name + ".png"),
+  );
 await Bun.write(
   join(dist, "manifest.webmanifest"),
   JSON.stringify({
@@ -216,20 +254,43 @@ await Bun.write(
     theme_color: "#6750a4",
     icons: [
       { src: "/brand/256.png", sizes: "256x256", type: "image/png" },
-      { src: "/brand/1024.png", sizes: "1024x1024", type: "image/png", purpose: "any maskable" },
+      {
+        src: "/brand/1024.png",
+        sizes: "1024x1024",
+        type: "image/png",
+        purpose: "any maskable",
+      },
     ],
   }),
 );
 // Shared sheet plus one sheet per app (src/apps/*.css), served as one file.
-const sheets = [join(import.meta.dir, "src/styles.css"), ...(await readdir(join(import.meta.dir, "src/apps"))).filter(f => f.endsWith(".css")).sort().map(f => join(import.meta.dir, "src/apps", f))];
-await Bun.write(join(dist, "styles.css"), (await Promise.all(sheets.map(s => Bun.file(s).text()))).join(String.fromCharCode(10)));
+const sheets = [
+  join(import.meta.dir, "src/styles.css"),
+  ...(await readdir(join(import.meta.dir, "src/apps")))
+    .filter((f) => f.endsWith(".css"))
+    .sort()
+    .map((f) => join(import.meta.dir, "src/apps", f)),
+];
+await Bun.write(
+  join(dist, "styles.css"),
+  (await Promise.all(sheets.map((s) => Bun.file(s).text()))).join(
+    String.fromCharCode(10),
+  ),
+);
 await cp(join(import.meta.dir, "src/index.html"), join(dist, "index.html"));
 await cp(join(import.meta.dir, "public"), dist, { recursive: true });
+await stageWorkspace(dist, root);
 await Bun.write(join(dist, "catalog.json"), JSON.stringify(catalog));
 await stageVm(dist);
 const docs = await buildDocs(dist);
-console.log(`docs: ${Object.entries(docs).map(([k, n]) => `${k} ${n}`).join(", ")}`);
+console.log(
+  `docs: ${Object.entries(docs)
+    .map(([k, n]) => `${k} ${n}`)
+    .join(", ")}`,
+);
 const built = await buildPackages(dist);
 await buildSeo(dist, catalog);
-console.log(`packages: ${built.map(p => p.id).join(", ") || "none"}`);
-console.log(`webos: ${apps.length} apps, ${packages.length} packages, ${crates.length} crates`);
+console.log(`packages: ${built.map((p) => p.id).join(", ") || "none"}`);
+console.log(
+  `webos: ${apps.length} apps, ${packages.length} packages, ${crates.length} crates`,
+);

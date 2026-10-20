@@ -2,7 +2,7 @@
 //! Stage the local agent console assets for `include_str!`.
 //!
 //! The console is built by the UI package in this workspace
-//! (`crates/ui/app/ui-dist/`).
+//! (`packages/app-ui/dist/`, or the explicit `APHRODY_UI_DIR`).
 //! Embedding that path directly makes this crate uncompilable on any checkout
 //! where the UI has not been built (CI, a fresh clone, a Linux host without
 //! Bun). This script copies the three assets into `OUT_DIR` when they exist,
@@ -26,7 +26,7 @@ const PLACEHOLDER_HTML: &str = r#"<!doctype html>
 <h1>aphrody app-server</h1>
 <p>The JSON-RPC API is running, but this binary was built without the web console.</p>
 <p>Build it in the system layer first:</p>
-<pre>bun install &amp;&amp; bun run --filter aphrody-app build</pre>
+<pre>bun packages/app-ui/build.ts</pre>
 <p>then rebuild <code>aphrody-app-server</code> so the assets are embedded.</p>
 </main>
 <script src="/app.js"></script>
@@ -44,7 +44,12 @@ const PLACEHOLDER_CSS: &str = "body{font:16px/1.5 system-ui,sans-serif;margin:3r
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
-    let ui_dist = manifest_dir.join("../../apps/aphrody-app/ui-dist");
+    let workspace = manifest_dir.join("../..");
+    let ui_dist = env::var_os("APHRODY_UI_DIR")
+        .filter(|value| !value.is_empty())
+        .map(|path| workspace.join(path))
+        .unwrap_or_else(|| workspace.join("packages/app-ui/dist"));
+    println!("cargo:rerun-if-env-changed=APHRODY_UI_DIR");
 
     // Re-run when the built console changes or (dis)appears.
     println!("cargo:rerun-if-changed={}", ui_dist.display());
@@ -61,7 +66,7 @@ fn main() {
     } else {
         println!(
             "cargo:warning=aphrody-app-server: console assets not found under {}; embedding a \
-             placeholder page (build the UI from crates/ui/app to ship the real console)",
+             unavailable page (build packages/app-ui to ship the real console)",
             ui_dist.display()
         );
         fs::write(out_dir.join("index.html"), PLACEHOLDER_HTML).expect("write placeholder html");
