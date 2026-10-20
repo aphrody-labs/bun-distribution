@@ -30,9 +30,15 @@ logs do not define the current state; use Git history for prior batches.
    `inspectWorkspaceManifests` for app/package/crate manifests, pinned
    submodules and vendor roots. It records source/repository pins, workspace
    owners, targets when declared, and explicit qualification/migration states.
-   Its present scope follows root-declared submodules and initialized manifest
-   trees; nested submodule declarations and uninitialized source manifests still
-   need coverage. Keep counts derived from this inventory rather than prose.
+   The inventory now follows nested `.gitmodules` declarations through
+   initialized owners and records the root commit. Uninitialized owners still
+   have no inspectable nested manifests. The current source inventory lists
+   3,639 manifests (2,052 Cargo and 1,567 Bun), 326 recursive submodule
+   declarations (166 at the root; 104 unavailable at the root and 170 across
+   all visible levels), and 140 vendor roots. It reports 12 ownership
+   conflicts and seven manifest parse failures; six are intentionally invalid
+   runtime fixtures and one is an unavailable nested `vendor/rea` manifest.
+   Keep counts derived from this inventory rather than prose.
    Regenerate `docs/aphrody/ecosystem/` only when both owner checkouts are
    available and complete; the available Aphrody checkout is missing, so the
    generator's zero-entry result is not a valid replacement for its current
@@ -86,9 +92,11 @@ logs do not define the current state; use Git history for prior batches.
   product/runtime receipts, and verifies it on container health. The separate
   Alpine musl and Ubuntu compatibility image recipes keep different runtime
   ABIs and are not yet product-payload images.
-- The source-only audit of all 92 uninitialized root submodules found zero
-  proven removals: 24 have implementation/manifest consumers and 67 retain
-  catalog/owner contracts. Material Design Icons has a concrete packaging gap:
+- The current recursive source inventory reports 326 declarations, including
+  166 root declarations and 104 unavailable root sources. The earlier 92-item
+  audit count is stale; no submodule removal is justified until the recursive
+  inventory and current consumers are reviewed. Material Design Icons has a
+  concrete packaging gap:
   its package loads assets from `vendor/` but excludes those assets from its
   published file set. Migrate and qualify the assets, license and consumers
   before considering retirement of that vendor.

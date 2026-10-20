@@ -17,40 +17,75 @@ async function inventoryGit(root: string, args: string[]) {
   return result.stdout;
 }
 
-/** Live root-index source pins and their declarations; no manifest scan or build. */
+/** Recursive Git source pins and declarations available in initialized owners; no build or checkout mutation. */
 export async function inspectGitSourceOwners(root: string, preloaded: { staged?: string; modules?: string } = {}) {
-  const [staged, modules] = await Promise.all([
-    preloaded.staged ?? inventoryGit(root, ["ls-files", "--stage", "-z"]),
-    preloaded.modules ?? Bun.file(join(root, ".gitmodules")).text(),
-  ]);
-  const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^\[]*)/g)].map(match => ({
-    name: match[1],
-    path: /^\s*path\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? "",
-    repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? null,
+  const submodules: {
+    name: string;
+    path: string;
+    repository: string | null;
+    revision: string | null;
+    initialized: boolean;
+    depth: number;
+  }[] = [];
+  const pins: { path: string; revision: string }[] = [];
+  const visited = new Set<string>();
+  const statusOutput = await inventoryGit(root, ["submodule", "status", "--recursive"]);
+  const statusByPath = new Map(statusOutput.split("\n").flatMap(line => {
+    const match = /^([-+ U])([0-9a-f]{40})\s+(.+)$/.exec(line);
+    return match ? [[match[3]!.replace(/\s+\([^)]*\)$/, ""), match[1]!] as const] : [];
   }));
-  const indexEntries = staged.split("\0").filter(Boolean);
-  const pins = indexEntries.filter(line => line.startsWith("160000 ")).map(line => {
-    const tab = line.indexOf("\t");
-    return { path: line.slice(tab + 1), revision: line.slice(7, 47) };
-  });
-  const submodules = await Promise.all(declarations.map(async declaration => ({
-    ...declaration,
-    revision: pins.find(pin => pin.path === declaration.path)?.revision ?? null,
-    initialized: await Bun.file(join(root, declaration.path, ".git")).exists() || await Bun.file(join(root, declaration.path, ".git/HEAD")).exists(),
-  })));
+
+  async function visit(repositoryRoot: string, prefix: string, depth: number) {
+    const identity = prefix || ".";
+    if (visited.has(identity)) return;
+    visited.add(identity);
+    const modulesPath = join(repositoryRoot, ".gitmodules");
+    const modulesFile = Bun.file(modulesPath);
+    if (!(await modulesFile.exists())) return;
+    const [modules, staged] = await Promise.all([
+      depth === 0 && preloaded.modules !== undefined ? preloaded.modules : modulesFile.text(),
+      depth === 0 && preloaded.staged !== undefined
+        ? preloaded.staged
+        : inventoryGit(root, ["-C", repositoryRoot, "ls-files", "--stage", "-z"]),
+    ]);
+    const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^\[]*)/g)].map(match => ({
+      name: match[1]!,
+      path: /^\s*path\s*=\s*(.+)$/m.exec(match[2]!)?.[1].trim() ?? "",
+      repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2]!)?.[1].trim() ?? null,
+    })).map(declaration => ({ ...declaration, path: declaration.path.replaceAll("\\", "/") }))
+      .filter(declaration => declaration.path && !posix.isAbsolute(declaration.path) &&
+        !/^[a-z]:\//i.test(declaration.path) &&
+        !declaration.path.split("/").some(part => part === ".." || part === "." || part === ""));
+    const localPins = staged.split("\0").filter(line => line.startsWith("160000 ")).map(line => {
+      const tab = line.indexOf("\t");
+      return { path: line.slice(tab + 1), revision: line.slice(7, 47) };
+    });
+    pins.push(...localPins.map(pin => ({ path: prefix ? `${prefix}/${pin.path}` : pin.path, revision: pin.revision })));
+    for (const declaration of declarations) {
+      const path = prefix ? `${prefix}/${declaration.path.replaceAll("\\", "/")}` : declaration.path.replaceAll("\\", "/");
+      const revision = localPins.find(pin => pin.path === declaration.path)?.revision ?? null;
+      const childRoot = join(repositoryRoot, declaration.path);
+      const initialized = statusByPath.has(path) && statusByPath.get(path) !== "-";
+      submodules.push({ name: declaration.name, path, repository: declaration.repository, revision, initialized, depth: depth + 1 });
+      if (initialized) await visit(childRoot, path, depth + 1);
+    }
+  }
+
+  await visit(root, "", 0);
   return { submodules, pins };
 }
 
 /** Read source manifests, including initialized pinned sources, without scanning caches or running builds. */
 export async function inspectWorkspaceManifests(root: string) {
   const git = (args: string[]) => inventoryGit(root, args);
-  const [tracked, untracked, staged, modules, rootCargo, rootBun] = await Promise.all([
+  const [tracked, untracked, staged, modules, rootCargo, rootBun, rootRevision] = await Promise.all([
     git(["ls-files", "--cached", "--recurse-submodules", "-z", "--", "Cargo.toml", "package.json", ":(glob)**/Cargo.toml", ":(glob)**/package.json"]),
     git(["ls-files", "--others", "--exclude-standard", "-z", "--", "Cargo.toml", "package.json", ":(glob)**/Cargo.toml", ":(glob)**/package.json"]),
     git(["ls-files", "--stage", "-z"]),
     Bun.file(join(root, ".gitmodules")).text(),
     Bun.file(join(root, "Cargo.toml")).text(),
     Bun.file(join(root, "package.json")).json() as Promise<PackageManifest>,
+    git(["rev-parse", "HEAD"]),
   ]);
   const cargoWorkspace = (Bun.TOML.parse(rootCargo) as CargoManifest).workspace ?? {};
   const bunMembers = Array.isArray(rootBun.workspaces) ? rootBun.workspaces : rootBun.workspaces?.packages ?? [];
@@ -245,8 +280,9 @@ export async function inspectWorkspaceManifests(root: string) {
   ];
   return {
     schemaVersion: 1,
-    coverage: "Current tracked manifests in root and initialized submodules, plus nonignored untracked root manifests. Uninitialized sources are reported without inventing their manifests.",
-    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, unpinnedSubmodules: submodules.filter(item => item.revision === null).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
+    rootRevision: rootRevision.trim(),
+    coverage: "Tracked root and initialized recursive submodule manifests, plus nonignored untracked root manifests. Git source declarations are recursive through initialized owners; unavailable owners are recorded from their parent contract without inventing nested manifests.",
+    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, rootSubmodules: submodules.filter(item => item.depth === 1).length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, unavailableRootSubmodules: submodules.filter(item => item.depth === 1 && !item.initialized).length, unpinnedSubmodules: submodules.filter(item => item.revision === null).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
     ownershipCoverage: "Owners follow explicit package.workspace or nearest ancestor workspace within the Git source boundary. Cargo implicit path-dependency membership is unverified without Cargo metadata. Source roles are path-based labels; all parsed manifests remain listed.",
     ownershipConflicts,
     componentInventory, manifests, submodules, missingMembers, failures,
