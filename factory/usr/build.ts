@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
-// `bun factory usr plan|build|fetch [--composition server|cosmic|gaming] [--snapshot YYYY-MM-DD | --lock FILE]
+// `bun factory usr plan|build|fetch [--composition server|desktop|gaming] [--desktop-session cosmic|omarchy-hyprland] [--snapshot YYYY-MM-DD | --lock FILE]
 //   [--verity] [--no-boot] [--host HOST] [--job ID]`
 import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Glob } from "bun";
+import type { DesktopSession } from "../arch/index.ts";
 
 const here = import.meta.dir;
 const workspace = resolve(here, "../..");
-type UsrComposition = "server" | "cosmic" | "gaming";
+type UsrComposition = "server" | "desktop" | "gaming";
 interface Repository {
   name: string;
   server: string;
@@ -64,9 +65,12 @@ export interface UsrLockPackage {
   bytes: number;
 }
 export interface UsrLock {
-  schemaVersion: 2;
+  schemaVersion: 3;
   kind: "bun-os-usr-lock";
   composition: UsrComposition;
+  desktopSession: DesktopSession | null;
+  desktopSessionOwner: string | null;
+  desktopSessionState: "not-applicable" | "unqualified";
   snapshot: string | null;
   builderImage: string;
   kernelSelection: UsrManifest["kernelSelection"];
@@ -139,7 +143,11 @@ export async function stageMulticall(manifest: UsrManifest, dir: string) {
     });
 }
 
-export async function planUsr(composition: UsrComposition, snapshot?: string) {
+export async function planUsr(
+  composition: UsrComposition,
+  snapshot?: string,
+  requestedDesktopSession?: DesktopSession,
+) {
   if (snapshot && !/^\d{4}-\d{2}-\d{2}$/.test(snapshot))
     throw new Error("Expected --snapshot YYYY-MM-DD");
   const manifest: UsrManifest = await Bun.file(
@@ -150,6 +158,33 @@ export async function planUsr(composition: UsrComposition, snapshot?: string) {
   ).json();
   const selected = manifest.compositions[composition];
   if (!selected) throw new Error(`Unknown usr composition: ${composition}`);
+  if (
+    requestedDesktopSession !== undefined &&
+    requestedDesktopSession !== "cosmic" &&
+    requestedDesktopSession !== "omarchy-hyprland"
+  )
+    throw new Error("Unknown desktop session.");
+  if (requestedDesktopSession && composition !== "desktop")
+    throw new Error(
+      "A desktop session can only be selected for the desktop composition.",
+    );
+  const defaultDesktopSession = profile.compositions.desktop
+    .defaultSession as DesktopSession;
+  const desktopSession =
+    composition === "desktop"
+      ? (requestedDesktopSession ?? defaultDesktopSession)
+      : null;
+  const session = desktopSession
+    ? profile.desktopSessions[desktopSession]
+    : undefined;
+  if (composition === "desktop" && !session)
+    throw new Error(
+      "The desktop composition requires a known desktop session.",
+    );
+  if (session?.state === "blocked")
+    throw new Error(
+      `Desktop session ${desktopSession} is blocked: ${session.blockers.join(" ")}`,
+    );
   const components = await Bun.file(
     join(workspace, manifest.bunos.manifest),
   ).json();
@@ -168,6 +203,7 @@ export async function planUsr(composition: UsrComposition, snapshot?: string) {
       ...manifest.basePackages,
       ...chain.flatMap((id) => profile.compositions[id].packages as string[]),
       ...selected.packages,
+      ...(session?.packages ?? []),
       ...bunosComposition,
     ]),
   ];
@@ -201,7 +237,16 @@ export async function planUsr(composition: UsrComposition, snapshot?: string) {
       return [`[${repo.name}]`, `Server = ${server}`, ""];
     }),
   ].join("\n");
-  return { manifest, composition, packages, localPackages, pacmanConf };
+  return {
+    manifest,
+    composition,
+    desktopSession,
+    desktopSessionOwner: session?.owner ?? null,
+    desktopSessionState: session?.state ?? "not-applicable",
+    packages,
+    localPackages,
+    pacmanConf,
+  };
 }
 
 function pairs(map: Record<string, string>) {
@@ -287,6 +332,7 @@ async function fetchArtifacts(
 interface BuildOptions {
   verity: boolean;
   boot: boolean;
+  desktopSession?: DesktopSession;
   snapshot?: string;
   lock?: UsrLock;
 }
@@ -294,6 +340,9 @@ interface BuildOptions {
 async function writeLock(
   manifest: UsrManifest,
   composition: UsrComposition,
+  desktopSession: DesktopSession | null,
+  desktopSessionOwner: string | null,
+  desktopSessionState: UsrLock["desktopSessionState"],
   job: string,
   local: string,
   snapshot?: string,
@@ -316,16 +365,24 @@ async function writeLock(
     } as UsrLockPackage;
   });
   const lock: UsrLock = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     kind: "bun-os-usr-lock",
     composition,
+    desktopSession,
+    desktopSessionOwner,
+    desktopSessionState,
     snapshot: snapshot ?? null,
     builderImage: manifest.builderImage,
     kernelSelection: manifest.kernelSelection,
     job,
     packages,
   };
-  const path = join(workspace, manifest.lockDirectory, `${composition}.json`);
+  const lockName =
+    composition === "desktop"
+      ? `desktop-${desktopSession}.json`
+      : `${composition}.json`;
+  const path = join(workspace, manifest.lockDirectory, lockName);
+  await mkdir(dirname(path), { recursive: true });
   await Bun.write(
     path,
     `${JSON.stringify(lock, null, 2)}
@@ -346,15 +403,23 @@ async function build(
   const snapshot = options.lock
     ? (options.lock.snapshot ?? undefined)
     : options.snapshot;
-  const { manifest, packages, localPackages, pacmanConf } = await planUsr(
-    composition,
-    snapshot,
-  );
+  const {
+    manifest,
+    packages,
+    localPackages,
+    pacmanConf,
+    desktopSession,
+    desktopSessionOwner,
+    desktopSessionState,
+  } = await planUsr(composition, snapshot, options.desktopSession);
   if (options.lock) {
     if (
-      options.lock.schemaVersion !== 2 ||
+      options.lock.schemaVersion !== 3 ||
       options.lock.kind !== "bun-os-usr-lock" ||
       options.lock.composition !== composition ||
+      options.lock.desktopSession !== desktopSession ||
+      options.lock.desktopSessionOwner !== desktopSessionOwner ||
+      options.lock.desktopSessionState !== desktopSessionState ||
       options.lock.kernelSelection?.source !==
         manifest.kernelSelection.source ||
       options.lock.kernelSelection?.state !== manifest.kernelSelection.state
@@ -478,7 +543,16 @@ async function build(
     ].join("; ");
     await run(["ssh", ...sshOptions, host, script], (seconds + 120) * 1000);
     const local = await fetchArtifacts(manifest, host, composition, job);
-    const lock = await writeLock(manifest, composition, job, local, snapshot);
+    const lock = await writeLock(
+      manifest,
+      composition,
+      desktopSession,
+      desktopSessionOwner,
+      desktopSessionState,
+      job,
+      local,
+      snapshot,
+    );
     await run(
       [
         "ssh",
@@ -491,7 +565,18 @@ async function build(
     const boot = (await Bun.file(join(local, "boot-result.txt")).exists())
       ? (await Bun.file(join(local, "boot-result.txt")).text()).trim()
       : "skipped";
-    return { job, host, local, lock, boot, packages };
+    return {
+      job,
+      host,
+      local,
+      lock,
+      composition,
+      desktopSession,
+      desktopSessionOwner,
+      desktopSessionState,
+      boot,
+      packages,
+    };
   } finally {
     await rm(stage, { recursive: true, force: true });
   }
@@ -503,6 +588,7 @@ export async function main(args: string[]) {
     allowPositionals: true,
     options: {
       composition: { type: "string", default: "server" },
+      "desktop-session": { type: "string" },
       host: { type: "string" },
       job: { type: "string" },
       verity: { type: "boolean", default: false },
@@ -512,15 +598,20 @@ export async function main(args: string[]) {
     },
   });
   const composition = values.composition as UsrComposition;
-  if (!["server", "cosmic", "gaming"].includes(composition))
-    throw new Error("Expected --composition server|cosmic|gaming");
+  if (!["server", "desktop", "gaming"].includes(composition))
+    throw new Error("Expected --composition server|desktop|gaming");
+  const desktopSession = values["desktop-session"] as
+    DesktopSession | undefined;
   const action = positionals[0] ?? "plan";
-  const plan = await planUsr(composition, values.snapshot);
+  const plan = await planUsr(composition, values.snapshot, desktopSession);
   const host = values.host ?? plan.manifest.host;
   if (action === "plan")
     return {
       composition,
       host,
+      desktopSession: plan.desktopSession,
+      desktopSessionOwner: plan.desktopSessionOwner,
+      desktopSessionState: plan.desktopSessionState,
       kernelSelection: plan.manifest.kernelSelection,
       packages: plan.packages,
       pacmanConf: plan.pacmanConf,
@@ -529,6 +620,7 @@ export async function main(args: string[]) {
     return build(composition, host, {
       verity: values.verity!,
       boot: !values["no-boot"],
+      desktopSession,
       snapshot: values.snapshot,
       lock: values.lock
         ? await Bun.file(resolve(values.lock)).json()

@@ -6,6 +6,7 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { planUsr } from "../usr/build.ts";
+import type { DesktopSession } from "../arch/index.ts";
 import { stageAlpineRuntime } from "./runtime.ts";
 import type { RuntimePin } from "@aphrody/bun-workspace";
 
@@ -29,7 +30,8 @@ interface AgentTooling {
   }[];
 }
 interface ImageSpec {
-  usrComposition?: "server" | "cosmic" | "gaming";
+  usrComposition?: "server" | "desktop" | "gaming";
+  desktopSession?: DesktopSession;
   agentTooling?: AgentTooling;
   platforms: string[];
   targets: Record<string, Kind>;
@@ -95,10 +97,32 @@ function buildArgs(name: string): Record<string, string> {
 }
 
 /** Generated inputs reused from the /usr factory: its pacman.conf, keys and composition package set. */
-async function generated(name: string) {
-  const composition = spec(name).usrComposition;
-  if (!composition) return {};
-  const usr = await planUsr(composition);
+async function generated(
+  name: string,
+  requestedDesktopSession?: DesktopSession,
+) {
+  const image = spec(name);
+  const composition = image.usrComposition;
+  if (!composition) {
+    if (requestedDesktopSession)
+      throw new Error(
+        "A desktop session requires an image with a desktop /usr composition.",
+      );
+    return {};
+  }
+  if (
+    image.desktopSession &&
+    requestedDesktopSession &&
+    image.desktopSession !== requestedDesktopSession
+  )
+    throw new Error(
+      `Image ${name} fixes desktop session ${image.desktopSession}.`,
+    );
+  const usr = await planUsr(
+    composition,
+    undefined,
+    requestedDesktopSession ?? image.desktopSession,
+  );
   const bootOnly = new Set(
     ["linux-cachyos", "linux-firmware", usr.manifest.kernelFallback].filter(
       Boolean,
@@ -113,14 +137,24 @@ async function generated(name: string) {
     ),
   ];
   // Newest local /usr job of this composition provides the [bunos] package files.
-  const artifacts = join(
-    usr.manifest.localArtifacts.replace(/^~/, homedir()),
-    composition,
-  );
-  const jobs = (
-    await Array.fromAsync(new Bun.Glob("*/repo/*.pkg.tar.zst").scan(artifacts))
-  ).sort();
-  const latest = jobs.at(-1)?.split(/[/\\]/)[0];
+  const artifactRoot = usr.manifest.localArtifacts.replace(/^~/, homedir());
+  const artifactCompositions =
+    composition === "desktop" ? ["desktop", "cosmic"] : [composition];
+  let artifacts = join(artifactRoot, composition);
+  let latest: string | undefined;
+  for (const artifactComposition of artifactCompositions) {
+    const candidate = join(artifactRoot, artifactComposition);
+    const jobs = (
+      await Array.fromAsync(
+        new Bun.Glob("*/repo/*.pkg.tar.zst").scan(candidate),
+      )
+    ).sort();
+    latest = jobs.at(-1)?.split(/[/\\]/)[0];
+    if (latest) {
+      artifacts = candidate;
+      break;
+    }
+  }
   return {
     repo: latest ? join(artifacts, latest, "repo") : undefined,
     missingRepo: latest
@@ -135,17 +169,23 @@ async function generated(name: string) {
         usr.packages.filter((pkg) => !bootOnly.has(pkg)).join("\n") + "\n",
     },
     args: { PACMAN_KEYS: keys.join(" ") },
+    desktopSession: usr.desktopSession,
+    desktopSessionOwner: usr.desktopSessionOwner,
+    desktopSessionState: usr.desktopSessionState,
   };
 }
 
-export async function planImage(name: string) {
+export async function planImage(name: string, desktopSession?: DesktopSession) {
   const image = spec(name);
-  const extra = await generated(name);
+  const extra = await generated(name, desktopSession);
   const blockedTargets = image.blockedTargets ?? {};
   return {
     name,
     ...image,
     targetBlockers: blockedTargets,
+    desktopSession: extra.desktopSession ?? image.desktopSession ?? null,
+    desktopSessionOwner: extra.desktopSessionOwner ?? null,
+    desktopSessionState: extra.desktopSessionState ?? "not-applicable",
     buildArgs: { ...buildArgs(name), ...extra.args },
     generated: Object.keys(extra.files ?? {}),
   };
@@ -336,6 +376,7 @@ async function build(
   only?: string,
   runtimes?: string,
   platform?: string,
+  desktopSession?: DesktopSession,
 ) {
   const declared = spec(name);
   const platforms = platform ? platform.split(",") : declared.platforms;
@@ -364,7 +405,7 @@ async function build(
       throw new Error(
         `${name}:${target} is blocked: ${image.blockedTargets[target]}`,
       );
-  const extra = await generated(name);
+  const extra = await generated(name, desktopSession);
   const args = { ...buildArgs(name), ...extra.args };
   const job = `${name}-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
   const remote = `${manifest.remoteRoot}/${job}`;
@@ -444,6 +485,9 @@ async function build(
       host,
       remote,
       targets,
+      desktopSession: extra.desktopSession ?? null,
+      desktopSessionOwner: extra.desktopSessionOwner ?? null,
+      desktopSessionState: extra.desktopSessionState ?? "not-applicable",
       status: `bun factory image status ${name} --job ${job}`,
     };
   } finally {
@@ -472,6 +516,7 @@ export async function main(args: string[]) {
     allowPositionals: true,
     options: {
       target: { type: "string" },
+      "desktop-session": { type: "string" },
       host: { type: "string" },
       job: { type: "string" },
       runtimes: { type: "string" },
@@ -485,9 +530,18 @@ export async function main(args: string[]) {
     throw new Error(
       `Expected image name: ${Object.keys(manifest.images).join("|")}`,
     );
-  if (action === "plan") return planImage(name);
+  const desktopSession = values["desktop-session"] as
+    DesktopSession | undefined;
+  if (action === "plan") return planImage(name, desktopSession);
   if (action === "build")
-    return build(name, host, values.target, values.runtimes, values.platform);
+    return build(
+      name,
+      host,
+      values.target,
+      values.runtimes,
+      values.platform,
+      desktopSession,
+    );
   if (action === "status") {
     if (!values.job) throw new Error("Missing --job");
     return status(host, values.job);

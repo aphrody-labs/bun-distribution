@@ -25,7 +25,7 @@
   ],
   "compositionPackages": {
     "server": ["aphrody"],
-    "cosmic": [
+    "desktop": [
       "aphrody",
       "bun-video-native",
       "bun-os-fonts",

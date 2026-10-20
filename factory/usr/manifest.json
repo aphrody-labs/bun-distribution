@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "kind": "bun-os-usr",
   "description": "Arch-style merged-usr /usr for Bun OS, assembled from real pacman packages plus Bun OS overlays",
   "architecture": "x86_64",
@@ -77,7 +77,7 @@
       "profile": "server",
       "packages": ["openssh"]
     },
-    "cosmic": {
+    "desktop": {
       "profile": "desktop",
       "packages": []
     },
