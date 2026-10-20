@@ -1716,7 +1716,7 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::Refs(d) => d.title(),
         Dialog::Icons { .. } => "Icons",
         Dialog::PasteSpecial { .. } => "Paste Special",
-        Dialog::About { .. } => "About WordCraft",
+        Dialog::About { .. } => "Aphrody / Bun · Documents",
         Dialog::SaveChanges { .. } => "WordCraft",
         Dialog::RecipientList { .. } => "Recipient List",
         Dialog::SelectTable { .. } => "Select Table",
@@ -3103,7 +3103,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 1 => crate::credits::contributors_ui(ui),
                 2 => crate::credits::models_ui(ui),
                 _ => {
-                    ui.label(egui::RichText::new(tl!("WordCraft")).font(semibold(22.0)));
+                    ui.label(egui::RichText::new(craft_ui::brand::app_title("Documents")).font(semibold(22.0)));
                     let build = option_env!("WORDCRAFT_BUILD_SHA")
                         .map(|s| s.get(..8).unwrap_or(s))
                         .unwrap_or(tl!("development build"));
@@ -3112,7 +3112,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                         &[("version", env!("CARGO_PKG_VERSION")), ("build", build)],
                     ));
                     ui.label(tl!(
-                        "A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team."
+                        "A free, open-source word processor written from scratch in Rust.\nPart of Aphrody / Bun, the open creative platform."
                     ));
                     ui.add_space(6.0);
                     ui.hyperlink_to(

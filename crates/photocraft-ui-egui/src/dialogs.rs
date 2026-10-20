@@ -703,7 +703,7 @@ pub fn title(d: &Dialog) -> String {
         DialogKind::About if d.fields.get("systemInfo").and_then(Value::as_bool) == Some(true) => {
             "System Info".into()
         }
-        DialogKind::About => "About PhotoCraft".into(),
+        DialogKind::About => craft_ui::brand::app_title("Images"),
         DialogKind::LayerStyle => "Layer Style".into(),
         DialogKind::Command => d
             .fields

@@ -442,7 +442,7 @@ fn units(app: &mut CadApp, ctx: &egui::Context, open: &mut bool) {
 fn about(ctx: &egui::Context, open: &mut bool) {
     let t = Tokens::get();
     let tab_id = egui::Id::new("about_tab");
-    egui::Window::new(crate::tl!("About CADCraft"))
+    egui::Window::new(craft_ui::brand::app_title("Drafting"))
         .id(egui::Id::new("About CADCraft"))
         .open(open)
         .default_size(vec2(640.0, 420.0))

@@ -333,7 +333,7 @@ fn about(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
     let mut close = false;
     let mut cmd: Option<&str> = None;
     let tab_id = egui::Id::new("about_tab");
-    modal(ctx, "About EffectCraft", vec2(680.0, 520.0), t, |ui| {
+    modal(ctx, &craft_ui::brand::app_title("Compositing"), vec2(680.0, 520.0), t, |ui| {
         let mut tab = ui.data_mut(|d| d.get_temp::<usize>(tab_id)).unwrap_or(0);
         ui.horizontal(|ui| {
             for (i, (label, id)) in ABOUT_TABS.iter().enumerate() {

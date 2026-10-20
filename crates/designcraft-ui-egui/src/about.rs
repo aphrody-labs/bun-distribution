@@ -209,12 +209,9 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
         }
         ui.vertical_centered(|ui| {
             ui.add_space(8.0);
-            let (r, _) = ui.allocate_exact_size(vec2(72.0, 72.0), Sense::hover());
-            paint_mark(ui, r, BRAND);
-            ui.add_space(6.0);
             ui.label(crate::rtl::widget(
                 ui,
-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "DesignCraft"))
+                egui::RichText::new(craft_ui::brand::app_title("Layout"))
                     .font(semibold(26.0))
                     .color(t.text_strong),
             ));
@@ -242,7 +239,7 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
                 ui,
                 egui::RichText::new(crate::i18n::tr(
                     &app.ui.language,
-                    "Part of the ArtCraft suite of open creative tools.",
+                    "Part of Aphrody / Bun, the open creative platform.",
                 ))
                 .size(12.0)
                 .color(t.text_dim),

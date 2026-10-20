@@ -50,7 +50,7 @@ fn title(id: &str) -> &'static str {
         "renameShape" => "Rename",
         "renameLayout" => "Rename Layout",
         "paragraph" => "Paragraph",
-        "about" => "About DeckCraft",
+        "about" => "Aphrody / Bun · Slides",
         "preferences" => "Preferences",
         "export" => "Export",
         "symbol" => "Symbol",

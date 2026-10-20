@@ -351,7 +351,7 @@ fn about_window(tab: &str, table: bool) -> (f32, f32, f32) {
         .expect("the OK button");
     // The dialog's contents: everything between its title and the OK button.
     let title = h
-        .query_all_by_label("About PhotoCraft")
+        .query_all_by_label("Aphrody / Bun · Images")
         .map(|n| n.rect())
         .find(|r| r.top() < ok.top())
         .expect("the dialog title");

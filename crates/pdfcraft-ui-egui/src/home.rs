@@ -43,9 +43,8 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     ui.horizontal(|ui| {
-                        widgets::artcraft_mark(ui, 28.0);
                         ui.vertical(|ui| {
-                            ui.label(egui::RichText::new(tl!("Join the ArtCraft community")).font(theme::semibold(15.0)));
+                            ui.label(egui::RichText::new("Join the Aphrody / Bun community").font(theme::semibold(15.0)));
                             ui.label(egui::RichText::new(tl!("Get help, share feedback and follow development on Discord.")).color(t.text_muted));
                         });
                     });

@@ -168,7 +168,7 @@ pub fn show(app: &mut FigApp, ctx: &Context) {
     let t = Tokens::get(ctx);
     if app.ui.about {
         let mut open = true;
-        window(tr("About FigCraft"), ctx)
+        window(&craft_ui::brand::app_title("Interface Design"), ctx)
             .open(&mut open)
             .show(ctx, |ui| {
                 ui.set_width(ABOUT_WIDTH);

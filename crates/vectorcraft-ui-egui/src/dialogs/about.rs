@@ -9,7 +9,7 @@ pub(super) fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
         return;
     }
     let mut open = true;
-    egui::Window::new(tl!("About VectorCraft"))
+    egui::Window::new(craft_ui::brand::app_title("Vectors"))
         .collapsible(false)
         .resizable(false)
         .open(&mut open)
