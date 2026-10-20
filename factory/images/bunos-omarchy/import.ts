@@ -248,8 +248,8 @@ export async function prepareOmarchyRootfsImport(
     );
   const importDir = resolve(contextDir, "import");
   const sourceDir = resolve(workspace, "omarchy-source-v0.12.0");
-  await run(["mkdir", "--", importDir], 10);
-  await run(["mkdir", "--", sourceDir], 10);
+  await run(["mkdir", "-p", "--", importDir], 10);
+  await run(["mkdir", "-p", "--", sourceDir], 10);
 
   const outputTar = resolve(importDir, "rootfs.tar");
   const partialTar = `${outputTar}.part`;
@@ -257,7 +257,7 @@ export async function prepareOmarchyRootfsImport(
   const mountDir = resolve(workspace, "omarchy-rootfs-mount");
   const receiptPath = resolve(importDir, "import-receipt.json");
   await assertNoExistingOutputs([outputTar, partialTar, expanded, receiptPath]);
-  await run(["mkdir", "--", mountDir], 10);
+  await run(["mkdir", "-p", "--", mountDir], 10);
 
   let mounted = false;
   const failures: unknown[] = [];
@@ -286,8 +286,9 @@ export async function prepareOmarchyRootfsImport(
       [
         "zstd",
         "--decompress",
+        "--memory=512MB",
         "--force",
-        "--output",
+        "-o",
         expanded,
         downloaded.rootfs.path,
       ],
