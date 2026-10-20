@@ -1817,9 +1817,12 @@ name = "aphrody-gpu-backend"
 version = "1.4.4"
 dependencies = [
  "cudarc",
+ "js-sys",
+ "naga 30.0.1",
  "pollster 1.0.1",
  "serde",
  "serde_json",
+ "wasm-bindgen",
  "wgpu 30.0.1",
 ]
 
@@ -15068,8 +15071,10 @@ dependencies = [
  "effectcraft-render",
  "effectcraft-text",
  "effectcraft-time",
+ "js-sys",
  "log",
  "pollster 1.0.1",
+ "wasm-bindgen",
  "web-time",
  "wgpu 30.0.1",
 ]

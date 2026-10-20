@@ -612,3 +612,11 @@
 [submodule "vendor/cubeb-rs"]
 	path = vendor/cubeb-rs
 	url = https://github.com/aphrody-labs/cubeb-rs.git
+[submodule "vendor/vkwebgpu-icd"]
+	path = vendor/vkwebgpu-icd
+	url = https://github.com/Dankular/VkWebGPU-ICD.git
+	branch = main
+[submodule "vendor/webx"]
+	path = vendor/webx
+	url = https://github.com/Dankular/WebX.git
+	branch = main

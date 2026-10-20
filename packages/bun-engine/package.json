@@ -12,6 +12,7 @@
   "exports": {
     ".": "./src/plugins/index.ts",
     "./formats": "./src/formats/index.ts",
+    "./webgpu": "./src/gpu/webx.ts",
     "./usr": "./src/usr.ts"
   },
   "scripts": {

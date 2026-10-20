@@ -8,6 +8,9 @@ rust-version = "1.97"
 authors = ["aphrody-code"]
 repository = "https://github.com/aphrody-labs/aphrody"
 license = "Apache-2.0"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"
@@ -26,6 +29,11 @@ wgsl = ["wgpu/wgsl"]
 native-backends = ["wgpu/vulkan", "wgpu/dx12", "wgpu/metal"]
 webgpu = ["wgpu/web", "wgpu/webgpu"]
 webgl = ["wgpu/web", "wgpu/webgl"]
+# Strict SPIR-V → WGSL translation using the workspace-pinned Naga 30 owner.
+vkwebgpu = ["dep:naga", "naga/spv-in", "naga/wgsl-out"]
+# Browser ABI for the shader translator. This exports conversion only; it does not claim to be
+# a Vulkan device/ICD or a complete DXVK compatibility layer.
+vkwebgpu-wasm = ["vkwebgpu", "dep:js-sys", "dep:wasm-bindgen"]
 # Process-wide GPU hub shared by Bun, Obscura and Tauri hosts: one wgpu device, adapter
 # inventory and WGSL compute jobs.
 hub = ["wgsl", "native-backends", "dep:pollster", "dep:serde", "dep:serde_json"]
@@ -34,7 +42,12 @@ cuda = ["hub", "dep:cudarc"]
 
 [dependencies]
 wgpu = { version = "30.0.1", default-features = false, features = ["std"] }
+naga = { workspace = true, optional = true }
 pollster = { version = "1.0.1", optional = true }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false, optional = true }
 serde_json = { version = "1.0.151", optional = true }
 cudarc = { version = "0.19.10", default-features = false, features = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13040"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }

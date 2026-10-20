@@ -7,6 +7,20 @@
 
 pub use ::wgpu;
 
+/// Validated SPIR-V shader translation for the WebGPU shader subset.
+///
+/// This module translates individual shader modules only. It is not a Vulkan
+/// implementation and does not establish device, resource, command, or DXVK
+/// compatibility.
+#[cfg(feature = "vkwebgpu")]
+pub mod vkwebgpu;
+
+/// Browser-facing SPIR-V shader translation ABI. The caller must still pass
+/// the returned WGSL to a real browser `GPUDevice.createShaderModule` and
+/// surface any browser validation error.
+#[cfg(all(feature = "vkwebgpu-wasm", target_arch = "wasm32"))]
+pub mod vkwebgpu_wasm;
+
 #[cfg(feature = "cuda")]
 pub mod cuda;
 #[cfg(feature = "hub")]

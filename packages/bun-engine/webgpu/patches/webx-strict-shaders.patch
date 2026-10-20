@@ -1,0 +1,154 @@
+diff --git a/harness/vk-bridge.mjs b/harness/vk-bridge.mjs
+index 3fd5c8a..d231e95 100644
+--- a/harness/vk-bridge.mjs
++++ b/harness/vk-bridge.mjs
+@@ -35,6 +35,7 @@ export class VkBridge {
+     #responseQueue    = [];                /* pending responses (legacy pull model) */
+     #pendingRead      = null;             /* legacy: { resolve } waiting for data */
+     #onResponseReady  = null;             /* push model: called when response built */
++    #dispatchQueue   = Promise.resolve(); /* preserve guest command/response order */
+ 
+     constructor(plugin) {
+         this.#plugin = plugin;
+@@ -116,7 +117,7 @@ export class VkBridge {
+             const payload     = this.#recvBuf.slice(HEADER_SIZE, total);
+             this.#recvBuf     = this.#recvBuf.slice(total);
+ 
+-            this.#dispatch(cmd, seq, payload);
++            this.#dispatchQueue = this.#dispatchQueue.then(() => this.#dispatch(cmd, seq, payload));
+         }
+     }
+ 
+diff --git a/harness/vkwebgpu-plugin.mjs b/harness/vkwebgpu-plugin.mjs
+index 1701816..f78dad2 100644
+--- a/harness/vkwebgpu-plugin.mjs
++++ b/harness/vkwebgpu-plugin.mjs
+@@ -23,6 +23,7 @@
+ // ── Vulkan result codes ────────────────────────────────────────────────────────
+ const VK_SUCCESS          = 0;
+ const VK_ERROR_DEVICE_LOST = -4;
++const VK_ERROR_INVALID_SHADER_NV = -1000012000;
+ 
+ // ── GPUBufferUsage numeric flags (stable across browsers) ─────────────────────
+ const BU_COPY_SRC  = 0x0004;
+@@ -310,6 +311,7 @@ export class VkWebGPUPlugin {
+     /** @type {HTMLCanvasElement}*/ #canvas  = null;
+     /** @type {GPUCanvasContext} */ #ctx     = null;
+     /** @type {string}           */ #canvasFormat = 'bgra8unorm';
++    /** @type {(device: GPUDevice, words: Uint32Array, label?: string) => Promise<{ok: boolean, module?: GPUShaderModule, error?: object}>} */ #shaderTranslator;
+ 
+     // ── Resource maps (guest handle bigint → host descriptor) ─────────────────
+     #renderPasses    = new Map(); // handle → { attachments[] }
+@@ -358,6 +360,13 @@ export class VkWebGPUPlugin {
+     // ── Host-side handle allocator (only used for pre-resource-creation bootstrap) ─
+     #nextHandle      = 0x0001_0000n;
+ 
++    constructor({ shaderTranslator } = {}) {
++        if (typeof shaderTranslator !== 'function') {
++            throw new TypeError('VkWebGPUPlugin requires an injected Naga SPIR-V shaderTranslator');
++        }
++        this.#shaderTranslator = shaderTranslator;
++    }
++
+     // =========================================================================
+     async initialize(adapter, device, canvas) {
+         this.#adapter      = adapter;
+@@ -409,10 +418,10 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+         console.log('[VkWebGPUPlugin] initialized —', adapter.info?.description ?? '(no description)');
+     }
+ 
+-    dispatch(cmd, seq, payload) {
++    async dispatch(cmd, seq, payload) {
+         const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+         try {
+-            return this.#handle(cmd, v, payload);
++            return await this.#handle(cmd, v, payload);
+         } catch (err) {
+             console.error(`[VkWebGPUPlugin] cmd=0x${cmd.toString(16).padStart(4,'0')} threw:`, err);
+             return { result: VK_ERROR_DEVICE_LOST, data: new Uint8Array(0) };
+@@ -431,7 +440,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+     // Top-level command dispatch
+     // =========================================================================
+ 
+-    #handle(cmd, v, payload) {
++    async #handle(cmd, v, payload) {
+         switch (cmd) {
+             // Instance
+             case 0x0001: return this.#createInstance();
+@@ -472,7 +481,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+             case 0x0048: return this.#createSampler(v);
+             case 0x0049: return this.#destroySampler(v);
+             // Pipelines
+-            case 0x0050: return this.#createShaderModule(v, payload);
++            case 0x0050: return await this.#createShaderModule(v, payload);
+             case 0x0051: return this.#destroyShaderModule(v);
+             case 0x0052: return this.#createPipelineLayout(v, payload);
+             case 0x0053: return ok();
+@@ -885,27 +894,31 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+     }
+ 
+     // =========================================================================
+-    // Shaders  (SPIRV stored; WGSL transpilation is a TODO)
++    // Shaders (SPIR-V must translate and pass actual WebGPU compilation)
+     // =========================================================================
+ 
+-    #createShaderModule(v, payload) {
++    async #createShaderModule(v, payload) {
+         // C: dev(u64@0) + handle(u64@8) + codeSize(u32@16) + SPIR-V bytes@20
+         const h        = v.getBigUint64(8,  true);
+         const codeSize = v.getUint32(16, true);
++        if (codeSize < 20 || (codeSize & 3) !== 0 || 20 + codeSize > payload.byteLength) {
++            return shaderFailure('invalid_spirv_input', 'SPIR-V byte length is invalid.');
++        }
+         const spirv    = payload.slice(20, 20 + codeSize);
+-        let gpuModule  = null;
+-        // Attempt SPIR-V→WGSL translation via naga-bridge if loaded.
+-        if (typeof globalThis.spirvToWgsl === 'function') {
+-            try {
+-                const wgsl = globalThis.spirvToWgsl(spirv);
+-                gpuModule = this.#device.createShaderModule({ code: wgsl, label: `sm_${h}` });
+-            } catch (e) {
+-                console.warn(`[VkWebGPUPlugin] createShaderModule spirv→wgsl failed (h=${h}):`, e.message);
+-            }
+-        } else {
+-            console.warn(`[VkWebGPUPlugin] createShaderModule (h=${h}): no spirvToWgsl translator — shader deferred`);
++        const words = new Uint32Array(codeSize / 4);
++        const source = new DataView(spirv.buffer, spirv.byteOffset, spirv.byteLength);
++        for (let i = 0; i < words.length; i++) words[i] = source.getUint32(i * 4, true);
++        let translated;
++        try {
++            translated = await this.#shaderTranslator(this.#device, words, `sm_${h}`);
++        } catch (error) {
++            return shaderFailure('shader_translation_failed', error?.message ?? String(error));
+         }
+-        this.#shaderModules.set(h, { spirv, gpuModule });
++        if (!translated?.ok || !translated.module) {
++            const failure = translated?.error ?? { code: 'shader_translation_failed', message: 'Shader translator returned no validated module.' };
++            return shaderFailure(failure.code ?? 'shader_translation_failed', failure.message ?? 'Shader translation failed.', failure);
++        }
++        this.#shaderModules.set(h, { spirv, gpuModule: translated.module });
+         return ok();
+     }
+ 
+@@ -2188,8 +2201,8 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+ // Plugin loader
+ // =============================================================================
+ 
+-export async function loadPlugin() {
+-    return new VkWebGPUPlugin();
++export async function loadPlugin(options) {
++    return new VkWebGPUPlugin(options);
+ }
+ 
+ // =============================================================================
+@@ -2197,6 +2210,10 @@ export async function loadPlugin() {
+ // =============================================================================
+ 
+ function ok()               { return { result: VK_SUCCESS, data: new Uint8Array(0) }; }
++function shaderFailure(code, message, details = undefined) {
++    const payload = { code, message, ...(details === undefined ? {} : { details }) };
++    return { result: VK_ERROR_INVALID_SHADER_NV, data: new TextEncoder().encode(JSON.stringify(payload)) };
++}
+ function u32Bytes(n)        { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n, true); return b; }
+ function okHandle(bigintH)  { const b = new Uint8Array(8); new DataView(b.buffer).setBigUint64(0, bigintH, true); return { result: VK_SUCCESS, data: b }; }
+ 
