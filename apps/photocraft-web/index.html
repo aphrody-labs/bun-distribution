@@ -29,6 +29,31 @@
       rel="copy-file"
       href="../../build/craft-web/photocraft-web/aphrody-icon.png"
     />
+    <style>
+      #photocraft_stalled {
+        max-inline-size: 60ch;
+        margin: 0;
+        color: var(--md-sys-color-on-surface-variant);
+        text-align: center;
+        visibility: hidden;
+        pointer-events: auto;
+        animation: photocraft-stalled 0s linear 10s forwards;
+      }
+      #photocraft_stalled a {
+        color: var(--md-sys-color-primary);
+      }
+      @keyframes photocraft-stalled {
+        to {
+          visibility: visible;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #photocraft_stalled {
+          animation: none;
+          visibility: visible;
+        }
+      }
+    </style>
   </head>
   <body>
     <canvas id="photocraft_canvas" aria-label="Images editor"></canvas>
