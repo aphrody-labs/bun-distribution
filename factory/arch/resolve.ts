@@ -16,6 +16,7 @@ import {
   hashFile,
 } from "../../packages/bun-workspace/src/hash.ts";
 import { runProcess } from "../../packages/bun-workspace/src/process.ts";
+import { trustedPacmanSigners } from "./signatures.ts";
 import {
   acquireArchHeavyLock,
   validateArchPackageLock,
@@ -146,33 +147,6 @@ function parseSelection(
       filename,
     };
   });
-}
-
-function approvedSigner(status: string): string[] {
-  if (
-    /\[GNUPG:\] (?:BADSIG|ERRSIG|NO_PUBKEY|REVKEYSIG|EXPKEYSIG|EXPSIG|FAILURE)\b/.test(
-      status,
-    )
-  )
-    throw new Error("Arch detached package signature did not qualify.");
-  if (!/\[GNUPG:\] TRUST_(?:FULLY|ULTIMATE)\b/.test(status))
-    throw new Error(
-      "Package signer is not trusted by the official Arch keyring.",
-    );
-  const fingerprints = new Set<string>();
-  for (const line of status.split(/\r?\n/)) {
-    const fields = line.trim().split(/\s+/);
-    if (fields[0] !== "[GNUPG:]" || fields[1] !== "VALIDSIG") continue;
-    for (const value of [fields[2], fields[11]]) {
-      if (value && /^(?:[a-fA-F0-9]{40}|[a-fA-F0-9]{64})$/.test(value))
-        fingerprints.add(value.toUpperCase());
-    }
-  }
-  if (!fingerprints.size)
-    throw new Error(
-      "Official Arch signature status contains no complete VALIDSIG fingerprint.",
-    );
-  return [...fingerprints];
 }
 
 function resolverScript(
@@ -549,7 +523,7 @@ export async function resolveArchLock(
       const status = Bun.file(statusFile);
       if (status.size > 65536)
         throw new Error("Signature status exceeds its metadata bound.");
-      for (const signer of approvedSigner(await status.text()))
+      for (const signer of trustedPacmanSigners(await status.text()))
         approved.add(signer);
       const sha256 = await hashFile(archive, {
         signal,

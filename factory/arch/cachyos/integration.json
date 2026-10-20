@@ -12,7 +12,7 @@
       "arch": "x86_64_v3",
       "isa": "x86-64-v3",
       "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
-      "signingKey": "F3B607488DB35A47"
+      "signingKey": "882DCFE48E2051D48E2562ABF3B607488DB35A47"
     },
     {
       "name": "cachyos-core-v3",
@@ -20,7 +20,7 @@
       "arch": "x86_64_v3",
       "isa": "x86-64-v3",
       "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
-      "signingKey": "F3B607488DB35A47"
+      "signingKey": "882DCFE48E2051D48E2562ABF3B607488DB35A47"
     },
     {
       "name": "cachyos-extra-v3",
@@ -28,7 +28,7 @@
       "arch": "x86_64_v3",
       "isa": "x86-64-v3",
       "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
-      "signingKey": "F3B607488DB35A47"
+      "signingKey": "882DCFE48E2051D48E2562ABF3B607488DB35A47"
     },
     {
       "name": "cachyos",
@@ -36,7 +36,7 @@
       "arch": "x86_64",
       "isa": "x86-64",
       "servers": ["https://cdn77.cachyos.org/repo/$arch/$repo", "https://mirror.cachyos.org/repo/$arch/$repo"],
-      "signingKey": "F3B607488DB35A47"
+      "signingKey": "882DCFE48E2051D48E2562ABF3B607488DB35A47"
     }
   ],
   "packageManager": {
