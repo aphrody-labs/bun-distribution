@@ -1,3 +1,3 @@
 #!/bin/sh
 # SPDX-License-Identifier: MIT
-exec /usr/local/bin/bun "${BUN_OS_ROOT:-/opt/bun-os}/product/src/cli.ts" "$@"
+exec /usr/local/bin/bun "${BUN_OS_ROOT:-/opt/bun-os}/product/sources/bun-os/src/cli.ts" "$@"

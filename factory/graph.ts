@@ -655,7 +655,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       await receipt("factory/product-qualification.ts", "CLI workspace identity and passed discovery bound to the staged product"),
       await receipt(
         "src/cli.ts image",
-        "Immutable image digest and target/composition runtime smoke; boot/session remains separate",
+        "Immutable image digest, in-rootfs CLI/WASM/FFI/plugin/MCP qualification and target/composition runtime smoke; boot/session remains separate",
       ),
     ],
   });

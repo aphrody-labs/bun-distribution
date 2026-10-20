@@ -81,9 +81,11 @@ logs do not define the current state; use Git history for prior batches.
   qualification now also performs a non-mutating install plan for every
   agent-plugin provider adapter and exercises MCP initialization,
   tool/resource/prompt listing, and an embedded skill read. All these gates
-  still need VPS execution. The
-  Alpine/Ubuntu/gaming image owners also need integration with the frozen
-  product receipt.
+  still need VPS execution. The primary Arch Docker image now reruns those
+  gates inside its final rootfs, records an image qualification bound to the
+  product/runtime receipts, and verifies it on container health. The separate
+  Alpine musl and Ubuntu compatibility image recipes keep different runtime
+  ABIs and are not yet product-payload images.
 - The source-only audit of all 92 uninitialized root submodules found zero
   proven removals: 24 have implementation/manifest consumers and 67 retain
   catalog/owner contracts. Material Design Icons has a concrete packaging gap:

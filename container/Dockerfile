@@ -12,7 +12,7 @@ COPY product.receipt.json product.qualification.json /opt/bun-os/
 COPY distribution.json sources.receipt.json /opt/bun-os/
 COPY container/ /opt/bun-os/container/
 ENV BUN_OS_PACKAGE_MANAGER=pacman
-RUN ["/bin/sh", "-ec", "chmod 0755 /opt/bun-os/runtime/bun /opt/bun-os/container/bunos; ln -s /opt/bun-os/runtime/bun /usr/local/bin/bun; ln -s /opt/bun-os/container/bunos /usr/local/bin/bunos; groupadd --gid 10000 bun; useradd --uid 10000 --gid 10000 --create-home --shell /usr/bin/nologin bun; install -d -m 0700 -o bun -g bun /run/user/10000; install -d -o bun -g bun /work; bun /opt/bun-os/container/verify-payload.ts; ldd /usr/local/bin/bun > /opt/bun-os/runtime/shared-libraries.txt; ! grep -q 'not found' /opt/bun-os/runtime/shared-libraries.txt"]
+RUN ["/bin/sh", "-ec", "chmod 0755 /opt/bun-os/runtime/bun /opt/bun-os/container/bunos; ln -s /opt/bun-os/runtime/bun /usr/local/bin/bun; ln -s /opt/bun-os/container/bunos /usr/local/bin/bunos; groupadd --gid 10000 bun; useradd --uid 10000 --gid 10000 --create-home --shell /usr/bin/nologin bun; install -d -m 0700 -o bun -g bun /run/user/10000; install -d -o bun -g bun /work; bun /opt/bun-os/container/qualify-image.ts; ldd /usr/local/bin/bun > /opt/bun-os/runtime/shared-libraries.txt; ! grep -q 'not found' /opt/bun-os/runtime/shared-libraries.txt"]
 ARG DISTRIBUTION_VERSION
 ARG SOURCE_REVISION
 LABEL org.opencontainers.image.title="Bun OS" \

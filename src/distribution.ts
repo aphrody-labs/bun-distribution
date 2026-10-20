@@ -302,8 +302,14 @@ export async function stageRuntime(
     throw new Error(
       "Bun runtime must match the locked source, target, checksum and a passed native-runtime qualification",
     );
+  if (product && receipt.abi !== "gnu")
+    throw new Error("Qualified product payloads require the GNU runtime ABI");
+  const productRuntime: { sha256: string; revision: string; abi: "gnu" } | undefined =
+    product && receipt.abi === "gnu"
+      ? { sha256: receipt.sha256, revision: receipt.revision, abi: "gnu" }
+      : undefined;
   const qualifiedProduct = product ? await verifyQualifiedProduct(
-    product.workspace, product.receipt, product.qualification, { target, runtime: receipt },
+    product.workspace, product.receipt, product.qualification, { target, runtime: productRuntime! },
   ) : undefined;
   const sourcesReceipt = await Bun.file(join(output, "sources.receipt.json")).json();
   if (
@@ -323,7 +329,7 @@ export async function stageRuntime(
     await copyFile(product.receipt, join(output, "product.receipt.json"));
     await copyFile(product.qualification, join(output, "product.qualification.json"));
     await verifyQualifiedProduct(join(output, "product"), join(output, "product.receipt.json"),
-      join(output, "product.qualification.json"), { target, runtime: receipt });
+      join(output, "product.qualification.json"), { target, runtime: productRuntime! });
     productIdentity = {
       sourceRevision: qualifiedProduct.receipt.sourceRevision,
       installedTreeSHA256: qualifiedProduct.receipt.installedTreeSHA256,
@@ -586,6 +592,16 @@ async function assembleArchImage(
   if (!Array.isArray(productCommands) || !["mcp", "agent-plugin", "wasm"].every(name =>
     productCommands.some(entry => entry.group === "" && entry.name === name)))
     throw new Error("Image product CLI does not expose the required native capability routes");
+  const containerVerification = JSON.parse(await command([
+    "docker", "run", "--rm", "--network=none", "--entrypoint", "/usr/local/bin/bun", tag,
+    "/opt/bun-os/container/verify-payload.ts",
+  ])) as { runtime?: string; imageQualification?: { passed?: boolean; gates?: string[]; runtimeSHA256?: string } };
+  const imageQualification = containerVerification.imageQualification;
+  const requiredImageGates = ["product-cli", "cli-wasm", "ffi", "agent-plugin", "mcp"];
+  if (containerVerification.runtime !== "verified" || imageQualification?.passed !== true ||
+    imageQualification.runtimeSHA256 !== receipt.runtime.sha256 ||
+    !requiredImageGates.every(gate => imageQualification.gates?.includes(gate)))
+    throw new Error("Built container is missing its receipt-bound product surface qualification");
   const result = {
     schemaVersion: 1,
     kind: "bun-os-image",
@@ -601,7 +617,8 @@ async function assembleArchImage(
       installedTreeSHA256: product.receipt.installedTreeSHA256,
       installedModesSHA256: product.receipt.installedModesSHA256,
       commandDiscovery: productCommands.length,
-      scope: "CLI discovery; native commands and full product require their own qualification",
+      imageQualification: { passed: true, gates: imageQualification.gates },
+      scope: "In-image CLI, CLI-WASM, FFI, agent-plugin and MCP surfaces; full OS product qualification remains separate",
     },
     packageManager: "pacman",
     rootfs: {
