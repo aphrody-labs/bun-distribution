@@ -41,6 +41,9 @@ contracts. A Hyprland configuration cannot implement COSMIC by renaming its
 session or bindings. Additional sessions can be admitted as explicit choices
 only with separate package, portal, greeter, boot and settings ownership.
 [COSMIC components and packaging](https://github.com/pop-os/cosmic-epoch#components-of-cosmic-desktop)
+The Arch profile requests the `cosmic` package group rather than a hand-picked
+subset; pacman resolves that group against the selected signed archive snapshot
+before recording the exact package closure. [Arch COSMIC installation](https://wiki.archlinux.org/title/COSMIC#Installation)
 
 Alpine/musl remains a distinct qualification target where useful. Its libc,
 loader, toolchain and native ABI are not interchangeable with glibc artifacts.

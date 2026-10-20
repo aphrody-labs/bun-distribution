@@ -82,17 +82,10 @@
     "cosmic": {
       "owner": "existing Bun OS COSMIC source and package owner",
       "session": "cosmic-session",
-      "packages": [
-        "cosmic-session",
-        "cosmic-comp",
-        "cosmic-panel",
-        "cosmic-settings",
-        "cosmic-files",
-        "cosmic-term"
-      ],
+      "packages": ["cosmic"],
       "state": "unqualified",
       "blockers": [
-        "Selected COSMIC package closure and desktop boot/display qualification are pending."
+        "The complete COSMIC group must resolve from a signed archive snapshot, and desktop boot/display qualification is pending."
       ]
     },
     "omarchy-hyprland": {
