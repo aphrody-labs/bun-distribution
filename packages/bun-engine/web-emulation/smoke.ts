@@ -82,7 +82,8 @@ class Cdp {
   }
 }
 
-export async function smoke(cores: string[], threads: boolean) {
+export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_000) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 30_000 || timeoutMs > 900_000) throw new Error("Smoke timeout must be 30000..900000 milliseconds");
   // Invalidate old claims before setup too: missing browser/content must not retain qualification.
   for (const core of cores) {
     if (!/^[a-z0-9][a-z0-9-]*$/.test(core)) throw new Error(`Invalid core: ${core}`);
@@ -105,6 +106,9 @@ export async function smoke(cores: string[], threads: boolean) {
       `--user-data-dir=${profile}`,
       "--no-first-run",
       "--no-default-browser-check",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--disable-backgrounding-occluded-windows",
       "--enable-unsafe-webgpu",
       // GPU-less Linux hosts (the VPS): WebGPU on SwiftShader's Vulkan.
       ...(process.platform === "linux"
@@ -154,6 +158,7 @@ export async function smoke(cores: string[], threads: boolean) {
         system: test.system,
         rom: `/emulation/${fixture.path}`,
         frames: String(test.frames ?? 120),
+        timeout: String(timeoutMs),
       });
       if (test.firmware) query.set("firmware", test.firmware);
       if (threads) query.set("threads", "1");
@@ -180,10 +185,11 @@ export async function smoke(cores: string[], threads: boolean) {
       await cdp.send("Runtime.enable", {}, sessionId);
       await cdp.send("Log.enable", {}, sessionId);
       await cdp.send("Page.enable", {}, sessionId);
+      await cdp.send("Page.bringToFront", {}, sessionId);
       const opened = performance.now();
       await cdp.send("Page.navigate", { url }, sessionId);
       let result: any;
-      while (performance.now() - opened < 180_000) {
+      while (performance.now() - opened < timeoutMs + 30_000) {
         await Bun.sleep(500);
         const { result: value } = await cdp.send(
           "Runtime.evaluate",
@@ -232,6 +238,7 @@ if (import.meta.main) {
   const args = Bun.argv.slice(2);
   const cores = args.filter(a => !a.startsWith("--"));
   const selected = cores.length ? cores : ["dust-nds"];
-  const results = await smoke(selected, args.includes("--threads"));
+  const timeoutArg = args.find(arg => arg.startsWith("--timeout-ms="));
+  const results = await smoke(selected, args.includes("--threads"), timeoutArg ? Number(timeoutArg.split("=")[1]) : 90_000);
   if (selected.some(core => (results[`${core}${args.includes("--threads") ? ":threads" : ""}`] as any)?.ok !== true)) process.exitCode = 1;
 }
