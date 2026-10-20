@@ -15,6 +15,23 @@ export interface ArchDistributionOptions {
   snapshot?: string;
 }
 
+/** Load exactly the source catalogs selected by the root Arch profile. */
+export async function loadSelectedSourceCatalogs(
+  selected: readonly string[],
+  loaders: Record<string, () => Promise<unknown>>,
+): Promise<Record<string, unknown>> {
+  if (new Set(selected).size !== selected.length)
+    throw new Error("Arch source catalog identifiers must be unique.");
+  for (const id of selected) {
+    if (!Object.hasOwn(loaders, id) || typeof loaders[id] !== "function")
+      throw new Error(`Unknown Arch source catalog: ${id}`);
+  }
+  const entries = await Promise.all(
+    selected.map(async (id) => [id, await loaders[id]!()] as const),
+  );
+  return Object.fromEntries(entries);
+}
+
 export function selectDesktopSession(
   composition: Composition,
   requested?: DesktopSession,
@@ -57,11 +74,45 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
         blockers: string[];
       }
     >;
+    sourceCatalogs: string[];
   };
-  const [cachyos, chimeraos, omarchy, forks] = await Promise.all([
-    Bun.file(join(import.meta.dir, "cachyos/integration.json")).json(),
-    Bun.file(join(import.meta.dir, "chimeraos/sources.json")).json(),
-    Bun.file(join(import.meta.dir, "omarchy/integration.json")).json(),
+  if (
+    !Array.isArray(profile.sourceCatalogs) ||
+    profile.sourceCatalogs.some((id) => typeof id !== "string")
+  )
+    throw new Error("The root Arch profile must declare its source catalogs.");
+  const loaders = {
+    cachyos: async () => ({
+      path: "factory/arch/cachyos",
+      recipes: "catalog.json",
+      integration: await Bun.file(
+        join(import.meta.dir, "cachyos/integration.json"),
+      ).json(),
+    }),
+    chimeraos: async () => {
+      const source = (await Bun.file(
+        join(import.meta.dir, "chimeraos/sources.json"),
+      ).json()) as { sources: unknown };
+      return {
+        path: "factory/arch/chimeraos",
+        sources: source.sources,
+        plan: planChimeraOs({
+          target: options.target,
+          archiveDate: options.snapshot?.replaceAll("-", "/"),
+        }),
+      };
+    },
+    omarchy: async () => ({
+      path: "factory/arch/omarchy",
+      recipes: "pkgbuilds.json",
+      rust: "rust.json",
+      integration: await Bun.file(
+        join(import.meta.dir, "omarchy/integration.json"),
+      ).json(),
+    }),
+  };
+  const [catalogs, forks] = await Promise.all([
+    loadSelectedSourceCatalogs(profile.sourceCatalogs, loaders),
     Bun.file(join(import.meta.dir, "sources.json")).json(),
   ]);
   const selected = profile.compositions[options.composition];
@@ -113,27 +164,7 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
     profile,
     requestedPackages: [...new Set(packages)],
     snapshot: options.snapshot ?? null,
-    catalogs: {
-      cachyos: {
-        path: "factory/arch/cachyos",
-        recipes: "catalog.json",
-        integration: cachyos,
-      },
-      chimeraos: {
-        path: "factory/arch/chimeraos",
-        sources: chimeraos.sources,
-        plan: planChimeraOs({
-          target: options.target,
-          archiveDate: options.snapshot?.replaceAll("-", "/"),
-        }),
-      },
-      omarchy: {
-        path: "factory/arch/omarchy",
-        recipes: "pkgbuilds.json",
-        rust: "rust.json",
-        integration: omarchy,
-      },
-    },
+    catalogs,
     sources: forks,
     graph: [
       { id: "arch:sources", owner: "factory/arch/sources.json", dependsOn: [] },
