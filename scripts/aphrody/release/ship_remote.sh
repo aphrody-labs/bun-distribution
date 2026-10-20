@@ -13,7 +13,7 @@ if [[ "${APHRODY_BUILD_HOST:-}" != vps ]]; then
   echo "Full ship requires the native Workspace factory environment (APHRODY_BUILD_HOST=vps)." >&2
   exit 64
 fi
-ship_cargo_wrapper=${YOLO_CARGO_WRAPPER:-$HOME/aphrody/scripts/build/rust/cargo-serial.sh}
+ship_cargo_wrapper=${YOLO_CARGO_WRAPPER:-$HOME/aphrody/scripts/aphrody/build/rust/cargo-serial.sh}
 if [[ ! -x "$ship_cargo_wrapper" ]]; then
   echo "Full ship requires the installed Aphrody Cargo owner wrapper (YOLO_CARGO_WRAPPER)." >&2
   exit 64

@@ -23,7 +23,7 @@ mkdir -p "${SCCACHE_DIR:-$HOME/.cache/sccache}"
 docker run --rm -it -v "$PWD:/workspace" \
   -v "${SCCACHE_DIR:-$HOME/.cache/sccache}:/home/builder/.cache/sccache" \
   -w /workspace aphrody/desktop-builder:local \
-  scripts/build/rust/cargo-serial.sh build --locked --release -p aphrody-app --features custom-protocol
+  scripts/aphrody/build/rust/cargo-serial.sh build --locked --release -p aphrody-app --features custom-protocol
 ```
 
 This is the crate's Cargo build path, not a verified CEF/UI build result. The builder includes the toolchain and native headers but does not run Cargo at image-build time. Follow the project build factory guidance for heavy builds; this image is useful as a reproducible Ubuntu build environment, not evidence that CEF downloads or the full app compile succeed here.
@@ -33,7 +33,7 @@ The builder sets `APHRODY_CLOUD=1`: the container is the build host. Cargo runs 
 Qualify the dependency boundary on the declared factory before using the images:
 
 ```sh
-scripts/build/container/desktop-qualify.sh
+scripts/aphrody/build/container/desktop-qualify.sh
 ```
 
 This builds both targets, checks their non-root identity, verifies the toolchains against the repository manifests, compiles C and Rust probes through the builder, and loads GTK4/CEF support libraries in the runtime with a read-only root filesystem and dropped capabilities. It also checks that the runtime lacks compilers, Bun and WebKitGTK. The probes do not download CEF or launch a browser; app compilation, the CEF bundle, actual rendering, GPU access and native Windows execution require their own gates.
@@ -57,7 +57,7 @@ Use the same UID/GID as the host user so the mounted Wayland socket is accessibl
 Docker 29.1.3 on the VPS built both targets from an isolated context under `/home/ubuntu/build/locks/heavy.lock`. The final qualifier used the shared `/home/ubuntu/build/cache/sccache` cache and exited 0. Source checksums were:
 
 - Dockerfile SHA-256: `64a10cec2a3152a6b5aa9f8cb793fc0a05725fe5be9492d345a7e76db78507c6`.
-- `scripts/build/container/desktop-qualify.sh` SHA-256: `841dab72d75fc4dc996e73bf6360cb3845a83d833f343001cada0dc76a6b6c66`.
+- `scripts/aphrody/build/container/desktop-qualify.sh` SHA-256: `841dab72d75fc4dc996e73bf6360cb3845a83d833f343001cada0dc76a6b6c66`.
 
 | Target  | Local image ID                                                            | Docker-reported bytes |
 | ------- | ------------------------------------------------------------------------- | --------------------- |

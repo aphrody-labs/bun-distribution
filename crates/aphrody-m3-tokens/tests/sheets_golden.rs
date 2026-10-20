@@ -4,7 +4,7 @@
 //! `m3/packages/m3-theme/tokens.css` (fusion palette) and
 //! `m3/packages/m3-tokens/src/m3-tokens.css` (shape, typescale, motion, elevation, state) are
 //! rendered by `aphrody_m3_tokens::sheets` and must match byte for byte. Rewrite them with
-//! `APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test
+//! `APHRODY_UPDATE_TOKENS=1 scripts/aphrody/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test
 //! sheets_golden`. The formatter pass of `bun run generate` in `@aphrody/m3-theme` is a no-op on
 //! this output.
 

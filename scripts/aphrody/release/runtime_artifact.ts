@@ -10,7 +10,7 @@ import { basename, resolve } from "node:path";
 import { libraryFile, Runtime } from "@aphrody/runtime-sdk";
 import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 // A producer packages its build, independently of whichever version the user installed.
 const libraryPath = process.env["YOLO_RUNTIME_LIB"] || resolve(root, "target/runtime", libraryFile());

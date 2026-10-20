@@ -98,7 +98,7 @@ export interface BrandThemes {
 }
 
 export const BRAND_THEME_REGENERATE =
-  "APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test brand_theme_golden";
+  "APHRODY_UPDATE_TOKENS=1 scripts/aphrody/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test brand_theme_golden";
 
 /** Full brand sheet from the Rust theme exports; colours are never derived in JS. */
 export function brandCss(tokensCss: string, themes: BrandThemes): string {

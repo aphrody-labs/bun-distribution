@@ -4,9 +4,9 @@
  * aphrody-build: the single VPS build image for Aphrody and Shenron
  * (tools/config/container/build/Dockerfile).
  *
- *   bun scripts/build/container/aphrody-build.ts image                 # build + tag (versioned, latest)
- *   bun scripts/build/container/aphrody-build.ts run [options] -- CMD   # run CMD on a bind-mounted checkout
- *   bun scripts/build/container/aphrody-build.ts source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]
+ *   bun scripts/aphrody/build/container/aphrody-build.ts image                 # build + tag (versioned, latest)
+ *   bun scripts/aphrody/build/container/aphrody-build.ts run [options] -- CMD   # run CMD on a bind-mounted checkout
+ *   bun scripts/aphrody/build/container/aphrody-build.ts source-job plan|apply --config PRIVATE --plan PRIVATE [--plan-sha256 HASH]
  *
  * `run` options:
  *   --repo DIR            checkout to mount (default: this repository); mounted at the same absolute path
@@ -16,7 +16,7 @@
  *   --host-network        share the host network (loopback services such as a database tunnel)
  *   --no-lock             do not take the factory heavy lock
  *
- * Contract shared with Shenron's scripts/build/container.ts: image `aphrody-build:latest`, caller uid
+ * Contract shared with Shenron's scripts/aphrody/build/container.ts: image `aphrody-build:latest`, caller uid
  * plus the shared build group (gid 1500), named cache volumes aphrody-build-{cargo,sccache,bun,xwin,xdg},
  * bounded resources (APHRODY_BUILD_CPUS, default 6; APHRODY_BUILD_MEMORY, default 16g, no swap) and the
  * factory heavy lock `/home/ubuntu/build/locks/heavy.lock` when it exists.
@@ -41,8 +41,8 @@ export const CACHE_VOLUMES = {
 } as const;
 
 const ROOT = resolve(import.meta.dir, "../../../..");
-/** Aphrody pins (Rust channel, Bun) live with its documentation; Cargo.lock is the workspace one. */
-const PINS = `${ROOT}/docs/aphrody`;
+/** Toolchain, runtime and lockfile pins share the canonical workspace owner. */
+const PINS = ROOT;
 const CONTEXT = "tools/aphrody/config/container/build";
 
 export type Pins = {

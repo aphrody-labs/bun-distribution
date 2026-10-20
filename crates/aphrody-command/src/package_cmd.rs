@@ -139,7 +139,7 @@ pub(crate) fn run(action: PackageAction) -> miette::Result<()> {
         PackageAction::Update { .. } => Err(miette::miette!(
             "`aphrody package update` est retiré : il n'y a qu'un binaire et plus de sources \
              gérées à tirer. Installer le nouveau binaire (fabrique : `bun \
-             scripts/build/rust/build-factory.ts run --install`), puis `aphrody package install` \
+             scripts/aphrody/build/rust/build-factory.ts run --install`), puis `aphrody package install` \
              pour re-pointer les liens."
         )),
     }

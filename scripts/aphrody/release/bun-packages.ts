@@ -173,7 +173,7 @@ export async function auditPackages(root: string, output: string, only?: string[
 if (import.meta.main) {
   const command = Bun.argv[2] ?? "audit";
   if (command !== "audit") throw new Error("usage: bun run packages:audit [--only name,name] [--out directory]");
-  const root = resolve(import.meta.dir, "../../../docs/aphrody");
+  const root = resolve(import.meta.dir, "../../../");
   const outIndex = Bun.argv.indexOf("--out");
   const onlyIndex = Bun.argv.indexOf("--only");
   const output = outIndex >= 0 ? resolve(Bun.argv[outIndex + 1]!) : await mkdtemp(join(tmpdir(), "aphrody-npm-audit-"));

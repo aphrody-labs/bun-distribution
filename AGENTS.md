@@ -20,7 +20,8 @@ It is the active owner execution goal for consolidating this repository as the
 canonical Bun OS distribution workspace. Repository evidence and newer explicit
 owner directives still take precedence.
 
-This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
+This checkout is the Bun OS distribution workspace. The broader Aphrody/Bun
+unification is an owner goal and is not complete. Read `GOAL.md`,
 `PLAN.md`, `MEMORY.md` and `START-HERE.md` before changes. Preserve concurrent
 work, repository history, first-party attribution, and every imported license
 and notice. Keep product documentation and collaboration in English.
@@ -58,11 +59,12 @@ workspace while imported crates still belong to nested workspaces; migrate
 their manifests and references in controlled batches before removing those
 boundaries. Keep upstream license notices intact.
 
-The owner's current contract is flat Git submodules for every product Rust
-crate in `crates/<package-name>`, inherited from one root Cargo workspace and
-nightly toolchain. Provision declared forge repositories and access through
-the Bun OS Infra owner, with credentials in protected secret stores. The
-font crates implement this contract; remaining owners require real migration.
+The owner's target contract is flat Git submodules for product Rust crates in
+`crates/<package-name>`, inherited from one root Cargo workspace and nightly
+toolchain. This target is not complete: root Cargo exclusions and nested
+workspace boundaries remain. Provision declared forge repositories and access
+through the Bun OS Infra owner, with credentials in protected secret stores.
+Verify each crate's current owner and migration state from the source inventory.
 
 Preserve protected `.local` stores, credentials, sessions, databases, model
 weights and concurrent work. Bound long commands and serialize native builds.

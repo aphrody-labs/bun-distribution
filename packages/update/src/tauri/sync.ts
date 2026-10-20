@@ -761,7 +761,7 @@ export async function applyReport(root: string, config: TauriUpstreamConfig, rep
     const gate = registry ? gateFromRegistry(registry) : { cargoPackages: [], generatedPaths: [] };
     const gates: string[][] = [
       ...(gate.cargoPackages.length > 0
-        ? [["bash", "scripts/build/rust/cargo-serial.sh", "check", ...gate.cargoPackages.flatMap(pkg => ["-p", pkg])]] // repo rule: Cargo only through the serialized wrapper
+        ? [["bash", "scripts/aphrody/build/rust/cargo-serial.sh", "check", ...gate.cargoPackages.flatMap(pkg => ["-p", pkg])]] // repo rule: Cargo only through the serialized wrapper
         : []),
       ...config.gate.bun.map(command => command.split(" ")),
     ];

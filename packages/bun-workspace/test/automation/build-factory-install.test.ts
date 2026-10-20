@@ -95,7 +95,7 @@ async function checkout() {
 
 test("derives artifacts from --bin, packages, profiles and targets", async () => {
   const root = await checkout();
-  const serial = "scripts/build/rust/cargo-serial.sh";
+  const serial = "scripts/aphrody/build/rust/cargo-serial.sh";
   expect(await factoryArtifacts(config, "aphrody", [serial, "build", "--release", "-p", "aphrody-mcp"], root)).toEqual([
     {
       name: "aphrody-mcp",

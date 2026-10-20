@@ -111,7 +111,7 @@ async function inspectLockedCheckout(checkout: string, revision: string) {
 function cargoOwner(config: Config): string[] {
   if (config.cargoCommand?.length) return config.cargoCommand;
   const checkout = runtimeCheckout(config);
-  const wrapper = join(checkout, "scripts/build/rust/cargo-serial.ts");
+  const wrapper = join(checkout, "scripts/aphrody/build/rust/cargo-serial.ts");
   if (!existsSync(wrapper)) throw new Error("Configure the serialized native Cargo owner in cargoCommand");
   return [process.execPath, wrapper];
 }

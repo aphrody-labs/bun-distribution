@@ -44,6 +44,30 @@ define(
   // Top level ---------------------------------------------------------------------------------
   {
     group: "",
+    name: "mcp",
+    summary: "Run the native Bun MCP server",
+    usage: "[native MCP arguments]",
+    passthroughHelp: true,
+    ...native("mcp"),
+  },
+  {
+    group: "",
+    name: "agent-plugin",
+    summary: "Install, inspect and update the runtime's agent plugin",
+    usage: "<install|uninstall|doctor> [args]",
+    passthroughHelp: true,
+    ...native("agent-plugin"),
+  },
+  {
+    group: "",
+    name: "wasm",
+    summary: "Use the native Bun WebAssembly toolchain",
+    usage: "[native WASM arguments]",
+    passthroughHelp: true,
+    ...native("wasm"),
+  },
+  {
+    group: "",
     name: "setup",
     summary: "Install dependencies, submodules and shared setup",
     ...script("scripts/setup.ts"),

@@ -5,7 +5,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { activeDeployment, deploymentSelection } from "./shenron-deployment-identity.ts";
 
-const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/aphrody");
+const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../");
 const config = await Bun.file(join(infra, "tools/config/shenron-auto-deploy.json")).json();
 const [sha, image, work, job, previous] = process.argv.slice(2);
 const selection = deploymentSelection(sha ?? "", config);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Shape of the wasm-bindgen output of crates/infra/aphrody-command-wasm (`--target web`), built by
-// scripts/build/rust/wasm-package.ts. `#cli-wasm-glue` maps to the generated wasm/aphrody_command_wasm.js.
+// scripts/aphrody/build/rust/wasm-package.ts. `#cli-wasm-glue` maps to the generated wasm/aphrody_command_wasm.js.
 declare module "#cli-wasm-glue" {
   export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
   export type InitOptions = { module_or_path?: InitInput | Promise<InitInput> };

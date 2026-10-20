@@ -17,7 +17,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const REPO_ROOT = resolve(import.meta.dir, "../../../../");
 const LOCALES_DIR = join(REPO_ROOT, "m3", "packages", "m3", "src", "locales");
 
 export type I18nSchema = {

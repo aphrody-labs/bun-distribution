@@ -8,7 +8,7 @@ transitive registry dependencies with that token owner.
 Use the qualified native Cargo owner from the configured Bun checkout:
 
 ```powershell
-bun "$env:APHRODY_BUN_CHECKOUT/scripts/build/rust/cargo-serial.ts" --msvc run --locked --manifest-path examples/published-consumer/Cargo.toml
+bun "$env:APHRODY_BUN_CHECKOUT/scripts/aphrody/build/rust/cargo-serial.ts" --msvc run --locked --manifest-path examples/published-consumer/Cargo.toml
 ```
 
 The application emits the generated primary color and shared state-layer

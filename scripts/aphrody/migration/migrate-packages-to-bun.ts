@@ -22,7 +22,7 @@ type Candidate = {
   group: "m3" | "packages";
 };
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 const forkRoot = resolve(process.env.APHRODY_BUN_CHECKOUT ?? join(root, "..", "bun"));
 const submoduleRoot = resolve(process.env.APHRODY_BUN_SUBMODULE_ROOT ?? join(forkRoot, "packages", "aphrody-migrated"));
 const apply = Bun.argv.includes("--apply");

@@ -9,7 +9,7 @@
  * (vswhere + VsDevCmd, captured without a console), build output off the checkout, native sccache and the private
  * Git SSH alias mapped to HTTPS. Qualified Unix hosts use the same owner with native flock admission.
  *
- * Usage: bun scripts/build/rust/cargo-serial.ts [--msvc] <cargo arguments...>
+ * Usage: bun scripts/aphrody/build/rust/cargo-serial.ts [--msvc] <cargo arguments...>
  */
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism, tmpdir } from "node:os";
@@ -294,7 +294,7 @@ export async function main(argv: readonly string[], baseEnv: Env = process.env):
     factoryRoute(env) === "factory"
   ) {
     console.error(
-      "Heavy Cargo belongs to the build factory. Exact worktree state: bun scripts/build/rust/vps-cargo.ts run -- <arguments>; native Windows build context: bun scripts/build/rust/cargo-serial.ts --msvc <arguments>.",
+      "Heavy Cargo belongs to the build factory. Exact worktree state: bun scripts/aphrody/build/rust/vps-cargo.ts run -- <arguments>; native Windows build context: bun scripts/aphrody/build/rust/cargo-serial.ts --msvc <arguments>.",
     );
     console.error("APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.");
     return 64;

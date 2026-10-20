@@ -113,7 +113,7 @@ describe("versions and toolchain", () => {
     expect(versionIn("Ubuntu clang version 23.1.1 (++20260901)")).toBe("23.1.1");
   });
 
-  test("LLVM range matches scripts/build/tools.ts", () => {
+  test("LLVM range matches scripts/aphrody/build/tools.ts", () => {
     expect(llvmAccepted("23.1.1", 23)).toBe(true);
     expect(llvmAccepted("23.1.0", 23)).toBe(true);
     expect(llvmAccepted("23.0.9", 23)).toBe(false);

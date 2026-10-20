@@ -268,7 +268,7 @@ export async function runCargoReleaseAudit(args: string[]): Promise<number> {
   }
   if (!metadataPath)
     throw new Error(
-      "--metadata is required; generate metadata through scripts/build/rust/cargo-serial.sh metadata --no-deps --format-version 1",
+      "--metadata is required; generate metadata through scripts/aphrody/build/rust/cargo-serial.sh metadata --no-deps --format-version 1",
     );
   const metadata = (await Bun.file(metadataPath).json()) as ReleaseMetadata;
   const report = await auditCargoRelease(metadata, root ?? resolve(metadata.workspace_root));

@@ -3,7 +3,7 @@
 # Idempotent toolchain bootstrap for the build factory host (Ubuntu). Run by ship_remote.sh before every build, and
 # standalone: bash scripts/release/bootstrap_remote.sh
 # Pins follow the sources: yolo rust-toolchain.toml (workspace), the Bun fork checkout ($APHRODY_BUN_CHECKOUT, default
-# ~/bun) rust-toolchain.toml and scripts/build/ci-images/spec.ts (LLVM 23, nightly Rust, release Bun), cmake/ninja from apt.
+# ~/bun) rust-toolchain.toml and scripts/aphrody/build/ci-images/spec.ts (LLVM 23, nightly Rust, release Bun), cmake/ninja from apt.
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 CACHE=${APHRODY_BUILD_CACHE:-/home/ubuntu/build/cache}

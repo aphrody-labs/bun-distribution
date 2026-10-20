@@ -4,7 +4,7 @@
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 const wasm = Bun.file(resolve(root, "packages/infra/cli-wasm/wasm/aphrody_command_wasm_bg.wasm"));
 if (!(await wasm.exists())) throw new Error("Build the capability-owner WASM package first");
 const built = await Bun.build({

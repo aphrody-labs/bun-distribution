@@ -2,11 +2,11 @@
 
 Read AGENTS.md, GOAL.md, PLAN.md and MEMORY.md.
 
-This checkout assembles the distribution. Runtime changes belong to the
-existing Bun checkout; the Material framework belongs to the configured
-Material workspace. Other fork owners retain their repositories and licenses.
-README.md contains product usage. PLAN.md distinguishes prepared recipes
-from executed artifacts.
+This checkout owns distribution assembly. Runtime implementation changes
+belong to the Bun runtime source owner in `toolchains/bun`; the Material
+framework and other imported projects retain their own source and license
+boundaries. README.md documents repository entry points. PLAN.md distinguishes
+declared/prepared inputs from build and qualification evidence.
 
 ## Entry points
 

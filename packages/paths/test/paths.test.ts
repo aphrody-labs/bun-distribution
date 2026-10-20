@@ -25,30 +25,15 @@ test("portablePath normalizes manifest separators", () => {
   expect(portablePath("crates\\os\\kernel")).toBe("crates/os/kernel");
 });
 
-test("Bun and Material follow the selected workspace and explicit configuration", () => {
+test("integrated owners resolve inside the selected workspace", () => {
   const root = mkdtempSync(join(tmpdir(), "aphrody-moved-workspace-"));
   try {
     const env = { APHRODY_WORKSPACE_ROOT: root };
-    expect(checkoutRoot("bun", env)).toBe(join(root, "..", "bun"));
-    expect(checkoutRoot("material", env)).toBe(join(root, "..", "material"));
-    expect(checkoutRoot("m3", env)).toBe(checkoutRoot("material", env));
-    expect(
-      checkoutRoot("bun", {
-        ...env,
-        APHRODY_BUN_CHECKOUT: join(root, "custom-bun"),
-      }),
-    ).toBe(join(root, "custom-bun"));
-    expect(
-      checkoutRoot("material", {
-        ...env,
-        APHRODY_MATERIAL_CHECKOUT: join(root, "custom-material"),
-      }),
-    ).toBe(join(root, "custom-material"));
-    mkdirSync(join(root, "toolchains/bun"), { recursive: true });
     expect(checkoutRoot("bun", env)).toBe(join(root, "toolchains/bun"));
-    expect(checkoutRoot("bun", { ...env, APHRODY_BUN_CHECKOUT: join(root, "custom-bun") })).toBe(
-      join(root, "custom-bun"),
-    );
+    expect(checkoutRoot("material", env)).toBe(root);
+    expect(checkoutRoot("m3", env)).toBe(checkoutRoot("material", env));
+    expect(checkoutRoot("iecode", env)).toBe(root);
+    expect(checkoutRoot("rg", env)).toBe(root);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

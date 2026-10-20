@@ -26,7 +26,7 @@ export const SITE = {
   certScript: "scripts/tools/infra/issue-creator-certificate.sh",
 };
 
-const repo = resolve(import.meta.dir, "../../../docs/aphrody");
+const repo = resolve(import.meta.dir, "../../../");
 const appDir = join(repo, "packages/infra/product");
 import { build as buildPage, SEED } from "@aphrody/product/creator/site";
 import { brandExe } from "./windows-exe.ts";

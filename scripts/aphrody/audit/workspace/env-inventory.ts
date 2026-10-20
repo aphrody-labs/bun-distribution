@@ -55,7 +55,7 @@ for (const sourceRoot of ["apps", "crates", "packages", "scripts", "config", "m3
   })) {
     if (ignoredPath(path) || path.includes(".test.") || path.endsWith("_test.rs")) continue;
     const rel = relative(root, join(root, sourceRoot, path)).replaceAll("\\", "/");
-    if (rel.startsWith("scripts/build/")) continue;
+    if (rel.startsWith("scripts/aphrody/build/")) continue;
     const text = await Bun.file(join(root, sourceRoot, path)).text();
     for (const pattern of [
       envAccess,

@@ -6,7 +6,7 @@ import { cp, mkdir, copyFile, readFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { buildDependencies } from "@aphrody/bun-workspace/automation/bun-dependency-builds.ts";
 
-const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../../");
 if (Bun.env.APHRODY_BUILD_HOST !== "vps") {
   throw new Error("Use yolo ops build-factory run for this build.");
 }
@@ -51,7 +51,7 @@ const extract = Bun.spawn(["tar", "-x", "-C", source], {
 });
 if ((await extract.exited) || (await archive.exited)) throw new Error("Source archive extraction failed");
 await run(["bun", "install", "--frozen-lockfile", "--ignore-scripts"], source);
-const cargo = ["bash", "scripts/build/rust/cargo-serial.sh"];
+const cargo = ["bash", "scripts/aphrody/build/rust/cargo-serial.sh"];
 const lock = Bun.TOML.parse(await readFile(join(source, "Cargo.lock"), "utf8")) as {
   package: { name: string; version: string }[];
 };

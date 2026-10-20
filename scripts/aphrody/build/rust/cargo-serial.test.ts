@@ -14,11 +14,11 @@ afterEach(() => {
 async function run(host: string, held = false, extra: Record<string, string | undefined> = {}) {
   const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-routing-"));
   fixtures.push(root);
-  const wrapper = join(root, "scripts/build/rust/cargo-serial.sh");
+  const wrapper = join(root, "scripts/aphrody/build/rust/cargo-serial.sh");
   const factory = join(root, "packages/bun-workspace/src/automation/build-factory.ts");
   const bin = join(root, "bin");
   for (const dir of [
-    join(root, "scripts/build/rust"),
+    join(root, "scripts/aphrody/build/rust"),
     join(root, "tools", "config"),
     join(root, "packages/bun-workspace/src"),
     bin,

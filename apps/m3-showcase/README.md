@@ -32,7 +32,7 @@ Run `bun run icons` to prepare the canonical brand icons using the installed Tau
 `bun run tauri -- build --plan` reports the concrete owner, serialized Cargo runner
 and prerequisite diagnostics without compiling. Native build, development and sidecar
 commands execute through Aphrody's configured Workspace build factory and
-`scripts/build/rust/cargo-serial.sh`; local flags cannot bypass those owners.
+`scripts/aphrody/build/rust/cargo-serial.sh`; local flags cannot bypass those owners.
 A production desktop delivery still needs a successful build/package and a launch
 of the resulting application.
 

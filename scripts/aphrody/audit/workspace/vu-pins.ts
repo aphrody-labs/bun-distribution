@@ -13,7 +13,7 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../../");
 const SHA = /^[0-9a-f]{40}$/;
 const DIGEST = /^[0-9a-f]{64}$/;
 

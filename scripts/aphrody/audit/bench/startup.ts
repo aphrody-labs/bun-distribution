@@ -149,7 +149,7 @@ export async function runStartupBenchmark(
     bun?: string;
   } = {},
 ) {
-  const root = resolve(options.repository ?? join(import.meta.dir, "../../../../docs/aphrody"));
+  const root = resolve(options.repository ?? join(import.meta.dir, "../../../../"));
   const bun = realpathSync(options.bun ?? Bun.which("bun") ?? process.execPath);
   const installed = resolve(options.installedYolo ?? join(homedir(), ".yolo/bin/yolo"));
   const launcher = join(root, "scripts/dev/cli/yolo");

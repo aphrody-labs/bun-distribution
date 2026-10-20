@@ -17,7 +17,7 @@ export-env {
   }
 
   let home = $nu.home-dir
-  let root = $env.APHRODY_ROOT? | default ($home | path join "aphrody")
+  let root = $env.APHRODY_ROOT? | default ((path self | path dirname | path join ".." ".." ".." "..") | path expand)
   let aphrody_home = $env.APHRODY_HOME? | default ($home | path join ".aphrody")
   let domain = $env.APHRODY_AGENT_DOMAIN? | default "aphrody"
   let cargo_home = $env.CARGO_HOME? | default ($home | path join ".cargo")
@@ -29,8 +29,7 @@ export-env {
   $env.APHRODY_WORKSPACE = ($env.APHRODY_WORKSPACE? | default ($env.APHRODY_HOME | path join "workspaces" $domain))
   $env.APHRODY_SOURCE_ROOT = ($env.APHRODY_SOURCE_ROOT? | default ($env.APHRODY_ROOT | path join ".cache" "upstream"))
   $env.APHRODY_PY_ROOT = ($env.APHRODY_PY_ROOT? | default ($env.APHRODY_ROOT | path join "py"))
-  $env.APHRODY_IECODE_ROOT = ($env.APHRODY_IECODE_ROOT? | default (($env.APHRODY_ROOT | path dirname) | path join "iecode"))
-  $env.IECODE_ROOT = ($env.IECODE_ROOT? | default $env.APHRODY_IECODE_ROOT)
+  $env.IECODE_ROOT = ($env.IECODE_ROOT? | default $env.APHRODY_ROOT)
   $env.CARGO_HOME = $cargo_home
   $env.BUN_INSTALL = $bun_install
   $env.CARGO_BUILD_JOBS = ($env.CARGO_BUILD_JOBS? | default "6")

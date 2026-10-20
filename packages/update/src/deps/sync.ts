@@ -406,7 +406,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
     output += `\n# ${d}\n${r.stdout}${r.stderr}`;
   }
   if (targets.cargo.length) {
-    const r = c.run("bash", ["scripts/build/rust/cargo-serial.sh", "check", ...targets.cargo.flatMap(p => ["-p", p])]);
+    const r = c.run("bash", ["scripts/aphrody/build/rust/cargo-serial.sh", "check", ...targets.cargo.flatMap(p => ["-p", p])]);
     output += `\n# cargo ${targets.cargo.join(" ")}\n${r.stdout}${r.stderr}`;
   }
   const baselineFile = "tools/config/deps/baseline.json";

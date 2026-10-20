@@ -42,5 +42,5 @@ bun scripts/<category>/<domain>/<script>.ts [args]
   ```
 - **Remote Cargo builds (from WSL)**:
   ```bash
-  bun scripts/build/rust/vps-cargo.ts run -- <cargo args>
+  bun scripts/aphrody/build/rust/vps-cargo.ts run -- <cargo args>
   ```

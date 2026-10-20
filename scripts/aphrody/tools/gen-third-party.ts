@@ -10,7 +10,7 @@
 import { Glob } from "bun";
 import { resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dir, "../../../docs/aphrody").replaceAll("\\", "/");
+const ROOT = resolve(import.meta.dir, "../../../").replaceAll("\\", "/");
 const OUT = `${ROOT}/THIRD-PARTY.md`;
 
 // First-party crate license fields.

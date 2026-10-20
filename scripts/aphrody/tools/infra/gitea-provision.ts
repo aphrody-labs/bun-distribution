@@ -43,7 +43,7 @@ const usage =
 function argumentsFrom(argv: string[]) {
   const args = [...argv];
   if (args[0] && !args[0].startsWith("--")) args.shift();
-  let root = resolve(import.meta.dir, "../../../../docs/aphrody");
+  let root = resolve(import.meta.dir, "../../../../");
   let apply = false,
     json = false;
   const repositories: string[] = [];

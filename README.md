@@ -17,24 +17,28 @@
 
 </div>
 
-Bun OS ships the [Aphrody Bun runtime](https://github.com/aphrody-labs/bun) as the system runtime of an
-Arch Linux distribution. One repository holds the image factory, the desktop, the applications
-and every first-party crate and package. The image factory uses pacman/libalpm and runs from
-TypeScript. The desktop is COSMIC, with a Gamescope gaming session. The applications include the
-Craft creative suite, reverse-engineering tools and game tooling.
+Bun OS is the distribution workspace for an Arch-based system using the
+[Aphrody Bun runtime](https://github.com/aphrody-labs/bun). This repository
+owns assembly and the root Bun workspace. Product sources live under `apps/`,
+`crates/` and `packages/`, while Cargo ownership is still split by nested
+workspace boundaries and excluded sources. The image factory uses
+pacman/libalpm and runs from TypeScript. The planned compositions are COSMIC
+Desktop and Gamescope Gaming, alongside Server.
 
 ## Editions
 
-| Composition | Session          | Purpose                                     |
-| ----------- | ---------------- | ------------------------------------------- |
-| `server`    | none             | Headless host: Bun services, nginx, systemd |
-| `desktop`   | `cosmic-session` | COSMIC desktop with the Material 3 shell    |
-| `gaming`    | `gamescope`      | Steam/Proton gaming session                 |
+| Declared composition | Session value in `distribution.json` |
+| -------------------- | ------------------------------------ |
+| `server`             | `null`                               |
+| `desktop`            | `cosmic-session`                     |
+| `gaming`             | `gamescope`                           |
 
-Profiles: `full` (wgpu renderer, every engine) and `perf` (tiny-skia, demand-loaded engines).
-Targets: `linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64`, `wasm`.
-Package catalogs: Arch, CachyOS, ChimeraOS and Omarchy. APT is a separate compatibility target.
-Source of truth: [`distribution.json`](distribution.json) and [`sources.lock.json`](sources.lock.json).
+The manifest also declares `full` and `perf` profiles and five targets:
+`linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64` and `wasm`. These are
+configuration selectors, not claims of build or runtime support. Package
+catalog inputs are under `factory/arch/`; APT configuration is maintained as a
+separate compatibility path. See [`distribution.json`](distribution.json),
+[`sources.lock.json`](sources.lock.json) and the relevant factory manifests.
 
 ## Quickstart
 
@@ -57,9 +61,11 @@ bun src/cli.ts plan --profile full --target linux-x64
 bun run factory --action plan --composition server --snapshot 2026-10-17
 ```
 
-`setup` initializes the pinned submodules and installs the single Bun workspace from `bun.lock`.
-It also builds `build/packages/material-web.tgz`. Run `bun run setup --plan` to inspect without
-installing.
+`setup` initializes declared submodules, prepares the local
+`build/packages/material-web.tgz` archive and installs dependencies from the
+root Bun lockfile. `bun run setup --plan` prints a source preflight without
+installing. A successful plan does not establish that setup, builds or product
+qualification will succeed.
 
 ## Repository
 
@@ -67,10 +73,10 @@ installing.
 | ------------------- | -------------------------------------------------------------------------- |
 | `src/`              | Factory CLI: plan, sources, stage, rootfs, image, msys2, graph, infra, ops |
 | `factory/`          | Arch factory, compositions, `/usr` images, Ubuntu and MSYS2 compatibility  |
-| `crates/` (549)     | First-party Rust crates in one root Cargo workspace                        |
-| `packages/` (544)   | First-party Bun packages in one root Bun workspace                         |
-| `apps/` (61)        | Desktop, web, CLI and Android applications                                 |
-| `vendor/` (113)     | Pinned upstream sources: kernels, Proton, Wine, emulators, toolchains      |
+| `crates/`            | Rust source; root Cargo membership and nested workspace boundaries are tracked separately |
+| `packages/`          | Bun packages; the root Bun manifest declares the workspace members         |
+| `apps/`              | Desktop, web, CLI and Android application sources                          |
+| `vendor/`            | Imported sources; inspect `sources.lock.json` and `.gitmodules` for declared pins |
 | `toolchains/bun`    | The Aphrody Bun runtime and Tauri SDK                                      |
 | `infra/`            | Host, nginx, systemd and DNS desired state                                 |
 | `fonts/`, `assets/` | Shared fonts and app assets with their licenses                            |
@@ -81,7 +87,7 @@ installing.
 | Product                       | Where                                                                                              |
 | ----------------------------- | -------------------------------------------------------------------------------------------------- |
 | COSMIC desktop and Material 3 | `apps/desktop`, `packages/m3*`, `packages/app-ui`                                                  |
-| Craft suite                   | `apps/*craft*`: PDF, CAD, film, photo, vector, sound, word, deck, design, grid, light, effect, fig |
+| Craft suite                   | `apps/*craft*`: PDF, CAD web, film, photo, vector, sound, word, deck, design, grid, light, effect, fig |
 | Reverse engineering (`re`)    | `packages/re`, `crates/re` (`bunre`)                                                               |
 | IECODE and nie game tooling   | `crates/aphrody-nie-*`, `packages/inagle`, `apps/iecode-*`                                         |
 | Rose Griffon                  | [Canonical source](https://github.com/aphrody-labs/rosegriffon), [ownership and binaries](docs/ROSEGRIFFON.md) |

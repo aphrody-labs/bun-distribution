@@ -78,7 +78,7 @@ export interface Manifest {
   totals: Record<Category, number>;
 }
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../../");
 
 /** Where an item lives inside the portable directory. */
 export function storedPath(base: string, item: Item, kind: "home" | "system"): string {

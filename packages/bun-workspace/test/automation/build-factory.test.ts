@@ -611,7 +611,7 @@ test("source preparations use disjoint locks and builds also protect their pinne
   });
   expect(other.lockPath).not.toBe(first.lockPath);
   expect(other.initializesSubmodules).toBe(false);
-  const build = buildFactoryPlan(config, "aphrody", revision, ["scripts/build/rust/cargo-serial.sh", "check"]);
+  const build = buildFactoryPlan(config, "aphrody", revision, ["scripts/aphrody/build/rust/cargo-serial.sh", "check"]);
   expect(build.transport[5]).toContain(
     "flock --close -- /home/ubuntu/build/locks/heavy.lock flock --close -- /home/ubuntu/build/locks/aphrody.source.lock",
   );

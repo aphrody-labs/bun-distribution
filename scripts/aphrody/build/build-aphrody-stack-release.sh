@@ -14,7 +14,7 @@ compute_release() {
   [[ "$(uname -s)" = Linux && "$(uname -m)" = x86_64 ]] || { echo 'Linux x86_64 build host required' >&2; return 2; }
   [[ "$pin" =~ ^[0-9a-f]{40}$ ]] && git -C "$repo" cat-file -e "$pin^{commit}" || { echo 'invalid source commit' >&2; return 2; }
   for binary in git tar sha256sum ldd; do command -v "$binary" >/dev/null || { echo "missing $binary" >&2; return 2; }; done
-  for binary in Cargo.toml Cargo.lock scripts/build/rust/cargo-serial.sh crates/ai/rag/migrations/0001_shenron_postgres.sql; do
+  for binary in Cargo.toml Cargo.lock scripts/aphrody/build/rust/cargo-serial.sh crates/ai/rag/migrations/0001_shenron_postgres.sql; do
     git -C "$repo" cat-file -e "$pin:$binary" || { echo "source commit lacks $binary" >&2; return 2; }
   done
   # Cargo must not reach outside the exported commit: an external path dependency would escape the pin.
@@ -46,7 +46,7 @@ compute_release() {
     cd "$work/aphrody"
     export CARGO_TARGET_DIR="$target" APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-2}"
     # aphrody-mcp, aphrody-embed and aphrody-llama-daemon are entries of the single multi-call `aphrody` binary.
-    scripts/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody --bin aphrody > "$stage/.logs/aphrody.log" 2>&1
+    scripts/aphrody/build/rust/cargo-serial.sh build --locked --offline --release --target x86_64-unknown-linux-gnu -p aphrody --bin aphrody > "$stage/.logs/aphrody.log" 2>&1
   ) || { echo "compute build failed; logs=$stage/.logs source=$work" >&2; return 1; }
   for binary in aphrody-mcp aphrody-embed aphrody-llama-daemon; do
     built="$binary"

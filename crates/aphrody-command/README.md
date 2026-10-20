@@ -17,7 +17,7 @@ these Rust entry points include the program name; C ABI adapters still prepend
 help/version surface.
 
 The root workspace owns versions and gates. Use
-`scripts/build/rust/cargo-serial.sh` for check, clippy, test and build commands.
+`scripts/aphrody/build/rust/cargo-serial.sh` for check, clippy, test and build commands.
 CLI integration tests stay with the binary; library and provisioning tests live
 here. Windows stack reservation stays in the binary build script; build version
 metadata lives with the command implementation.

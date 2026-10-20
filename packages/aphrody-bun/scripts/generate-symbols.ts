@@ -3,11 +3,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Resolve the repo root relative to this script
-// (packages/interop/native/scripts/ -> repo root). material-web was merged in-tree on
+// (packages/aphrody-bun/scripts/ -> repo root). material-web was merged in-tree on
 // 2026-06-01, so both the input JSON and the output Rust file live under packages/.
-const root = join(import.meta.dir, "../../../docs/aphrody");
-const jsonPath = join(root, "m3/packages/m3-codemods/data/material-symbols-names.json");
-const rustPath = join(root, "crates/ui/bun/src/symbols.rs");
+const root = join(import.meta.dir, "../../../");
+const jsonPath = join(root, "packages/m3-codemods/data/material-symbols-names.json");
+const rustPath = join(root, "crates/aphrody-bun/src/symbols.rs");
 
 console.log("Reading symbols JSON from:", jsonPath);
 const symbols: string[] = JSON.parse(readFileSync(jsonPath, "utf-8"));

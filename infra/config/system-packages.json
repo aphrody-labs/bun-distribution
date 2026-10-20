@@ -65,15 +65,14 @@
     "cargo-update"
   ],
   "workstation": {
-    "note": "Windows/WSL only (iecode native and .NET builds); never installed on vps or dbfr.",
+    "note": "Windows-only native and .NET builds; never installed on vps or dbfr.",
     "dotnet-sdk": {
       "version": "10.0.102",
-      "source": "../../../iecode/global.json",
+      "source": "../../apps/iecode-dotnet/global.json",
       "rollForward": "latestMinor"
     },
     "vcpkg": {
-      "rootEnv": "VCPKG_ROOT",
-      "baseline": "../../../iecode/vcpkg.json"
+      "rootEnv": "VCPKG_ROOT"
     },
     "msvc": {
       "required": "x64 developer environment for the iecode CMake unified preset"

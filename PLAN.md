@@ -6,7 +6,9 @@ logs do not define the current state; use Git history for prior batches.
 ## Verified architecture
 
 - This repository owns Bun OS distribution assembly, its root Bun workspace,
-  package catalog, factory and release coordination.
+  package catalog, factory and release coordination. These are repository
+  ownership boundaries, not claims that all declared compositions or release
+  artifacts have been built or qualified.
 - The Bun runtime implementation remains with its canonical runtime owner.
 - Product source is organized under `apps/`, `crates/` and `packages/`.
   Upstream projects and independently owned code retain their source boundaries
@@ -19,7 +21,8 @@ logs do not define the current state; use Git history for prior batches.
   the root manifest excludes them. Do not report Cargo consolidation complete.
 - The product direction is Arch Linux with pacman/libalpm. Server, COSMIC
   Desktop and Gamescope Gaming remain distinct compositions; Alpine and Ubuntu
-  are compatibility targets.
+  are compatibility targets in the checked-in product configuration. The
+  distribution manifest currently labels qualification as `development`.
 
 ## Remaining work
 
@@ -44,6 +47,16 @@ logs do not define the current state; use Git history for prior batches.
 5. Run native build and qualification gates on the VPS after the relevant
    source batch is complete. Record actual command output and distinguish
    source validation from artifact, deployment and release qualification.
+
+## Known validation blocker
+
+- The current local read-only workspace inspection via
+  `bun scripts/cargo.ts metadata --no-deps --format-version 1` aborts in the
+  shared workspace inspector because `vendor/rea/package.json` has a different
+  version from the root product package. Resolve whether that vendor is
+  intentionally exempt or the manifest is wrong before reporting workspace
+  inspection as passing. This failure is not evidence that Cargo metadata
+  itself failed.
 
 ## Delivery rules
 

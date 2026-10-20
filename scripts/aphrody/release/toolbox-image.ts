@@ -15,7 +15,7 @@ import { copyFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dir, "../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../");
 const DOCKERFILE = join(ROOT, "tools/config/container/toolbox/Dockerfile");
 
 export function parseArgs(argv: string[]) {

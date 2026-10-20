@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dir, "../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../");
 // [patch.crates-io] overlays keep upstream names and are never published.
 const SKIP = [/^crates\/native\/simdutf$/];
 

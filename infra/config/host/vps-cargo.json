@@ -19,7 +19,7 @@
     "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/build/storage/cache/bun",
     "CEF_PATH": "/home/ubuntu/build/storage/cache/cef"
   },
-  "jobs": 12,
+  "jobs": 4,
   "desktopSysCrates": ["gdk4-sys", "gtk4-sys"],
   "forwards": {
     "remote": [
@@ -44,7 +44,7 @@
       "remoteWorkspace": "/home/ubuntu/build/wsl/vu",
       "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/vu-wsl",
       "snapshotRef": "refs/vu/snapshot",
-      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/aphrody/build/rust/cargo-serial.sh"
     },
     "shenron": {
       "root": "../shenron",
@@ -52,7 +52,7 @@
       "remoteSeed": "",
       "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
-      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/aphrody/build/rust/cargo-serial.sh"
     },
     "shenron-release": {
       "root": "../shenron",
@@ -60,7 +60,7 @@
       "remoteSeed": "",
       "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
-      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/aphrody/build/rust/cargo-serial.sh"
     },
     "shenron-omar": {
       "root": "../shenron",
@@ -68,7 +68,7 @@
       "remoteSeed": "",
       "remoteTargetDir": "/home/ubuntu/build/storage/cache/cargo/shenron-wsl",
       "snapshotRef": "refs/shenron/snapshot",
-      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh"
+      "cargoSerial": "/home/ubuntu/build/wsl/aphrody/scripts/aphrody/build/rust/cargo-serial.sh"
     }
   },
   "refuseSnapshotPaths": [
@@ -108,7 +108,7 @@
       }
     }
   },
-  "maxJobs": 12,
+  "maxJobs": 4,
   "resources": {
     "reserveMemoryGiB": 8,
     "reserveDiskGiB": 32,

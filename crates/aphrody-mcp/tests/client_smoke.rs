@@ -21,7 +21,7 @@ use tokio::{
 /// Path of the workspace `aphrody` multi-call binary (the former `aphrody-mcp` binary is its
 /// `mcp-server` subcommand). `APHRODY_BIN` overrides; otherwise it is the `aphrody` next to the
 /// `deps/` directory of the current test executable (`target/<profile>/aphrody`), so build it
-/// first with `scripts/build/rust/cargo-serial.sh build -p aphrody`.
+/// first with `scripts/aphrody/build/rust/cargo-serial.sh build -p aphrody`.
 fn aphrody_bin() -> std::path::PathBuf {
     if let Some(path) = std::env::var_os("APHRODY_BIN") {
         return path.into();

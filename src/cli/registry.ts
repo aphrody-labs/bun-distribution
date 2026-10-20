@@ -16,6 +16,8 @@ export interface Command {
   target?: string;
   /** Hidden from the short list; shown with --all. */
   advanced?: boolean;
+  /** The underlying owner handles --help itself (including nested commands). */
+  passthroughHelp?: boolean;
   run(args: string[]): Promise<number> | number;
 }
 

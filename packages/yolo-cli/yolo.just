@@ -6,7 +6,7 @@ set working-directory := "../../.."
 
 # Local/factory builds use Aphrody's shared Cargo lock, cache and resource guard.
 # The factory may override this with its installed owner wrapper.
-cargo_owner := env("YOLO_CARGO_WRAPPER", env("HOME") / "aphrody/scripts/build/rust/cargo-serial.sh")
+cargo_owner := env("YOLO_CARGO_WRAPPER", env("HOME") / "aphrody/scripts/aphrody/build/rust/cargo-serial.sh")
 # The Bun fork has its own toolchain and build graph.
 bun_toolchain := "nightly-2026-09-15"
 bun_python_manifest := env("APHRODY_BUN_CHECKOUT", "") / "packages/bun-runtime-sdk/Cargo.toml"

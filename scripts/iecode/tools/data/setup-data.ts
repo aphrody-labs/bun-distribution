@@ -83,7 +83,7 @@ function findExternalSteamInstall(): string | null {
     join(home, ".local/share/Steam/iecode/inazuma"),
     join(home, ".local/share/Steam/steamapps/common/INAZUMA ELEVEN Victory Road"),
     join(home, ".steam/steam/steamapps/common/INAZUMA ELEVEN Victory Road"),
-    resolve(root, "../aphrody/data"),
+    resolve(root, "data"),
   ].filter((p): p is string => Boolean(p));
 
   for (const candidate of candidates) {

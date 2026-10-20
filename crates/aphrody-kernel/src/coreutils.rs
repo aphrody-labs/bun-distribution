@@ -133,7 +133,7 @@ fn coreutils_binary() -> PathBuf {
     env::var_os("APHRODY_COREUTILS_BIN").map_or_else(default_binary, PathBuf::from)
 }
 
-/// Companions are installed next to the multicall binary (`scripts/build/os/build-uutils-coreutils.ts`).
+/// Companions are installed next to the multicall binary (`scripts/aphrody/build/os/build-uutils-coreutils.ts`).
 fn companion_binary(companion: &Companion) -> PathBuf {
     let name = platform_binary(companion.binary);
     coreutils_binary()
@@ -153,7 +153,7 @@ fn resolve_binary() -> Result<PathBuf, String> {
         Ok(path)
     } else {
         Err(format!(
-            "uutils coreutils binary not found at `{}`; run `bun scripts/build/os/build-uutils-coreutils.ts` or set APHRODY_COREUTILS_BIN",
+            "uutils coreutils binary not found at `{}`; run `bun scripts/aphrody/build/os/build-uutils-coreutils.ts` or set APHRODY_COREUTILS_BIN",
             path.display()
         ))
     }
@@ -439,7 +439,7 @@ impl CoreutilsSubsystem {
         let binary = companion_binary(companion);
         if !binary.is_file() {
             return Err(SubsystemError::Failed(format!(
-                "uutils `{utility}` binary not found at `{}`; run `bun scripts/build/os/build-uutils-coreutils.ts`",
+                "uutils `{utility}` binary not found at `{}`; run `bun scripts/aphrody/build/os/build-uutils-coreutils.ts`",
                 binary.display()
             )));
         }
@@ -643,7 +643,7 @@ mod tests {
             .find(|companion| companion.tool == "sed")
             .unwrap();
         if !super::companion_binary(sed).is_file() {
-            eprintln!("uutils sed not installed: bun scripts/build/os/build-uutils-coreutils.ts");
+            eprintln!("uutils sed not installed: bun scripts/aphrody/build/os/build-uutils-coreutils.ts");
             return;
         }
         let result = CoreutilsSubsystem::new()

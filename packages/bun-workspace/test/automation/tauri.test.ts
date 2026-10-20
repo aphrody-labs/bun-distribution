@@ -14,7 +14,7 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   const root = mkdtempSync(join(tmpdir(), "aphrody-tauri-owner-"));
   roots.push(root);
   const app = join(root, "crates/ui/app");
-  const scripts = join(root, "scripts/build/rust");
+  const scripts = join(root, "scripts/aphrody/build/rust");
   mkdirSync(app, { recursive: true });
   mkdirSync(scripts, { recursive: true });
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\nmembers = []\n");

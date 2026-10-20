@@ -12,7 +12,6 @@
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { checkoutRoot } from "@aphrody/paths";
 
 export interface StackTemplate {
   readonly path: string;
@@ -30,16 +29,10 @@ export interface StackManifest {
   readonly template: Readonly<Record<string, StackTemplate>>;
 }
 
-/** Source checkouts consume Material; installed distributions retain their asset layout. */
+/** Source checkouts consume the integrated templates; installed distributions retain their asset layout. */
 export function templatesRoot(rootDir: string): string {
   if (!existsSync(join(rootDir, "Cargo.toml"))) return resolve(rootDir, "m3/templates");
-  return join(
-    checkoutRoot("material", {
-      ...process.env,
-      APHRODY_WORKSPACE_ROOT: rootDir,
-    }),
-    "packages/m3/templates",
-  );
+  return join(rootDir, "packages/m3-templates");
 }
 
 export async function loadStack(rootDir: string): Promise<StackManifest> {
@@ -72,7 +65,7 @@ export interface CreateOptions {
 }
 
 /**
- * The template layers as `bun create` reads them: m3/templates, overlaid with the files of the layers whose
+ * The template layers as `bun create` reads them: packages/m3-templates, overlaid with the files of the layers whose
  * canonical source is packages/m3-templates of the OS (the web, react and spa pages).
  */
 function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {

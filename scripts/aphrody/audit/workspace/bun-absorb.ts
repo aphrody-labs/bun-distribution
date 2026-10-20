@@ -184,7 +184,7 @@ async function countImports(root: string, config: AbsorbConfig): Promise<Record<
 
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
-  const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+  const root = resolve(import.meta.dir, "../../../../");
   const config: AbsorbConfig = await Bun.file(resolve(root, "tools/config/bun-absorb.json")).json();
   const rootManifest = await Bun.file(resolve(root, "package.json")).json();
   const baselinePath = resolve(root, "tools/config/bun-absorb.baseline.json");

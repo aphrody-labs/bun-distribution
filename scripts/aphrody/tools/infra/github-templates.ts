@@ -25,7 +25,7 @@ interface RepoTemplate {
   prValidations: string[];
 }
 
-const root = join(import.meta.dir, "../../../../docs/aphrody");
+const root = join(import.meta.dir, "../../../../");
 const config = JSON.parse(readFileSync(join(root, "tools/config/github/templates.json"), "utf8")) as {
   repos: Record<string, RepoTemplate>;
 };

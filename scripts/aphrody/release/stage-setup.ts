@@ -21,7 +21,7 @@ import { join, resolve } from "node:path";
 import { scanPack, sha256File } from "./publish-creator.ts";
 import { brandExe } from "./windows-exe.ts";
 
-const repo = resolve(import.meta.dir, "../../../docs/aphrody");
+const repo = resolve(import.meta.dir, "../../../");
 const appDir = join(repo, "packages/infra/product");
 const EXE = "Aphrody-Setup.exe";
 const TARGET = "x86_64-pc-windows-msvc";

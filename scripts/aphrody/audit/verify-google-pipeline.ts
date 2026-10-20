@@ -51,7 +51,7 @@ export function owners(root = resolve(import.meta.dir, "../../..")): Owners {
     facadeEntry: join(root, "packages/google/src/index.ts"),
     nativeTests: join(root, "toolchains/bun/packages/bun-google/test"),
     facadeTests: join(root, "packages/google/test"),
-    cargoSerial: join(root, "toolchains/bun/scripts/build/rust/cargo-serial.ts"),
+    cargoSerial: join(root, "toolchains/bun/scripts/aphrody/build/rust/cargo-serial.ts"),
   };
 }
 

@@ -31,7 +31,7 @@ async function run(argv: string[]): Promise<number> {
     );
     return values.help ? 0 : 2;
   }
-  const repoRoot = resolve(import.meta.dir, "../../../../../docs/aphrody");
+  const repoRoot = resolve(import.meta.dir, "../../../../../");
   assertOutsideRepo(values.out, repoRoot);
   const tunnelFile = values.tunnel ?? join(repoRoot, "infra/config/host/wireguard/aphrody-tunnel.json");
   const tunnel = JSON.parse(await readFile(tunnelFile, "utf8")) as Tunnel;

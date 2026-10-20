@@ -306,7 +306,7 @@ services:
     profiles: [prod]
 
   # Build service (VPS): the shared aphrody-build image, reached over SSH (`aphrody infra ssh exec --host vps`).
-  # It idles; builds enter through `docker exec` or scripts/build/container/aphrody-build.ts run (bounded, locked).
+  # It idles; builds enter through `docker exec` or scripts/aphrody/build/container/aphrody-build.ts run (bounded, locked).
   build:
     image: aphrody-build:latest
     container_name: aphrody-build

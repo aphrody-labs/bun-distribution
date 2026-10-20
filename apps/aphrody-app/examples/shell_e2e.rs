@@ -6,7 +6,7 @@
 //! and the permission-checked plugin IPC, then reports its result through `report`, which prints
 //! it and exits. The desktop's own `main` window and capability are reused: only the assets are
 //! swapped for the directory named by `APHRODY_SHELL_E2E_FRONTEND`, which
-//! `scripts/build/desktop/e2e.ts` assembles (WASM package and transpiled transports).
+//! `scripts/aphrody/build/desktop/e2e.ts` assembles (WASM package and transpiled transports).
 //! Build it with `--features custom-protocol` so the window serves those assets.
 
 use std::{

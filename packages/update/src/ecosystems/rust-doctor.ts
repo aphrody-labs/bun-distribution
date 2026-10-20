@@ -5,7 +5,7 @@
  *   rust doctor [--fix] [--only a,b] [--skip a,b] [--strict] [--allow-dirty] [--verbose] [--json]
  *   rust fix [...]                   same as `doctor --fix`
  *
- * Stages, always in this order, one Cargo command at a time through scripts/build/rust/cargo-serial.sh:
+ * Stages, always in this order, one Cargo command at a time through scripts/aphrody/build/rust/cargo-serial.sh:
  *   lock      Cargo.lock matches the manifests (`cargo metadata --locked`) and the lock pins of rust-holds.json
  *   format    `cargo fmt --all -- --check -l` against rustfmt.toml, one row per crate
  *   compile   `cargo clippy --workspace --all-targets`: compiler errors, warnings and lints with file:line
@@ -31,7 +31,7 @@ import { Ctx } from "../context.ts";
 import { parseCargoLock } from "../deps/inventory.ts";
 import { denyAdvisories, loadAdvisoryHolds, loadHolds, lockPinDrift, restoreLockPins, rustStatus } from "./rust.ts";
 
-const WRAPPER = "scripts/build/rust/cargo-serial.sh";
+const WRAPPER = "scripts/aphrody/build/rust/cargo-serial.sh";
 const CONFIG_FILE = "tools/config/update/rust-doctor.json";
 const OUT_DIR = "target/update/rust-doctor";
 const JUNIT = "target/nextest/doctor/junit.xml";

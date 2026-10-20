@@ -15,7 +15,7 @@ type Repo = {
   updatedAt: string;
 };
 // Repository root: this file lives in scripts/audit/workspace/.
-const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../../");
 const run = async (args: string[]) => (await Bun.$`gh ${args}`.text()).trim();
 const repos = JSON.parse(
   await run([

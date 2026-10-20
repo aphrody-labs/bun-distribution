@@ -37,7 +37,7 @@ const FORBIDDEN_SECRETS = [
 ];
 
 export function initCloudAgentHome(options: AgentHomeInitOptions = {}): AgentHomeReport {
-  const root = resolve(import.meta.dir, "../../../docs/aphrody");
+  const root = resolve(import.meta.dir, "../../../");
   const homeDir =
     options.homeDir ?? process.env.APHRODY_HOME ?? join(process.env.HOME ?? process.env.USERPROFILE ?? "", ".aphrody");
   const workspaceName = options.workspace ?? "aphrody";

@@ -1,68 +1,50 @@
-# Architecture
+# Repository architecture
 
-```mermaid
-flowchart TD
-  UI[Aphrody shell] --> SDK[Bun Tauri v3 / CEF]
-  UI --> Backend[Bun backend]
-  Product[Standalone product API] --> Workspace
-  Backend --> Workspace[Native library orchestration]
-  Workspace --> Sources[Pinned library submodules]
-  Backend --> Video[Typed video adapter]
-  Video --> Headless[Native video CLI]
-  Video --> NativeVideo[Bun.Video when available]
-  Sources --> Rust[Existing Rust engines and headless CLIs]
-  Sources --> Shared[Shared libraries and fonts]
-  Workspace --> Factory[App build factory]
-  Factory --> Artifacts[Verified manifests and embedded engines]
-  Artifacts --> Apps[Independent Bun apps]
-  Apps --> Assets[Shared R2 content keys]
-  Infra[Aphrody Infra] --> Apps
-  Infra --> Control[Rust deployment controller]
-  Forge[Git forge and runner] --> Factory
-  Infra --> Forge
-  Forge --> Portal[source.aphrody.app]
-  Sources --> Crates[Flat pinned crates / root Cargo workspace]
-```
+This page records repository structure visible in the checked-in manifests and
+entry points. It does not claim that declared products or target combinations
+have been built, deployed or qualified.
 
-- `apps/desktop`: Aphrody shell, built and served by Bun.
-- `packages/bun-workspace`: shared CLI, app identity, config, provenance,
-  source coverage, native execution, asset manifests and process ownership.
-- `packages/bun-app-host`: product server, common authenticated API transport,
-  standalone compilation and executable qualification.
-- `packages/bun-video-project`: exact JSON, bounded native operations and runtime availability.
-- `packages/bun-artifacts`: target manifests, standalone compilation and verified
-  native payload extraction.
-- `crates/`, `packages/`, `apps/`: flat library sources (history merged), docs in `docs/libraries/`.
-- `toolchains/bun`: pinned SDK and runtime types.
+## Owners and entry points
 
-Imported libraries retain their history and licenses. The root Cargo workspace
-owns the migrated flat crate submodules and common dependencies. Remaining
-nested Cargo workspaces are migrated in qualified batches.
+| Area | Repository evidence | What that evidence establishes |
+| --- | --- | --- |
+| Distribution CLI | `src/cli.ts`, `src/cli/` | Command routing and CLI implementation are present. |
+| Bun workspace | Root `package.json`, `bun.lock`, `bunfig.toml` | A root Bun workspace and dependency lock are declared. |
+| Cargo workspace | Root `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml` | A root Cargo workspace and toolchain are declared; exclusions and nested workspaces mean it is not the sole Rust workspace. |
+| Runtime source | `toolchains/bun`, `.gitmodules`, `sources.lock.json` | The runtime is consumed as a pinned source owner; runtime implementation ownership remains external to this distribution. |
+| Factory | `factory/`, `src/distribution.ts`, `distribution.json` | Factory code and configuration are present. A manifest entry alone does not prove an image was produced. |
+| Product sources | `apps/`, `crates/`, `packages/` | Source directories exist. Membership and ownership must be checked from manifests and source inventory. |
+| Imported sources | `vendor/`, `sources.lock.json`, `.gitmodules` | Some external sources and pins are declared. Inspect each source's provenance and status independently. |
 
-The shell exposes capabilities and headless inspection. Library sources do not
-define product branding. GUI binaries are not launch targets.
+## Declared product configuration
 
-Native builds use a host mutex and one Cargo job. The mutex is released before
-headless execution. Compiled sidecars resolve a verified external Bun CLI for
-native commands. Runtime and SDK source revisions are declared separately.
+`distribution.json` declares the `full` and `perf` profiles; targets
+`linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64` and `wasm`; and the
+`server`, `desktop` and `gaming` compositions. It selects `pacman/libalpm` and
+the Arch Linux family for the Linux distribution configuration. The file labels
+qualification as `development`. These values define configuration; they are
+not build or release receipts.
 
-The desktop shell discovers its checkout or uses `APHRODY_ROOT`. Independent
-app binaries embed their native engines and required resources. They run from
-verified manifests without Git, Cargo or source discovery.
+## Migration boundaries
 
-One workspace owner supplies app IDs, hashes, runtime provenance, source
-coverage and child lifetimes. Adapters preserve native domain errors and
-protocols. One shared R2 manifest references licensed assets by SHA-256.
-Provider credentials, sessions, datasets and model weights remain isolated.
+The root Cargo manifest explicitly excludes source trees, and some Rust
+projects retain nested workspaces. Therefore the repository does not yet have
+one authoritative Cargo workspace. Do not infer consolidation from a crate
+directory or a root manifest entry alone.
 
-Aphrody Infra owns host, service, route and activation policy. Komodo actuates
-deployment; Gitea and its runner host Git and execute the same Bun factory.
-The root `bun-os` CLI routes `server` commands to the same app-host CLI owner.
-Just coordinates setup, shared quality, Cargo, apps, product server and vendor
-without implementing another build pipeline. The root owns `node_modules`,
-`target`, `build` and `install`.
+The root package manifest declares Bun workspaces. Nested `package.json` files
+may serve as leaf package metadata or remain with independently owned source.
+Use the root manifest, lockfile and package inventory to establish actual
+workspace membership; do not infer it from directory counts.
 
-Source, artifact, CI and public service qualification are recorded separately.
-The complete 239-repository Labs inventory and resumable mirror admission live
-in Aphrody Infra. The embedded product catalog is a pinned distribution
-snapshot, not a claim that every mirror or native application is qualified.
+Imported projects keep their own histories, licenses and source boundaries
+until a documented migration changes those boundaries. Root-level product
+assembly does not transfer upstream source ownership.
+
+## Qualification evidence
+
+Keep source inventory, package resolution, compilation, tests, runtime checks,
+image assembly, boot/hardware validation and release qualification distinct.
+Report a stage only when its current receipt or command output establishes it.
+`PLAN.md` tracks migration work; `factory/` and `docs/qualification.md` describe
+factory and qualification interfaces.

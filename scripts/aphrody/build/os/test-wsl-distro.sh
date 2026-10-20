@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Root-only fixture tests: all bootstrap/chroot/mount operations are intercepted.
 set -euo pipefail
-[[ $EUID -eq 0 ]] || { echo 'Run with sudo -n bash scripts/build/os/test-wsl-distro.sh' >&2; exit 2; }
+[[ $EUID -eq 0 ]] || { echo 'Run with sudo -n bash scripts/aphrody/build/os/test-wsl-distro.sh' >&2; exit 2; }
 python3 - "$(dirname "$0")/build-wsl-distro.sh" <<'PY'
 import hashlib, json, os, pathlib, subprocess, sys, tarfile, tempfile
 builder = pathlib.Path(sys.argv[1]).resolve()

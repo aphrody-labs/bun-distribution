@@ -21,7 +21,7 @@ import {
   type SqliteCandidate,
 } from "./probe.ts";
 
-const repo = new URL("../../../../../docs/aphrody/", import.meta.url).pathname.replace(/\/$/, "");
+const repo = new URL("../../../../../", import.meta.url).pathname.replace(/\/$/, "");
 const home = homedir();
 const iecode = process.env.IECODE_ROOT?.trim().replace(/\/+$/, "");
 /** Paths in the local IECODE checkout; empty when IECODE_ROOT is not set. */

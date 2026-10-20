@@ -18,7 +18,7 @@
     "bun-musl": {
       "repository": "aphrody-labs/bun",
       "version": "1.4.6",
-      "revision": "4bece04a99245ee8ee2d74a57d8c9eb8329f98c4",
+      "revision": "4bece04a9928383aacf36fc66620b8ef0a79e6b2",
       "note": "Source candidate only. Build requires local fork musl binaries and native target qualification receipts; no upstream runtime substitution."
     },
     "omarchy": {

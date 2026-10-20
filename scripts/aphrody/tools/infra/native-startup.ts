@@ -24,7 +24,7 @@ import { join, resolve } from "node:path";
 import type { Subprocess } from "bun";
 import { killWithThisProcess, type Listener, normalizeAddress, processStartedAt, tcpListeners } from "./win32-net.ts";
 
-const repo = resolve(import.meta.dir, "../../../../docs/aphrody");
+const repo = resolve(import.meta.dir, "../../../../");
 export const TASK_PATH = "\\Aphrody\\Native\\";
 const SCHEMA = join(repo, "infra/config/host/windows/aphrody-startup.schema.json");
 const CATALOG = join(repo, "infra/config/service-catalog.json");

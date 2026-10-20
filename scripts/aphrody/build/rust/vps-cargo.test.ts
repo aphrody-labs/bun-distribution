@@ -123,11 +123,11 @@ describe("vps-cargo", () => {
     expect(script).toContain("cd /home/ubuntu/build/wsl/vu");
     expect(script).toContain("CARGO_TARGET_DIR=/home/ubuntu/build/storage/cache/cargo/vu-wsl");
     expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
-    expect(script).toContain("/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh build --release -p vu");
+    expect(script).toContain("/home/ubuntu/build/wsl/aphrody/scripts/aphrody/build/rust/cargo-serial.sh build --release -p vu");
     // No factory seed: the first push into the new checkout is a full pack.
     expect(remoteSeedScript(vu)).toContain("git init --quiet /home/ubuntu/build/wsl/vu");
     // The default repository keeps its relative wrapper.
-    expect(remoteRunScript(config, SHA, "job-3", ["check"], 2)).toContain(" scripts/build/rust/cargo-serial.sh check");
+    expect(remoteRunScript(config, SHA, "job-3", ["check"], 2)).toContain(" scripts/aphrody/build/rust/cargo-serial.sh check");
     expect(() => repositoryConfig(config, "nope")).toThrow("unknown repository");
     await expect(loadConfig(undefined, "nope")).rejects.toThrow("unknown build host");
   });

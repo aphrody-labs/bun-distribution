@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if (($# == 0)); then
-    echo "usage: scripts/build/rust/cargo-serial.sh <cargo arguments...>" >&2
+    echo "usage: scripts/aphrody/build/rust/cargo-serial.sh <cargo arguments...>" >&2
     exit 64
 fi
 
@@ -28,7 +28,7 @@ case "$cargo_command" in
             # The Workspace build-factory owner interprets the factory contract.
             factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
-                echo "Heavy Cargo never runs in WSL. Exact worktree state: bun scripts/build/rust/vps-cargo.ts run -- <arguments>; pushed main revision: aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/build/rust/cargo-serial.sh <arguments>." >&2
+                echo "Heavy Cargo never runs in WSL. Exact worktree state: bun scripts/aphrody/build/rust/vps-cargo.ts run -- <arguments>; pushed main revision: aphrody-ops build-factory run --repo aphrody --revision <full-sha> -- scripts/aphrody/build/rust/cargo-serial.sh <arguments>." >&2
                 echo "APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic." >&2
                 exit 64
             fi
@@ -50,7 +50,7 @@ if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-
             echo "Factory resource marker has no inherited heavy lock" >&2
             exit 64
         fi
-        exec bun "$resource_owner" "$factory_config" bash "$source_root/scripts/build/rust/cargo-serial.sh" "$@"
+        exec bun "$resource_owner" "$factory_config" bash "$source_root/scripts/aphrody/build/rust/cargo-serial.sh" "$@"
     fi
 fi
 

@@ -16,23 +16,29 @@
    NTRGhidra sources own full analysis and Nintendo loaders. The private
    `aphrody-code/ghidra-suite-plugin` owns Codex/GUI/MCP/headless orchestration. See
    [GHIDRA-PLUGIN-SUITE.md](GHIDRA-PLUGIN-SUITE.md).
-9. Linux gaming: `crates/linux-cachyos` and `crates/kernel-patches` own the CachyOS
-   kernel layer; `crates/proton-cachyos` and `crates/wine-cachyos` own the Steam Play and
-   Win32 compatibility layer. See [CACHYOS-SUITE.md](CACHYOS-SUITE.md).
-10. Windows Omarchy: `crates/omarchy-windows` owns the WHPX/QEMU launcher and
-    resolves an explicit QEMU, then MSYS2 UCRT64/CLANG64/MINGW64, then stock QEMU.
+9. Linux gaming sources are catalogued and pinned under `vendor/`; they are
+   not consolidated into the `crates/linux-cachyos`, `crates/kernel-patches`,
+   `crates/proton-cachyos` or `crates/wine-cachyos` paths in this checkout.
+   See [CACHYOS-SUITE.md](CACHYOS-SUITE.md) for the documented source owners
+   and verify their current pins in `.gitmodules` and `sources.lock.json`.
+10. The Windows Omarchy/QEMU integration is not present at the documented
+    `crates/omarchy-windows` path; treat it as pending until its source and
+    executable integration are inventoried here.
 
 Physics, animation, audio, networking, scripting, streaming and authoring share
 the same distribution contract and may load lazily through their owners.
 
-The repository has one root Cargo workspace, one Bun package workspace, one
-CMake project and one vcpkg manifest. `crates/bun-runtime` owns Bun, Buv, PyJS,
-Python, CUDA bindings and the shared runtime FFI. Linux/NVIDIA/CUDA/DirectX
-sources are pinned under `crates/`; LLVM, QEMU, CMake, vcpkg and Make are pinned
-under `toolchains/`. They are required distribution owners with scoped builds.
-`crates/pkg-manage-util` owns CachyOS package builds and
-`crates/repo-manage-util` is a direct member of the root Cargo workspace for
-repository reset, update, synchronization and package movement.
+The distribution declares a root Cargo workspace and a root Bun package
+workspace, but Rust ownership is not fully consolidated: nested workspaces and
+explicitly excluded source trees remain. The root manifest is therefore not
+the sole Cargo workspace yet. CMake and vcpkg ownership is source-specific;
+consult their manifests and the pinned source inventory before treating either
+as a repository-wide owner. The Bun runtime implementation remains with its
+canonical runtime repository and is consumed through `toolchains/bun`; this
+distribution does not own a `crates/bun-runtime` source tree. Linux gaming,
+NVIDIA, CUDA and DirectX sources retain their own pinned source locations.
+Package-management and repository-management integrations should be described
+as present only where their paths and workspace membership are verified.
 
 Console runtimes, CPU implementations and free native SDK source trees are
 unified catalog entries described in [CONSOLE-PLUGINS.md](CONSOLE-PLUGINS.md).

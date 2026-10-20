@@ -25,7 +25,7 @@
 //! wasm-pack build crates/nie/aphrody-nie-wasm --target web
 //! ```
 //!
-//! `scripts/build/build-wasm.sh` fait le contrôle d'alignement avant de construire.
+//! `scripts/aphrody/build/build-wasm.sh` fait le contrôle d'alignement avant de construire.
 //!
 //! ## Surface exposée
 //!

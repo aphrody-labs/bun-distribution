@@ -83,7 +83,7 @@ async function fixture() {
   await mkdir(join(ffi, "src"), { recursive: true });
   await mkdir(join(consumer, "src"), { recursive: true });
   const wrapper =
-    process.platform === "win32" ? "scripts/build/rust/cargo-serial.ts" : "scripts/build/rust/cargo-serial.sh";
+    process.platform === "win32" ? "scripts/aphrody/build/rust/cargo-serial.ts" : "scripts/aphrody/build/rust/cargo-serial.sh";
   const serialScript = join(root, wrapper);
   await mkdir(dirname(serialScript), { recursive: true });
   await cp(join(import.meta.dir, "../../../..", wrapper), serialScript);
@@ -152,7 +152,7 @@ test("native builder fails before build when the serialization wrapper is absent
     await rm(
       join(
         root,
-        process.platform === "win32" ? "scripts/build/rust/cargo-serial.ts" : "scripts/build/rust/cargo-serial.sh",
+        process.platform === "win32" ? "scripts/aphrody/build/rust/cargo-serial.ts" : "scripts/aphrody/build/rust/cargo-serial.sh",
       ),
     );
     const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"], {

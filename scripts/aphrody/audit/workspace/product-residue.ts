@@ -95,7 +95,7 @@ export async function countResidue(root: string): Promise<Record<string, number>
 
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
-  const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+  const root = resolve(import.meta.dir, "../../../../");
   const baselinePath = resolve(root, "tools/config/product-residue.baseline.json");
   const counts = await countResidue(root);
   if (args.has("--write-baseline"))

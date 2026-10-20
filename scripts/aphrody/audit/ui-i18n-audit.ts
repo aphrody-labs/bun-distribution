@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { EN_CATALOG, FR_CATALOG } from "../tools/ui/generate-i18n.ts";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../docs/aphrody");
+const REPO_ROOT = resolve(import.meta.dir, "../../../");
 const LOCALES_DIR = join(REPO_ROOT, "m3", "packages", "m3", "src", "locales");
 
 export interface AuditResult {

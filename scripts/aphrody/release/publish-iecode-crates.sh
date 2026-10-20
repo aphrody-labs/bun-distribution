@@ -13,7 +13,7 @@ case "${1:-}" in
     --dry-run) mode=dry-run ;;
     --help|-h)
         printf '%s\n' 'Usage: publish-rust-crates.sh [--plan|--dry-run]' \
-            'IECODE_ROOT selects the producer checkout; default: sibling iecode.'
+            'Publishes the qualified IECode crates from this Bun OS checkout.'
         exit 0 ;;
     *) printf 'Unknown argument: %s\n' "$1" >&2; exit 64 ;;
 esac
@@ -22,9 +22,9 @@ if (($# > 1)); then
     exit 64
 fi
 
-owner_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-iecode_root=$(cd -- "${IECODE_ROOT:-${owner_root}/../iecode}" && pwd)
-cargo_owner="${owner_root}/scripts/build/rust/cargo-serial.sh"
+owner_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
+iecode_root="$owner_root"
+cargo_owner="${owner_root}/scripts/aphrody/build/rust/cargo-serial.sh"
 workspace_manifest="${iecode_root}/Cargo.toml"
 # Neither crate depends on the other. Keep foundations before their consumers;
 # adding a package requires a separately qualified allowlist change.
@@ -49,7 +49,7 @@ run_cargo() {
 cd -- "$iecode_root"
 if [[ "$mode" != plan ]]; then
     if [[ "$(git rev-parse --show-toplevel)" != "$iecode_root" ]]; then
-        printf '%s\n' 'IECODE_ROOT must be the producer Git checkout root.' >&2
+        printf '%s\n' 'The Bun OS checkout must be the producer Git root.' >&2
         exit 2
     fi
     if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then

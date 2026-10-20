@@ -137,7 +137,7 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
             ]),
           ),
         ),
-        builder: "scripts/build/rust/wasm-package.ts",
+        builder: "scripts/aphrody/build/rust/wasm-package.ts",
         optimization: built.optimization,
         rawBytes: built.rawBytes,
       };

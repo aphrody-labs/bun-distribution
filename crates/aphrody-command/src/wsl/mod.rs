@@ -250,7 +250,7 @@ impl Config {
         Ok(())
     }
     pub fn script(&self, name: &str) -> PathBuf {
-        self.workspace.join("scripts/build/os").join(name)
+        self.workspace.join("scripts/aphrody/build/os").join(name)
     }
     pub fn source(&self, name: &str) -> Result<&Source> {
         self.sources

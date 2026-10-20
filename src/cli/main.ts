@@ -142,7 +142,7 @@ export async function main(argv: string[]): Promise<number> {
 
   const top = commands.find(c => !c.group && c.name === first);
   if (top) {
-    if (wantsHelp([second ?? "", ...rest])) return (commandHelp(top), 0);
+    if (!top.passthroughHelp && wantsHelp([second ?? "", ...rest])) return (commandHelp(top), 0);
     return await top.run(argv.slice(1));
   }
   const group = GROUPS.find(g => g.name === first);

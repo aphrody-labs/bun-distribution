@@ -11,7 +11,7 @@
 import { resolve, join } from "node:path";
 import { obscuraSourceRoot } from "./obscura-sources";
 
-const REPO = resolve(import.meta.dir, "../../../../../../../aphrody");
+const REPO = resolve(import.meta.dir, "../../../..");
 const WEB = obscuraSourceRoot(REPO);
 const args = process.argv.slice(2);
 const asJson = args.includes("--json");

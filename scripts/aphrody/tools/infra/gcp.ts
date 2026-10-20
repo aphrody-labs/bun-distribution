@@ -361,7 +361,7 @@ if (import.meta.main) {
         project: values.project,
         location: values.location,
         name: values.name,
-        root: values.root ?? process.env.APHRODY_ROOT ?? resolve(import.meta.dir, "../../../../docs/aphrody"),
+        root: values.root ?? process.env.APHRODY_ROOT ?? resolve(import.meta.dir, "../../../../"),
         rotate: values.rotate,
       });
       console.log(`Terminé. SA=${report.email}  clé=${report.keyFile}  APIs=${report.apis}`);

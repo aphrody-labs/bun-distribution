@@ -1,5 +1,9 @@
 # Goal
 
+This file describes the desired end state, not a statement that consolidation
+has already been completed. Current implementation and migration evidence is
+tracked in `PLAN.md` and the repository manifests.
+
 Deliver one Bun OS product workspace from `C:\\src`, unifying Bun OS and Bun
 Libraries package/setup/build/install ownership while preserving source
 histories, active concurrent work, and all applicable license notices.

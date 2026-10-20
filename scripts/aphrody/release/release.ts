@@ -30,19 +30,15 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { checkoutRoot } from "@aphrody/paths";
 import { hostTarget, verifyArtifact } from "@aphrody/runtime-sdk/artifact";
 import { COMPILE_FLAGS } from "./compile-flags";
 import { toolingAsset } from "./tooling-asset";
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 const cliEntry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 const cliRoot = resolve(dirname(cliEntry), "..");
 const sdkRoot = resolve(dirname(Bun.resolveSync("@aphrody/runtime-sdk/artifact", import.meta.dir)), "..");
-const templates = join(
-  checkoutRoot("material", { ...process.env, APHRODY_WORKSPACE_ROOT: root }),
-  "packages/m3/templates",
-);
+const templates = join(root, "packages/m3-templates");
 const outIndex = Bun.argv.indexOf("--out");
 const outRoot = resolve(root, outIndex > 0 ? (Bun.argv[outIndex + 1] as string) : "dist/release");
 const version = readFileSync(join(cliRoot, "VERSION"), "utf8").trim();

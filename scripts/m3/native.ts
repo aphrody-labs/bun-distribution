@@ -7,29 +7,28 @@
 //
 // `@aphrody/bun` opens its native library when it is imported. The npm build (3.3.x) loads
 // `native/bun_rs.<so|dylib|dll>` next to its sources; the aphrody workspace build loads
-// `native/libaphrody_ffi.<suffix>`. The library is the `aphrody-ffi` cdylib of the aphrody repository
+// `native/libaphrody_ffi.<suffix>`. The library is the root-owned `aphrody-ffi` cdylib
 // (the `bun_rs_*` exports of crates/ui/bun are linked into it); this repository never compiles it.
 //
 // The library is resolved and verified through the yolo producer SDK loader
-// (`@aphrody/runtime-sdk/ffi`, `nativeLibrary`, read from $YOLO_ROOT/packages/runtime): `--lib`, then
+// (`@aphrody/runtime-sdk/ffi`, `nativeLibrary`, in packages/runtime-sdk): `--lib`, then
 // $APHRODY_FFI_LIB / $BUN_RS_LIB, then the executable directory, ~/.local/bin, ~/.local/lib/aphrody and
-// the aphrody target directories ($APHRODY_ROOT, default: the enclosing aphrody checkout or ~/aphrody).
+// the Bun OS target directories.
 // A candidate is accepted only when it dlopens and exports `bun_rs_version`.
 // `link` symlinks the verified library into every installed copy of `@aphrody/bun`: a plan unless
-// `--apply`. Build it first (integrator, serialized Cargo):
-//   scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu
+// `--apply`. Build it first (serialized Cargo):
+//   bun scripts/aphrody/build/rust/cargo-serial.ts --msvc build --release --locked -p aphrody-ffi --features gpu
 import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, symlinkSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-export const REPO = resolve(dirname(import.meta.path), "..");
-export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
-/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) inside the yolo checkout. */
-export const RUNTIME_SDK_FFI = join(YOLO_ROOT, "packages/runtime/src/ffi.ts");
+export const REPO = resolve(dirname(import.meta.path), "../..");
+/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) owned by this checkout. */
+export const RUNTIME_SDK_FFI = join(REPO, "packages/runtime-sdk/src/ffi.ts");
 
 export const SUFFIX = process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
 export const BUILD_HINT =
-  "Build it in aphrody (integrator): scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody-ffi --features gpu, then `bun scripts/native.ts link --apply`.";
+  "Build it in Bun OS: bun scripts/aphrody/build/rust/cargo-serial.ts --msvc build --release --locked -p aphrody-ffi --features gpu, then `bun scripts/m3/native.ts link --apply`.";
 
 export interface InstalledCopy {
   /** Package directory of one installed `@aphrody/bun`. */
@@ -74,14 +73,10 @@ export function installedCopies(root = REPO): InstalledCopy[] {
   });
 }
 
-/** The aphrody checkout that builds the library: $APHRODY_ROOT, an enclosing checkout, or ~/aphrody. */
+/** The Bun OS checkout that owns the library and Cargo target directory. */
 export function aphrodyRoot(start = REPO): string {
-  if (process.env["APHRODY_ROOT"]) return resolve(process.env["APHRODY_ROOT"]);
-  for (let dir = start; ; dir = dirname(dir)) {
-    if (existsSync(join(dir, "crates/interop/ffi/Cargo.toml"))) return dir;
-    if (dirname(dir) === dir) break;
-  }
-  return join(homedir(), "aphrody");
+  void start;
+  return REPO;
 }
 
 /** Directories searched after the explicit and environment paths. */
@@ -140,7 +135,7 @@ export async function resolveLibrary(
   if (!existsSync(sdk)) {
     return {
       path: null,
-      error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; set YOLO_ROOT to the yolo checkout`,
+      error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; expected it in the Bun OS checkout`,
       loader: sdk,
     };
   }

@@ -2,7 +2,7 @@
 // Regenerates docs/cli/HELP.md from the package-owned dispatcher and its command help.
 import { join } from "node:path";
 
-const root = join(import.meta.dir, "../../../docs/aphrody");
+const root = join(import.meta.dir, "../../../");
 const entry = Bun.resolveSync("@aphrody/yolo-cli/cli", import.meta.dir);
 const strip = (s: string) => Bun.stripANSI(s).trimEnd();
 const run = async (args: string[]) => {

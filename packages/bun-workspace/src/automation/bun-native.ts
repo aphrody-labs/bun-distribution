@@ -334,7 +334,7 @@ export async function runBunNative(argv: string[], options: { signal?: AbortSign
     ];
     const serialScript = join(
       repo,
-      process.platform === "win32" ? "scripts/build/rust/cargo-serial.ts" : "scripts/build/rust/cargo-serial.sh",
+      process.platform === "win32" ? "scripts/aphrody/build/rust/cargo-serial.ts" : "scripts/aphrody/build/rust/cargo-serial.sh",
     );
     if (!existingArtifact && !existsSync(serialScript))
       throw new Error(`Cargo serialization wrapper missing: ${serialScript}`);

@@ -21,7 +21,7 @@ const config: BuildFactoryConfig = {
   rust: { maxJobs: 6 },
   commandTimeoutSeconds: 21600,
 };
-const ownerCommand = ["scripts/build/rust/cargo-serial.sh", "build", "--locked", "-p", "aphrody-ffi"];
+const ownerCommand = ["scripts/aphrody/build/rust/cargo-serial.sh", "build", "--locked", "-p", "aphrody-ffi"];
 const durable = factoryJobPlan(config, buildFactoryPlan(config, "aphrody", revision, ownerCommand), jobId);
 
 // One Infra stand-in per file: Windows needs a compiled executable, so it is built once and

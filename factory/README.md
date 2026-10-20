@@ -1,58 +1,44 @@
-# Bun OS factory
+# Factory repository guide
 
-The root CLI owns Arch/pacman source resolution, offline rootfs construction
-and image assembly. The native Windows workstation plans and prepares source;
-Linux commands run on an explicitly selected native, SSH or Docker host.
+This directory contains factory configuration, source catalogs and build
+scripts. The root command entry point is `src/cli.ts`; factory composition and
+target selectors are declared in `distribution.json`. A declared selector or
+recipe is not evidence of a built package, root filesystem, image or release.
+
+## Relevant paths
+
+- `arch/`: Arch-related factory configuration and catalogs.
+- `profile.json`: shared factory profile input referenced by
+  `distribution.json`.
+- `ubuntu.ts` and `ubuntu-profile.json`: separate Ubuntu compatibility path.
+- `images/`: image definitions and supporting files.
+- `arch/qualification/`: stored qualification records. Check each record's
+  source revision, timestamp, target and gates before treating it as current.
+
+## Read-only planning
 
 ```sh
 bun src/cli.ts factory --action plan --composition server --snapshot YYYY-MM-DD
 bun src/cli.ts graph --composition server
-bun src/cli.ts factory --action resolve --root /ABSOLUTE/FACTORY --composition server --snapshot YYYY-MM-DD
-bun src/cli.ts factory --action rootfs --root /ABSOLUTE/FACTORY --composition server --lock /ABSOLUTE/LOCK.json --executor docker
-bun src/cli.ts rootfs-stage --out /ABSOLUTE/STAGE --receipt /ABSOLUTE/JOB/receipt.json --composition server
 ```
 
-Use the actual emitted lock path. Resolution uses a fixed Arch archive date,
-an empty package database and the official digest-pinned bootstrap image.
-Package archives, detached signatures and exact versions form the root lock.
-Rootfs construction verifies hashes and approved signing fingerprints, then
-installs the full locked closure offline in an isolated root. It checks the
-installed inventory and hashes the rootfs archive. Jobs and logs remain under
-the explicit factory root; the existing shared heavy lock covers execution.
-No packages are installed on the host. Uncertain container cleanup retains
-the job claim for operator recovery rather than stealing an active build slot.
+Planning reports inputs for the selected composition and snapshot. It does not
+build or qualify an artifact.
 
-`server` is headless, `desktop` selects COSMIC and `gaming` selects an optional
-Gamescope session. Runtime/rendering profiles `full` and `perf` remain separate
-from system composition. Complete upstream recipe catalogs are selectable
-inputs, not one conflicting all-packages transaction. CPU tuning, alternate
-kernels, Hyprland and imported services need explicit selection and gates.
+## Execution ownership
 
-`arch/sources.json` records fork readbacks and pinned source references;
-`.gitmodules` owns their independent histories. The catalogs preserve upstream
-recipes, Rust manifest/lock references, build tools, SDK/library declarations
-and license notices. Source export of these new owners still requires their
-nested gitlink/LFS closure and size inventory; a fork is not a built package.
+Repository instructions require builds and qualification to run on the
+configured VPS. Inspect the current host, active jobs, storage and coordination
+before starting work. The Windows workstation is for source edits and
+synchronization; do not start WSL here. Use the existing factory and serialized
+Cargo owners rather than adding another build queue or Cargo wrapper.
 
-The final image requires an independently qualified Bun runtime/source stage
-plus `arch/rootfs.tar` and its matching receipt. Rootfs success is not kernel,
-boot, desktop, hardware, update or release qualification.
+## Qualification
 
-See [the architecture decisions](../docs/architecture/arch-distribution.md).
-The [Ubuntu compatibility factory](UBUNTU.md) uses `ubuntu.ts` and
-`ubuntu-profile.json`; it is not the primary Bun OS factory.
+Keep source validation, package resolution, compilation, tests, rootfs/image
+assembly, boot/hardware checks and release qualification separate. A saved
+receipt is evidence only for the exact revisions, target and gates it records.
+The root `distribution.json` currently labels qualification as `development`.
 
-Native Windows source/tool inspection reuses the installed MSYS2 owner:
-
-```sh
-bun src/cli.ts factory --action host --msys-source-root SOURCE_DIRECTORY --msys-home USER_HOME
-```
-
-The options also accept `APHRODY_MSYS2_SOURCE_ROOT` and `APHRODY_MSYS2_HOME`.
-Without an explicit source root, the inspector derives it from native pacman
-on PATH. It reads source identities, junction state, guidance metadata and
-`pacman -V/-Q`; it does not install packages, import Home contents or execute
-the existing `cym` pipeline. Different checkout revisions remain visible.
-
-The [server qualification](arch/qualification/server-linux-x64.json) records
-the executed 137-package, signature-verified, offline rootfs assembly.
+See [the root README](../README.md), [repository architecture](../docs/architecture.md)
+and [qualification guide](../docs/qualification.md).

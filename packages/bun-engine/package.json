@@ -26,7 +26,7 @@
     "probe": "bun run ./src/cli.ts probe",
     "qualify:fc27": "bun run ./src/cli.ts qualify 4080220",
     "console:manifest": "bun test ./test/console-catalog.test.ts",
-    "native:test": "bun ../../toolchains/bun/scripts/build/rust/cargo-serial.ts --msvc test -p bun-engine -p aphrody-wii -p aphrody-wii-image -p aphrody-switch",
+    "native:test": "bun ../../toolchains/bun/scripts/aphrody/build/rust/cargo-serial.ts --msvc test -p bun-engine -p aphrody-wii -p aphrody-wii-image -p aphrody-switch",
     "nds:tinke:build": "bun dotnet publish ../../crates/bun-engine-core/dotnet/BunEngine.Nds.Tinke.csproj -c Release -r win-x64 --self-contained -o ../../build/nds/tinke -p:PublishAot=true",
     "console:validate": "bun run ./src/console/validate.ts"
   },

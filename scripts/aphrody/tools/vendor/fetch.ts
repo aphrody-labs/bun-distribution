@@ -25,7 +25,7 @@ export interface VendorSource {
   sparseScript?: string;
 }
 
-const REPO = resolve(dirname(import.meta.path), "../../../../docs/aphrody");
+const REPO = resolve(dirname(import.meta.path), "../../../../");
 
 export const loadSources = async (): Promise<VendorSource[]> =>
   (await Bun.file(join(REPO, "tools/config/vendor.json")).json()).sources;

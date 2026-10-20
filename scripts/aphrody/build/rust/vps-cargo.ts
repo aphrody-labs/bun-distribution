@@ -4,15 +4,15 @@
  * Windows/native -> VPS Cargo tunnel. Heavy Cargo runs on the SSH build host:
  * the exact local worktree (HEAD plus uncommitted and untracked files, `.gitignore` respected) is
  * snapshotted into the configured workspace ref, sent to a dedicated VPS checkout and built through
- * `scripts/build/rust/cargo-serial.sh` under the factory heavy lock, inside the remote tmux session.
+ * `scripts/aphrody/build/rust/cargo-serial.sh` under the factory heavy lock, inside the remote tmux session.
  * Logs stream back live; artifacts come back with `fetch`. Configuration: infra/config/host/vps-cargo.json.
  *
- *   bun scripts/build/rust/vps-cargo.ts tunnel up|down|status   local tmux: SSH master + git daemon
- *   bun scripts/build/rust/vps-cargo.ts sync [--pull]           snapshot + checkout on the VPS
- *   bun scripts/build/rust/vps-cargo.ts run [--jobs N] [--pull] -- <cargo args>
- *   bun scripts/build/rust/vps-cargo.ts logs <job>              replay a remote job log
- *   bun scripts/build/rust/vps-cargo.ts fetch --bin <name> [--profile release] [--dest <dir>]
- *   bun scripts/build/rust/vps-cargo.ts attach                  attach the remote tmux session
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts tunnel up|down|status   local tmux: SSH master + git daemon
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts sync [--pull]           snapshot + checkout on the VPS
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts run [--jobs N] [--pull] -- <cargo args>
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts logs <job>              replay a remote job log
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts fetch --bin <name> [--profile release] [--dest <dir>]
+ *   bun scripts/aphrody/build/rust/vps-cargo.ts attach                  attach the remote tmux session
  *
  * `--repo <name>` (sync, run, fetch) builds an external repository declared under `repositories` in the config
  * (for example the private vu runtime repository) through the same tunnel, locks and wrapper: its own worktree is
@@ -91,7 +91,7 @@ export type VpsCargoConfig = {
   refuseSnapshotPaths: string[];
 };
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../../");
 const CONFIG_PATH = join(ROOT, "infra/config/host/vps-cargo.json");
 const MAX_SNAPSHOT_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -536,7 +536,7 @@ export function remoteRunScript(
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,
     // The shared checkout is moved to the job snapshot only once this job holds the factory lock: another session may
     // have synced its own snapshot while this job waited, and building then would compile the wrong tree.
-    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} flock --close ${shellQuote(posix.join(config.remoteLockDir, `${posix.basename(config.remoteWorkspace)}.source.lock`))} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; mkdir -p -- ${shellQuote(config.remoteTargetDir)}; ${factoryTransientShell(config.remoteTransientRoot ?? posix.resolve(posix.dirname(config.remoteHeavyLock), "../transient"), "docker", config.remoteHeavyLock).join("; ")}; factory_jobs=$(bun --no-env-file -e ${shellQuote(admission)}); export APHRODY_CARGO_JOBS="$factory_jobs" CARGO_BUILD_JOBS="$factory_jobs"; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
+    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} flock --close ${shellQuote(posix.join(config.remoteLockDir, `${posix.basename(config.remoteWorkspace)}.source.lock`))} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; mkdir -p -- ${shellQuote(config.remoteTargetDir)}; ${factoryTransientShell(config.remoteTransientRoot ?? posix.resolve(posix.dirname(config.remoteHeavyLock), "../transient"), "docker", config.remoteHeavyLock).join("; ")}; factory_jobs=$(bun --no-env-file -e ${shellQuote(admission)}); export APHRODY_CARGO_JOBS="$factory_jobs" CARGO_BUILD_JOBS="$factory_jobs"; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/aphrody/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
   ].join("; ");
   const window = `bash -c ${shellQuote(`(${body}) > ${log} 2>&1; echo $? > ${exit}`)}`;
   const session = shellQuote(config.remoteSession);
@@ -863,7 +863,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       const jobs = cargoJobsSetting(flag(options, "--jobs"), config);
       const sha = await sync(config, options.includes("--pull"), root);
       const job = `${new Date().toISOString().replaceAll(/[:.]/g, "-")}-${sha.slice(0, 12)}`;
-      console.log(`job ${job} (attach: bun scripts/build/rust/vps-cargo.ts attach)`);
+      console.log(`job ${job} (attach: bun scripts/aphrody/build/rust/vps-cargo.ts attach)`);
       return ssh(config, remoteRunScript(config, sha, job, rest.slice(separator + 1), jobs));
     }
     case "logs":

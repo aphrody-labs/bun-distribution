@@ -23,7 +23,7 @@
 #  Construire la GUI en PRODUCTION d'abord (charge les assets bundlés, sinon le
 #  binaire cherche le serveur dev http://localhost:1420) :
 #    cd apps/desktop && bun install && bun run tauri build
-#  (ou, binaire seul sans Node : scripts/build/rust/cargo-serial.sh build
+#  (ou, binaire seul sans Node : scripts/aphrody/build/rust/cargo-serial.sh build
 #   --manifest-path apps/desktop/src-tauri/Cargo.toml --release --features custom-protocol)
 # ============================================================================
 set -euo pipefail
@@ -125,7 +125,7 @@ if [ "$NO_BUILD" -eq 0 ]; then
     [ -n "$TARGET" ] && BUILD_ARGS+=(--target "$TARGET")
     echo "[deploy] cargo ${BUILD_ARGS[*]}"
     if [ "$DRY_RUN" -eq 0 ]; then
-        "$REPO_ROOT/scripts/build/rust/cargo-serial.sh" "${BUILD_ARGS[@]}"
+        "$REPO_ROOT/scripts/aphrody/build/rust/cargo-serial.sh" "${BUILD_ARGS[@]}"
     fi
 fi
 

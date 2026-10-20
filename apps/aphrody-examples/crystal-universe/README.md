@@ -42,7 +42,7 @@ cargo run --locked --manifest-path crates/web/dragon-pixel-server/Cargo.toml
 Construire le cœur de combat WASM avant de lancer le navigateur :
 
 ```sh
-bun scripts/build/rust/wasm-package.ts --manifest-path crates/web/dragon-pixel-wasm/Cargo.toml --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
+bun scripts/aphrody/build/rust/wasm-package.ts --manifest-path crates/web/dragon-pixel-wasm/Cargo.toml --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
 ```
 
 Les trois crates `crates/web/dragon-pixel-*` sont exclues du workspace racine :

@@ -167,4 +167,4 @@ let report = aphrody_sql::migrate_sqlite(&mut conn, &set, &MigrateOptions::defau
 parsing, redaction, pool/TLS decisions (no connection), migration parsing,
 ordering, checksums and planning, SQLite policy, in-memory migrations and
 `vec0`. PostgreSQL behaviour against a live server is exercised through the
-consumers. Run Cargo through `scripts/build/rust/cargo-serial.sh`.
+consumers. Run Cargo through `scripts/aphrody/build/rust/cargo-serial.sh`.

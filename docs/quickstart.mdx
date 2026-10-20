@@ -1,43 +1,34 @@
 ---
 title: Quickstart
-description: Plan, source and stage a Bun OS image.
+description: Inspect the declared Bun OS plan and source preflight.
 ---
 
-<Steps>
-  <Step title="Plan">
-    Print the source, runtime and target plan without building.
+## Requirements declared by the repository
 
-    ```bash terminal icon="terminal"
-    bun src/cli.ts plan --profile full --target linux-x64
-    ```
+The root package manifest declares Bun `1.4.4`; `rust-toolchain.toml` declares
+the Rust toolchain used by the root Cargo workspace. Git is required by source
+and submodule commands. Other native tools depend on the selected build target.
 
-  </Step>
-  <Step title="Resolve the composition">
-    Resolve the `server` package closure against a pinned Arch snapshot.
+## Inspect setup inputs
 
-    ```bash terminal icon="terminal"
-    bun run factory --action plan --composition server --snapshot 2026-10-17
-    ```
+```bash
+bun run setup --plan
+```
 
-  </Step>
-  <Step title="Export sources">
-    Copy the committed, pinned sources. Protected stores are never copied.
+This prints a read-only source and vendor preflight. It does not install
+dependencies or qualify the workspace.
 
-    ```bash terminal icon="terminal"
-    bun src/cli.ts sources --out ./out/server
-    ```
+## Inspect a factory plan
 
-  </Step>
-  <Step title="Stage and build">
-    Stage the qualified runtime, then build the root filesystem and image.
+```bash
+bun src/cli.ts factory --action plan --composition server --snapshot YYYY-MM-DD
+bun src/cli.ts graph --composition server
+```
 
-    ```bash terminal icon="terminal"
-    bun src/cli.ts stage --out ./out/server --profile full --target linux-x64 --runtime ./bun --receipt ./bun.receipt.json
-    bun src/cli.ts image --out ./out/server --root /abs/factory --profile full --target linux-x64 --composition server --tag bun-os:server
-    ```
+These commands request a plan and graph for a declared composition. The
+snapshot date is an input; it does not identify a built image. The checked-in
+`distribution.json` currently labels qualification as `development`.
 
-  </Step>
-</Steps>
-
-Staging requires the exact locked runtime, target, ABI, hash and byte count. See
-[qualification](/qualification) and [native targets](/NATIVE-TARGETS).
+For setup behavior, see [the root README](https://github.com/aphrody-labs/bun-distribution/blob/os/README.md).
+For factory inputs and qualification boundaries, see
+[the Arch distribution architecture](/architecture/arch-distribution).

@@ -109,7 +109,7 @@
       "ref": "main",
       "tier": "build",
       "purpose": "WSLg; system distro build recipe input.",
-      "consumers": "tools/config/os/wsl-build.json; scripts/build/os/build-wslg.py",
+      "consumers": "tools/config/os/wsl-build.json; scripts/aphrody/build/os/build-wslg.py",
       "observedCommit": "6942bb534b537302a7a22617261d9274db3cfa37"
     },
     {

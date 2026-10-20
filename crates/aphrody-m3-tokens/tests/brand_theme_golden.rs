@@ -4,7 +4,7 @@
 //! `m3/packages/app-ui/src/generated/brand-theme{,-high-contrast}.json` are the
 //! [`ThemeExport`](aphrody_m3_tokens::theme::ThemeExport) of the identity pet seed at contrast 0
 //! and 1; `bun run brand` in app-ui turns them into `src/brand.css`. Rewrite them with
-//! `APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test
+//! `APHRODY_UPDATE_TOKENS=1 scripts/aphrody/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test
 //! brand_theme_golden`.
 
 #![cfg(feature = "std")]

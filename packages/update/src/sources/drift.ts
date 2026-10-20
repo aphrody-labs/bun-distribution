@@ -310,7 +310,7 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
       .map(l => l.split("=")[0]!.trim());
     if (deps.length)
       console.log(
-        `next   verify Cargo consumers: scripts/build/rust/cargo-serial.sh check ${deps.map(d => `-p ${d}`).join(" ")}`,
+        `next   verify Cargo consumers: scripts/aphrody/build/rust/cargo-serial.sh check ${deps.map(d => `-p ${d}`).join(" ")}`,
       );
   }
   return failures ? 1 : 0;

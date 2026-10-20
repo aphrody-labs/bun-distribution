@@ -14,7 +14,7 @@
  */
 import { resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dir, "../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../");
 export const DOCKERFILE = "tools/config/container/Dockerfile";
 
 export type Options = {

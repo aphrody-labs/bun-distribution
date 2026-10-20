@@ -14,7 +14,7 @@ import { KernelClient } from "@aphrody/os";
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
-export const repoRoot = resolve(import.meta.dir, "../../../../../docs/aphrody");
+export const repoRoot = resolve(import.meta.dir, "../../../../../");
 
 /** The `aphrody` multi-call binary: `APHRODY_BIN`, PATH, the per-user install, then Cargo output. */
 export function resolveAphrody(): string {

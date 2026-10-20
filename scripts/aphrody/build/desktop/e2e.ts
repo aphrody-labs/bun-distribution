@@ -10,7 +10,7 @@ import { $ } from "bun";
 import { mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../../");
 const fe = join(root, "crates/ui/app/examples/shell_e2e/frontend");
 const pkg = join(root, "packages/shell/web/pkg");
 
@@ -19,13 +19,13 @@ if (process.platform !== "linux") {
   process.exit(2);
 }
 
-await $`${join(root, "scripts/build/shell/build-wasm.sh")}`.quiet();
+await $`${join(root, "scripts/aphrody/build/shell/build-wasm.sh")}`.quiet();
 rmSync(join(fe, "pkg"), { recursive: true, force: true });
 mkdirSync(join(fe, "pkg"), { recursive: true });
 for (const file of ["aphrody_shell_web.js", "aphrody_shell_web_bg.wasm"])
   await Bun.write(join(fe, "pkg", file), Bun.file(join(pkg, file)));
 await $`bun build ${join(root, "packages/shell/web/src/index.ts")} --outfile ${join(fe, "index.js")}`.quiet();
-await $`${join(root, "scripts/build/rust/cargo-serial.sh")} build -p aphrody-app --example shell_e2e --features custom-protocol`;
+await $`${join(root, "scripts/aphrody/build/rust/cargo-serial.sh")} build -p aphrody-app --example shell_e2e --features custom-protocol`;
 
 let xvfb: Bun.Subprocess | undefined;
 if (!Bun.env.DISPLAY) {

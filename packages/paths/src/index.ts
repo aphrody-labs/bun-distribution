@@ -7,18 +7,6 @@ import { fileURLToPath } from "node:url";
 export type ExternalCheckout = "aphrody-py" | "iecode" | "rg" | "source" | "bxc" | "yolo" | "m3" | "bun" | "material";
 
 const rootMarkers = ["rust-toolchain.toml", "Cargo.toml", "package.json"] as const;
-const envNames: Record<ExternalCheckout, readonly string[]> = {
-  "aphrody-py": ["APHRODY_PY_ROOT"],
-  iecode: ["APHRODY_IECODE_ROOT", "IECODE_ROOT", "NIE_ROOT"],
-  rg: ["APHRODY_RG_ROOT", "RG_REPO_ROOT"],
-  source: ["APHRODY_SOURCE_ROOT"],
-  bxc: ["APHRODY_BXC_ROOT", "BXC_ROOT"],
-  yolo: ["APHRODY_YOLO_ROOT", "YOLO_ROOT"],
-  m3: ["APHRODY_MATERIAL_CHECKOUT", "APHRODY_M3_ROOT", "M3_ROOT"],
-  material: ["APHRODY_MATERIAL_CHECKOUT", "APHRODY_M3_ROOT", "M3_ROOT"],
-  bun: ["APHRODY_BUN_CHECKOUT"],
-};
-
 /** Find this Aphrody checkout by its root manifests, starting at a file or directory. */
 export function findWorkspaceRoot(from?: string, env: Record<string, string | undefined> = process.env): string {
   const explicit = from === undefined && (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
@@ -51,49 +39,36 @@ export function workspacePath(...parts: string[]): string {
   return resolve(findWorkspaceRoot(), ...parts);
 }
 
-/** Resolve explicit checkouts first, then the selected workspace's source layout. */
+/** Resolve integrated owners from the selected workspace's source layout. */
 export function checkoutRoot(
   checkout: ExternalCheckout,
   env: Record<string, string | undefined> = process.env,
 ): string {
-  for (const name of envNames[checkout]) {
-    const value = env[name]?.trim();
-    if (value) return resolve(value);
-  }
   const root = findWorkspaceRoot(undefined, env);
-  const parent = dirname(root);
   switch (checkout) {
     case "aphrody-py":
-      return existsSync(join(root, "py")) ? join(root, "py") : resolve(parent, "aphrody-py");
+      return join(root, "py");
     case "iecode":
-      return resolve(parent, "iecode");
     case "rg":
       return root;
     case "source":
       return resolve(root, ".cache", "upstream");
     case "bxc":
-      return join(homedir(), "bxc");
     case "yolo":
-      return resolve(parent, "yolo");
     case "m3":
     case "material":
-      return resolve(parent, "material");
+      return root;
     case "bun":
-      return isDirectory(join(root, "toolchains/bun")) ? join(root, "toolchains/bun") : resolve(parent, "bun");
+      return join(root, "toolchains/bun");
   }
 }
 
-/** Root of the Rose Griffon website within the consolidated monorepo or legacy checkout. */
+/** Root of the Rose Griffon website integrated in the Bun OS checkout. */
 export function rgWebsiteRoot(): string {
-  const override = process.env.RG_REPO_ROOT?.trim() || process.env.APHRODY_RG_ROOT?.trim();
-  if (override) {
-    const legacy = resolve(override, "apps", "website");
-    return existsSync(legacy) ? legacy : resolve(override, "apps", "rg", "website");
-  }
-  return workspacePath("apps", "rg", "website");
+  return workspacePath("apps", "rg-website");
 }
 
-/** Root of the Inazuma game checkout (`NIE_ROOT` remains a compatibility override). */
+/** Root of the Inazuma sources integrated in this checkout. */
 export function iecodeRoot(): string {
   return checkoutRoot("iecode");
 }
@@ -104,17 +79,10 @@ export function iecodeDataPath(...parts: string[]): string {
   return resolve(explicit || checkoutPath("iecode", "data"), ...parts);
 }
 
-/** Inagle package root in either the consolidated Aphrody tree or legacy RG checkout. */
+/** Inagle package root in the Bun OS checkout. */
 export function inagleRoot(): string {
-  const legacy = process.env.RG_REPO_ROOT?.trim();
-  if (legacy) {
-    const oldLayout = resolve(legacy, "packages", "inagle");
-    const currentLayout = resolve(legacy, "packages", "rg", "inagle");
-    return existsSync(oldLayout) ? oldLayout : currentLayout;
-  }
   const root = findWorkspaceRoot();
-  const currentLayout = resolve(root, "packages", "rg", "inagle");
-  return existsSync(currentLayout) ? currentLayout : resolve(root, "packages", "inagle");
+  return resolve(root, "packages", "inagle");
 }
 
 /** Resolve under a sibling checkout. */

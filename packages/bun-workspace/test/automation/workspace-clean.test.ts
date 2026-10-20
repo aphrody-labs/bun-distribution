@@ -44,13 +44,13 @@ test("unignored source build directory and symlink targets survive", async () =>
   const root = await fixture();
   await writeFile(join(root, ".gitignore"), "target/\n");
   await mkdir(join(root, "scripts/build"), { recursive: true });
-  await writeFile(join(root, "scripts/build/source.ts"), "source");
+  await writeFile(join(root, "scripts/aphrody/build/source.ts"), "source");
   const outside = await mkdtemp(join(tmpdir(), "aphrody-clean-outside-"));
   roots.push(outside);
   await writeFile(join(outside, "keep"), "keep");
   await symlink(outside, join(root, "target"));
   await cleanWorkspace(root, true);
-  expect(existsSync(join(root, "scripts/build/source.ts"))).toBe(true);
+  expect(existsSync(join(root, "scripts/aphrody/build/source.ts"))).toBe(true);
   expect(existsSync(join(outside, "keep"))).toBe(true);
 });
 test("Git metadata and installed dependency trees are pruned", async () => {

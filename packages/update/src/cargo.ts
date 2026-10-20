@@ -48,7 +48,7 @@ export function lockDiff(before: Map<string, Set<string>>, after: Map<string, Se
 }
 
 export function runCargo(c: Ctx, _args: string[]): number {
-  const wrapper = "scripts/build/rust/cargo-serial.sh";
+  const wrapper = "scripts/aphrody/build/rust/cargo-serial.sh";
   if (!c.apply) {
     const r = c.run("bash", [wrapper, "update", "--dry-run"]);
     const lines = (r.stderr + r.stdout)

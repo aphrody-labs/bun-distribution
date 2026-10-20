@@ -41,7 +41,7 @@ export function runAiReleaseGate(args: string[]): number {
     {
       name: "Rust maintained crate tests",
       command: [
-        "scripts/build/rust/cargo-serial.sh",
+        "scripts/aphrody/build/rust/cargo-serial.sh",
         "test",
         "-p",
         "aphrody-config",
@@ -59,7 +59,7 @@ export function runAiReleaseGate(args: string[]): number {
   if (!scoped)
     checks.push({
       name: "Rust complete workspace check",
-      command: ["scripts/build/rust/cargo-serial.sh", "check", "--workspace", "--all-targets", "--locked", "--offline"],
+      command: ["scripts/aphrody/build/rust/cargo-serial.sh", "check", "--workspace", "--all-targets", "--locked", "--offline"],
     });
   const failures = checks.filter(check => !run(check, root)).length;
   console.log(`\nRelease gate: ${failures === 0 ? "PASS" : "FAILED"} (${failures} failure(s))`);

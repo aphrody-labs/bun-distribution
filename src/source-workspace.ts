@@ -3,6 +3,7 @@ import { readdir, realpath } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { runProcess } from "@aphrody/bun-workspace/process";
 import { packageRoot, readLock, type Config } from "./distribution.ts";
+import { inspectWorkspaceManifests } from "./workspace-manifests.ts";
 
 type Component = {
   id: string;
@@ -199,6 +200,7 @@ export async function inspectSourceWorkspace(config: Config = {}) {
   return {
     schemaVersion: 1,
     root: packageRoot,
+    manifestInventory: await inspectWorkspaceManifests(packageRoot),
     sourceRoot,
     integrationScope: catalog.integrationScope,
     productLayers: {

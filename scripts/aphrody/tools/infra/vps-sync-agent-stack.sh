@@ -17,7 +17,7 @@ BXC_ROOT="${BXC_ROOT:-$APHRODY_WEB_ROOT/scripts/tools/web/apps/bxc}"
 if [[ ! -f "$BXC_ROOT/bin/bxc" && -f "$APHRODY_WEB_ROOT/apps/bxc/bin/bxc" ]]; then
   BXC_ROOT="$APHRODY_WEB_ROOT/apps/bxc"
 fi
-CARGO_WRAPPER="$APHRODY_ROOT/scripts/build/rust/cargo-serial.sh"
+CARGO_WRAPPER="$APHRODY_ROOT/scripts/aphrody/build/rust/cargo-serial.sh"
 LOCAL_BIN="${HOME}/.local/bin"
 MCP_CONFIG="${HOME}/.config/aphrody/mcp.json"
 BXC_DATA_DIR="${BXC_DATA_DIR:-$APHRODY_WEB_ROOT/var/bxc}"

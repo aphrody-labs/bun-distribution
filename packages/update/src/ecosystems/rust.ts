@@ -13,7 +13,7 @@
  *   rust doctor | rust fix           every gate of the workspace in one action, with repair (rust-doctor.ts)
  *
  * Global flags (same as cli.ts): --root <repo>, --json. Every cargo command goes through
- * scripts/build/rust/cargo-serial.sh, one at a time, never in the background. Cargo.lock is only ever changed by cargo.
+ * scripts/aphrody/build/rust/cargo-serial.sh, one at a time, never in the background. Cargo.lock is only ever changed by cargo.
  * Reuses cargo.ts (lock refresh and diff), deps/inventory.ts (sparse index, OSV, Cargo.lock parser), sources/drift.ts
  * (git remotes and source pins) and context.ts. The CLI wiring lives in cli.ts (owned by the lead).
  */
@@ -25,7 +25,7 @@ import { Cache, cachedText, osv, parseCargoLock, sparsePath, type Dep } from "..
 import { cmpVersion } from "../deps/sync.ts";
 import { cargoGitRemotes, driftRows } from "../sources/drift.ts";
 
-const WRAPPER = "scripts/build/rust/cargo-serial.sh";
+const WRAPPER = "scripts/aphrody/build/rust/cargo-serial.sh";
 const HOLDS_FILE = "tools/config/deps/rust-holds.json";
 const ADVISORY_HOLDS_FILE = "tools/config/deps/advisory-holds.json";
 

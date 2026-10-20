@@ -568,7 +568,7 @@ pub fn static_css() -> String {
          overlay on the content role. */\n{state}\n}}\n",
         header = header(
             "Material 3 static tokens: shape, typescale, motion, elevation, state layers.",
-            "APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens \
+            "APHRODY_UPDATE_TOKENS=1 scripts/aphrody/build/rust/cargo-serial.sh test -p aphrody-m3-tokens \
              --test sheets_golden"
         ),
         root = root.join("\n"),

@@ -6,7 +6,7 @@
  * 10.0.22621.0 pins. The developer environment comes from vswhere + VsDevCmd captured without a
  * console (no PowerShell module import); a current nuget.exe restores `OpenConsole.slnx`.
  *
- * Usage: bun scripts/build/shell/terminal-build.ts [--project <msbuild target>]
+ * Usage: bun scripts/aphrody/build/shell/terminal-build.ts [--project <msbuild target>]
  *          [--terminal-root <checkout>] [--configuration Debug|Release|AuditMode|Fuzzing]
  *          [--platform x64|x86|ARM64]
  */
@@ -21,7 +21,7 @@ export const SDK = "10.0.26100.0";
 const CONFIGURATIONS = ["Debug", "Release", "AuditMode", "Fuzzing"];
 const PLATFORMS = ["x64", "x86", "ARM64"];
 const NUGET_URL = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe";
-const repoRoot = resolve(import.meta.dir, "../../../../docs/aphrody");
+const repoRoot = resolve(import.meta.dir, "../../../../");
 
 export interface BuildOptions {
   project?: string;
@@ -201,7 +201,7 @@ if (import.meta.main) {
     const options = parseArgs(process.argv.slice(2));
     if (options.help)
       console.log(
-        "Usage: bun scripts/build/shell/terminal-build.ts [--project <target>] [--terminal-root <checkout>] [--configuration Debug|Release|AuditMode|Fuzzing] [--platform x64|x86|ARM64]",
+        "Usage: bun scripts/aphrody/build/shell/terminal-build.ts [--project <target>] [--terminal-root <checkout>] [--configuration Debug|Release|AuditMode|Fuzzing] [--platform x64|x86|ARM64]",
       );
     else await build(options);
   } catch (error) {

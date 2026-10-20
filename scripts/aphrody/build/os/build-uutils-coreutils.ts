@@ -6,16 +6,16 @@
  * `<repo>/target/aphrody-uutils/coreutils/bin`, the directory the kernel coreutils subsystem
  * resolves (`APHRODY_COREUTILS_BIN` overrides the multicall path; companions sit next to it).
  *
- * Cargo runs through `scripts/build/rust/cargo-serial.ts` (`--msvc` native context on Windows:
+ * Cargo runs through `scripts/aphrody/build/rust/cargo-serial.ts` (`--msvc` native context on Windows:
  * shared build lock, MSVC environment captured without a console, build output off the checkout).
  *
- * Usage: bun scripts/build/os/build-uutils-coreutils.ts [--verify] [--json]
+ * Usage: bun scripts/aphrody/build/os/build-uutils-coreutils.ts [--verify] [--json]
  */
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { main as cargoSerial } from "../rust/cargo-serial.ts";
 
-export const repoRoot = resolve(import.meta.dir, "../../../../docs/aphrody");
+export const repoRoot = resolve(import.meta.dir, "../../../../");
 export const installRoot = join(repoRoot, "target", "aphrody-uutils", "coreutils");
 const WINDOWS = process.platform === "win32";
 const EXE = WINDOWS ? ".exe" : "";
@@ -159,7 +159,7 @@ if (import.meta.main) {
   const args = process.argv.slice(2);
   const unknown = args.filter(arg => !["--verify", "--json", "--help", "-h"].includes(arg));
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("Usage: bun scripts/build/os/build-uutils-coreutils.ts [--verify] [--json]");
+    console.log("Usage: bun scripts/aphrody/build/os/build-uutils-coreutils.ts [--verify] [--json]");
   } else if (unknown.length > 0) {
     console.error(`Unknown argument: ${unknown.join(" ")}`);
     process.exitCode = 64;

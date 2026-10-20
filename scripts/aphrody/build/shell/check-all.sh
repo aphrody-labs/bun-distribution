@@ -3,10 +3,10 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-"$root/scripts/build/shell/build-wasm.sh"
+"$root/scripts/aphrody/build/shell/build-wasm.sh"
 (
   cd "$root/packages/shell/web"
   bun run typecheck
   bun test
 )
-bun "$root/scripts/build/desktop/e2e.ts"
+bun "$root/scripts/aphrody/build/desktop/e2e.ts"

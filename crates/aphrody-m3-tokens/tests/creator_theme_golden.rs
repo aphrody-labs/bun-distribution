@@ -4,7 +4,7 @@
 //! `packages/infra/product/resources/creator/site/theme.json` is the
 //! [`ThemeExport`](aphrody_m3_tokens::theme::ThemeExport) of the logo seed (`#951ae2`) in the
 //! `fidelity` variant at contrast 0; the site build (`build.ts`) turns it into `theme.css`.
-//! Rewrite it with `APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p
+//! Rewrite it with `APHRODY_UPDATE_TOKENS=1 scripts/aphrody/build/rust/cargo-serial.sh test -p
 //! aphrody-m3-tokens --test creator_theme_golden`.
 
 #![cfg(feature = "std")]

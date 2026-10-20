@@ -8,13 +8,13 @@
  * - Parallel package compilation
  *
  * Usage:
- *   bun scripts/build/ui/build-ui-packages.ts [--package <name>] [--minify] [--all]
+ *   bun scripts/aphrody/build/ui/build-ui-packages.ts [--package <name>] [--minify] [--all]
  */
 import { Glob } from "bun";
 import { resolve, join } from "node:path";
 import { m3BunBuild } from "@aphrody/m3-config/bun-build";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const REPO_ROOT = resolve(import.meta.dir, "../../../../");
 const UI_ROOT = join(resolve(process.env.APHRODY_MATERIAL_CHECKOUT ?? join(REPO_ROOT, "..", "material")), "packages");
 
 interface PackageBuildTarget {

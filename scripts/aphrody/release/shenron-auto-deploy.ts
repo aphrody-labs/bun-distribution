@@ -17,7 +17,7 @@ import {
   type ControllerWorker,
 } from "./shenron-source-controller";
 
-const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../docs/aphrody");
+const infra = resolve(dirname(fileURLToPath(import.meta.url)), "../../../");
 const config = JSON.parse(
   readFileSync(process.env.SHENRON_AUTO_DEPLOY_CONFIG ?? join(infra, "tools/config/shenron-auto-deploy.json"), "utf8"),
 );

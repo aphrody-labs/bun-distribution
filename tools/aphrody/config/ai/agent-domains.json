@@ -21,7 +21,7 @@
     },
     "ie": {
       "workspace": "workspaces/ie",
-      "codeRoot": "../iecode",
+      "codeRoot": ".",
       "context": "Inazuma Eleven"
     }
   }

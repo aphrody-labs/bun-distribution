@@ -197,7 +197,7 @@ export function versionIn(output: string): string | undefined {
   return /(\d+\.\d+(?:\.\d+)?)/.exec(output)?.[1];
 }
 
-/** scripts/build/tools.ts accepts clang/lld `>=MAJOR.1.0 <MAJOR.1.99`. */
+/** scripts/aphrody/build/tools.ts accepts clang/lld `>=MAJOR.1.0 <MAJOR.1.99`. */
 export function llvmAccepted(version: string | undefined, major: number): boolean {
   if (!version) return false;
   return compareVersions(version, `${major}.1.0`) >= 0 && compareVersions(version, `${major}.1.99`) < 0;

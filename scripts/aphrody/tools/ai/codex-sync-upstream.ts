@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const ROOT = resolve(import.meta.dir, "../../../../docs/aphrody");
+const ROOT = resolve(import.meta.dir, "../../../../");
 const ABSORPTION_JSON = resolve(ROOT, "tools/config/codex-absorption.json");
 
 interface CodexComparison {

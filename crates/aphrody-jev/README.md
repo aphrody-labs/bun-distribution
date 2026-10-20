@@ -76,8 +76,8 @@ are compiled into this crate.
 ## Verification and licensing
 
 ```powershell
-bun scripts/build/rust/cargo-serial.ts --msvc test -p aphrody-jev --no-default-features --locked -- --test-threads=1
-bun scripts/build/rust/cargo-serial.ts --msvc test -p aphrody-jev --features server --locked -- --test-threads=1
+bun scripts/aphrody/build/rust/cargo-serial.ts --msvc test -p aphrody-jev --no-default-features --locked -- --test-threads=1
+bun scripts/aphrody/build/rust/cargo-serial.ts --msvc test -p aphrody-jev --features server --locked -- --test-threads=1
 ```
 
 Tests use local mock servers and require no provider calls or credentials.

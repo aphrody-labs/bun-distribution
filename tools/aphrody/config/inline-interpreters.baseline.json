@@ -157,12 +157,12 @@
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
     },
-    "scripts/build/os/build-wsl-distro.sh": {
+    "scripts/aphrody/build/os/build-wsl-distro.sh": {
       "count": 1,
       "scope": "host",
       "reason": "Root-only Linux rootfs builder run through sudo by `aphrody wsl build distro`; system CPython validates the payload manifest before debootstrap, the user's Bun install is not on root's PATH."
     },
-    "scripts/build/os/test-wsl-distro.sh": {
+    "scripts/aphrody/build/os/test-wsl-distro.sh": {
       "count": 1,
       "scope": "test",
       "reason": "Root-only fixture suite of build-wsl-distro.sh with the same root interpreter; bootstrap, chroot and mounts are intercepted."

@@ -1,40 +1,51 @@
 ---
-title: Welcome to Bun OS
-description: An Arch-based Linux distribution and product workspace built on the Aphrody Bun runtime.
+title: Bun OS
+description: Repository guide for the Bun OS distribution workspace.
 mode: center
 ---
 
-Bun OS ships the Aphrody Bun runtime as the system runtime of an Arch Linux distribution. One
-repository builds the image, the COSMIC desktop, the Gamescope gaming session and the
-applications, with pacman/libalpm as the package manager.
+This repository contains the Bun OS distribution workspace. The root CLI is
+`src/cli.ts`; distribution selectors are declared in `distribution.json`, and
+pinned source revisions are recorded in `sources.lock.json` and Git submodule
+gitlinks.
+
+The manifests describe intended sources, profiles, targets and compositions.
+They do not by themselves prove that a package set, image, application or
+hardware target builds, boots or is release-qualified. The distribution
+manifest currently labels qualification as `development`.
 
 <CardGroup cols={2}>
-  <Card icon="download" title="Installation" href="/installation">
-    Requirements, clone and workspace setup.
-  </Card>
-  <Card icon="rocket" title="Quickstart" href="/quickstart">
-    Plan and stage a `server` image.
+  <Card icon="download" title="Quickstart" href="/quickstart">
+    Read-only planning commands and their declared inputs.
   </Card>
   <Card icon="layers" title="Architecture" href="/architecture">
-    Runtime, factory, compositions and source ownership.
+    Workspace ownership and current migration boundaries.
   </Card>
   <Card icon="factory" title="Factory" href="/architecture/arch-distribution">
-    Arch, CachyOS, ChimeraOS and Omarchy catalogs.
+    Arch factory manifests and qualification limits.
+  </Card>
+  <Card icon="book" title="Plan" href="https://github.com/aphrody-labs/bun-distribution/blob/os/PLAN.md">
+    Tracked consolidation work and delivery rules.
   </Card>
 </CardGroup>
 
-## Compositions
+## Declared compositions
 
-| Composition | Session          | Purpose                                     |
-| ----------- | ---------------- | ------------------------------------------- |
-| `server`    | none             | Headless host: Bun services, nginx, systemd |
-| `desktop`   | `cosmic-session` | COSMIC desktop with the Material 3 shell    |
-| `gaming`    | `gamescope`      | Steam/Proton gaming session                 |
+`distribution.json` declares `server`, `desktop` and `gaming` compositions,
+with `null`, `cosmic-session` and `gamescope` session values respectively. These
+are configuration values, not evidence that the compositions have been built
+or qualified.
 
-## Profiles and targets
+## Workspace state
 
-- `full`: wgpu renderer and every optional engine.
-- `perf`: tiny-skia renderer and demand-loaded engines.
-- Targets: `linux-x64`, `linux-arm64`, `windows-x64`, `macos-arm64`, `wasm`.
+- `package.json` declares the root Bun workspace.
+- `Cargo.toml` declares a root Cargo workspace, but also excludes source trees;
+  nested Cargo workspace boundaries remain. Cargo consolidation is incomplete.
+- `toolchains/bun` is a Git submodule for the Aphrody Bun runtime source owner.
+- `factory/`, `src/`, `crates/`, `packages/`, `apps/` and `vendor/` contain
+  product, tooling and imported source. Directory presence alone does not prove
+  ownership, workspace membership or qualification.
 
-`distribution.json` declares profiles, targets and compositions. `sources.lock.json` pins every source revision.
+See [Quickstart](/quickstart), [Architecture](/architecture),
+[the consolidation plan](https://github.com/aphrody-labs/bun-distribution/blob/os/PLAN.md)
+and [the factory guide](/architecture/arch-distribution).

@@ -3,7 +3,7 @@
 Light TypeScript SDK of the YOLO native runtime: loads the precompiled `yolo_runtime` library through
 its versioned C ABI with `bun:ffi`. Core modules are `runtime:system` and `runtime:process`;
 optional clients are `runtime:desktop` and `runtime:browser`.
-Nothing here compiles an engine. See `docs/architecture/runtime-native/RUNTIME-ABI.md` and `docs/decisions/runtime/DECISIONS.md` in the yolo repository.
+Nothing here compiles an engine. See the repository's [runtime ABI](../../docs/aphrody/architecture/runtime-native/RUNTIME-ABI.md) and [runtime decisions](../../docs/aphrody/decisions/runtime/DECISIONS.md).
 
 ```ts
 import { Runtime } from "@aphrody/runtime-sdk";
@@ -20,7 +20,7 @@ await child.stopAsync(2000);
 
 Library resolution: `$YOLO_RUNTIME_LIB`, then the installed artifact
 (`$YOLO_RUNTIME_HOME/<target>/current`, default `~/.yolo/runtime`), then `target/runtime/` of the
-yolo checkout. Install with `just yolo::runtime-install`, roll back with `just yolo::runtime-rollback`.
+this Bun OS checkout. Install with `just yolo::runtime-install`, roll back with `just yolo::runtime-rollback`.
 
 For one-shot binary output, ABI 1.4 provides lossless capture with an explicit
 budget. Overflow rejects with `RuntimeError` / `Status.OutputLimit`; no successful

@@ -28,7 +28,7 @@ export async function runOwnedTunnel(argv: string[], cwd: string, logPath: strin
 }
 
 if (import.meta.main) {
-  const repository = resolve(import.meta.dir, "../../../../docs/aphrody");
+  const repository = resolve(import.meta.dir, "../../../../");
   const installed = join(homedir(), "AppData/Local/Aphrody/bin/aphrody.exe");
   const executable = Bun.which("aphrody") ?? ((await Bun.file(installed).exists()) ? installed : null);
   if (!executable) throw new Error("Installed Aphrody Infra executable required");

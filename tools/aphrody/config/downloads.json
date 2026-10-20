@@ -58,7 +58,7 @@
           "platform": "linux-x86_64",
           "target": "x86_64-unknown-linux-gnu",
           "cargo": [
-            "scripts/build/rust/cargo-serial.sh",
+            "scripts/aphrody/build/rust/cargo-serial.sh",
             "build",
             "--release",
             "--locked",
@@ -78,7 +78,7 @@
           "cargo": [
             "env",
             "TARGET_CPU=x86-64-v2",
-            "scripts/build/rust/cargo-serial.sh",
+            "scripts/aphrody/build/rust/cargo-serial.sh",
             "xwin",
             "build",
             "--release",

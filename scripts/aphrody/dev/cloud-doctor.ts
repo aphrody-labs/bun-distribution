@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const root = join(import.meta.dir, "../../../docs/aphrody");
+const root = join(import.meta.dir, "../../../");
 const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
 const standalone =
   process.argv.includes("--standalone") ||

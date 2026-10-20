@@ -12,7 +12,7 @@ import { install, list, rollback } from "@aphrody/runtime-sdk/release";
 
 export { install, list, rollback };
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 
 if (import.meta.main) {
   const [command = "list", argument] = Bun.argv.slice(2);

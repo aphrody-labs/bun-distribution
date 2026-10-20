@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # aphrody-build: the single VPS build image for Aphrody and Shenron.
-# Build it with scripts/build/container/aphrody-build.ts image (pins read from rust-toolchain.toml,
+# Build it with scripts/aphrody/build/container/aphrody-build.ts image (pins read from rust-toolchain.toml,
 # package.json#packageManager and Cargo.lock); run builds with `aphrody-build.ts run` (Aphrody) or
-# Shenron's scripts/build/container.ts. Neither copies a checkout, an env file or a secret into the image:
+# Shenron's scripts/aphrody/build/container.ts. Neither copies a checkout, an env file or a secret into the image:
 # sources are bind mounted, caches are named volumes, tokens arrive as runtime environment names.
 #
 # Contents: Rust (pinned channel, every target/component of rust-toolchain.toml: Linux, Windows MSVC,

@@ -45,9 +45,9 @@ uv_pin="$(jq -r '.toolchains.uv.version' "$packages_file")"
 if ! command -v uv >/dev/null || [[ "$(uv --version)" != *"${uv_pin}"* ]]; then
   curl -LsSf "https://astral.sh/uv/${uv_pin}/install.sh" | env UV_INSTALL_DIR="$HOME/.local/bin" INSTALLER_NO_MODIFY_PATH=1 sh
 fi
-command -v cargo-binstall >/dev/null || "$root/scripts/build/rust/cargo-serial.sh" install --locked cargo-binstall
+command -v cargo-binstall >/dev/null || "$root/scripts/aphrody/build/rust/cargo-serial.sh" install --locked cargo-binstall
 mapfile -t cargo_tools < <(jq -r '.cargoTools[]' "$packages_file")
-"$root/scripts/build/rust/cargo-serial.sh" binstall -y --locked nu "${cargo_tools[@]}"
+"$root/scripts/aphrody/build/rust/cargo-serial.sh" binstall -y --locked nu "${cargo_tools[@]}"
 
 cd "$root"
 bun install --frozen-lockfile

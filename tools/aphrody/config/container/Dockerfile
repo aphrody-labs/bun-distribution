@@ -13,7 +13,7 @@
 # release-builder adds Python; wasm-artifacts exports browser/Bun JS, types and WASM.
 # The runtime target contains no source checkout, workspace node_modules or build toolchain.
 # The container is its own build host: the dev target sets APHRODY_CLOUD=1, the same profile as a Claude cloud
-# session (local Cargo through scripts/build/rust/cargo-serial.sh, jobs = CPU count, no factory routing).
+# session (local Cargo through scripts/aphrody/build/rust/cargo-serial.sh, jobs = CPU count, no factory routing).
 # Limits: scoped `-p <crate>` Cargo gates; full-workspace and engine (V8, Tauri, WebKit) builds need a larger host.
 
 ARG UBUNTU=24.04
@@ -169,7 +169,7 @@ RUN --mount=type=cache,target=/home/aphrody/.cargo/registry,uid=1000,gid=1000 \
     --mount=type=cache,target=/home/aphrody/.cargo/git,uid=1000,gid=1000 \
     --mount=type=cache,target=/app/target,sharing=locked,uid=1000,gid=1000 \
     --mount=type=cache,target=/home/aphrody/.cache/sccache,uid=1000,gid=1000 \
-    bun scripts/build/rust/wasm-package.ts --crate aphrody-command-wasm --out /home/aphrody/wasm-package
+    bun scripts/aphrody/build/rust/wasm-package.ts --crate aphrody-command-wasm --out /home/aphrody/wasm-package
 FROM scratch AS wasm-artifacts
 COPY --from=wasm-build /home/aphrody/wasm-package/ /
 

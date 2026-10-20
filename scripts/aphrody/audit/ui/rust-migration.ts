@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "../../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../../");
 const checkpoint = "6f7b0805f9afb0c92dcb18c091960cdb373345dc";
 const roots = [
   "apps/web",

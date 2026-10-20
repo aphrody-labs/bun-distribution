@@ -59,11 +59,11 @@ if ($Canary) {
 }
 
 if (-not (Get-Command cargo-binstall -ErrorAction SilentlyContinue)) {
-  bun (Join-Path $root 'scripts/build/rust/cargo-serial.ts') --msvc install --locked cargo-binstall
+  bun (Join-Path $root 'scripts/aphrody/build/rust/cargo-serial.ts') --msvc install --locked cargo-binstall
   if ($LASTEXITCODE -ne 0) { throw 'cargo-binstall installation failed' }
 }
 $cargoTools = @($packagePins.cargoTools)
-bun (Join-Path $root 'scripts/build/rust/cargo-serial.ts') --msvc binstall --yes --locked nu @cargoTools
+bun (Join-Path $root 'scripts/aphrody/build/rust/cargo-serial.ts') --msvc binstall --yes --locked nu @cargoTools
 if ($LASTEXITCODE -ne 0) { throw 'Rust developer tools installation failed' }
 
 bun install --frozen-lockfile

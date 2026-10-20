@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const root = resolve(import.meta.dir, "../../../docs/aphrody");
+const root = resolve(import.meta.dir, "../../../");
 const rootPkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 const catalog = rootPkg.workspaces?.catalog ?? {};
 

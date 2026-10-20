@@ -20,4 +20,4 @@ case "$channel" in
   *) echo "unknown channel: $channel (expected stable or canary)" >&2; exit 64 ;;
 esac
 
-exec "$root/scripts/build/rust/cargo-serial.sh" "+$toolchain" "$@"
+exec "$root/scripts/aphrody/build/rust/cargo-serial.sh" "+$toolchain" "$@"

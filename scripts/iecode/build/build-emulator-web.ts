@@ -3,8 +3,7 @@
 import { resolve, join } from "node:path";
 
 const root = resolve(import.meta.dir, "../../..");
-const aphrodyRoot = resolve(root, process.env.APHRODY_ROOT ?? process.env.APHRODY_INFRA_ROOT ?? "../aphrody");
-const cargoFactory = join(aphrodyRoot, "scripts/iecode/build/rust/cargo-serial.ts");
+const cargoFactory = join(root, "scripts/aphrody/build/rust/cargo-serial.ts");
 const ds = process.argv.includes("--ds");
 const packageName = ds ? "aphrody-dust-web" : "aphrody-wii-web";
 const outputName = ds ? "aphrody_dust_web" : "gecko_web";
