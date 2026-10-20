@@ -153,6 +153,19 @@
         "bootable": "No explicit kernel composition is selected or qualified; container gaming remains host-kernel based."
       }
     },
+    "bunos-omarchy": {
+      "prepare": "omarchy-rootfs",
+      "platforms": ["linux/amd64"],
+      "targets": {
+        "imported-rootfs": "image",
+        "c2w-terminal": "image"
+      },
+      "qualification": {
+        "state": "unqualified",
+        "releaseEligible": false,
+        "scope": "Signed Arch/Omarchy container candidate; separate from the complete Bun OS /usr composition and browser desktop qualification."
+      }
+    },
     "bunos-alpine": {
       "platforms": ["linux/amd64", "linux/arm64"],
       "targets": {

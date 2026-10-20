@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "kind": "official-omarchy-guest-rootfs",
+  "release": {
+    "repository": "omacom/try-omarchy-windows",
+    "tag": "v0.12.0",
+    "revision": "3b497519f5f4b320b33aa7bfaf8e3ec12ecb2b64",
+    "baseUrl": "https://github.com/omacom/try-omarchy-windows/releases/download/v0.12.0/"
+  },
+  "guestBuilder": {
+    "repository": "jorge-huxley/try-omarchy-win",
+    "revision": "aa009bd828037727de212c1412ccbe6ed7c95c7b",
+    "branch": "win"
+  },
+  "omarchy": {
+    "repository": "omacom/omarchy",
+    "revision": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
+    "version": "4.0.4-10"
+  },
+  "assets": {
+    "guestManifest": {
+      "file": "guest-manifest.json",
+      "sha256": "686f04a58e65d9dfdf36dd66c2dd75778ff5524a49be6952f242bc5e1e30a1a3",
+      "maxBytes": 4194304
+    },
+    "packagesLock": {
+      "file": "packages.lock.txt",
+      "sha256": "c4519a9e974feba651ab3175e5c0c0083bae50ef89febf129bc27a4014ea41a6",
+      "maxBytes": 16777216
+    },
+    "rootfs": {
+      "file": "rootfs.ext4.zst",
+      "sha256": "2f329e53b92c994e744b4d2311b0cd900552cd54c4efee5736c1a6e374a76864",
+      "sizeBytes": 1859964893,
+      "expandedSha256": "466995346cff00614e695e5dddb8576d654b8629fc332eb7e588e889ad71bd3d",
+      "expandedSizeBytes": 7516192768
+    }
+  },
+  "graphicsPackageCrossChecks": {
+    "hyprland": "0.56.2-4",
+    "mesa": "1:26.2.4-1",
+    "quickshell": "0.3.2-1",
+    "vulkan-virtio": "1:26.2.4-1"
+  },
+  "limits": {
+    "downloadTimeoutSeconds": 1800,
+    "decompressionTimeoutSeconds": 1800,
+    "mountTimeoutSeconds": 30,
+    "tarTimeoutSeconds": 1800,
+    "maxParallelJobs": 4
+  },
+  "import": {
+    "rootfsTar": "import/rootfs.tar",
+    "receipt": "import/import-receipt.json",
+    "containerfile": "import.Containerfile",
+    "dockerfileSyntax": "docker/dockerfile:1.7",
+    "imageCommand": ["/bin/bash", "--login"],
+    "supportedState": "unqualified"
+  }
+}

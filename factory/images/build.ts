@@ -5,10 +5,11 @@ import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { planUsr } from "../usr/build.ts";
+import { planUsr, type UsrLock } from "../usr/build.ts";
 import type { DesktopSession } from "../arch/index.ts";
 import { stageAlpineRuntime } from "./runtime.ts";
 import type { RuntimePin } from "@aphrody/bun-workspace";
+import { planOmarchyCandidate } from "./bunos-omarchy/stage.ts";
 
 const here = import.meta.dir;
 const sshOptions = ["-o", "ConnectTimeout=15", "-o", "BatchMode=yes"];
@@ -30,6 +31,7 @@ interface AgentTooling {
   }[];
 }
 interface ImageSpec {
+  prepare?: "omarchy-rootfs";
   usrComposition?: "server" | "desktop" | "gaming";
   desktopSession?: DesktopSession;
   agentTooling?: AgentTooling;
@@ -56,7 +58,18 @@ interface ImagesManifest {
 const manifest: ImagesManifest = await Bun.file(
   join(here, "manifest.json"),
 ).json();
+const archProfile = (await Bun.file(join(here, "../profile.json")).json()) as {
+  bootstrapImage: string;
+};
 const sourcesDir = manifest.sources.replace(/^~/, homedir());
+const factoryConfig = (await Bun.file(
+  Bun.env.APHRODY_FACTORY_CONFIG ??
+    join(here, "../../tools/aphrody/config/build-factory.json"),
+).json()) as { lockPath: string };
+if (!/^\/[A-Za-z0-9/_.-]+$/.test(factoryConfig.lockPath))
+  throw new Error(
+    "The image factory requires an absolute VPS factory lock path.",
+  );
 
 function spec(name: string) {
   const image = manifest.images[name];
@@ -71,6 +84,12 @@ function buildArgs(name: string): Record<string, string> {
   const { pins } = manifest;
   const bun = pins.bun!;
   const common = { BUN_VERSION: bun.version };
+  if (name === "bunos-gaming") {
+    return {
+      ...common,
+      ARCH_BOOTSTRAP_IMAGE: archProfile.bootstrapImage,
+    };
+  }
   if (name === "bunos-alpine") {
     return { ALPINE_VERSION: pins.alpine.version };
   }
@@ -102,6 +121,28 @@ async function generated(
   requestedDesktopSession?: DesktopSession,
 ) {
   const image = spec(name);
+  if (image.prepare === "omarchy-rootfs")
+    return {
+      desktopSession: "omarchy-hyprland",
+      desktopSessionOwner: "factory/images/bunos-omarchy/guest-inputs.json",
+      desktopSessionState: "unqualified",
+    };
+  if (name === "bunos-omarchy") {
+    if (
+      requestedDesktopSession &&
+      requestedDesktopSession !== "omarchy-hyprland"
+    )
+      throw new Error("The Omarchy candidate requires its Hyprland session.");
+    return {
+      repo: undefined,
+      missingRepo: undefined,
+      ...planOmarchyCandidate(
+        archProfile,
+        await Bun.file(join(here, "../usr/manifest.json")).json(),
+        await Bun.file(join(here, "../arch/omarchy/integration.json")).json(),
+      ),
+    };
+  }
   const composition = image.usrComposition;
   if (!composition) {
     if (requestedDesktopSession)
@@ -118,48 +159,75 @@ async function generated(
     throw new Error(
       `Image ${name} fixes desktop session ${image.desktopSession}.`,
     );
-  const usr = await planUsr(
-    composition,
-    undefined,
-    requestedDesktopSession ?? image.desktopSession,
-  );
+  const selectedSession = requestedDesktopSession ?? image.desktopSession;
+  const initialUsr = await planUsr(composition, undefined, selectedSession);
+  const lockName =
+    composition === "desktop"
+      ? `desktop-${selectedSession ?? initialUsr.desktopSession}.json`
+      : `${composition}.json`;
+  const lockPath = join(workspace, initialUsr.manifest.lockDirectory, lockName);
+  if (!(await Bun.file(lockPath).exists()))
+    return {
+      missingRepo: `No ${composition} /usr package lock at ${lockPath}; build and qualify the /usr composition first.`,
+    };
+  const usrLock = (await Bun.file(lockPath).json()) as UsrLock;
+  if (
+    usrLock.schemaVersion !== 3 ||
+    usrLock.kind !== "bun-os-usr-lock" ||
+    usrLock.composition !== composition ||
+    usrLock.desktopSession !== initialUsr.desktopSession ||
+    usrLock.desktopSessionState !== initialUsr.desktopSessionState ||
+    usrLock.builderImage !== initialUsr.manifest.builderImage ||
+    !new RegExp(`^${composition}-[0-9]{8}T[0-9]{6}$`).test(usrLock.job) ||
+    !Array.isArray(usrLock.packages)
+  )
+    throw new Error(
+      `The ${composition} /usr package lock does not match the current factory profile. Rebuild and qualify /usr.`,
+    );
+  const usr =
+    usrLock.snapshot === null
+      ? initialUsr
+      : await planUsr(composition, usrLock.snapshot, selectedSession);
   const bootOnly = new Set(
     ["linux-cachyos", "linux-firmware", usr.manifest.kernelFallback].filter(
       Boolean,
     ),
   );
-  const keys = [
-    ...usr.manifest.repositories.flatMap((repo) =>
-      (repo.keys ?? []).map(
-        (key) =>
-          `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
-      ),
+  const keys = usr.manifest.repositories.flatMap((repo) =>
+    (repo.keys ?? []).map(
+      (key) =>
+        `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
     ),
-  ];
-  // Newest local /usr job of this composition provides the [bunos] package files.
+  );
+  // The source-bound /usr lock selects the exact local package artifact job.
   const artifactRoot = usr.manifest.localArtifacts.replace(/^~/, homedir());
-  const artifactCompositions =
-    composition === "desktop" ? ["desktop", "cosmic"] : [composition];
-  let artifacts = join(artifactRoot, composition);
-  let latest: string | undefined;
-  for (const artifactComposition of artifactCompositions) {
-    const candidate = join(artifactRoot, artifactComposition);
-    const jobs = (
-      await Array.fromAsync(
-        new Bun.Glob("*/repo/*.pkg.tar.zst").scan(candidate),
-      )
-    ).sort();
-    latest = jobs.at(-1)?.split(/[/\\]/)[0];
-    if (latest) {
-      artifacts = candidate;
-      break;
-    }
+  const artifacts = join(artifactRoot, composition, usrLock.job);
+  const repo = join(artifacts, "repo");
+  const localPackages = usrLock.packages.filter(
+    (pkg) => pkg.repository === usr.manifest.localRepository.name,
+  );
+  if (!localPackages.length)
+    throw new Error(
+      `The ${composition} /usr lock has no local Bun OS packages.`,
+    );
+  for (const pkg of localPackages) {
+    if (!/^[A-Za-z0-9@._+-]+\.pkg\.tar\.zst$/.test(pkg.file))
+      throw new Error(
+        `Invalid local package filename in /usr lock: ${pkg.file}`,
+      );
+    const path = join(repo, pkg.file);
+    const file = Bun.file(path);
+    if (
+      !(await file.exists()) ||
+      file.size !== pkg.bytes ||
+      (await sha256(path)) !== pkg.sha256
+    )
+      throw new Error(
+        `Local package ${pkg.name} does not match the ${composition} /usr lock; rebuild and qualify /usr.`,
+      );
   }
   return {
-    repo: latest ? join(artifacts, latest, "repo") : undefined,
-    missingRepo: latest
-      ? undefined
-      : `No [bunos] packages under ${artifacts}; run bun factory usr build --composition ${composition} --no-boot`,
+    repo,
     files: {
       "pacman.conf": usr.pacmanConf.replace(
         "file:///job/repo",
@@ -188,6 +256,7 @@ export async function planImage(name: string, desktopSession?: DesktopSession) {
     desktopSessionState: extra.desktopSessionState ?? "not-applicable",
     buildArgs: { ...buildArgs(name), ...extra.args },
     generated: Object.keys(extra.files ?? {}),
+    missingRepo: extra.missingRepo,
   };
 }
 
@@ -346,16 +415,26 @@ function remoteScript(
     "#!/usr/bin/env bash",
     "set -uo pipefail",
     'cd "$(dirname "$0")"',
+    `exec 9>'${factoryConfig.lockPath}'`,
+    "flock 9",
     "mkdir -p out",
     ": >status",
   ];
+  if (image.prepare === "omarchy-rootfs")
+    lines.push(
+      `bun context/import.ts prepare "$PWD" '${manifest.remoteRoot}' || exit $?`,
+    );
+  const containerfile =
+    image.prepare === "omarchy-rootfs"
+      ? "context/import.Containerfile"
+      : "context/Containerfile";
   for (const target of targets) {
     const tag = `${name}:${target}`;
-    const base = `docker buildx build --progress=plain --platform ${image.platforms.join(",")} --target ${target} ${flags} -f context/Containerfile context`;
+    const base = `docker buildx build --progress=plain --platform ${image.platforms.join(",")} --target ${target} ${flags} -f ${containerfile} context`;
     lines.push(`echo "== ${tag}"`);
     const rootfs =
       image.targets[target] === "rootfs"
-        ? ` && { ${base} --output type=tar,dest=out/${name}-${target}-rootfs.tar && zstd -T0 -19 --long --rm -f out/${name}-${target}-rootfs.tar && echo "${name}-${target}-rootfs.tar.zst ok" >>status || echo "${name}-${target}-rootfs failed" >>status; }`
+        ? ` && { ${base} --output type=tar,dest=out/${name}-${target}-rootfs.tar && zstd -T4 -19 --long --rm -f out/${name}-${target}-rootfs.tar && echo "${name}-${target}-rootfs.tar.zst ok" >>status || echo "${name}-${target}-rootfs failed" >>status; }`
         : "";
     lines.push(
       `${base} --output type=image,name=docker.io/library/${tag},compression=zstd,compression-level=19,force-compression=true,oci-mediatypes=true && echo "${tag} ok" >>status${rootfs} || echo "${tag} failed" >>status`,

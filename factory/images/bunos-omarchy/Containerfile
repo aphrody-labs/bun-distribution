@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1.7
+# SPDX-License-Identifier: MIT
+# Explicitly unqualified Omarchy source candidate, not a Bun OS release image.
+# The image factory stages pacman.conf, candidate.packages and PACMAN_KEYS.
+ARG ARCH_BOOTSTRAP_IMAGE
+FROM ${ARCH_BOOTSTRAP_IMAGE} AS source-candidate
+ARG PACMAN_KEYS
+COPY pacman.conf /etc/pacman.conf
+COPY candidate.packages /usr/share/bun-os/candidate.packages
+COPY install-packages.sh /usr/local/sbin/bunos-install-packages
+COPY entrypoint.sh /usr/local/sbin/bunos-omarchy-start
+COPY probe.sh /usr/local/sbin/bunos-omarchy-probe
+COPY c2w-terminal.sh /usr/local/sbin/bunos-c2w-terminal
+COPY headless.lua /usr/share/bun-os/headless.lua
+COPY NOTICES.md /usr/share/licenses/bun-os-omarchy/NOTICES.md
+RUN chmod 0755 /usr/local/sbin/bunos-install-packages /usr/local/sbin/bunos-omarchy-start /usr/local/sbin/bunos-omarchy-probe /usr/local/sbin/bunos-c2w-terminal \
+ && pacman-key --init && pacman-key --populate archlinux \
+ && for spec in ${PACMAN_KEYS}; do key=${spec%@*}; server=${spec#*@}; pacman-key --keyserver "hkps://$server" --recv-keys "$key" && pacman-key --lsign-key "$key"; done \
+ && pacman -Syu --noconfirm --needed cachyos-keyring cachyos-mirrorlist \
+ && bunos-install-packages /usr/share/bun-os/candidate.packages \
+ && settings_version="$(pacman -Q omarchy-settings | awk '{print $2}')" \
+ && [[ "$settings_version" =~ ^([0-9]+:)?4\.0\.4(-[0-9]+)?$ ]] || { echo "expected stable Omarchy 4.0.4 package, received $settings_version" >&2; exit 26; } \
+ && pacman -Ql omarchy-settings | grep -F '/default/hypr/bootstrap.lua' >/dev/null \
+ && for bin in Hyprland hyprctl wayvnc dbus-run-session runuser useradd timeout; do command -v "$bin" >/dev/null || { echo "missing candidate package executable: $bin" >&2; exit 21; }; done \
+ && useradd --no-create-home --uid 1000 --user-group --home-dir /run/bun-os/home --shell /bin/bash omarchy \
+ && pacman -Q > /usr/share/bun-os/source-candidate-pacman-Q.txt \
+ && printf '%s\n' 'status=source-candidate-unqualified' 'omarchy=4.0.4' 'desktop-session=Hyprland-headless' > /usr/share/bun-os/source-candidate-status.txt \
+ && rm -rf /var/cache/pacman/pkg/*
+ENV XDG_SESSION_TYPE=wayland \
+    AQ_NO_KMS_REQUIREMENT=1 \
+    LIBGL_ALWAYS_SOFTWARE=1 \
+    BUNOS_WAYVNC_LISTEN=127.0.0.1 \
+    BUNOS_WAYVNC_PORT=5900
+EXPOSE 5900/tcp
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 CMD ["/usr/local/sbin/bunos-omarchy-probe"]
+
+FROM source-candidate AS desktop
+ENTRYPOINT ["/usr/local/sbin/bunos-omarchy-start"]
+
+# Separate browser-terminal conversion input; never advertise this as a GUI.
+FROM source-candidate AS c2w-terminal
+ENV BUNOS_C2W_TERMINAL=1
+ENTRYPOINT ["/usr/local/sbin/bunos-c2w-terminal"]
+CMD ["/bin/bash", "--login"]

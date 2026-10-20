@@ -1,0 +1,25 @@
+# Stable Omarchy 4.0.4 package subset selected for a container desktop candidate.
+# The exact resolved versions are captured by source-candidate-pacman-Q.txt.
+omarchy-keyring
+omarchy-settings
+hyprland
+quickshell
+uwsm
+sddm
+xdg-desktop-portal-hyprland
+pipewire
+wireplumber
+gnome-keyring
+gum
+jq
+git
+perl
+fakeroot
+pacman-contrib
+ttf-jetbrains-mono-nerd-basic
+wayvnc
+mesa
+dbus
+wayland-protocols
+foot
+shadow
