@@ -33,25 +33,30 @@
 <script type="module">
   const $ = id => document.getElementById(id);
   const msg = $("msg");
-  let manifest, product, mod, readyOK = false, started = false;
+  let manifest, variant, product, mod, readyOK = false, started = false;
   async function json(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Missing player resource (${response.status})`);
     return response.json();
   }
   function payloadURL(path) {
-    if (typeof path !== "string" || !path || /[\\:?#]/.test(path) || path.startsWith("/") || path.split("/").some(p => !p || p === "." || p === "..")) throw new Error("Invalid emulator resource path");
+    if (typeof path !== "string" || !path || /[%\\:?#]/.test(path) || path.startsWith("/") || path.split("/").some(p => !p || p === "." || p === "..")) throw new Error("Invalid emulator resource path");
     return new URL(`./payload/${path}`, location.href);
   }
   async function boot() {
     product = await json("./emulator.json");
     manifest = await json(payloadURL(`${product.core}/manifest.json`));
+    const receipt = await json("./qualification.json");
+    if (receipt.core !== product.core || receipt.variant !== product.variant) throw new Error("Player qualification does not match the selected emulator.");
+    if (!["single", "threads"].includes(receipt.variant)) throw new Error("Missing qualified emulator variant.");
+    variant = receipt.variant === "threads" ? manifest.variants?.threads : manifest;
+    if (!variant) throw new Error("The qualified emulator variant is missing.");
     $("title").textContent = manifest.name;
     $("file").accept = manifest.extensions.join(",");
-    if (manifest.threads && !globalThis.crossOriginIsolated) throw new Error("This emulator needs a cross-origin isolated page for shared memory.");
+    if (variant.threads && !globalThis.crossOriginIsolated) throw new Error("This emulator needs a cross-origin isolated page for shared memory.");
     if (!globalThis.WebAssembly) throw new Error("This browser does not support WebAssembly.");
-    mod = await import(payloadURL(`${product.core}/${manifest.module}`).href);
-    await mod.default({ module_or_path: payloadURL(`${product.core}/${manifest.wasm}`).href });
+    mod = await import(payloadURL(`${product.core}/${variant.module}`).href);
+    await mod.default({ module_or_path: payloadURL(`${product.core}/${variant.wasm}`).href });
     readyOK = true;
     $("file").disabled = false;
     $("test").disabled = false;

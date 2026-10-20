@@ -91,11 +91,11 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   }
   const chrome = chromePath();
   if (!chrome) throw new Error("no Chrome/Chromium found (set CHROME)");
-  const profile = join(root, "build", "web-emulation", "chrome-profile");
-  rmSync(profile, { recursive: true, force: true });
+  const profileRoot = resolve(root, "build/web-emulation");
+  const profile = join(profileRoot, `chrome-profile-${crypto.randomUUID()}`);
   mkdirSync(shots, { recursive: true });
   const server = serve(0);
-  let cleanupBrowser: (() => void) | undefined;
+  let cleanupBrowser: (() => Promise<void>) | undefined;
   let cdp: Cdp | undefined;
   try {
   const browser = Bun.spawn(
@@ -126,7 +126,7 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
     ],
     { stderr: "pipe", stdout: "ignore" },
   );
-  cleanupBrowser = () => { browser.kill(); };
+  cleanupBrowser = async () => { browser.kill(); await browser.exited; };
   let endpoint = "";
   const reader = browser.stderr.getReader();
   const decoder = new TextDecoder();
@@ -152,7 +152,7 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
         if (!pin) throw new Error(`No free firmware pin: ${test.firmware}`);
         fixtures.push({ path: `firmware/${pin.file}`, sha256: pin.sha256, license: pin.license, source: pin.source });
       }
-      const snapshot = await createQualificationSnapshot(dist, core, fixtures);
+      const snapshot = await createQualificationSnapshot(dist, core, fixtures, { variant: threads ? "threads" : "single" });
       const query = new URLSearchParams({
         core,
         system: test.system,
@@ -229,8 +229,11 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   return results;
   } finally {
     cdp?.close();
-    cleanupBrowser?.();
+    await cleanupBrowser?.();
     server.stop(true);
+    const profileName = profile.slice(profileRoot.length + 1);
+    if (!/^chrome-profile-[a-f0-9-]+$/.test(profileName) || resolve(profile) !== join(profileRoot, profileName)) throw new Error("Unsafe browser profile cleanup path");
+    rmSync(profile, { recursive: true, force: true });
   }
 }
 

@@ -32,7 +32,9 @@
   const t = { begin: performance.now() };
   try {
     const manifest = await (await fetch(`/emulation/${core}/manifest.json`, { cache: "no-cache" })).json();
-    const variant = params.get("threads") === "1" && manifest.variants?.threads ? manifest.variants.threads : manifest;
+    const threaded = params.get("threads") === "1";
+    if (threaded && !manifest.variants?.threads) throw new Error("Requested threaded WASM variant is not built");
+    const variant = threaded ? manifest.variants.threads : manifest;
     t.manifest = performance.now();
     const mod = await import(`/emulation/${core}/${variant.module}`);
     await mod.default({ module_or_path: `/emulation/${core}/${variant.wasm}` });

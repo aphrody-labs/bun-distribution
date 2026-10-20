@@ -141,7 +141,9 @@ async function emulators(dist: string): Promise<PackageManifest[]> {
     if (typeof manifest.license !== "string" || !manifest.license.trim()) throw new Error(`${core}: core license metadata is missing`);
     await mkdir(dest, { recursive: true });
     for (const path of Object.keys(receipt.files)) {
-      await Bun.write(join(dest, "payload", path), Bun.file(join(src, path)));
+      const copied = join(dest, "payload", path);
+      await Bun.write(copied, Bun.file(join(src, path)));
+      if (await sha256(copied) !== receipt.files[path]) throw new Error(`${core}: packaged qualification input changed: ${path}`);
     }
     // The loader registry must be included verbatim among the qualified files.
     const firmwareIDs = manifest.firmware ?? [];
@@ -155,7 +157,7 @@ async function emulators(dist: string): Promise<PackageManifest[]> {
     }
     await Bun.write(join(dest, "qualification.json"), JSON.stringify(receipt));
     const licenseNotices = await emulatorNotices(dest, core, receipt.fixtures);
-    await Bun.write(join(dest, "emulator.json"), JSON.stringify({ core, manifest: `payload/${core}/manifest.json`, qualification: "qualification.json", fixtures: receipt.fixtures, qualificationHarnessRevision: receipt.sourceRevision }));
+    await Bun.write(join(dest, "emulator.json"), JSON.stringify({ core, variant: receipt.variant, manifest: `payload/${core}/manifest.json`, qualification: "qualification.json", fixtures: receipt.fixtures, qualificationHarnessRevision: receipt.sourceRevision }));
     await Bun.write(join(dest, "PROVENANCE.json"), JSON.stringify({ core: { id: core, license: manifest.license, build: manifest.build ?? null }, qualificationHarnessRevision: receipt.sourceRevision, fixtures: receipt.fixtures, note: "License descriptions and source URLs are retained from the canonical registries; this metadata does not replace upstream license notices." }, null, 2));
     await Bun.write(join(dest, "index.html"), player);
     out.push(
@@ -167,7 +169,7 @@ async function emulators(dist: string): Promise<PackageManifest[]> {
         description: "Qualified browser emulator with bundled open-source test content.",
         license: manifest.license,
         glyph: (manifest.systems?.[0] ?? core).toUpperCase().slice(0, 4),
-        threads: manifest.threads === true,
+        threads: (receipt.variant === "threads" ? manifest.variants?.threads : manifest).threads === true,
         licenseNotices,
       }),
     );

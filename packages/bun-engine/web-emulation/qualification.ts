@@ -17,6 +17,7 @@ export interface WasmQualificationReceipt {
   schemaVersion: 1;
   kind: "bun-engine-wasm-qualification";
   core: string;
+  variant: "single" | "threads";
   /** Revision of the qualification harness; artifact provenance is separately retained in the manifest. */
   sourceRevision: string;
   testedAt: string;
@@ -34,6 +35,16 @@ function safePath(path: string): string {
 }
 function safeCore(core: string) {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(core)) throw new Error(`Invalid core: ${core}`);
+}
+function selectedVariant(manifest: any, variant: "single" | "threads") {
+  if (variant !== "single" && variant !== "threads") throw new Error("Invalid qualification variant");
+  const selected = variant === "threads" ? manifest.variants?.threads : manifest;
+  if (!selected || (variant === "threads" && selected.threads !== true)) throw new Error("Requested threaded WASM variant is not built");
+  for (const path of [selected.module, selected.wasm]) {
+    if (typeof path !== "string" || /[%?#]/.test(path)) throw new Error("Invalid qualified module path");
+    safePath(path);
+  }
+  return selected;
 }
 export async function qualificationSHA256(path: string): Promise<string> {
   const hash = new Bun.CryptoHasher("sha256");
@@ -81,9 +92,11 @@ function checkResult(result: QualificationResult) {
   if (result?.ok !== true || !Number.isFinite(result.frames) || result.frames < 120 || result.lit !== true || !/^[a-f0-9]+$/i.test(result.hash) || !Array.isArray(result.errors) || result.errors.length)
     throw new Error("WASM qualification requires 120 lit frames, a frame hash and no errors");
 }
-export async function createQualificationSnapshot(dist: string, core: string, fixtures: QualificationFixture[], options: { root?: string } = {}): Promise<Omit<WasmQualificationReceipt, "testedAt" | "result">> {
+export async function createQualificationSnapshot(dist: string, core: string, fixtures: QualificationFixture[], options: { root?: string; variant?: "single" | "threads" } = {}): Promise<Omit<WasmQualificationReceipt, "testedAt" | "result">> {
   const root = options.root ?? defaultRoot;
   const manifest = await Bun.file(join(dist, core, "manifest.json")).json();
+  const variant = options.variant ?? "single";
+  const selected = selectedVariant(manifest, variant);
   await checkFixtures(dist, fixtures, root, manifest.systems ?? []);
   const registry = await Bun.file(join(root, "packages/bun-engine/plugins/consoles/free-firmware.json")).json();
   for (const id of manifest.firmware ?? []) {
@@ -94,8 +107,9 @@ export async function createQualificationSnapshot(dist: string, core: string, fi
   const sourceRevision = revision.stdout.toString().trim();
   if (revision.exitCode !== 0 || !/^[a-f0-9]{40}$/.test(sourceRevision)) throw new Error("Cannot resolve qualification source revision");
   const files = await snapshotFiles(dist, core, fixtures);
+  for (const path of [selected.module, selected.wasm]) if (!files[`${core}/${path}`]) throw new Error(`${core}: selected variant input is not in qualification files`);
   if (manifest.firmware?.length) files["firmware/firmware.json"] = await qualificationSHA256(join(dist, "firmware/firmware.json"));
-  return { schemaVersion: 1, kind: "bun-engine-wasm-qualification", core, sourceRevision, lockSHA256: await qualificationSHA256(join(root, "packages/bun-engine/web-emulation/web-emulation.lock.json")), files, fixtures };
+  return { schemaVersion: 1, kind: "bun-engine-wasm-qualification", core, variant, sourceRevision, lockSHA256: await qualificationSHA256(join(root, "packages/bun-engine/web-emulation/web-emulation.lock.json")), files, fixtures };
 }
 export async function writeQualification(dist: string, snapshot: Omit<WasmQualificationReceipt, "testedAt" | "result">, result: QualificationResult): Promise<WasmQualificationReceipt> {
   checkResult(result);
@@ -114,6 +128,7 @@ export async function verifyQualification(dist: string, core: string, options: {
   checkResult(receipt.result);
   if (receipt.lockSHA256 !== await qualificationSHA256(join(root, "packages/bun-engine/web-emulation/web-emulation.lock.json"))) throw new Error(`${core}: stale qualification lock`);
   const manifest = await Bun.file(join(dist, core, "manifest.json")).json();
+  const selected = selectedVariant(manifest, receipt.variant);
   await checkFixtures(dist, receipt.fixtures, root, manifest.systems ?? []);
   const registry = await Bun.file(join(root, "packages/bun-engine/plugins/consoles/free-firmware.json")).json();
   for (const id of manifest.firmware ?? []) {
@@ -122,6 +137,7 @@ export async function verifyQualification(dist: string, core: string, options: {
   }
   for (const [path, hash] of Object.entries(receipt.files)) if (!safePath(path) || !digestPattern.test(hash)) throw new Error("Invalid qualification file digest");
   const current = await snapshotFiles(dist, core, receipt.fixtures);
+  for (const path of [selected.module, selected.wasm]) if (!current[`${core}/${path}`]) throw new Error(`${core}: selected variant input is not in qualification files`);
   if (manifest.firmware?.length) current["firmware/firmware.json"] = await qualificationSHA256(join(dist, "firmware/firmware.json"));
   if (JSON.stringify(current) !== JSON.stringify(receipt.files)) throw new Error(`${core}: qualification artifact set or digests changed`);
   return receipt;
