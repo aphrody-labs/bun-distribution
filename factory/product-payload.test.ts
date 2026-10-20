@@ -8,6 +8,7 @@ import {
   productModesSHA256,
   sourceEntries,
   validatePreparedProductPath,
+  validateProductWasmInputs,
   verifyInstalledAdditions,
   verifyLinks,
   verifySourceEntries,
@@ -126,6 +127,16 @@ test("prepared build inputs require a declared root member and cannot overwrite 
     .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
   await expect(validatePreparedProductPath(root, "packages/cli-wasm/wasm/unlisted.wasm", original))
     .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
+  const wasmInputs = [
+    "packages/cli-wasm/wasm/aphrody_command_wasm.js",
+    "packages/cli-wasm/wasm/aphrody_command_wasm.d.ts",
+    "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm",
+    "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm.d.ts",
+    "packages/cli-wasm/wasm/provenance.json",
+  ].map(path => ({ path }));
+  await expect(validateProductWasmInputs(root, wasmInputs.slice(0, -1)))
+    .rejects.toThrow("missing required CLI-WASM inputs");
+  await validateProductWasmInputs(root, wasmInputs);
   expect(await Bun.file(join(root, "packages/declared/dist/tracked.js")).text()).toBe("export const tracked = true;\n");
 
   const path = "packages/declared/dist/generated.js";

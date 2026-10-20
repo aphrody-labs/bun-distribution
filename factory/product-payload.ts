@@ -11,7 +11,7 @@ import type { RuntimeReceipt } from "../src/distribution.ts";
 import {
   productIdentity, sameProductIdentity, productPath, sourceEntries, entryTreeHash,
   verifySourceEntries, verifyLinks, verifyInstalledAdditions, verifyProductPayload,
-  validatePreparedProductPath,
+  validatePreparedProductPath, validateProductWasmInputs,
   productModesSHA256,
   type ProductPayloadReceipt,
 } from "../container/product-payload.ts";
@@ -127,6 +127,7 @@ export async function prepareProductPayload(output: string, options: ProductPayl
     if (!sameProductIdentity(source, await productIdentity(destination))) throw new Error("Prepared archive changed while copying");
     preparedInputs.push({ path: input.path, ...source, sourceRevision: input.sourceRevision });
   }
+  await validateProductWasmInputs(workspace, preparedInputs);
   const frozenLock = await productIdentity(join(workspace, "bun.lock"));
   const installHome = join(root, ".install-home");
   await mkdir(installHome);

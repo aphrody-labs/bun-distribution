@@ -205,6 +205,30 @@ export interface ProductPayloadExpected {
   runtime: { sha256: string; revision: string };
 }
 
+const CLI_WASM_INPUTS = [
+  "packages/cli-wasm/wasm/aphrody_command_wasm.js",
+  "packages/cli-wasm/wasm/aphrody_command_wasm.d.ts",
+  "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm",
+  "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm.d.ts",
+  "packages/cli-wasm/wasm/provenance.json",
+] as const;
+
+/** The frozen product must carry the complete generated module set for its CLI-WASM owner. */
+export async function validateProductWasmInputs(
+  root: string,
+  inputs: readonly { path: string }[],
+): Promise<void> {
+  const manifest = await Bun.file(join(root, "packages/cli-wasm/package.json")).json() as {
+    name?: string;
+    imports?: Record<string, string>;
+  };
+  if (manifest.name !== "@aphrody/cli-wasm" || manifest.imports?.["#cli-wasm-glue"] !== "./wasm/aphrody_command_wasm.js")
+    throw new Error("Frozen product has an invalid CLI-WASM owner manifest");
+  const paths = new Set(inputs.map(input => input.path));
+  const missing = CLI_WASM_INPUTS.filter(path => !paths.has(path));
+  if (missing.length) throw new Error(`Frozen product is missing required CLI-WASM inputs: ${missing.join(", ")}`);
+}
+
 /** Offline verification of a copied workspace and its separate producer receipt. */
 export async function verifyProductPayload(
   payloadRoot: string,
@@ -249,6 +273,7 @@ export async function verifyProductPayload(
       throw new Error("Prepared product archive differs from its pinned inputs");
     preparedPaths.add(input.path);
   }
+  await validateProductWasmInputs(root, receipt.preparedInputs);
   await verifyLinks(root, receipt.sourceEntries);
   await verifyInstalledAdditions(root, receipt.sourceEntries, receipt.preparedInputs);
   for (const file of ["src/cli.ts", "src/cli/main.ts", "src/cli/commands.ts", "package.json"])
