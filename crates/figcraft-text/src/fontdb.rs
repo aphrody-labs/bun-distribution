@@ -749,9 +749,10 @@ impl FontDb {
         faces.into_iter().min_by_key(|f| cost(f)).cloned()
     }
 
-    /// The default face (Inter Regular if embedded, else any system sans).
+    /// The default face (the product M3 sans if embedded, else any system sans).
     pub fn default_face(&mut self) -> Option<Arc<Face>> {
         for fam in [
+            "Roboto Flex",
             "Inter",
             "Helvetica Neue",
             "Helvetica",
@@ -773,6 +774,7 @@ impl FontDb {
     pub fn fallbacks(&mut self) -> Vec<Arc<Face>> {
         let mut out = Vec::new();
         for fam in [
+            "Roboto Flex",
             "Inter",
             "Helvetica Neue",
             "Arial",

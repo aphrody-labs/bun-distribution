@@ -13,6 +13,26 @@ if (process.platform !== "linux")
   throw new Error("Build Craft WebAssembly apps on the Linux VPS factory.");
 
 const root = resolve(import.meta.dir, "../..");
+const fontRoot = resolve(Bun.env.CRAFT_FONTS_DIR ?? root);
+const fontNotices = new Map<string, string>();
+for (const manifest of ["fonts/manifest.txt", "fonts/latin-manifest.txt"]) {
+  const text = await Bun.file(join(fontRoot, manifest)).text();
+  fontNotices.set(manifest, text);
+  for (const line of text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))) {
+    const fields = line.split(" | ").map((field) => field.trim());
+    const [path, notice, hash] = [fields[2], fields[5], fields[6]];
+    for (const value of [path, notice])
+      if (!value || value.split(/[\\/]/).some((part) => !part || part === ".."))
+        throw new Error(`${manifest}: invalid font or notice path`);
+    const bytes = await Bun.file(join(fontRoot, path!)).bytes();
+    if (new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !== hash)
+      throw new Error(`${path}: font content does not match its manifest`);
+    fontNotices.set(notice!, await Bun.file(join(fontRoot, notice!)).text());
+  }
+}
 const out = join(import.meta.dir, "out/craft");
 const work = join(root, "build/web-craft");
 const lock = JSON.parse(
@@ -209,7 +229,7 @@ const buildCode = await runNative(
     timeoutMs: 1_800_000,
     env: {
       CARGO_BUILD_JOBS: "4",
-      CRAFT_FONTS_DIR: Bun.env.CRAFT_FONTS_DIR ?? root,
+      CRAFT_FONTS_DIR: fontRoot,
       CRAFT_FONTS_REQUIRED: "1",
     },
   },
@@ -312,6 +332,8 @@ for (const app of apps) {
   }
   await cp(join(shellDir, "theme.css"), join(dest, "theme.css"));
   await cp(join(shellDir, "aphrody-icon.png"), join(dest, "aphrody-icon.png"));
+  for (const [path, text] of fontNotices)
+    await Bun.write(join(dest, "licenses", path), text);
   const cargo = await Bun.file(
     join(root, "apps", app.crate, "Cargo.toml"),
   ).text();

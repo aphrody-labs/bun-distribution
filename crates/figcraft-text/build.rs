@@ -59,9 +59,13 @@ fn craft_fonts(dir: &std::path::Path, manifest_rel: &str) -> Result<String, Stri
         if cjk && std::env::var_os("FIGCRAFT_EMBED_CJK").is_none() {
             continue;
         }
-        // Web builds have a size budget: Inter, plus Noto Sans CJK (every CJK script, for CJK UI
-        // text) when asked.
-        if wasm && *family != "Inter" && !cjk {
+        // Reuse the product's M3 Latin fonts and compact script fallbacks in the browser.
+        let web_face = matches!(*family, "Inter" | "Roboto Flex" | "Roboto Mono")
+            || (*family == "BIZ UDPGothic" && *style == "Regular")
+            || scripts
+                .split(',')
+                .any(|script| matches!(script.trim(), "Arab" | "Thai"));
+        if wasm && !web_face && !cjk {
             continue;
         }
         let path = dir
