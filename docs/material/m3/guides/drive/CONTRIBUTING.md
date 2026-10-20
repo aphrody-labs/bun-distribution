@@ -8,9 +8,11 @@ for the current ownership and parity gates.
 ## Product targets
 
 Drive is Aphrody's Files feature, not a separate product shell. The active UI lives in
-`../packages/app-ui`; Tauri (`../crates/aphrody-app`) is the current desktop host. Optional HTTP
-delivery reuses that same UI. The React Native, Expo, iOS and Android app and the old
-`drive/apps/tauri` host were removed. Do not add another desktop bridge or copy daemon types into
+`packages/app-ui`; the shared M3 controls are in `packages/m3-explorer`, and the active contract
+client is `packages/drive-client`. The desktop Drive bridge is `crates/aphrody-drive`, which
+supervises the `sd-daemon` from `apps/aphrody-drive/core`. Upstream's mobile host is preserved in
+the recovered source history; its Files workflows still need integration and qualification in
+the unified Bun Android product. Do not add another desktop bridge or copy daemon types into
 TypeScript by hand.
 
 ## Setup and build
@@ -20,14 +22,15 @@ Run commands from the repository root unless a command specifies the Drive Cargo
 ```sh
 bun install --frozen-lockfile
 bun run bun:check
-cargo metadata --manifest-path drive/Cargo.toml --no-deps --locked --format-version 1
-cargo build --manifest-path drive/Cargo.toml -p sd-core --bin sd-daemon --locked
+bun scripts/aphrody/build/rust/cargo-serial.ts metadata --manifest-path apps/aphrody-drive/core/Cargo.toml --no-deps --locked --format-version 1
+bun scripts/aphrody/build/rust/cargo-serial.ts build --manifest-path apps/aphrody-drive/core/Cargo.toml -p sd-core --bin sd-daemon --locked
 ```
 
-On Windows, `pwsh scripts/tauri.ps1 -Action dev|run|bundle` builds the Aphrody UI, prepares the
-Drive engine and starts or packages the native app. On Linux, use
-`bash scripts/tauri.sh dev|run|bundle`. Optional HTTP delivery reuses `@aphrody/app-ui` and
-requires `sd-server` for its `/rpc` and `/events` endpoints.
+`packages/app-ui` and `apps/aphrody-drive/core` are separately owned build inputs. The current
+checkout does not yet have a verified unified desktop command that builds the daemon, stages its
+target-suffixed Tauri sidecar, and packages the same Files UI on Windows and Linux. Keep daemon
+installation and launch qualification open until that end-to-end path is wired and run. WebOS
+uses the shared App UI through its own host adapter.
 
 The daemon's separate Cargo workspace is a dependency and FSL provenance boundary, not a separate
 product: `crates/aphrody-drive` is the only native bridge used by Aphrody's Files surface. Library
@@ -36,12 +39,13 @@ part of an interface change.
 
 ## Making changes
 
-1. Keep Rust operations and persisted data rules in `drive/core`. Regenerate the Specta client
+1. Keep Rust operations and persisted data rules in `apps/aphrody-drive/core`. Regenerate the Specta client
    after changing public types; avoid handwritten duplicates.
-2. Put shared controls and the Files UI in `../packages/m3-*` and `../packages/app-ui`. Keep
-   `SdPath`, daemon operations, generated client types and file actions in `drive/core`,
-   `drive/packages/ts-client` and `crates/aphrody-drive`. `drive/packages/interface` is an excluded
-   FSL reference mirror, not an active application package.
+2. Put shared controls and the Files UI in `packages/m3-*` and `packages/app-ui`. Keep
+   `SdPath`, daemon operations, generated client types and file actions in `apps/aphrody-drive/core`,
+   `packages/drive-client` and `crates/aphrody-drive`. The recovered upstream interface source is
+   in `docs/material/m3/reference/drive/packages/interface`, below the docs tree and outside the
+   active build graph.
 3. Implement desktop capabilities through `crates/aphrody-drive` and its explicit Tauri permissions.
    The Web client receives an HTTP adapter without native filesystem authority.
 4. Preserve the behavior of existing libraries and volumes, including historical cloud volumes.

@@ -56,7 +56,7 @@ Plugin rationale: `docs/tauri/plugins.md`. Integration design:
 
 ## Build, run and package on Windows
 
-[`@aphrody/app-ui`](../../../../material/packages/app-ui/) is the sole frontend source package. Bun builds it to ignored
+[`@aphrody/app-ui`](../../packages/app-ui/) is the sole frontend source package. Bun builds it to ignored
 `ui-dist/` before Tauri packages the CEF shell. It reuses the canonical
 `@aphrody/m3-theme/spaceui.css`, `@aphrody/m3-ai` and
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
@@ -64,28 +64,27 @@ local canonical font during this build.
 
 `ui-dist/index.html`, `app.js`, `app.css` and the SVGs under `ui-dist/fonts/` are committed.
 The binary assets of `ui-dist/fonts/` (webfonts, file-kind icons, sounds) are not: `build.rs`
-copies them from their single canonical packages (`material/packages/m3-fonts`, whose
-`fonts/upstream/material-symbols` also feeds aphrody-bun, and `material/packages/assets`) into `ui-dist/fonts/` before
+copies them from their single canonical packages (`packages/m3-fonts`, whose
+`fonts/upstream/material-symbols` also feeds aphrody-bun, and `packages/assets`) into `ui-dist/fonts/` before
 `tauri::generate_context!()` embeds the directory, as listed in `ui-dist.manifest`. A clean
 clone therefore builds with no staging command; `cargo test -p aphrody-app --test
 ui_dist_assets` checks that every listed file is staged byte-for-byte and that every font
 `app.css` loads is present. The shipped configuration (`--features custom-protocol`) fails the
 build if a source is missing; a plain `cargo check` only warns.
 
-The desktop build helper prefers the OS-owned FSL workspace at
-`crates/os/kernel/comps/drive/Cargo.toml` (or `APHRODY_DRIVE_WORKSPACE`) and falls back to
-the retained UI Drive workspace for standalone checkouts. It stages the daemon
-as a target-suffixed Tauri `externalBin` and copies it beside the unbundled executable
-for `run` and `dev`. The shipped Drive UI uses the existing explorer, search, sidebar, tabs and
-file actions through `aphrody-drive`; React Native/iOS/Android are outside this product target.
+The daemon source is owned by the nested FSL workspace at
+`apps/aphrody-drive/core/Cargo.toml`. `crates/aphrody-drive` locates it through
+`APHRODY_DRIVE_DAEMON`, beside the desktop executable, or on `PATH`. Although
+`tauri.drive.conf.json` declares an `externalBin`, the current unified build path has not yet
+been shown to build and stage that binary for each target. Keep bundled daemon startup and
+installed Files behavior as open release gates. The active Drive UI uses the shared explorer,
+search, sidebar, tabs, and file operations through `packages/app-ui`, `packages/m3-explorer`,
+and `packages/drive-client`; Android Files workflows still need integration and qualification.
 
 ```pwsh
 bun install --frozen-lockfile
-bun run --cwd ../material/packages/app-ui build
-bun run desktop:check
-bun run desktop:run
-bun run desktop:bundle                       # Windows: NSIS; Linux: deb, AppImage
-bun run desktop:bundle -- --bundles msi
+bun check packages/app-ui
+bun scripts/aphrody/build/rust/cargo-serial.ts check -p aphrody-app
 ```
 
 The same `bun run desktop:check|build|run|dev|bundle` entries serve Linux. They require the

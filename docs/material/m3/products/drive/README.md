@@ -1,5 +1,6 @@
-> Aphrody OS integration target: Windows, Linux and Web. The React Native/iOS/Android app is
-> retired here; the Aphrody Tauri shell in `../crates/aphrody-app` owns the desktop product.
+> Drive is part of the unified Bun OS product. Desktop and Web use the active App UI, M3
+> components and Drive client. The recovered SpaceDrive mobile source still needs its Files
+> workflows integrated into the Bun Android host and qualified; it remains in scope.
 > Historical upstream descriptions below document Spacedrive's origin.
 
 <p align="center">

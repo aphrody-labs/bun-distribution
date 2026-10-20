@@ -74,7 +74,7 @@ Plugin rationale: `docs/reference/ui/tauri/plugins.md`. Integration design:
 
 ## Build, run and package on Windows
 
-`../../packages/app-ui/` is the sole frontend source package. Bun builds it to ignored
+`packages/app-ui/` is the sole frontend source package. Bun builds it to ignored
 `ui-dist/` before Tauri packages the Wry shell. It reuses the canonical
 `@aphrody/m3-theme/spaceui.css`, `@aphrody/m3-ai` and
 `@aphrody/m3-primitives` surfaces. Material Symbols are copied from the one
@@ -90,25 +90,15 @@ ui_dist_assets` checks that every listed file is staged byte-for-byte and that e
 `app.css` loads is present. The shipped configuration (`--features custom-protocol`) fails the
 build if a source is missing; a plain `cargo check` only warns.
 
-The desktop build helper prefers the OS-owned FSL workspace at
-`../aphrody-os/drive/Cargo.toml` (or `APHRODY_DRIVE_WORKSPACE`) and falls back to
-the retained UI Drive workspace for standalone checkouts. It stages the daemon
-as a target-suffixed Tauri `externalBin` and copies it beside the unbundled executable
-for `run` and `dev`. The shipped Drive UI uses the existing explorer, search, sidebar, tabs and
-file actions through `aphrody-drive`; React Native/iOS/Android are outside this product target.
+The daemon source lives in `apps/aphrody-drive/core/Cargo.toml`, outside the root Cargo graph.
+`crates/aphrody-drive` locates it from `APHRODY_DRIVE_DAEMON`, beside the app executable, or on
+`PATH`. The checked-in `tauri.drive.conf.json` declares a sidecar, but no current unified build
+command has been verified to compile and stage it for each target. Treat sidecar packaging and
+installed startup as open gates. The Files surface already composes `packages/app-ui`,
+`packages/m3-explorer`, `packages/drive-client`, and the native bridge. Android Files workflows
+still need to be brought into the unified Android product and qualified.
 
-```pwsh
-bun install --frozen-lockfile
-bun run --cwd packages/app-ui build
-pwsh scripts/tauri.ps1 -Action check
-pwsh scripts/tauri.ps1 -Action run
-pwsh scripts/tauri.ps1 -Action bundle         # Windows: NSIS setup executable
-pwsh scripts/tauri.ps1 -Action bundle -Bundles msi
-```
-
-On Linux, use `bash scripts/tauri.sh check|build|run|dev|bundle`. Both helpers require the
-Drive Cargo graph and the OS Cargo graph to compile on the host. They fail when the daemon
-cannot be built, instead of delivering a desktop bundle with an empty Drive view.
-
-The PowerShell helper clears any user-level Rust compiler wrapper. The Tauri
-package command executes the same frontend build and does not load a CDN.
+The supported serialized Cargo entry point is
+`bun scripts/aphrody/build/rust/cargo-serial.ts`; qualification must run through the VPS factory.
+Keep a single cross-platform package command as an open delivery requirement until it bundles and
+launches `sd-daemon` with the same App UI on Windows and Linux.

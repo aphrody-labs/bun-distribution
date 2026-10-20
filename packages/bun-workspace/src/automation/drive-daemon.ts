@@ -26,7 +26,7 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
   if (!(await Bun.file(join(repo, "Cargo.toml")).exists())) {
     throw new Error(`Aphrody monorepo missing: ${repo}`);
   }
-  const driveWorkspace = join(repo, "crates", "os", "kernel", "comps", "drive");
+  const driveWorkspace = join(repo, "apps", "aphrody-drive", "core");
   const driveManifest = join(driveWorkspace, "Cargo.toml");
   if (!(await Bun.file(driveManifest).exists())) {
     throw new Error(`Drive workspace missing: ${driveManifest}`);
@@ -42,8 +42,11 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
     stdout: "pipe",
     stderr: "pipe",
   });
-  if (rustc.exitCode !== 0) throw new Error(new TextDecoder().decode(rustc.stderr));
-  const host = /^host: (.+)$/m.exec(new TextDecoder().decode(rustc.stdout))?.[1];
+  if (rustc.exitCode !== 0)
+    throw new Error(new TextDecoder().decode(rustc.stderr));
+  const host = /^host: (.+)$/m.exec(
+    new TextDecoder().decode(rustc.stdout),
+  )?.[1];
   if (!host) throw new Error("rustc did not report its host target");
   if (!host.includes("windows") && !host.includes("linux")) {
     throw new Error(`Aphrody Drive bundles only Windows and Linux: ${host}`);
@@ -57,7 +60,9 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
   }
   const command = [
     ...cargoSerialCommand(repo),
-    ...(windowsX64 ? ["--config", 'env.CFLAGS_x86_64_pc_windows_msvc.value="-W0 /arch:AVX2"'] : []),
+    ...(windowsX64
+      ? ["--config", 'env.CFLAGS_x86_64_pc_windows_msvc.value="-W0 /arch:AVX2"']
+      : []),
     "build",
     "--manifest-path",
     driveManifest,
@@ -80,11 +85,13 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
     stdout: "inherit",
     stderr: "inherit",
   });
-  if (build.exitCode !== 0) throw new Error(`Drive daemon build failed (${build.exitCode})`);
+  if (build.exitCode !== 0)
+    throw new Error(`Drive daemon build failed (${build.exitCode})`);
 
   const source = join(driveTarget, profile, `sd-daemon${suffix}`);
-  if (!(await stat(source)).isFile()) throw new Error(`Drive daemon binary missing: ${source}`);
-  const binaries = join(repo, "crates", "ui", "app", "binaries");
+  if (!(await stat(source)).isFile())
+    throw new Error(`Drive daemon binary missing: ${source}`);
+  const binaries = join(repo, "apps", "aphrody-app", "binaries");
   await mkdir(binaries, { recursive: true });
   const staged = join(binaries, `sd-daemon-${host}${suffix}`);
   await copyFile(source, staged);

@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody Drive vs upstream Spacedrive
 
-`drive/` is vendored from [spacedriveapp/spacedrive](https://github.com/spacedriveapp/spacedrive).
+`apps/aphrody-drive/` is the preserved Spacedrive daemon workspace from
+[spacedriveapp/spacedrive](https://github.com/spacedriveapp/spacedrive).
 Integration ownership: [`design/SPACEUI-SPACEDRIVE-MIGRATION.md`](../architecture/design/SPACEUI-SPACEDRIVE-MIGRATION.md).
 
 ## Imported revision
@@ -71,7 +72,7 @@ quarantine until a real model, failure path and index-time enforcement are quali
 
 | Area | Upstream | Aphrody | Rationale |
 | --- | --- | --- | --- |
-| `apps/tauri` (not in repo), `apps/mobile` (not in repo), `xtask` iOS/Android/mobile commands, `mobile` Cargo feature, `profile.mobile-dev` | Present | Removed | Desktop host is `crates/ui/app` (commit `6286df2`); mobile targets out of scope. No `feature = "mobile"` cfg remains. |
+| `apps/tauri`, `apps/mobile`, `xtask` iOS/Android/mobile commands, `mobile` Cargo feature, `profile.mobile-dev` | Present | Desktop bridge is integrated; upstream mobile flows still need reconciliation in the unified Bun Android host. | The old Spacedrive host was replaced by `apps/aphrody-app` and `crates/aphrody-drive`. Mobile remains in scope; preserve its source and qualify feature mapping before retiring it. |
 | `packages/assets` (not in repo) | In `drive/` | Moved to repository `packages/assets` (not in repo) (with `LICENSE.spacedrive`) | Consolidated vendor assets (commit `b4d69a4`); tsconfigs point there. |
 | `apps/web` (not in repo) Vite files, `packages/ts-client` (not in repo) Jest files, `bun.lockb`, `.nvmrc`, `.eslintignore` | Vite / Jest / old lockfile | Bun build and `bun test`, repository-level `bun.lock` | Bun-native toolchain. |
 | `packages/interface/src/Spacebot/routes/{Memories,Autonomy,Schedule}Route.tsx` | Routed | Dropped with their router entries; "coming soon" placeholders redirect to `/explorer` | No placeholder UI. |
