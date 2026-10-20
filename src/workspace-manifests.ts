@@ -34,7 +34,9 @@ export async function inspectWorkspaceManifests(root: string) {
     path: /^\s*path\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? "",
     repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2])?.[1].trim() ?? null,
   }));
-  const pins = staged.split("\0").filter(line => line.startsWith("160000 ")).map(line => {
+  const indexEntries = staged.split("\0").filter(Boolean);
+  const indexedPaths = indexEntries.map(line => line.slice(line.indexOf("\t") + 1));
+  const pins = indexEntries.filter(line => line.startsWith("160000 ")).map(line => {
     const tab = line.indexOf("\t");
     return { path: line.slice(tab + 1), revision: line.slice(7, 47) };
   });
@@ -69,13 +71,49 @@ export async function inspectWorkspaceManifests(root: string) {
     ...(cargoWorkspace.members ?? []).filter(pattern => !manifests.some(item => item.type === "cargo" && matches(String(item.directory), [pattern]))).map(path => ({ type: "cargo", path })),
     ...bunMembers.filter(pattern => !manifests.some(item => item.type === "bun-package" && matches(String(item.directory), [pattern]))).map(path => ({ type: "bun-package", path })),
   ];
-  const vendorRoots = [...new Set([...paths, ...submodules.map(item => item.path)].filter(path => path.startsWith("vendor/")).map(path => path.split("/").slice(0, 2).join("/")))].sort();
+  // Vendor payloads need not contain a Cargo or package manifest (archives, fonts,
+  // SDK headers). Include every root-index path rather than only parsed manifests.
+  const vendorRoots = [...new Set([...indexedPaths, ...paths, ...submodules.map(item => item.path)].filter(path => path.startsWith("vendor/")).map(path => path.split("/").slice(0, 2).join("/")))].sort();
+  const consumerSearch = await runProcess([
+    "git", "-c", "core.fsmonitor=false", "grep", "-n", "-I", "-F", "-e", "vendor/", "--", ".",
+    ":(exclude)vendor", ":(exclude)toolchains", ":(exclude)docs", ":(exclude)Cargo.lock", ":(exclude)bun.lock",
+  ], root, {
+    timeoutMs: 30_000,
+    maxOutputBytes: 32 * 1024 * 1024,
+    env: { ...Bun.env, GIT_OPTIONAL_LOCKS: "0", GIT_NO_LAZY_FETCH: "1", GIT_TERMINAL_PROMPT: "0" },
+  });
+  if (consumerSearch.code !== 0 && consumerSearch.code !== 1)
+    throw new Error(`Cannot inspect vendor consumers: ${consumerSearch.stderr}`);
+  const references = consumerSearch.stdout.split("\n").flatMap(line => {
+    const match = /^(.+?):(\d+):(.*)$/.exec(line);
+    if (!match) return [];
+    return [{ file: match[1], line: Number(match[2]), text: match[3] }];
+  });
+  const vendorInventory = vendorRoots.map(path => {
+    const consumers = references.filter(reference => {
+      let offset = reference.text.indexOf(path);
+      while (offset >= 0) {
+        const next = reference.text[offset + path.length];
+        if (!next || !/[\w.-]/.test(next)) return true;
+        offset = reference.text.indexOf(path, offset + path.length);
+      }
+      return false;
+    }).map(({ file, line }) => ({ file, line, kind: file === ".gitmodules" || file === "sources.lock.json" ? "source-declaration" : "potential-consumer" }));
+    return {
+      path,
+      submodule: submodules.some(item => item.path === path || item.path.startsWith(`${path}/`)),
+      references: consumers,
+      potentialConsumerReferences: consumers.filter(reference => reference.kind === "potential-consumer").length,
+      disposition: "retained-pending-consumer-and-provenance-review",
+    };
+  });
   return {
     schemaVersion: 1,
     coverage: "Current tracked manifests in root and initialized submodules, plus nonignored untracked root manifests. Uninitialized sources are reported without inventing their manifests.",
     counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, submodules: submodules.length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
     manifests, submodules, missingMembers, failures,
     undeclaredGitlinks: pins.filter(pin => !declarations.some(item => item.path === pin.path)),
-    vendorRoots: vendorRoots.map(path => ({ path, submodule: submodules.some(item => item.path === path), disposition: "retained-pending-consumer-and-provenance-review" })),
+    vendorConsumerCoverage: "Literal forward-slash paths in tracked root text files, excluding vendor, toolchains, docs and lockfiles. References are candidates, not proven runtime consumers; absent references do not prove a vendor removable.",
+    vendorRoots: vendorInventory,
   };
 }
