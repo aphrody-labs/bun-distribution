@@ -9,8 +9,8 @@
 
 //! Small, reusable egui components for the Craft frontends.
 //!
-//! Applications own their assets, themes, layouts, commands and document semantics. Components
-//! accept focused style values and return egui responses; no application engine is required.
+//! Applications own their layouts, commands and document semantics. Shared chrome derives
+//! from Aphrody identity and M3 through [`theme::aphrody`]; no application engine is required.
 
 pub mod buttons;
 pub mod docking;
