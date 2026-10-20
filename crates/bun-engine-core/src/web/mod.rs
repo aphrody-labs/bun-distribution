@@ -203,10 +203,28 @@ struct Shared {
     system: &'static str,
     gpu_rendering: bool,
     gpu_submitted_frames: u64,
+    gpu2d_submitted_frames: u64,
+    gpu3d_submitted_frames: u64,
 }
 
 #[derive(Resource, Clone)]
 struct Page(Arc<Mutex<Shared>>);
+
+/// Keep renderer failures observable through the page handle instead of only console logs.
+fn render_error(
+    error: &crate::bevy::render::error_handler::RenderError,
+    world: &mut World,
+    _render_world: &mut World,
+) -> crate::bevy::render::error_handler::RenderErrorPolicy {
+    if let Some(page) = world.get_resource::<Page>() {
+        page.0.lock().unwrap().stopped = Some(format!(
+            "WebGPU {:?}: {}",
+            error.ty, error.description,
+        ));
+    }
+    world.write_message(AppExit::error());
+    crate::bevy::render::error_handler::RenderErrorPolicy::StopRendering
+}
 
 /// Dust must be built after Bevy's asynchronous browser renderer has supplied its device.
 #[cfg(feature = "nds-gpu")]
@@ -271,6 +289,8 @@ fn page_status(
         shared.gpu_rendering = slot.0.gpu_rendering();
         if let Some(frame) = slot.0.gpu_frame() {
             shared.gpu_submitted_frames = frame.submitted_frames;
+            shared.gpu2d_submitted_frames = frame.gpu2d_submitted_frames;
+            shared.gpu3d_submitted_frames = frame.gpu3d_submitted_frames;
         }
     }
     if status.frames > 0 && shared.first_frame_ms.is_none() {
@@ -326,6 +346,14 @@ pub fn start(
     options: JsValue,
 ) -> Result<Emulator, JsError> {
     let started_at = js_sys::Date::now();
+    let navigator = Reflect::get(&js_sys::global(), &"navigator".into())
+        .unwrap_or(JsValue::UNDEFINED);
+    let gpu = Reflect::get(&navigator, &"gpu".into()).unwrap_or(JsValue::UNDEFINED);
+    if gpu.is_null() || gpu.is_undefined() {
+        return Err(JsError::new(
+            "WebGPU is unavailable: use a WebGPU-capable browser in a secure HTTPS or localhost context",
+        ));
+    }
     let system: String = option::<js_sys::JsString>(&options, "system")
         .map(String::from)
         .ok_or_else(|| JsError::new("options.system is required (nds, 3ds, nes, gba, psx)"))?;
@@ -391,6 +419,7 @@ pub fn start(
         ..BunEnginePlugin::windowed("Bun Engine")
     })
     .insert_resource(Page(shared.clone()))
+    .insert_resource(crate::bevy::render::error_handler::RenderErrorHandler(render_error))
     .add_systems(PreUpdate, page_keys.before(EngineSystems::Input))
     .add_systems(
         RunFixedMainLoop,
@@ -464,10 +493,22 @@ impl Emulator {
         "webgpu".into()
     }
 
-    /// Actual Dust 3D command submissions, independently from presentation frames.
+    /// Actual Dust 2D and 3D command submissions, independently from presentation frames.
     #[wasm_bindgen(getter)]
     pub fn gpu_submitted_frames(&self) -> f64 {
         self.shared.lock().unwrap().gpu_submitted_frames as f64
+    }
+
+    /// Actual Dust 2D queue submissions.
+    #[wasm_bindgen(getter)]
+    pub fn gpu2d_submitted_frames(&self) -> f64 {
+        self.shared.lock().unwrap().gpu2d_submitted_frames as f64
+    }
+
+    /// Actual Dust 3D queue submissions; a purely 2D title can correctly report zero.
+    #[wasm_bindgen(getter)]
+    pub fn gpu3d_submitted_frames(&self) -> f64 {
+        self.shared.lock().unwrap().gpu3d_submitted_frames as f64
     }
 
     #[wasm_bindgen(getter)]

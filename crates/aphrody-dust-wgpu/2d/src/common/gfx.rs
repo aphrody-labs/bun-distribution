@@ -144,6 +144,7 @@ impl FrontendChannels {
 pub struct SharedData {
     stopped: AtomicBool,
     resolution_scale_shift: AtomicU8,
+    submitted_frames: AtomicU64,
 }
 
 impl SharedData {
@@ -151,11 +152,15 @@ impl SharedData {
         SharedData {
             stopped: AtomicBool::new(false),
             resolution_scale_shift: AtomicU8::new(resolution_scale_shift),
+            submitted_frames: AtomicU64::new(0),
         }
     }
 
     pub fn set_resolution_scale_shift(&self, value: u8) {
         self.resolution_scale_shift.store(value, Ordering::Relaxed);
+    }
+    pub fn submitted_frames(&self) -> u64 {
+        self.submitted_frames.load(Ordering::Acquire)
     }
 }
 
@@ -880,6 +885,7 @@ impl GfxThreadData {
             // }
 
             self.queue.submit([command_encoder.finish()]);
+            self.shared_data.submitted_frames.fetch_add(1, Ordering::Release);
             true
         } else {
             false

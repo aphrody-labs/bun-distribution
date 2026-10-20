@@ -25,7 +25,7 @@ use crate::{machine::{GpuFrame, Machine}, runtime::EngineSystems};
 pub(super) struct MachineGpuImage {
     image: Handle<Image>,
     gpu: GpuImage,
-    /// Counts actual 3D renderer submissions, not sprite refreshes.
+    /// Counts actual 2D and 3D renderer submissions, not sprite refreshes.
     pub submitted_frames: u64,
 }
 

@@ -19,10 +19,10 @@ export async function prepareAuthorizedContent(archiveOverride?: string) {
 
   // The root build owner may deliberately be a symlink. Resolve it once; reject
   // symlinks in the dedicated staging subtree and refuse to replace content.
-  await mkdir(join(root, "build"), { recursive: true });
-  const build = await realpath(join(root, "build"));
+  await mkdir(join(root, "build", "web-emulation"), { recursive: true });
+  const build = await realpath(join(root, "build", "web-emulation"));
   let outputDirectory = build;
-  for (const part of ["web-emulation", "authorized-content"]) {
+  for (const part of ["authorized-content"]) {
     outputDirectory = join(outputDirectory, part);
     await mkdir(outputDirectory, { recursive: true });
     const stat = await lstat(outputDirectory);

@@ -12,6 +12,9 @@ export interface QualificationResult {
   lit: boolean;
   hash: string;
   errors: string[];
+  renderer: string;
+  gpu2d_submitted_frames: number;
+  gpu3d_submitted_frames: number;
 }
 export interface WasmQualificationReceipt {
   schemaVersion: 1;
@@ -91,6 +94,8 @@ async function checkFixtures(dist: string, fixtures: QualificationFixture[], roo
 function checkResult(result: QualificationResult) {
   if (result?.ok !== true || !Number.isFinite(result.frames) || result.frames < 120 || result.lit !== true || !/^[a-f0-9]+$/i.test(result.hash) || !Array.isArray(result.errors) || result.errors.length)
     throw new Error("WASM qualification requires 120 lit frames, a frame hash and no errors");
+  if (typeof result.renderer !== "string" || !result.renderer || ![result.gpu2d_submitted_frames, result.gpu3d_submitted_frames].every(n => Number.isSafeInteger(n) && n >= 0)) throw new Error("Qualification is missing actual renderer/submission evidence");
+  if (result.renderer === "wgpu30-dust" && result.gpu2d_submitted_frames < 1) throw new Error("Dust GPU qualification requires actual 2D GPU submissions");
 }
 export async function createQualificationSnapshot(dist: string, core: string, fixtures: QualificationFixture[], options: { root?: string; variant?: "single" | "threads" } = {}): Promise<Omit<WasmQualificationReceipt, "testedAt" | "result">> {
   const root = options.root ?? defaultRoot;
@@ -113,6 +118,7 @@ export async function createQualificationSnapshot(dist: string, core: string, fi
 }
 export async function writeQualification(dist: string, snapshot: Omit<WasmQualificationReceipt, "testedAt" | "result">, result: QualificationResult): Promise<WasmQualificationReceipt> {
   checkResult(result);
+  if (snapshot.core === "dust-nds" && result.renderer !== "wgpu30-dust") throw new Error("Dust distribution qualification must exercise its GPU renderer");
   const current = await snapshotFiles(dist, snapshot.core, snapshot.fixtures);
   if (snapshot.files["firmware/firmware.json"]) current["firmware/firmware.json"] = await qualificationSHA256(join(dist, "firmware/firmware.json"));
   if (JSON.stringify(current) !== JSON.stringify(snapshot.files)) throw new Error("WASM qualification inputs changed during browser run");
@@ -126,6 +132,7 @@ export async function verifyQualification(dist: string, core: string, options: {
   const receipt = await Bun.file(join(dist, core, "qualification.json")).json() as WasmQualificationReceipt;
   if (receipt.schemaVersion !== 1 || receipt.kind !== "bun-engine-wasm-qualification" || receipt.core !== core || !/^[a-f0-9]{40}$/.test(receipt.sourceRevision) || !Number.isFinite(Date.parse(receipt.testedAt))) throw new Error(`${core}: invalid qualification receipt`);
   checkResult(receipt.result);
+  if (core === "dust-nds" && receipt.result.renderer !== "wgpu30-dust") throw new Error("Dust distribution qualification must exercise its GPU renderer");
   if (receipt.lockSHA256 !== await qualificationSHA256(join(root, "packages/bun-engine/web-emulation/web-emulation.lock.json"))) throw new Error(`${core}: stale qualification lock`);
   const manifest = await Bun.file(join(dist, core, "manifest.json")).json();
   const selected = selectedVariant(manifest, receipt.variant);

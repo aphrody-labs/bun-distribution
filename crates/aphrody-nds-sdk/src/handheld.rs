@@ -67,8 +67,10 @@ pub struct GpuFrame {
     pub view: aphrody_dust_wgpu::wgpu::TextureView,
     pub width: u32,
     pub height: u32,
-    /// 3D command submissions, independent from presentation refreshes.
+    /// Actual 2D plus 3D command submissions, independent from presentation refreshes.
     pub submitted_frames: u64,
+    pub gpu2d_submitted_frames: u64,
+    pub gpu3d_submitted_frames: u64,
 }
 
 /// How a frame ended.

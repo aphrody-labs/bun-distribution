@@ -150,6 +150,9 @@ pub struct FrontendChannels {
 }
 
 impl FrontendChannels {
+    pub fn submitted_frames(&self) -> u64 {
+        self.common_shared_data.submitted_frames()
+    }
     pub fn new_color_output_view(&self) -> Option<crate::wgpu::TextureView> {
         self.common.new_color_output_view()
     }

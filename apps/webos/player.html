@@ -33,7 +33,7 @@
 <script type="module">
   const $ = id => document.getElementById(id);
   const msg = $("msg");
-  let manifest, variant, product, mod, readyOK = false, started = false;
+  let manifest, variant, product, mod, testedRenderer, readyOK = false, started = false;
   async function json(path) {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Missing player resource (${response.status})`);
@@ -51,6 +51,9 @@
     if (!["single", "threads"].includes(receipt.variant)) throw new Error("Missing qualified emulator variant.");
     variant = receipt.variant === "threads" ? manifest.variants?.threads : manifest;
     if (!variant) throw new Error("The qualified emulator variant is missing.");
+    if (!receipt.result?.renderer) throw new Error("The qualification does not identify its tested renderer.");
+    testedRenderer = receipt.result.renderer === "wgpu30-dust" ? "gpu" : receipt.result.renderer === "software" ? "software" : undefined;
+    if (product.core === "dust-nds" && testedRenderer !== "gpu") throw new Error("Dust requires a GPU-qualified package.");
     $("title").textContent = manifest.name;
     $("file").accept = manifest.extensions.join(",");
     if (variant.threads && !globalThis.crossOriginIsolated) throw new Error("This emulator needs a cross-origin isolated page for shared memory.");
@@ -68,7 +71,7 @@
       msg.style.color = "";
       msg.textContent = "Starting…";
       const rom = new Uint8Array(await file.arrayBuffer());
-      const options = { system: manifest.systems[0], audio: true };
+      const options = { system: manifest.systems[0], audio: true, ...(testedRenderer ? { renderer: testedRenderer } : {}) };
       if (manifest.firmware?.length) {
         if (manifest.firmware.length !== 1) throw new Error("This player requires a single registered BIOS component.");
         const { loadFreeFirmware } = await import("./payload/runtime/firmware.js");

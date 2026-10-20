@@ -435,11 +435,15 @@ impl Handheld for Nds {
     fn gpu_frame(&mut self) -> Option<crate::GpuFrame> {
         let gpu = self.gpu.as_mut()?;
         if let Some(view) = gpu.two_d.new_color_output_view() { gpu.view = view; }
+        let gpu2d_submitted_frames = gpu.two_d.submitted_frames();
+        let gpu3d_submitted_frames = gpu.three_d.submitted_frames();
         Some(crate::GpuFrame {
             texture: gpu.view.texture().clone(),
             view: gpu.view.clone(), width: WIDTH << gpu.scale_shift,
             height: (HEIGHT * 2) << gpu.scale_shift,
-            submitted_frames: gpu.three_d.submitted_frames(),
+            submitted_frames: gpu2d_submitted_frames.saturating_add(gpu3d_submitted_frames),
+            gpu2d_submitted_frames,
+            gpu3d_submitted_frames,
         })
     }
 

@@ -40,7 +40,8 @@
     await mod.default({ module_or_path: `/emulation/${core}/${variant.wasm}` });
     t.instantiate = performance.now();
     const system = params.get("system") ?? manifest.systems[0];
-    const options = { system, audio: params.get("audio") !== "0" };
+    const gpu = params.get("renderer") === "gpu";
+    const options = { system, audio: params.get("audio") !== "0", renderer: gpu ? "gpu" : "software" };
     if (params.get("firmware")) {
       const { loadFreeFirmware } = await import("/emulation/runtime/firmware.js");
       const firmware = await loadFreeFirmware(params.get("firmware"), { Verifier: mod.FirmwareVerifier });
@@ -66,10 +67,13 @@
     }
     const done = performance.now();
     const result = {
-      ok: handle.frames >= frames && handle.lit && !handle.stopped && errors.length === 0,
+      ok: handle.frames >= frames && (gpu ? handle.renderer === "wgpu30-dust" && handle.gpu2d_submitted_frames > 0 && (params.get("require3d") !== "1" || handle.gpu3d_submitted_frames > 0) : handle.lit) && !handle.stopped && errors.length === 0,
       core, system, threads: variant.threads === true,
       frames: handle.frames, hash: handle.frame_hash, lit: handle.lit,
       renderer: handle.renderer, audio: handle.audio, stopped: handle.stopped ?? null,
+      gpu_submitted_frames: handle.gpu_submitted_frames ?? 0,
+      gpu2d_submitted_frames: handle.gpu2d_submitted_frames ?? 0,
+      gpu3d_submitted_frames: handle.gpu3d_submitted_frames ?? 0,
       crossOriginIsolated,
       ms: {
         manifest: t.manifest - t.begin, instantiate: t.instantiate - t.manifest,
