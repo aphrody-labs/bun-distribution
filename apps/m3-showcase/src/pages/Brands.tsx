@@ -14,9 +14,6 @@ import {
 } from "@aphrody/canvas/browser";
 import { getIcon } from "@aphrody/assets/util";
 import { useM3Theme } from "@aphrody/m3-theme/react";
-import rgTokens, {
-  resolved as rgResolved,
-} from "m3:optional/@rosegriffon/ui/tokens";
 import shenronTokens, {
   resolved as shenronResolved,
 } from "m3:optional/@shenron/ui/tokens";
@@ -25,7 +22,6 @@ import { Card, Code, Page, Section } from "../components/ui.tsx";
 import type { PageProps } from "./index.ts";
 
 const kits = [
-  { name: "@rosegriffon/ui/tokens", resolved: rgResolved, namespace: rgTokens },
   {
     name: "@shenron/ui/tokens",
     resolved: shenronResolved,

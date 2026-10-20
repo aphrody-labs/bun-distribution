@@ -201,8 +201,8 @@
   "dependencies": {
     "@aphrody/runtime-sdk": "catalog:",
     "@leeoniya/ufuzzy": "catalog:",
-    "@rosegriffon/assets": "workspace:*",
-    "@rosegriffon/db": "workspace:*",
+    "@rosegriffon/assets": "catalog:",
+    "@rosegriffon/db": "catalog:",
     "cheerio": "catalog:",
     "commander": "catalog:",
     "dotenv": "catalog:",

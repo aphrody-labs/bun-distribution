@@ -15,14 +15,20 @@
   },
   "applications": {
     "rg": {
-      "role": "canonical-platform",
+      "role": "externally-owned-product",
+      "sourceRepository": "https://github.com/aphrody-labs/rosegriffon",
+      "binaryDistribution": {
+        "workflow": "https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml",
+        "releases": "https://github.com/aphrody-labs/rosegriffon/releases",
+        "targets": ["linux-x64", "windows-x64"],
+        "artifacts": ["rosegriffon-linux-x64", "rosegriffon-windows-x64.exe", "SHA256SUMS"],
+        "latestReleaseAvailable": false,
+        "checkedAt": "2026-10-20"
+      },
       "website": {
-        "runtime": "next-bun",
-        "package": "@rosegriffon/website",
-        "ui": "@rosegriffon/ui (site repository; removed from m3 on 2026-10-09)",
-        "shell": "@rosegriffon/app-shell",
-        "auth": "@rosegriffon/auth",
-        "api": "@rosegriffon/achillea-client"
+        "runtime": "rosegriffon tagged-release binary",
+        "source": "apps/rg-website in aphrody-labs/rosegriffon",
+        "libraries": ["@rosegriffon/assets", "@rosegriffon/config", "@rosegriffon/i18n"]
       },
       "api": {
         "runtime": "vercel-function-bun-elysia",

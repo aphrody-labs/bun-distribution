@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*",
-    "@rosegriffon/i18n": "workspace:*"
+    "@rosegriffon/i18n": "catalog:"
   },
   "engines": {
     "bun": "=1.4.4"

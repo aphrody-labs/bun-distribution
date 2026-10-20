@@ -47,7 +47,6 @@ members = [
   "crates/aphrody-ovh",
   "crates/aphrody-infra",
   "crates/aphrody-discord",
-  "crates/aphrody-rg-server",
   "crates/aphrody-certificates",
   "crates/aphrody-command-wasm",
   "crates/aphrody-command-pure",

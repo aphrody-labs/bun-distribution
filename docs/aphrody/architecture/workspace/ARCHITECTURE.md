@@ -38,7 +38,7 @@ history under `upstream/`.
 | CLI | [Command owner](../../../../crates/aphrody-command): argument handling and invocation of capability owners |
 | Infra and Workspace | [Workspace implementation](../../../../packages/bun-workspace), [root Infra configuration](../../../../infra/config): inventories, orchestration and operations within Bun OS |
 | UI | [M3](../../../../packages/m3), [App UI](../../../../packages/app-ui): canonical flat source owners, not a sibling product |
-| RG contracts | [Auth](../../../../packages/rg-auth), [DB](../../../../packages/rg-db): application-domain contracts within the unified product |
+| RG contracts | [Auth](https://github.com/aphrody-labs/rosegriffon/tree/main/packages/rg-auth), [DB](https://github.com/aphrody-labs/rosegriffon/tree/main/packages/rg-db): owned by the separate Rose Griffon workspace |
 | Shenron contracts | [Auth](../../../../packages/shenron-auth), [DB](../../../../packages/shenron-db), [Admin UI](../../../../packages/admin-ui): restored owners; missing host adapters and production qualification remain explicit |
 
 This is a verified source navigation subset, not an exhaustive qualification

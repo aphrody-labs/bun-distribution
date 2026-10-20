@@ -2467,13 +2467,13 @@
       "path": null,
       "type": "documentation",
       "source": {
-        "repository": "aphrody-labs/iecode",
-        "visibility": "private",
-        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
-        "path": "docs/rg (98), .agents/skills/rose-griffon"
+        "repository": "aphrody-labs/rosegriffon",
+        "visibility": "public",
+        "revision": "0d68a2e6dece2deec223b2d8b75de5a97daa993c",
+        "path": "docs/rg"
       },
-      "migrationState": "out-of-scope",
-      "notes": "Rose Griffon documentation and skill belong to aphrody-labs/rosegriffon (89 of 98 files present in its docs/); the 9 other files and the skill have no counterpart there and stay in the source repository"
+      "migrationState": "migrated",
+      "notes": "Rose Griffon product documentation is owned by the canonical repository; Bun OS keeps only this ownership and binary handoff reference."
     },
     {
       "submodule": null,
@@ -2481,13 +2481,13 @@
       "path": "apps/rg-bot, apps/rg-website, apps/azalee-web, packages/rg-*, packages/achillea-*, packages/azalee",
       "type": "bun-apps",
       "source": {
-        "repository": "aphrody-labs/iecode",
-        "visibility": "private",
-        "revision": "d9b2f51008fe1b0da5626ec462f328b57d60b18c",
-        "path": "apps/rg, packages/rg, packages/azalee, packages/nie-ui/apps/azalee-web"
+        "repository": "aphrody-labs/rosegriffon",
+        "visibility": "public",
+        "revision": "0d68a2e6dece2deec223b2d8b75de5a97daa993c",
+        "path": "apps/rg-website, apps/rg-bot, apps/azalee-web, packages/rg-*, packages/achillea-*, packages/azalee, crates/aphrody-rg-server"
       },
-      "migrationState": "out-of-scope",
-      "notes": "owned by the aphrody-labs/rosegriffon extraction"
+      "migrationState": "migrated",
+      "notes": "The canonical source and history live in aphrody-labs/rosegriffon. Bun OS no longer carries these copies; packages/inagle and packages/inagle-cross remain Bun OS owners."
     },
     {
       "submodule": null,

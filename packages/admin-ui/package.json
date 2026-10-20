@@ -161,7 +161,7 @@
     "typecheck": "bun check -p tsconfig.json --threads=2 --no-pretty"
   },
   "dependencies": {
-    "@rosegriffon/config": "workspace:*",
+    "@rosegriffon/config": "catalog:",
     "@shenron/db": "workspace:*",
     "@shenron/ui": "workspace:*",
     "@tanstack/react-query": "catalog:",

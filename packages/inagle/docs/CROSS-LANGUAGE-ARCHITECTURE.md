@@ -11,7 +11,7 @@
 +---------------------------------------------------------------------------------+
 |                       USER INTERFACES & WORKSPACE CONSUMERS                     |
 |  - CLI: `inagle <command>`                                                      |
-|  - Web Application: `packages/azalee` (Zukan Explorer)                         |
+|  - Web Application: `apps/azalee-web` in aphrody-labs/rosegriffon                 |
 |  - Shared Components: `packages/ieverse`                                       |
 +---------------------------------------+-----------------------------------------+
                                         |

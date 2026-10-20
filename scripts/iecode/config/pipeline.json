@@ -43,28 +43,6 @@
       ]
     },
     {
-      "id": "bun-azalee",
-      "parallel": false,
-      "steps": [
-        {
-          "repo": "iecode",
-          "command": ["run", "--filter", "@rosegriffon/azalee", "lint"]
-        },
-        {
-          "repo": "iecode",
-          "command": ["run", "--filter", "@rosegriffon/azalee", "typecheck"]
-        },
-        {
-          "repo": "iecode",
-          "command": ["run", "--filter", "@rosegriffon/azalee", "test"]
-        },
-        {
-          "repo": "iecode",
-          "command": ["run", "--filter", "@rosegriffon/azalee", "build"]
-        }
-      ]
-    },
-    {
       "id": "bun-iecode-homebrew",
       "parallel": false,
       "steps": [

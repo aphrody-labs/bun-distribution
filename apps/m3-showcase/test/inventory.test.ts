@@ -9,7 +9,7 @@ test("inventory requires declared membership for every physical app and package"
   const root = mkdtempSync(join(tmpdir(), "showcase-inventory-"));
   try {
     const admitted = ["apps/declared", "packages/declared"];
-    const unadmitted = ["apps/m3-showcase", "packages/admin-ui", "packages/rg-ui", "packages/shenron-ui"];
+    const unadmitted = ["apps/m3-showcase", "packages/admin-ui", "packages/shenron-ui"];
     for (const path of [...admitted, ...unadmitted]) {
       mkdirSync(join(root, path), { recursive: true });
       writeFileSync(join(root, path, "package.json"), JSON.stringify({ name: path }));

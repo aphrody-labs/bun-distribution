@@ -1,8 +1,0 @@
-{
-  "extends": "../rg-config/tsconfig-nextjs.json",
-  "compilerOptions": {
-    "types": ["bun"]
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
-}

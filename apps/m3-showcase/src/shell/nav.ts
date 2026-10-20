@@ -183,7 +183,6 @@ export const DESTINATIONS: readonly Destination[] = [
     summary:
       "Host-bound UI kits where they resolve, the identity set, canvas and assets.",
     packages: [
-      "@rosegriffon/ui",
       "@shenron/ui",
       "@aphrody/nie-ui",
       "@aphrody/identity",

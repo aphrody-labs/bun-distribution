@@ -2,9 +2,9 @@
 /**
  * Checkout roots shared by the inagle/azalee CLIs and maintenance scripts.
  *
- * IECODE owns the IEVR packages and game data; the Rose Griffon website and bot
- * live in the Aphrody monorepo (`apps/rg-website`, `apps/rg-bot`). Both are
- * sibling checkouts (`../iecode` and `../aphrody`). Environment overrides keep
+ * Bun OS owns the IEVR libraries and game data; Rose Griffon product apps live
+ * in the separate `aphrody-labs/rosegriffon` repository. The checkouts are
+ * siblings (`../iecode` and `../rosegriffon`). Environment overrides keep
  * relocated or legacy checkouts working without hard-coded host paths.
  */
 
@@ -48,15 +48,15 @@ export function iecodeDataPath(...parts: string[]): string {
   return path.join(iecodeDataRoot(), ...parts);
 }
 
-/** Rose Griffon source root: the Aphrody monorepo sibling or a legacy RG checkout. */
+/** Rose Griffon source root: the canonical repository sibling or a legacy checkout. */
 export function rgRoot(): string {
-  return firstEnv(["APHRODY_RG_ROOT", "RG_REPO_ROOT", "APHRODY_ROOT"]) ?? path.resolve(iecodeRoot(), "../aphrody");
+  return firstEnv(["APHRODY_RG_ROOT", "RG_REPO_ROOT"]) ?? path.resolve(iecodeRoot(), "../rosegriffon");
 }
 
-/** Rose Griffon website root (`apps/rg-website` in Aphrody, `apps/website` in legacy RG). */
+/** Rose Griffon website root in the canonical repository, with the old layout as a fallback. */
 export function rgWebsiteRoot(): string {
   const root = rgRoot();
-  const current = path.join(root, "apps", "rg", "website");
+  const current = path.join(root, "apps", "rg-website");
   const legacy = path.join(root, "apps", "website");
   return existsSync(current) || !existsSync(legacy) ? current : legacy;
 }

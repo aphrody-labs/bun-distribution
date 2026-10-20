@@ -67,7 +67,7 @@
   },
   "devDependencies": {
     "@aphrody/bun-workspace": "workspace:*",
-    "@rosegriffon/config": "workspace:*",
+    "@rosegriffon/config": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

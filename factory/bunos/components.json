@@ -447,7 +447,7 @@
         "apps": "factory/bunos/webapps.json"
       },
       "build": "bun run build per app; static dist served on 127.0.0.1 by bunos-webapp, one .desktop per app",
-      "remainingApps": "Next.js apps (azalee-web, rg-website), rg-bot and iecode-web need a server or wasm launcher contract"
+      "remainingApps": "IECODE web apps need a server or WASM launcher contract. Rose Griffon is maintained in aphrody-labs/rosegriffon and publishes its self-hosted binaries there."
     },
     {
       "id": "bun-engine",

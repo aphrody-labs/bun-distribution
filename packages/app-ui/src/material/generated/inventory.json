@@ -12,7 +12,7 @@
   },
   {
     "name": "@aphrody/admin-ui",
-    "version": "0.1.0",
+    "version": "1.4.4",
     "description": "Canonical Aphrody M3 administration, served by the existing authenticated Shenron web host",
     "dir": "packages/admin-ui",
     "kind": "package",
@@ -23,7 +23,7 @@
   },
   {
     "name": "@aphrody/ag-ui",
-    "version": "1.0.1",
+    "version": "1.4.4",
     "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
     "dir": "packages/ag-ui",
     "kind": "package",
@@ -34,7 +34,7 @@
   },
   {
     "name": "@aphrody/android-web",
-    "version": "0.1.0",
+    "version": "1.4.4",
     "description": "",
     "dir": "packages/android-web",
     "kind": "package",
@@ -45,18 +45,18 @@
   },
   {
     "name": "@aphrody/app-ui",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "",
     "dir": "packages/app-ui",
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 4,
+    "exports": 5,
     "bin": []
   },
   {
     "name": "@aphrody/assets",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI'",
     "dir": "packages/assets",
     "kind": "package",
@@ -85,7 +85,9 @@
     "workspace": true,
     "private": true,
     "exports": 3,
-    "bin": ["bun-android"]
+    "bin": [
+      "bun-android"
+    ]
   },
   {
     "name": "@aphrody/bun-app-host",
@@ -96,7 +98,9 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": ["aphrody-server"]
+    "bin": [
+      "aphrody-server"
+    ]
   },
   {
     "name": "@aphrody/bun-arch-mcp",
@@ -107,7 +111,10 @@
     "workspace": true,
     "private": true,
     "exports": 2,
-    "bin": ["bun-arch-mcp", "bun-arch-docs"]
+    "bin": [
+      "bun-arch-docs",
+      "bun-arch-mcp"
+    ]
   },
   {
     "name": "@aphrody/bun-artifacts",
@@ -118,7 +125,9 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": ["aphrody-artifacts"]
+    "bin": [
+      "aphrody-artifacts"
+    ]
   },
   {
     "name": "@aphrody/bun-blender",
@@ -129,7 +138,10 @@
     "workspace": true,
     "private": true,
     "exports": 4,
-    "bin": ["bun-blender", "bun-blender-mcp"]
+    "bin": [
+      "bun-blender",
+      "bun-blender-mcp"
+    ]
   },
   {
     "name": "@aphrody/bun-desktop",
@@ -143,6 +155,19 @@
     "bin": []
   },
   {
+    "name": "@aphrody/bun-emu-host",
+    "version": "1.4.4",
+    "description": "",
+    "dir": "packages/bun-emu-host",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 1,
+    "bin": [
+      "bun-emu-host"
+    ]
+  },
+  {
     "name": "@aphrody/bun-engine",
     "version": "1.4.4",
     "description": "",
@@ -150,18 +175,33 @@
     "kind": "package",
     "workspace": true,
     "private": true,
-    "exports": 0,
-    "bin": ["bep", "bun-engine"]
+    "exports": 3,
+    "bin": [
+      "bep",
+      "bun-engine",
+      "bun-engine-formats"
+    ]
   },
   {
     "name": "@aphrody/bun-engine-android",
-    "version": "0.1.0",
+    "version": "1.4.4",
     "description": "",
     "dir": "packages/android-pipeline",
     "kind": "package",
     "workspace": true,
     "private": false,
     "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/bun-gamestream",
+    "version": "1.4.4",
+    "description": "Bun OS game streaming client: Bun.serve signalling, WebRTC receive, WebGPU FSR1 upscaling and input capture",
+    "dir": "packages/bun-gamestream",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 2,
     "bin": []
   },
   {
@@ -176,6 +216,19 @@
     "bin": []
   },
   {
+    "name": "@aphrody/bun-steam",
+    "version": "1.4.4",
+    "description": "Bun OS Steam owner (Bun half): VDF text/binary/appinfo parser and writer, Steam client configuration, steamcmd with a cached session, libraries, Proton management and launch tuning, Remote Play state, the local Steam ind",
+    "dir": "packages/bun-steam",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 4,
+    "bin": [
+      "bun-steam"
+    ]
+  },
+  {
     "name": "@aphrody/bun-video-project",
     "version": "1.4.4",
     "description": "Aphrody / Bun native video project bridge",
@@ -184,7 +237,9 @@
     "workspace": true,
     "private": true,
     "exports": 3,
-    "bin": ["aphrody-video"]
+    "bin": [
+      "aphrody-video"
+    ]
   },
   {
     "name": "@aphrody/bun-windows-aclui",
@@ -4320,11 +4375,13 @@
     "workspace": true,
     "private": true,
     "exports": 10,
-    "bin": ["aphrody-bun"]
+    "bin": [
+      "aphrody-bun"
+    ]
   },
   {
     "name": "@aphrody/canvas",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
     "dir": "packages/canvas",
     "kind": "package",
@@ -4368,7 +4425,7 @@
   },
   {
     "name": "@aphrody/docs-sync",
-    "version": "0.1.0",
+    "version": "1.4.4",
     "description": "",
     "dir": "packages/docs-sync",
     "kind": "package",
@@ -4390,7 +4447,7 @@
   },
   {
     "name": "@aphrody/eslint-plugin-m3",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under the native bun lint (jsPlugins).",
     "dir": "packages/eslint-plugin-m3",
     "kind": "package",
@@ -4400,8 +4457,19 @@
     "bin": []
   },
   {
+    "name": "@aphrody/google",
+    "version": "1.4.4",
+    "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
+    "dir": "packages/google",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 5,
+    "bin": []
+  },
+  {
     "name": "@aphrody/identity",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/ident",
     "dir": "packages/identity",
     "kind": "package",
@@ -4445,14 +4513,16 @@
   },
   {
     "name": "@aphrody/m3",
-    "version": "3.3.3",
+    "version": "1.4.4",
     "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), ",
     "dir": "packages/m3",
     "kind": "package",
     "workspace": true,
     "private": true,
     "exports": 10,
-    "bin": ["m3"]
+    "bin": [
+      "m3"
+    ]
   },
   {
     "name": "@aphrody/m3-ai",
@@ -4485,7 +4555,9 @@
     "workspace": true,
     "private": false,
     "exports": 26,
-    "bin": ["m3-bun"]
+    "bin": [
+      "m3-bun"
+    ]
   },
   {
     "name": "@aphrody/m3-codemods",
@@ -4606,7 +4678,9 @@
     "workspace": true,
     "private": false,
     "exports": 7,
-    "bin": ["m3-next"]
+    "bin": [
+      "m3-next"
+    ]
   },
   {
     "name": "@aphrody/m3-next-example",
@@ -4628,7 +4702,10 @@
     "workspace": true,
     "private": false,
     "exports": 17,
-    "bin": ["m3-next-migrate", "next-migrate"]
+    "bin": [
+      "m3-next-migrate",
+      "next-migrate"
+    ]
   },
   {
     "name": "@aphrody/m3-next-tauri-example",
@@ -4650,7 +4727,9 @@
     "workspace": true,
     "private": false,
     "exports": 4,
-    "bin": ["m3-os-themes"]
+    "bin": [
+      "m3-os-themes"
+    ]
   },
   {
     "name": "@aphrody/m3-primitives",
@@ -4731,7 +4810,7 @@
   },
   {
     "name": "@aphrody/m3-web",
-    "version": "3.3.3",
+    "version": "1.4.4",
     "description": "Showcase app of the M3 framework. Built, served and compiled through the yolo CLI (`yolo web build|dev`, `yolo tauri build`), which runs these scripts.",
     "dir": "apps/m3-web",
     "kind": "app",
@@ -4742,14 +4821,16 @@
   },
   {
     "name": "@aphrody/material-design-icons",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "Material Symbols SVG catalogue (vendor/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
     "dir": "packages/material-design-icons",
     "kind": "package",
     "workspace": true,
     "private": false,
     "exports": 1,
-    "bin": ["m3-svg-to-ico"]
+    "bin": [
+      "m3-svg-to-ico"
+    ]
   },
   {
     "name": "@aphrody/nie-ui",
@@ -4770,7 +4851,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 3,
+    "exports": 5,
     "bin": []
   },
   {
@@ -4807,6 +4888,17 @@
     "bin": []
   },
   {
+    "name": "@aphrody/play",
+    "version": "1.4.4",
+    "description": "play.aphrody.app: the Bun OS gaming web app. Bun Engine library, Steam, LAN cache, the WebRTC gamestream and web emulation behind one Bun.serve server fronted by a bun:nginx-owned NGINX engine.",
+    "dir": "apps/play",
+    "kind": "app",
+    "workspace": true,
+    "private": true,
+    "exports": 0,
+    "bin": []
+  },
+  {
     "name": "@aphrody/product",
     "version": "1.4.4",
     "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
@@ -4815,7 +4907,12 @@
     "workspace": true,
     "private": false,
     "exports": 17,
-    "bin": ["aphrody-omar", "aphrody-product", "aphrody-setup", "creator-kit"]
+    "bin": [
+      "aphrody-omar",
+      "aphrody-product",
+      "aphrody-setup",
+      "creator-kit"
+    ]
   },
   {
     "name": "@aphrody/rag-core",
@@ -4841,14 +4938,16 @@
   },
   {
     "name": "@aphrody/scaffold",
-    "version": "1.4.5",
+    "version": "1.4.4",
     "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web",
     "dir": "packages/scaffold",
     "kind": "package",
     "workspace": true,
     "private": false,
     "exports": 7,
-    "bin": ["aphrody-scaffold"]
+    "bin": [
+      "aphrody-scaffold"
+    ]
   },
   {
     "name": "@aphrody/shell-web",
@@ -4896,19 +4995,43 @@
   },
   {
     "name": "@aphrody/web-to-tauri",
-    "version": "1.0.0-canary",
+    "version": "1.4.4",
     "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
     "dir": "packages/web-to-tauri",
     "kind": "package",
     "workspace": true,
     "private": false,
     "exports": 8,
-    "bin": ["web-to-tauri"]
+    "bin": [
+      "web-to-tauri"
+    ]
+  },
+  {
+    "name": "@aphrody/webos",
+    "version": "1.4.4",
+    "description": "aphrody.com: the Bun OS in the browser. One Cloudflare Worker serves the desktop shell (windows, launcher, file explorer, terminal, browser, Bun Engine) and the catalog of every app, package and crate of the workspace.",
+    "dir": "apps/webos",
+    "kind": "app",
+    "workspace": false,
+    "private": true,
+    "exports": 0,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/webos-wasm",
+    "version": "1.4.4",
+    "description": "Rust WebAssembly backend of the Aphrody browser OS: OPFS-persisted file system, explorer wire protocol, local shell and terminal, binary triage and patches.",
+    "dir": "packages/webos-wasm",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 2,
+    "bin": []
   },
   {
     "name": "@aphrody/winclean",
     "version": "1.4.4",
-    "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools).",
+    "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (182 tools).",
     "dir": "packages/winclean",
     "kind": "package",
     "workspace": true,
@@ -4925,7 +5048,9 @@
     "workspace": true,
     "private": false,
     "exports": 8,
-    "bin": ["yolo"]
+    "bin": [
+      "yolo"
+    ]
   },
   {
     "name": "@aphrody/yolo-core",
@@ -4939,6 +5064,19 @@
     "bin": []
   },
   {
+    "name": "@bun-os/ds-dotnet",
+    "version": "1.4.4",
+    "description": "Nintendo DS and 3DS managed format readers (Kuriimu2 Konnect plugins, SPICA H3D, pk3DS ExeFS) hosted in Bun through bun:dotnet.",
+    "dir": "packages/ds-dotnet",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 3,
+    "bin": [
+      "ds-dotnet"
+    ]
+  },
+  {
     "name": "@bun-os/package-converter",
     "version": "1.4.4",
     "description": "",
@@ -4946,19 +5084,37 @@
     "kind": "package",
     "workspace": true,
     "private": true,
-    "exports": 2,
-    "bin": ["package-converter"]
+    "exports": 3,
+    "bin": [
+      "package-converter",
+      "pacman2apt"
+    ]
+  },
+  {
+    "name": "@bun-os/platform",
+    "version": "1.4.4",
+    "description": "Bun OS platform layer shared by the console shell, play.aphrody.app and the Bun Engine: Fluent catalogs and locale negotiation, M3 theme files, Bun.plugin-style plugins, the file-type registry and the transfer service (d",
+    "dir": "packages/bun-os-platform",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 12,
+    "bin": [
+      "bun-os-platform"
+    ]
   },
   {
     "name": "@bun-os/re",
     "version": "1.4.4",
-    "description": "Bun OS reverse engineering: the rea CLI and MCP server, the RE pipeline, the Steam indexer and the Replica skills.",
+    "description": "Bun OS RE command and pipeline facade over the canonical aphrody-labs/rea source owner in vendor/rea.",
     "dir": "packages/re",
     "kind": "package",
     "workspace": true,
     "private": true,
-    "exports": 2,
-    "bin": ["rea", "rea-agents", "re-pipeline", "re-steam"]
+    "exports": 1,
+    "bin": [
+      "re"
+    ]
   },
   {
     "name": "@frontend/source",
@@ -4972,182 +5128,6 @@
     "bin": []
   },
   {
-    "name": "@rosegriffon/achillea-client",
-    "version": "1.4.4",
-    "description": "Versioned HTTP client and runtime contracts for the Achillea guild API",
-    "dir": "packages/achillea-client",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/achillea-contract",
-    "version": "1.4.4",
-    "description": "Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript",
-    "dir": "packages/achillea-contract",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/achillea-core",
-    "version": "1.4.4",
-    "description": "Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI.",
-    "dir": "packages/achillea-core",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 30,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/achillea-types",
-    "version": "1.4.4",
-    "description": "Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web",
-    "dir": "packages/achillea-types",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 4,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/app-shell",
-    "version": "1.4.4",
-    "description": "Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page)",
-    "dir": "packages/rg-app-shell",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/assets",
-    "version": "1.4.4",
-    "description": "Shared static assets for Rose Griffon apps",
-    "dir": "packages/rg-assets",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 2,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/auth",
-    "version": "1.4.4",
-    "description": "Shared authentication logic and guards for Rose Griffon apps",
-    "dir": "packages/rg-auth",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 5,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/azalee",
-    "version": "1.4.4",
-    "description": "Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI.",
-    "dir": "packages/azalee",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 28,
-    "bin": ["azalee"]
-  },
-  {
-    "name": "@rosegriffon/azalee-web",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "apps/azalee-web",
-    "kind": "app",
-    "workspace": true,
-    "private": true,
-    "exports": 0,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/bot",
-    "version": "1.4.4",
-    "description": "Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards",
-    "dir": "apps/rg-bot",
-    "kind": "app",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/config",
-    "version": "1.4.4",
-    "description": "Configs partagées : TypeScript, bun lint et Tailwind preset",
-    "dir": "packages/rg-config",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 6,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/cron",
-    "version": "1.4.4",
-    "description": "Tâches planifiées Rose Griffon (maintenance DB, Discord, campagnes, SEO) : registre, route HTTP serverless et CLI",
-    "dir": "packages/rg-cron",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/db",
-    "version": "1.4.4",
-    "description": "Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot)",
-    "dir": "packages/rg-db",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 17,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/discord-sync",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "packages/rg-discord-sync",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/i18n",
-    "version": "1.4.4",
-    "description": "Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl",
-    "dir": "packages/rg-i18n",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/identity",
-    "version": "1.4.4",
-    "description": "Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa)",
-    "dir": "packages/rg-identity",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
     "name": "@rosegriffon/inagle",
     "version": "1.4.4",
     "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
@@ -5156,7 +5136,9 @@
     "workspace": true,
     "private": false,
     "exports": 27,
-    "bin": ["inagle"]
+    "bin": [
+      "inagle"
+    ]
   },
   {
     "name": "@rosegriffon/inagle-cross",
@@ -5192,61 +5174,6 @@
     "bin": []
   },
   {
-    "name": "@rosegriffon/preferences",
-    "version": "1.4.4",
-    "description": "Pure cross-runtime resolution of Rose Griffon presentation preferences",
-    "dir": "packages/rg-preferences",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/search",
-    "version": "1.4.4",
-    "description": "Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa",
-    "dir": "packages/rg-search",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/types",
-    "version": "1.4.4",
-    "description": "Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website",
-    "dir": "packages/rg-types",
-    "kind": "package",
-    "workspace": true,
-    "private": false,
-    "exports": 18,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/ui",
-    "version": "1.4.4",
-    "description": "Shared Rose Griffon UI on Base UI and native Material 3 tokens",
-    "dir": "packages/rg-ui",
-    "kind": "package",
-    "workspace": true,
-    "private": true,
-    "exports": 8,
-    "bin": []
-  },
-  {
-    "name": "@rosegriffon/website",
-    "version": "1.4.4",
-    "description": "",
-    "dir": "apps/rg-website",
-    "kind": "app",
-    "workspace": true,
-    "private": false,
-    "exports": 1,
-    "bin": []
-  },
-  {
     "name": "@shenron/auth",
     "version": "1.4.4",
     "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
@@ -5266,6 +5193,17 @@
     "workspace": true,
     "private": true,
     "exports": 18,
+    "bin": []
+  },
+  {
+    "name": "@shenron/dbxv2",
+    "version": "1.4.4",
+    "description": "DBXV2 reverse engineering for Shenron: typed bun:ffi and WebAssembly loaders over the bun-re DBXV2 surface (identify, CPK list/extract, EMB/EMD/ESK/gameplay JSON, ACB/AWB to WAV)",
+    "dir": "packages/shenron-dbxv2",
+    "kind": "package",
+    "workspace": true,
+    "private": true,
+    "exports": 5,
     "bin": []
   },
   {
@@ -5959,7 +5897,9 @@
     "workspace": true,
     "private": false,
     "exports": 0,
-    "bin": ["iecode-homebrew"]
+    "bin": [
+      "iecode-homebrew"
+    ]
   },
   {
     "name": "ieverse",

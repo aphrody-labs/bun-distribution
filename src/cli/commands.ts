@@ -571,37 +571,7 @@ define(
     ...bunRun("apps/iecode-web", "build"),
   },
 
-  // rg and nie turbo builds -----------------------------------------------------------------------
-  {
-    group: "rg",
-    name: "build",
-    summary: "Build and type check the Rose Griffon packages",
-    target: "turbo.json",
-    run: args =>
-      spawn([
-        localBin("turbo"),
-        "run",
-        "build",
-        "typecheck",
-        "--filter=./packages/rg-*",
-        "--filter=./packages/achillea-*",
-        "--filter=./packages/azalee*",
-        "--filter=./apps/rg-*",
-        "--filter=./apps/azalee-web",
-        ...args,
-      ]),
-  },
-  {
-    group: "rg",
-    name: "compile",
-    summary: "Compile the Rose Griffon standalone binaries",
-    target: "turbo.json",
-    ...sequence(
-      ...["apps/rg-bot", "packages/rg-cron", "packages/inagle", "packages/azalee", "packages/achillea-contract"].map(
-        dir => () => spawn([process.execPath, "run", "--cwd", abs(dir), "compile"]),
-      ),
-    ),
-  },
+  // NIE and Inagle builds --------------------------------------------------------------------------
   {
     group: "nie",
     name: "build",
