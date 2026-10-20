@@ -79,7 +79,10 @@ impl Bridge {
     }
 
     pub fn post_failed(&self, error: &str) {
-        self.send(&[("type", "photocraft:failed".into()), ("error", error.into())]);
+        self.send(&[
+            ("type", "photocraft:failed".into()),
+            ("error", error.into()),
+        ]);
     }
 
     pub fn save(&self, path: &str, bytes: &[u8]) -> Result<(), String> {

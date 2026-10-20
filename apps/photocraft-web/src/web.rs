@@ -12,6 +12,7 @@ use photocraft_ui_egui::theme::ThemeKind;
 use photocraft_ui_egui::{FileDialogAnswer, FileDialogRequest, Inbox, PhotocraftApp, Services};
 use wasm_bindgen::JsCast as _;
 
+#[path = "host.rs"]
 mod host;
 
 /// Everything File › Open reads: PhotoCraft, Photoshop, OpenRaster, Krita and Affinity documents, flat images, and
@@ -100,7 +101,8 @@ pub fn start() {
                         bridge.listen(inbox.clone(), cc.egui_ctx.clone());
                         bridge.post_ready();
                     }
-                    let mut app = PhotocraftApp::new(session, services(inbox.clone(), host.clone()));
+                    let mut app =
+                        PhotocraftApp::new(session, services(inbox.clone(), host.clone()));
                     if !preset_warnings.is_empty() {
                         photocraft_ui_egui::notices::post(
                             &mut app,

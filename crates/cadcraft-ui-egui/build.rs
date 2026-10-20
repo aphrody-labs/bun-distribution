@@ -14,7 +14,7 @@ use serde_json::Value;
 
 fn main() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../libraries/cadcraft/contributors");
+        .join("../../docs/libraries/cadcraft/contributors");
     let json = read(
         &dir.join("contributors.json"),
         "the About window shows no contributors",
