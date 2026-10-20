@@ -27,16 +27,12 @@ canvas {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 14px;
   color: var(--md-sys-color-on-surface-variant);
   pointer-events: none;
-}
-
-#loading[role="status"] {
-  flex-direction: column;
-  gap: 14px;
 }
 
 #loading .err {
