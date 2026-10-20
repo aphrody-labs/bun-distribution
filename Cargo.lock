@@ -15399,8 +15399,22 @@ name = "effectcraft-web"
 version = "0.9.2"
 dependencies = [
  "effectcraft-engine",
+ "effectcraft-export",
+ "effectcraft-expr",
+ "effectcraft-gpu",
+ "effectcraft-host",
+ "effectcraft-media",
+ "effectcraft-ui-egui",
+ "eframe",
+ "egui",
+ "js-sys",
+ "log",
  "serde",
  "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
 ]
 
 [[package]]

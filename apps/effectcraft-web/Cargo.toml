@@ -25,3 +25,38 @@ crate-type = ["cdylib", "rlib"]
 effectcraft-engine = { path = "../../crates/effectcraft-engine" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+effectcraft-host = { path = "../../crates/effectcraft-host" }
+effectcraft-gpu = { path = "../../crates/effectcraft-gpu" }
+effectcraft-media = { path = "../../crates/effectcraft-media" }
+effectcraft-export = { path = "../../crates/effectcraft-export" }
+effectcraft-expr = { path = "../../crates/effectcraft-expr" }
+effectcraft-ui-egui = { path = "../../crates/effectcraft-ui-egui" }
+egui = { workspace = true }
+eframe = { workspace = true, features = ["default_fonts", "wgpu"] }
+log = { workspace = true }
+web-time = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Blob",
+    "BlobPropertyBag",
+    "CssStyleDeclaration",
+    "Document",
+    "Element",
+    "DedicatedWorkerGlobalScope",
+    "Event",
+    "EventTarget",
+    "File",
+    "FileList",
+    "HtmlAnchorElement",
+    "HtmlCanvasElement",
+    "HtmlElement",
+    "HtmlInputElement",
+    "Location",
+    "Url",
+    "UrlSearchParams",
+    "Window",
+] }
