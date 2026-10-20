@@ -5,7 +5,7 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 import { productIdentity, sameProductIdentity, verifyProductPayload } from "../container/product-payload.ts";
 import { verifyQualifiedProduct, type ProductQualification } from "../container/verify-product.ts";
 
-/** Qualify CLI discovery and route targets; native commands retain their own gates. */
+/** Qualify CLI discovery, route targets and the frozen CLI-WASM runtime path. */
 export async function qualifyProductPayload(workspace: string, receiptPath: string, executable: string, output: string) {
   if (process.platform !== "linux") throw new Error("Product CLI qualification runs on the Linux factory");
   workspace = resolve(workspace);
@@ -38,6 +38,32 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   }
   if (!["mcp", "agent-plugin", "wasm"].every(name => commands.some(entry => entry.group === "" && entry.name === name)))
     throw new Error("Product CLI is missing a required native capability route");
+  const wasmArgs = ["--no-env-file", "-e", [
+    'import { loadCliWasm } from "./packages/cli-wasm/src/index.ts";',
+    'const wasm = await Bun.file("./packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm").bytes();',
+    "const cli = await loadCliWasm(wasm);",
+    'const report = { version: cli.version, abi: cli.rag.abiVersion, manifest: JSON.parse(cli.rag.manifest()), help: cli.run(["--help"]) };',
+    "console.log(JSON.stringify(report));",
+  ].join("\n")];
+  const wasmResult = await runProcess([resolve(executable), ...wasmArgs], workspace, {
+    timeoutMs: 60_000, maxOutputBytes: 16 * 1024 * 1024,
+    env: { ...Bun.env, BUN_BE_BUN: undefined },
+  });
+  if (wasmResult.code !== 0)
+    throw new Error(`Product CLI-WASM qualification failed: ${wasmResult.stderr.slice(-3000)}`);
+  const wasmReport = JSON.parse(wasmResult.stdout) as {
+    version?: unknown;
+    abi?: unknown;
+    manifest?: { abi?: unknown };
+    help?: { code?: unknown; stdout?: unknown };
+  };
+  if (typeof wasmReport.version !== "string" || !wasmReport.version || !Number.isSafeInteger(wasmReport.abi) ||
+    wasmReport.abi !== wasmReport.manifest?.abi || wasmReport.help?.code !== 0 ||
+    typeof wasmReport.help.stdout !== "string" || !wasmReport.help.stdout)
+    throw new Error("Product CLI-WASM returned invalid version, ABI or pure-command help evidence");
+  evidence.push({ args: wasmArgs, exitCode: wasmResult.code,
+    stdoutSHA256: new Bun.CryptoHasher("sha256").update(wasmResult.stdout).digest("hex"),
+    wasmVersion: wasmReport.version, wasmAbi: wasmReport.abi, pureHelp: true });
   await verifyProductPayload(workspace, receiptPath, expected);
   if (!sameProductIdentity(await productIdentity(executable), receipt.runtime))
     throw new Error("Product runtime changed during CLI qualification");
@@ -46,7 +72,7 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     target: receipt.target, sourceRevision: receipt.sourceRevision,
     installedTreeSHA256: receipt.installedTreeSHA256, runtimeSHA256: receipt.runtime.sha256,
     installedModesSHA256: receipt.installedModesSHA256,
-    gates: ["product-cli"],
+    gates: ["product-cli", "cli-wasm"],
   };
   await mkdir(dirname(output), { recursive: true });
   const parent = await realpath(dirname(output));
@@ -55,7 +81,8 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     throw new Error("Product qualification output resolves inside the frozen workspace");
   const file = await open(output, "wx");
   try {
-    await file.writeFile(JSON.stringify({ ...qualification, scope: "CLI discovery and route targets", evidence,
+    await file.writeFile(JSON.stringify({ ...qualification,
+      scope: "CLI discovery, route targets, CLI-WASM initialization and pure-command help", evidence,
       commandCount: commands.length, nativeCommandsQualified: false, fullProductQualified: false }, null, 2) + "\n");
   } finally { await file.close(); }
   await verifyQualifiedProduct(workspace, receiptPath, output, expected);

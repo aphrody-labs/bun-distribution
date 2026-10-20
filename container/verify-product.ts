@@ -29,7 +29,8 @@ export async function verifyQualifiedProduct(
     qualification.installedTreeSHA256 !== receipt.installedTreeSHA256 ||
     qualification.installedModesSHA256 !== receipt.installedModesSHA256 ||
     qualification.runtimeSHA256 !== receipt.runtime.sha256 ||
-    !Array.isArray(qualification.gates) || !qualification.gates.includes("product-cli")
-  ) throw new Error("Product payload requires a passed CLI qualification bound to its source, runtime and installed tree");
+    !Array.isArray(qualification.gates) || !qualification.gates.includes("product-cli") ||
+    !qualification.gates.includes("cli-wasm")
+  ) throw new Error("Product payload requires passed CLI and CLI-WASM gates bound to its source, runtime and installed tree");
   return { receipt, qualification };
 }
