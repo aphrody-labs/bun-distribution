@@ -4884,6 +4884,7 @@ dependencies = [
  "chrono",
  "cookie",
  "cookie_store_wrapper",
+ "craft-ui",
  "directories",
  "eframe",
  "egui",
@@ -11699,6 +11700,9 @@ dependencies = [
 name = "craft-ui"
 version = "1.4.4"
 dependencies = [
+ "aphrody-identity",
+ "aphrody-m3",
+ "aphrody-m3-tokens",
  "egui",
  "egui_extras",
  "egui_kittest",
@@ -13254,6 +13258,7 @@ dependencies = [
 name = "deckcraft-ui-egui"
 version = "0.6.1"
 dependencies = [
+ "craft-ui",
  "deckcraft-anim",
  "deckcraft-color",
  "deckcraft-engine",
@@ -16738,6 +16743,7 @@ name = "figcraft-ui-egui"
 version = "0.5.1"
 dependencies = [
  "base64 0.22.1",
+ "craft-ui",
  "egui",
  "egui_extras",
  "figcraft-color",
