@@ -7,10 +7,13 @@
       "dependencies": {
         "@aphrody/bun-app-host": "workspace:*",
         "@aphrody/bun-artifacts": "workspace:*",
+        "@aphrody/bun-engine": "workspace:*",
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
         "@aphrody/m3-design": "workspace:*",
         "@aphrody/tauri": "catalog:",
+        "@bun-os/re": "workspace:*",
+        "rea-agents": "workspace:*",
       },
       "devDependencies": {
         "@aphrody/bun-types": "catalog:",
@@ -3548,6 +3551,9 @@
     "packages/m3-design": {
       "name": "@aphrody/m3-design",
       "version": "1.4.4",
+      "bin": {
+        "m3-design": "intelligence/ui-ux-pro-max/scripts/search.ts",
+      },
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",

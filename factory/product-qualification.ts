@@ -36,8 +36,9 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     }
     evidence.push({ args, exitCode: result.code, stdoutSHA256: new Bun.CryptoHasher("sha256").update(result.stdout).digest("hex") });
   }
-  if (!["mcp", "agent-plugin", "wasm"].every(name => commands.some(entry => entry.group === "" && entry.name === name)))
-    throw new Error("Product CLI is missing a required native capability route");
+  if (!["mcp", "agent-plugin", "wasm", "design", "engine", "re", "rea"]
+    .every(name => commands.some(entry => entry.group === "" && entry.name === name)))
+    throw new Error("Product CLI is missing a required native or first-party capability route");
   const wasmArgs = ["--no-env-file", "-e", [
     'import { loadCliWasm } from "./packages/cli-wasm/src/index.ts";',
     'const wasm = await Bun.file("./packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm").bytes();',
