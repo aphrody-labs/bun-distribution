@@ -26,7 +26,7 @@ type Route = {
   paths?: string[];
 };
 
-const repo = resolve(import.meta.dir, "..", "..", "..");
+const repo = resolve(import.meta.dir, "..", "..", "..", "..");
 const yoloRoot = process.env.YOLO_ROOT ?? repo;
 
 function fail(message: string): never {
@@ -46,20 +46,25 @@ export function sensitiveInventoryPath(path: string): boolean {
 async function checkSensitiveFiles(): Promise<void> {
   // Check tracked Infra inventory, not protected .env files, caches, model data
   // or node_modules elsewhere in the consolidated monorepo. Never read values.
-  const child = Bun.spawn(["git", "ls-files", "-z", "--", "config", "inventory", "systemd", "nginx"], {
-    windowsHide: true,
-    cwd: repo,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const child = Bun.spawn(
+    ["git", "ls-files", "-z", "--", "config", "inventory", "systemd", "nginx"],
+    {
+      windowsHide: true,
+      cwd: repo,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
   const [code, stdout, stderr] = await Promise.all([
     child.exited,
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
   ]);
-  if (code !== 0) fail(`Cannot inspect tracked Infra inventory: ${stderr.trim()}`);
+  if (code !== 0)
+    fail(`Cannot inspect tracked Infra inventory: ${stderr.trim()}`);
   for (const path of stdout.split("\0").filter(Boolean))
-    if (sensitiveInventoryPath(path)) fail(`Sensitive-looking tracked Infra file: ${path}`);
+    if (sensitiveInventoryPath(path))
+      fail(`Sensitive-looking tracked Infra file: ${path}`);
 }
 
 function hasOwn(value: object, key: string): boolean {
@@ -75,19 +80,19 @@ async function main(): Promise<void> {
 
   const required = [
     "README.md",
-    "docs/reference/infra/TOPOLOGY.md",
-    "docs/reference/infra/MIGRATION-GUARDRAILS.md",
+    "docs/aphrody/reference/infra/TOPOLOGY.md",
+    "docs/aphrody/reference/infra/MIGRATION-GUARDRAILS.md",
     "tools/aphrody/config/local-ai.json",
-    "tools/config/local-ai.env.example",
+    "tools/aphrody/config/local-ai.env.example",
   ];
   const yoloUnits = [
-    "infra/config/host/systemd/aphrody/aphrody-web-api.service",
     "infra/config/host/catalog.json",
     "infra/config/host/inventory/vps-source.json",
   ];
   for (const relative of yoloUnits) {
     try {
-      if (!(await stat(join(yoloRoot, relative))).isFile()) fail(`Missing yolo host file: ${relative}`);
+      if (!(await stat(join(yoloRoot, relative))).isFile())
+        fail(`Missing yolo host file: ${relative}`);
     } catch {
       fail(`Missing yolo host file: ${relative}`);
     }
@@ -95,27 +100,37 @@ async function main(): Promise<void> {
   for (const relative of required) {
     const path = join(repo, relative);
     try {
-      if (!(await stat(path)).isFile()) fail(`Missing required file: ${relative}`);
+      if (!(await stat(path)).isFile())
+        fail(`Missing required file: ${relative}`);
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith("Missing required file:")) throw error;
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Missing required file:")
+      )
+        throw error;
       fail(`Missing required file: ${relative}`);
     }
   }
 
-  await readJson<JsonObject>(join(yoloRoot, "infra/config/host/inventory/vps-source.json"));
+  await readJson<JsonObject>(
+    join(yoloRoot, "infra/config/host/inventory/vps-source.json"),
+  );
   const a2a = await readJson<{
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };
-  }>("tools/config/a2a-peers.json");
+  }>("tools/aphrody/config/a2a-peers.json");
   const routes = await readJson<{ routes: Route[]; internal: Route[] }>(
     join(yoloRoot, "infra/config/host/nginx/routes.json"),
   );
-  const catalog = await readJson<{ services: Array<{ id: string }> }>("infra/config/service-catalog.json");
+  const catalog = await readJson<{ services: Array<{ id: string }> }>(
+    "infra/config/service-catalog.json",
+  );
   const ids = new Set<string>();
 
   for (const peer of a2a.peers) {
     for (const field of ["id", "role", "transport", "endpoint"] as const) {
-      if (!peer[field]) fail(`a2a peer missing ${field}: ${peer.id ?? "<unknown>"}`);
+      if (!peer[field])
+        fail(`a2a peer missing ${field}: ${peer.id ?? "<unknown>"}`);
     }
 
     const id = peer.id!;
@@ -130,9 +145,12 @@ async function main(): Promise<void> {
 
     if (transport === "https-jsonrpc") {
       const rpcPath = peer.rpcPath ?? a2a.protocol.rpcPath;
-      const endpointPattern = new RegExp(`^https://[^/]+${escapeRegExp(rpcPath)}$`);
-      if (!endpointPattern.test(endpoint)) fail(`a2a endpoint must end with rpcPath: ${id}`);
-      if (!catalog.services.some(service => service.id === peer.service)) {
+      const endpointPattern = new RegExp(
+        `^https://[^/]+${escapeRegExp(rpcPath)}$`,
+      );
+      if (!endpointPattern.test(endpoint))
+        fail(`a2a endpoint must end with rpcPath: ${id}`);
+      if (!catalog.services.some((service) => service.id === peer.service)) {
         fail(`a2a peer service not in catalog: ${id}`);
       }
       // A retired peer keeps its record (the redeploy shape) but its public edge is gone: no live route is required,
@@ -140,22 +158,27 @@ async function main(): Promise<void> {
       if (peer.status === "retired") continue;
 
       const hostname = new URL(endpoint).hostname;
-      const publicRoute = routes.routes.find(route => route.host === hostname);
+      const publicRoute = routes.routes.find(
+        (route) => route.host === hostname,
+      );
       if (!publicRoute) fail(`a2a public host missing: ${hostname}`);
       const route =
         publicRoute.service === peer.service
           ? publicRoute
           : routes.internal.find(
-              candidate =>
+              (candidate) =>
                 candidate.service === peer.service &&
                 candidate.via === "nginx" &&
                 hasOwn(candidate, "publicHost") &&
                 candidate.publicHost === hostname,
             );
-      const routePaths = route && hasOwn(route, "paths") ? (route.paths ?? []) : [];
+      const routePaths =
+        route && hasOwn(route, "paths") ? (route.paths ?? []) : [];
       if (
         !route ||
-        (routePaths.length > 0 && (!routePaths.includes(rpcPath) || !routePaths.includes(a2a.protocol.agentCardPath)))
+        (routePaths.length > 0 &&
+          (!routePaths.includes(rpcPath) ||
+            !routePaths.includes(a2a.protocol.agentCardPath)))
       ) {
         fail(`a2a nginx route missing for ${hostname}`);
       }
@@ -180,7 +203,7 @@ async function main(): Promise<void> {
   const exitCode = await child.exited;
   if (exitCode !== 0) {
     fail(
-      "tools/config/local-ai.env.example drifted from tools/aphrody/config/local-ai.json (run bun scripts/tools/infra/gen-local-ai-env.ts).",
+      "tools/aphrody/config/local-ai.env.example drifted from tools/aphrody/config/local-ai.json (run bun scripts/aphrody/tools/infra/gen-local-ai-env.ts).",
     );
   }
   console.log("infra-check: ok");

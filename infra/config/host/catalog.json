@@ -134,14 +134,6 @@
       "targetHost": "wsl"
     },
     {
-      "service": "aphrody-web-api",
-      "unit": "aphrody-web-api.service",
-      "path": "systemd/aphrody/aphrody-web-api.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base"],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
       "service": "rg-website",
       "unit": "rg-website.service",
       "path": "systemd/rg/rg-website.service",
