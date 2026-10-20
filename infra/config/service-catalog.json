@@ -5,6 +5,22 @@
   "proxy": "nginx",
   "services": [
     {
+      "id": "aphrody-video-editor",
+      "application": "aphrody",
+      "kind": "bun-static-editor",
+      "runtime": "bun",
+      "unit": "aphrody-video-editor.service",
+      "host": "vps",
+      "port": 8765,
+      "health": "http://127.0.0.1:8765/health",
+      "sourceRepo": "bun",
+      "workingDirectory": "/home/ubuntu/src/bun/packages/bun-video",
+      "releaseRoot": "/home/ubuntu/apps/aphrody-video-editor/releases",
+      "public": true,
+      "publicProxy": "nginx",
+      "note": "Rust/WASM Aphrody Video editor from the absorbed FilmCraft owner in aphrody-labs/bun. Bun.serve binds loopback; NGINX publishes only craft.aphrody.app/film/. Browser projects/media remain in OPFS. Deploy requires qualified versioned web artifacts and retained rollback; other Craft paths remain with their existing owners."
+    },
+    {
       "id": "aphrody-bun-os",
       "application": "aphrody",
       "kind": "docker",
