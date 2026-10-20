@@ -2,6 +2,10 @@
 
 Status: active owner execution goal, 2026-10-14.
 
+Active delivery details and unfinished owner requests are tracked in
+[the delivery backlog](active-delivery-backlog.md). Keep unchecked work open
+until its implementation and relevant qualification are complete.
+
 Canonical execution repository: `aphrody-labs/bun-distribution`, branch `os`.
 
 This is the canonical copy and is intentionally mirrored into `aphrody-labs/bun` and

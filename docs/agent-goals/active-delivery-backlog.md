@@ -1,0 +1,52 @@
+# Active owner delivery backlog
+
+Status: active, updated 2026-10-20. This ledger supplements the canonical
+[consolidation goal](bun-os-consolidation.md). Unchecked work remains requested;
+newer requests extend this scope rather than silently replacing it.
+
+## Workspace and distribution
+
+- [ ] Finish inventory of every crate, package, app, vendor and submodule, including sparse/missing sources.
+- [ ] Consolidate all existing worktrees and branches into the canonical checkout after preserving changes in Git; create no new worktrees.
+- [ ] Finish source checkpoints and PC/VPS/forge/GitHub synchronization, including concurrent changes.
+- [ ] Finish flattening and owner migration without losing histories, licenses, notices or consumers.
+- [ ] Retire confirmed legacy/duplicate sources only after their consumers migrate.
+- [ ] Complete shared factory, cache, target, release and packaging ownership.
+- [ ] Qualify Server, COSMIC Desktop and Gamescope Gaming compositions, including CachyOS/ChimeraOS/Omarchy integration and pacman/libalpm.
+
+## One product
+
+- [ ] Complete integration of App UI, Aphrody App, WebOS, Drive, Craft and Bun packages into one superapp/site.
+- [ ] Finish adopting the common M3 design system and UI UX Pro Max across all consumers.
+- [ ] Finish serving, documenting and installing Bun Engine, Bun RE, REA and Replica with the product.
+- [ ] Complete CLI, MCP, plugin, WASM, FFI and Docker coverage; retain an explicit unsupported-capability list until qualified.
+- [ ] Complete import/API repairs, decoder fixes and performance qualification across affected owners.
+- [ ] Verify requested services on their intended hosts; WireGuard was started, other stopped services have not been blanket-enabled.
+
+## Dust, games and public delivery
+
+- [ ] Compile and qualify Dust's actual WGPU 30 renderer through the shared Bevy device, not only CPU pixels presented with WebGPU.
+- [ ] Qualify shared texture presentation, lifecycle, input/touch/controller/audio and save/load behavior in the browser.
+- [ ] Build every supported emulator WASM recipe and qualify each exact variant before publication.
+- [ ] Package qualified cores with required redistributable BIOS, source-licensed test ROMs, hashes, receipts, notices and corresponding-source information.
+- [ ] Test the owner-supplied Inazuma Eleven 2 archive on the VPS; its source path is `usr/share/rom/`, not `usr/share/roms/`.
+- [ ] Prepare separately identified owner-authorized proprietary content. The owner declared Level-5 and Bandai Namco distribution agreements; do not relabel these games as open source or invent contract/end-user license terms.
+- [ ] Integrate supplied DBXV2 artifacts when available; no new DBXV2 binary was supplied with the Inazuma archive.
+- [ ] Finish the common M3 gaming route and absorb `play.aphrody.app` into the unified site while preserving supported emulator URLs.
+- [ ] Qualify Gamescope launch on the actual gaming composition/session.
+- [ ] Deploy and verify public gaming pages/assets without authentication or IP allowlists. Keep administrative credentials and unrelated private stores outside gaming artifacts.
+
+## Evidence and current limits
+
+The WebOS/App UI assembly previously succeeded on the VPS. Native Bun checks and
+HTTP checks passed for the common workspace assets and backend-unavailable
+responses. These do not establish complete product or GPU qualification.
+
+The old Dust artifact failed fresh VPS qualification: 23 frames in 90 seconds,
+then 29 frames with a 600-second deadline, against a 120-frame requirement.
+No valid public qualification receipt was issued. The new GPU source integration
+is being checked separately. Source commits are checkpoints, not release proofs.
+
+All builds and qualification run on the VPS with existing serialized factory
+owners and at most four compiler jobs per lane. Preserve concurrent source work,
+protected stores and existing licenses throughout.
