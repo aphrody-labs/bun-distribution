@@ -39,6 +39,7 @@ export function parseTextKv(text: string): KvObject {
     if (c === '"') {
       i++;
       let out = "";
+      let closed = false;
       while (i < n) {
         const ch = text[i];
         if (ch === "\\") {
@@ -54,12 +55,15 @@ export function parseTextKv(text: string): KvObject {
           i += 2;
         } else if (ch === '"') {
           i++;
+          closed = true;
           break;
         } else {
           out += ch;
           i++;
         }
       }
+      if (!closed)
+        throw new Error(`text KV: unterminated quoted token at ${i}`);
       return out;
     }
     // Bare token (up to whitespace or brace); `[$COND]` conditionals are skipped.
@@ -75,12 +79,20 @@ export function parseTextKv(text: string): KvObject {
     if (tok === null) break;
     const top = stack[stack.length - 1]!;
     if (tok === "{") {
+      if (pendingKey === null)
+        throw new Error(`text KV: object has no key at ${i - 1}`);
       const obj: KvObject = {};
-      if (pendingKey !== null) top[pendingKey] = obj;
+      top[pendingKey] = obj;
       stack.push(obj);
       pendingKey = null;
     } else if (tok === "}") {
-      if (stack.length > 1) stack.pop();
+      if (pendingKey !== null)
+        throw new Error(
+          `text KV: key has no value before closing object at ${i - 1}`,
+        );
+      if (stack.length === 1)
+        throw new Error(`text KV: unexpected closing object at ${i - 1}`);
+      stack.pop();
       pendingKey = null;
     } else if (pendingKey === null) {
       pendingKey = tok;
@@ -89,6 +101,10 @@ export function parseTextKv(text: string): KvObject {
       pendingKey = null;
     }
   }
+  if (pendingKey !== null)
+    throw new Error(`text KV: key has no value at end of input: ${pendingKey}`);
+  if (stack.length !== 1)
+    throw new Error(`text KV: ${stack.length - 1} unterminated object(s)`);
   return root;
 }
 
