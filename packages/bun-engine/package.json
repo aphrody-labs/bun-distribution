@@ -31,6 +31,7 @@
     "console:validate": "bun run ./src/console/validate.ts"
   },
   "dependencies": {
+    "@aphrody/bun-workspace": "workspace:*",
     "@aphrody/bun-steam": "workspace:*",
     "@aphrody/typesafe-sdk": "0.6.2",
     "@bun-os/ds-dotnet": "workspace:*",

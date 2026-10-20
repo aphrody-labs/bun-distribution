@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Card, CircularProgress, Icon } from "@aphrody/m3-primitives";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 interface GamePackage {
   id: string;
@@ -9,6 +9,18 @@ interface GamePackage {
   description: string;
   version: string;
   license: string;
+}
+interface PublishedGame {
+  id: string; title: string; system: string; sha256: string; bytes: number;
+  url: string; package: string; rights: unknown;
+}
+function publishedGame(value: unknown): value is PublishedGame {
+  if (!value || typeof value !== "object") return false;
+  const game = value as PublishedGame;
+  return typeof game.id === "string" && /^[a-z0-9][a-z0-9-]*$/.test(game.id)
+    && typeof game.title === "string" && typeof game.system === "string"
+    && /^[a-f0-9]{64}$/.test(game.sha256) && Number.isSafeInteger(game.bytes) && game.bytes > 0
+    && game.url === `/games/content/${game.id}` && /^game-[a-z0-9][a-z0-9-]*$/.test(game.package) && !!game.rights;
 }
 
 function gamePackage(value: unknown): value is GamePackage {
@@ -22,12 +34,37 @@ function gamePackage(value: unknown): value is GamePackage {
 export function GamesRoute() {
   const { core } = useParams<{ core?: string }>();
   const navigate = useNavigate();
+  const [search] = useSearchParams();
+  const [content, setContent] = useState<PublishedGame[]>([]);
+  const [contentError, setContentError] = useState("");
+  const [contentLoading, setContentLoading] = useState(true);
   const [games, setGames] = useState<GamePackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const frame = useRef<HTMLIFrameElement>(null);
   const selected = games.find(game => game.id === core);
+  const selectedContent = content.find(game => game.id === search.get("content") && game.package === selected?.id);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    setContentError("");
+    setContentLoading(true);
+    void (async () => {
+      try {
+        const response = await fetch("/games/content.json", { signal: controller.signal, cache: "no-cache" });
+        if (!response.ok) throw new Error(`Published game catalog unavailable (${response.status}).`);
+        const data: unknown = await response.json();
+        if (!data || typeof data !== "object" || !Array.isArray((data as { content?: unknown }).content)) throw new Error("The published game catalog is invalid.");
+        if (active) setContent((data as { content: unknown[] }).content.filter(publishedGame));
+      } catch (cause) {
+        if (active) { setContent([]); setContentError(cause instanceof Error ? cause.message : String(cause)); }
+      } finally { clearTimeout(timeout); if (active) setContentLoading(false); }
+    })();
+    return () => { active = false; clearTimeout(timeout); controller.abort(); };
+  }, [revision]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,7 +111,7 @@ export function GamesRoute() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <h1 className="text-headline-medium text-on-surface">Games</h1>
-          <p className="max-w-3xl text-body-large text-on-surface-variant">Play Bun Engine in your browser with bundled open-source test games, keyboard, touch and controller support.</p>
+          <p className="max-w-3xl text-body-large text-on-surface-variant">Play publisher-authorized games, bundled open-source tests and your local ROMs through the same Bun Engine player.</p>
         </div>
         <Button variant="tonal" className="min-h-12" disabled={loading} onClick={() => setRevision(value => value + 1)}>
           <Icon name="refresh" size={20} /> Refresh games
@@ -84,7 +121,18 @@ export function GamesRoute() {
       {loading && <div className="flex items-center gap-3" aria-busy="true"><span aria-hidden="true"><CircularProgress radius={12} progress={25} className="animate-spin motion-reduce:animate-none" /></span><p className="text-body-large">Loading games…</p></div>}
       {!loading && !error && games.length === 0 && <Card variant="outlined" className="p-6"><h2 className="text-title-large">No games published yet</h2><p className="mt-2 text-body-large text-on-surface-variant">Qualified emulator packages will appear here once they are published.</p></Card>}
       {!loading && core && !selected && !error && <p role="status" className="text-body-large">This emulator is not in the published gaming registry.</p>}
-      {selected && (
+      <div className="flex flex-col gap-4"><h2 className="text-title-large">Published games</h2>
+        {contentError && <p role="status" className="text-body-large text-on-surface-variant">{contentError}</p>}
+        {contentLoading && <p role="status" className="text-body-large">Loading published games…</p>}
+        {!contentLoading && !contentError && content.length === 0 && <p className="text-body-large text-on-surface-variant">No publisher-authorized games are available yet.</p>}
+        {content.length > 0 && <ul role="list" className="grid grid-cols-1 gap-4 medium:grid-cols-2 expanded:grid-cols-3">{content.map(game => <li key={game.id}><Card variant="outlined" className="flex h-full flex-col gap-3 p-5">
+          <h3 className="text-title-large">{game.title}</h3>
+          <p className="text-body-medium text-on-surface-variant">Publisher-authorized content · {Math.ceil(game.bytes / 1048576)} MiB</p>
+          <Button className="min-h-12 self-start" disabled={!games.some(pkg => pkg.id === game.package)} onClick={() => navigate(`/games/${game.package}?content=${encodeURIComponent(game.id)}`)}>Play {game.title}</Button>
+        </Card></li>)}</ul>}
+      </div>
+      {selected && search.get("content") && !contentLoading && !selectedContent && <p role="status" className="text-body-large">This published game is unavailable for the selected emulator.</p>}
+      {selected && (!search.get("content") || selectedContent) && (
         <Card variant="outlined" className="flex flex-col gap-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-title-large">{selected.name}</h2>
@@ -94,7 +142,7 @@ export function GamesRoute() {
             </div>
           </div>
           <p className="text-body-large text-on-surface-variant">Choose a bundled test game in the player, or open a local ROM. Stop and close ends the browser session.</p>
-          <iframe ref={frame} key={selected.id} src={`/apps/${selected.id}/index.html`} title={`${selected.name} game player`}
+          <iframe ref={frame} key={`${selected.id}:${selectedContent?.id ?? "local"}`} src={`/apps/${selected.id}/index.html${selectedContent ? `?content=${encodeURIComponent(selectedContent.id)}` : ""}`} title={`${selectedContent?.title ?? selected.name} game player`}
             className="min-h-[32rem] w-full rounded-medium border border-outline-variant bg-surface" style={{ height: "72vh" }}
             allow="autoplay; fullscreen; gamepad; cross-origin-isolated" allowFullScreen />
         </Card>

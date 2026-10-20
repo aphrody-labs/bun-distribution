@@ -8,6 +8,7 @@ import { buildSeo } from "./seo";
 import { stageVm } from "./vm";
 import { buildDocs } from "./docs";
 import { stageWorkspace } from "./workspace";
+import { stageGamesContent } from "./games-content";
 
 const root = resolve(import.meta.dir, "../..");
 const dist = join(import.meta.dir, "dist");
@@ -289,6 +290,7 @@ console.log(
     .join(", ")}`,
 );
 const built = await buildPackages(dist);
+await stageGamesContent(dist);
 await buildSeo(dist, catalog);
 console.log(`packages: ${built.map((p) => p.id).join(", ") || "none"}`);
 console.log(

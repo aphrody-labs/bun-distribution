@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // aphrody.com edge: static Bun OS shell + /api/health + /api/browse (script-free reader proxy for the Bun Browser).
 import { workspaceResponse } from "./workspace";
+import { gameContentResponse } from "./game-content";
 import { playRedirect, playResponse } from "./play";
 
 interface R2ObjectBodyLike {
@@ -280,6 +281,8 @@ function redirectFor(url: URL): string | undefined {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const game = await gameContentResponse(request, env.ASSETS, env.VM);
+    if (game) return game;
     const legacyPath = LEGACY_ROUTES.some(
       (prefix) =>
         url.pathname === prefix ||

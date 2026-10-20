@@ -61,17 +61,22 @@
     mod = await import(payloadURL(`${product.core}/${variant.module}`).href);
     await mod.default({ module_or_path: payloadURL(`${product.core}/${variant.wasm}`).href });
     readyOK = true;
+    const content = new URL(location.href).searchParams.get("content");
+    if (content !== null) {
+      try { await launchPublished(content); }
+      catch (error) { msg.textContent = `Could not load published game: ${error?.message ?? error}`; }
+    }
     $("file").disabled = false;
     $("test").disabled = false;
   }
-  async function run(file) {
+  async function run(input, system = manifest.systems[0]) {
     if (started || !readyOK) return;
     started = true;
     try {
       msg.style.color = "";
       msg.textContent = "Starting…";
-      const rom = new Uint8Array(await file.arrayBuffer());
-      const options = { system: manifest.systems[0], audio: true, ...(testedRenderer ? { renderer: testedRenderer } : {}) };
+      const rom = new Uint8Array(input instanceof ArrayBuffer ? input : await input.arrayBuffer());
+      const options = { system, audio: true, ...(testedRenderer ? { renderer: testedRenderer } : {}) };
       if (manifest.firmware?.length) {
         if (manifest.firmware.length !== 1) throw new Error("This player requires a single registered BIOS component.");
         const { loadFreeFirmware } = await import("./payload/runtime/firmware.js");
@@ -85,7 +90,7 @@
       const handle = await mod[manifest.start ?? "start"](canvas, rom, options);
       if (manifest.touch) {
         const { bindTouch } = await import("./payload/runtime/touch.js");
-        bindTouch(handle.canvas ?? canvas, handle, manifest.systems[0]);
+        bindTouch(handle.canvas ?? canvas, handle, system);
       }
       canvas.focus();
     } catch (error) {
@@ -95,6 +100,31 @@
       msg.style.color = "#f2b8b5";
       msg.textContent = `Could not start this game: ${error?.message ?? error}`;
     }
+  }
+  async function launchPublished(id) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) throw new Error("Invalid published content identifier.");
+    msg.textContent = "Loading published game catalog…";
+    const catalog = await json("/games/content.json");
+    if (!Array.isArray(catalog.content)) throw new Error("The published game catalog is invalid.");
+    const game = catalog.content.find(entry => entry?.id === id);
+    if (!game || typeof game.title !== "string" || !game.rights || game.package !== `game-${product.core}` || !manifest.systems.includes(game.system)
+      || !/^[a-f0-9]{64}$/.test(game.sha256) || !Number.isSafeInteger(game.bytes) || game.bytes < 1 || game.url !== `/games/content/${id}`) throw new Error("This game is not published for this qualified emulator.");
+    const target = new URL(game.url, location.origin);
+    if (target.origin !== location.origin || target.pathname !== `/games/content/${id}` || target.search || target.hash) throw new Error("Invalid published game URL.");
+    if (!crypto.subtle) throw new Error("Published game verification requires a secure browser context.");
+    msg.textContent = `Downloading ${game.title}…`;
+    const response = await fetch(target, { redirect: "error", cache: "no-store" });
+    if (response.status !== 200) throw new Error(`Published game download failed (${response.status}).`);
+    const length = response.headers.get("content-length");
+    if (length !== null && Number(length) !== game.bytes) throw new Error("Published game size metadata does not match.");
+    const bytes = await response.arrayBuffer();
+    if (bytes.byteLength !== game.bytes) throw new Error("Published game download size does not match.");
+    msg.textContent = `Verifying ${game.title}…`;
+    const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
+    if (digest !== game.sha256) throw new Error("Published game integrity check failed.");
+    $("title").textContent = game.title;
+    $("hint").textContent = "Publisher-authorized content. The qualified Bun Engine renderer runs this game locally in your browser.";
+    await run(bytes, game.system);
   }
   const ready = boot().catch(error => { msg.textContent = `This player could not load: ${error?.message ?? error}`; });
   $("test").addEventListener("click", async () => {
@@ -110,7 +140,7 @@
       const bytes = await response.arrayBuffer();
       const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
       if (digest !== fixture.sha256) throw new Error("Bundled test ROM integrity check failed.");
-      await run(new File([bytes], fixture.path.split("/").pop()));
+      await run(bytes);
     } catch (error) { msg.textContent = `Could not launch bundled test: ${error?.message ?? error}`; }
     finally { $("test").disabled = false; }
   });
@@ -122,7 +152,7 @@
   addEventListener("message", async e => {
     if (e.origin !== location.origin || !(e.data?.rom instanceof ArrayBuffer)) return;
     await ready;
-    run(new File([e.data.rom], e.data.name ?? "game"));
+    run(e.data.rom);
   });
 </script>
 </body>
