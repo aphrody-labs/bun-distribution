@@ -5,6 +5,12 @@ import { runProcess } from "@aphrody/bun-workspace/process";
 import { productIdentity, sameProductIdentity, verifyProductPayload } from "../container/product-payload.ts";
 import { verifyQualifiedProduct, type ProductQualification } from "../container/verify-product.ts";
 
+const productSkills = [
+  "replica-architect", "replica-backend", "replica-brand", "replica-build",
+  "replica-deploy", "replica-design", "replica-diff", "replica-entrepreneur",
+  "replica-launch", "replica-recon", "replica-test",
+];
+
 /** Qualify CLI discovery, route targets and the frozen CLI-WASM runtime path. */
 export async function qualifyProductPayload(workspace: string, receiptPath: string, executable: string, output: string) {
   if (process.platform !== "linux") throw new Error("Product CLI qualification runs on the Linux factory");
@@ -108,11 +114,16 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
     { jsonrpc: "2.0", id: 4, method: "resources/read", params: { uri: "bun://skills/bun-native" } },
     { jsonrpc: "2.0", id: 5, method: "prompts/list", params: {} },
     { jsonrpc: "2.0", id: 6, method: "resources/read", params: { uri: "bun://skills/ui-ux-pro-max" } },
+    { jsonrpc: "2.0", id: 7, method: "resources/read", params: { uri: "bun://skills/replica-architect" } },
   ];
   const mcpInput = new TextEncoder().encode(mcpMessages.map(message => JSON.stringify(message)).join("\n") + "\n");
   const mcpResult = await runProcess([resolve(executable), ...mcpArgs], workspace, {
     timeoutMs: 60_000, maxOutputBytes: 16 * 1024 * 1024, input: mcpInput,
-    env: { ...Bun.env, HOME: isolatedHome, BUN_MCP_PROFILE: "codex", BUN_MCP_SKILLS_PATH: join(workspace, "packages/m3-design/intelligence"),
+    env: { ...Bun.env, HOME: isolatedHome, BUN_MCP_PROFILE: "codex", BUN_MCP_SKILLS_PATH: [
+      join(workspace, "vendor/rea/plugin/skills"),
+      join(workspace, "packages/m3-design/intelligence"),
+      join(workspace, "packages/replica-skills/skills"),
+    ].join(":"),
       BUN_MCP_MEMORY_DB: undefined, REDIS_URL: undefined, VALKEY_URL: undefined, CODEX_HOME: undefined,
       BUN_BE_BUN: undefined },
   });
@@ -142,19 +153,23 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   const skill = response(4).contents?.[0];
   const prompts = response(5).prompts ?? [];
   const uiUxSkill = response(6).contents?.[0];
+  const replicaSkill = response(7).contents?.[0];
   const toolNames = tools.map(tool => tool.name);
   if (initialized.protocolVersion !== "2025-06-18" || initialized.serverInfo?.name !== "bun" || !initialized.capabilities?.tools ||
     !["docs_search", "skills_list", "skill_read", "graph_query"].every(name => toolNames.includes(name)) ||
     !resources.some(resource => resource.uri === "bun://docs/llms.txt") ||
     skill?.uri !== "bun://skills/bun-native" || typeof skill.text !== "string" || !skill.text.trim() ||
     uiUxSkill?.uri !== "bun://skills/ui-ux-pro-max" || typeof uiUxSkill.text !== "string" || !uiUxSkill.text.includes("Material 3 contract") ||
+    replicaSkill?.uri !== "bun://skills/replica-architect" || typeof replicaSkill.text !== "string" || !replicaSkill.text.includes("# replica-architect") ||
+    !productSkills.every(name => resources.some(resource => resource.uri === `bun://skills/${name}`) && prompts.some(prompt => prompt.name === name)) ||
     !prompts.some(prompt => prompt.name === "bun-native") || !prompts.some(prompt => prompt.name === "ui-ux-pro-max"))
-    throw new Error("Product MCP protocol, tools, docs, Bun and M3 design skills or prompts are incomplete");
+    throw new Error("Product MCP protocol, tools, docs, Bun, M3 design or Replica skills and prompts are incomplete");
   evidence.push({ args: mcpArgs, exitCode: mcpResult.code,
     stdoutSHA256: new Bun.CryptoHasher("sha256").update(mcpResult.stdout).digest("hex"),
     protocolVersion: initialized.protocolVersion, toolCount: tools.length, resourceCount: resources.length,
     embeddedSkill: skill.uri, skillBytes: new TextEncoder().encode(skill.text).length,
-    productDesignSkill: uiUxSkill.uri, productDesignSkillBytes: new TextEncoder().encode(uiUxSkill.text).length, promptCount: prompts.length });
+    productDesignSkill: uiUxSkill.uri, productDesignSkillBytes: new TextEncoder().encode(uiUxSkill.text).length,
+    replicaSkills: productSkills, replicaArchitectSkillBytes: new TextEncoder().encode(replicaSkill.text).length, promptCount: prompts.length });
   await verifyProductPayload(workspace, receiptPath, expected);
   if (!sameProductIdentity(await productIdentity(executable), receipt.runtime))
     throw new Error("Product runtime changed during CLI qualification");

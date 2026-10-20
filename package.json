@@ -94,6 +94,7 @@
     "packages/paths",
     "packages/product",
     "packages/rag-core",
+    "packages/replica-skills",
     "packages/re",
     "packages/runtime-sdk",
     "packages/scaffold",
@@ -644,7 +645,8 @@
     "@aphrody/bun-workspace": "workspace:*",
     "@aphrody/tauri": "catalog:",
     "@bun-os/re": "workspace:*",
-    "rea-agents": "workspace:*"
+    "rea-agents": "workspace:*",
+    "@aphrody/replica-skills": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/bun-types": "catalog:",

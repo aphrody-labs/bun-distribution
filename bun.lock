@@ -11,6 +11,7 @@
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
         "@aphrody/m3-design": "workspace:*",
+        "@aphrody/replica-skills": "workspace:*",
         "@aphrody/tauri": "catalog:",
         "@bun-os/re": "workspace:*",
         "rea-agents": "workspace:*",
@@ -3946,6 +3947,10 @@
         "@aphrody/bun-types": "workspace:*",
       },
     },
+    "packages/replica-skills": {
+      "name": "@aphrody/replica-skills",
+      "version": "1.4.4",
+    },
     "packages/runtime-sdk": {
       "name": "@aphrody/runtime-sdk",
       "version": "1.4.4",
@@ -5955,6 +5960,8 @@
     "@aphrody/qr": ["@aphrody/qr@workspace:toolchains/bun/packages/bun-qr"],
 
     "@aphrody/rag-core": ["@aphrody/rag-core@workspace:packages/rag-core"],
+
+    "@aphrody/replica-skills": ["@aphrody/replica-skills@workspace:packages/replica-skills"],
 
     "@aphrody/runtime-sdk": ["@aphrody/runtime-sdk@workspace:packages/runtime-sdk"],
 
