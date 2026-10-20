@@ -1,7 +1,8 @@
 //! Ribbon-style widgets: icon buttons, large buttons, split buttons, colour palettes, and the
 //! message box / toast overlays.
 
-use egui::{Align2, Color32, Rect, Response, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
+use craft_ui::buttons::{ButtonVisuals, IconButton, IconButtonStyle};
+use egui::{Align2, Color32, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2, pos2, vec2};
 
 use crate::SheetApp;
 use crate::i18n;
@@ -22,20 +23,42 @@ pub fn icon_button(
     tip: &str,
     size: egui::Vec2,
 ) -> Response {
-    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
     let t = Tokens::get(ui.ctx());
-    if resp.is_pointer_button_down_on() {
-        ui.painter().rect_filled(rect, 4.0, t.pressed);
-    } else if resp.hovered() {
-        ui.painter().rect_filled(rect, 4.0, t.hover);
-    }
-    icons::paint(
-        ui.painter(),
-        Rect::from_center_size(rect.center(), vec2(16.0, 16.0)),
-        icon,
-        color,
-    );
-    resp.on_hover_text(tr(ui, tip))
+    let style = IconButtonStyle {
+        normal: ButtonVisuals {
+            fill: Color32::TRANSPARENT,
+            stroke: Stroke::NONE,
+            icon: color,
+        },
+        hovered: ButtonVisuals {
+            fill: t.hover,
+            stroke: Stroke::NONE,
+            icon: color,
+        },
+        pressed: Some(ButtonVisuals {
+            fill: t.pressed,
+            stroke: Stroke::NONE,
+            icon: color,
+        }),
+        selected: ButtonVisuals {
+            fill: t.pressed,
+            stroke: Stroke::NONE,
+            icon: color,
+        },
+        corner_radius: craft_ui::theme::shape::CONTROL,
+        focus_stroke: Stroke::new(1.0, t.accent),
+    };
+    let tip = tr(ui, tip);
+    IconButton::new(tip, size, &style)
+        .show(ui, |ui, rect, tint| {
+            icons::paint(
+                ui.painter(),
+                Rect::from_center_size(rect.center(), vec2(16.0, 16.0)),
+                icon,
+                tint,
+            );
+        })
+        .on_hover_text(tip)
 }
 
 /// A toggle-able small button (e.g. Bold) showing a checked state.

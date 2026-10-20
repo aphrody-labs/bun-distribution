@@ -830,6 +830,7 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
         v.widgets.inactive.bg_stroke = Stroke::new(1.0, t.input_border);
         v.window_corner_radius = craft_ui::theme::shape::WINDOW;
         v.menu_corner_radius = craft_ui::theme::shape::MENU;
+        craft_ui::theme::shape::apply_control_to_visuals(&mut v);
         v.popup_shadow = egui::epaint::Shadow {
             offset: [0, 4],
             blur: 16,

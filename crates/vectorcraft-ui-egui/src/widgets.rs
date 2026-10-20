@@ -3,6 +3,7 @@
 use egui::{
     Color32, CornerRadius, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2, pos2, vec2,
 };
+use craft_ui::buttons::{ButtonVisuals, IconButton, IconButtonStyle};
 use vectorcraft_color::{BlendMode, Color, Paint};
 use vectorcraft_doc::Unit;
 
@@ -11,8 +12,39 @@ use crate::{icons, scrub};
 
 /// Square icon button; `selected` draws the pressed well.
 pub fn icon_button(ui: &mut Ui, icon: &str, tip: &str, selected: bool, size: f32) -> Response {
-    let (_, resp) = ui.allocate_exact_size(Vec2::splat(size), Sense::click());
-    paint_icon_button(ui, resp, icon, tip, selected)
+    let t = Tokens::get(ui.ctx());
+    let style = IconButtonStyle {
+        normal: ButtonVisuals {
+            fill: Color32::TRANSPARENT,
+            stroke: Stroke::NONE,
+            icon: t.icon,
+        },
+        hovered: ButtonVisuals {
+            fill: t.hover,
+            stroke: Stroke::NONE,
+            icon: t.icon,
+        },
+        pressed: None,
+        selected: ButtonVisuals {
+            fill: t.tool_active,
+            stroke: Stroke::NONE,
+            icon: t.text,
+        },
+        corner_radius: craft_ui::theme::shape::CONTROL,
+        focus_stroke: Stroke::new(1.0, t.accent),
+    };
+    let label = if tip.is_empty() { icon } else { tl!(tip) };
+    let response = IconButton::new(label, Vec2::splat(size), &style)
+        .selected(selected)
+        .show(ui, |ui, rect, tint| {
+            let pad = (rect.width() * 0.2).round();
+            icons::paint(ui, icon, rect.shrink(pad), tint);
+        });
+    if tip.is_empty() {
+        response
+    } else {
+        response.on_hover_text(tl!(tip))
+    }
 }
 
 /// [`icon_button`] drawn for a response the caller made (its own id or sense).

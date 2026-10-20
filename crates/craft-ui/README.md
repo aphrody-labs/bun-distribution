@@ -5,9 +5,22 @@ embedded SVG catalogs; `buttons` paints accessible icon buttons; `tabs` handles 
 interaction; `layout` provides toolbar fitting, split geometry and resize handles; `theme` shares widget-state styling.
 `docking` supplies transactional panel moves and an optional docking surface.
 `printing` supplies printer/job controls and asynchronous feedback used by WordCraft and GridCraft.
-The current delivery covers nine creative apps (DesignCraft, VectorCraft, PhotoCraft, FilmCraft, EffectCraft, CADCraft, PDFCraft, LightCraft and SoundCraft); prior basic and office adapters are separate. The [suite audit](docs/ui-components-audit.md#adoption-and-acceptance)
-records their scope and acceptance limits. Assets, complete themes, localization and command handling
-remain in each application. No icons, fonts or application engines are bundled.
+
+`theme::aphrody::Palette` provides cached light, dark and high-contrast semantic roles from the
+Aphrody identity seed; `theme::shape` exposes the canonical M3 control, menu and window corners.
+`theme::shape::apply_control_to_visuals` applies the shared control corner to all egui interaction
+states when an app installs its visuals. CADCraft, GridCraft and SoundCraft use this helper so
+their controls follow the same M3 shape token as the other editors.
+All thirteen product `*-ui-egui` crates consume the palette in their editor-chrome adapters and
+re-export their shared Aphrody window identity. Their engines, document/media colors, specialty
+presets and preferences remain app-owned. The shared palette is the token source, not a claim that
+every editor surface has completed visual or accessibility qualification.
+
+The reusable component and docking migration currently covers nine creative apps (DesignCraft,
+VectorCraft, PhotoCraft, FilmCraft, EffectCraft, CADCraft, PDFCraft, LightCraft and SoundCraft).
+WordCraft, GridCraft and DeckCraft have the earlier component pilots. The [suite audit](docs/ui-components-audit.md#adoption-and-acceptance)
+records component scope and acceptance limits. Assets, localization and command handling remain
+in each application. No icons, fonts or application engines are bundled.
 
 ## SVG catalogs
 

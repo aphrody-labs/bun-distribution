@@ -505,6 +505,7 @@ fn visuals(theme: Theme) -> Visuals {
     };
     v.window_corner_radius = craft_ui::theme::shape::WINDOW;
     v.menu_corner_radius = craft_ui::theme::shape::MENU;
+    craft_ui::theme::shape::apply_control_to_visuals(&mut v);
     v
 }
 

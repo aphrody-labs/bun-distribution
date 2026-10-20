@@ -17,6 +17,22 @@ chrome tokens to that adapter. Their desktop and browser applications share
 these frontend crates. Native ArtCraft uses the same adapter. CLI and server
 entry points keep their existing nonvisual contracts.
 
+The shared shape adapter exposes M3 control, menu and window corners. All
+thirteen editor themes use the window and menu roles; their egui widget states
+use the control role, with CADCraft, GridCraft and SoundCraft routed through
+`shape::apply_control_to_visuals`. Shared icon buttons in CADCraft, PhotoCraft
+and PDFCraft also use the same control shape. The shared UI components keep
+app-owned labels, icons, command handling and document behavior.
+
+PhotoCraft's primary action buttons now use the paired `Primary`/`OnPrimary`
+roles instead of legacy preset values. DeckCraft uses the same contrast pair for
+its primary buttons; accent roles used for links and other selected indicators
+remain app-specific.
+
+FigCraft separates selected-row icon color from its link accent and uses
+`OnSecondaryContainer` over `SecondaryContainer` for selected layer and toolbar
+icons.
+
 Legacy theme identifiers remain readable. Light and dark choices select their
 M3 schemes; DesignCraft's high-contrast choice uses the canonical high-contrast
 request. Editor-specific geometry, fonts and document rendering remain local.
@@ -31,8 +47,11 @@ when the native M3 binding is unavailable.
 Trunk applications run this preparation in their pre-build hook. Their generated
 assets live under root `build/craft-web/<application>`. FilmCraft, EffectCraft
 and LightCraft invoke the same preparation from their existing web packaging
-owners, writing into the selected artifact directory. Keep the existing app
-build commands; opening unbuilt source HTML is not a packaged application.
+owners, writing into the selected artifact directory. WebOS assembly and the
+static frontend deployment prepare the shell once per build batch and stage it
+beside every app; Trunk-only CSS, icon and copy directives become ordinary
+asset links in the assembled packages. Keep the existing app build commands;
+opening unbuilt source HTML is not a packaged application.
 
 ArtCraft's Bun frontend composes the M3 plugin with its existing worker, CSS and
 asset pipeline. Its existing component variables alias M3 semantic roles, and

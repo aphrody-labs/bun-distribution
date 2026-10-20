@@ -26,6 +26,7 @@ pub struct Tokens {
     pub accent: Color32,
     pub accent_hover: Color32,
     pub accent_text: Color32,
+    pub selected_icon: Color32,
     pub selected_row: Color32,
     pub selected_row_child: Color32,
     pub component: Color32,
@@ -74,6 +75,7 @@ impl Tokens {
         self.accent = palette.color(Role::Primary);
         self.accent_hover = palette.color(Role::Primary);
         self.accent_text = palette.color(Role::Primary);
+        self.selected_icon = palette.color(Role::OnSecondaryContainer);
         self.selected_row = palette.color(Role::SecondaryContainer);
         self.selected_row_child = palette.color(Role::PrimaryContainer);
         self.danger = palette.color(Role::Error);
@@ -110,6 +112,7 @@ impl Tokens {
                 accent_hover: Color32::from_rgb(0x00, 0x7B, 0xE5),
                 // 5.2:1 on white, 4.6:1 on selected rows: WCAG AA for text.
                 accent_text: Color32::from_rgb(0x00, 0x6B, 0xD1),
+                selected_icon: Color32::from_rgb(0x00, 0x6B, 0xD1),
                 selected_row: Color32::from_rgb(0xE5, 0xF4, 0xFF),
                 selected_row_child: Color32::from_rgb(0xF2, 0xF9, 0xFF),
                 component: COMPONENT,
@@ -151,6 +154,7 @@ impl Tokens {
             accent: ACCENT,
             accent_hover: Color32::from_rgb(0x3D, 0xAD, 0xFF),
             accent_text: Color32::from_rgb(0x7C, 0xC4, 0xF8),
+            selected_icon: Color32::from_rgb(0x7C, 0xC4, 0xF8),
             selected_row: Color32::from_rgb(0x2A, 0x45, 0x5C),
             selected_row_child: Color32::from_rgb(0x2D, 0x37, 0x41),
             component: Color32::from_rgb(0xD2, 0x7C, 0xFF),

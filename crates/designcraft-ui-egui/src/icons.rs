@@ -2,7 +2,8 @@
 //!
 //! Icons are designed on a 20×20 grid and scaled to the target rect.
 
-use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, pos2, vec2};
+use craft_ui::buttons::{ButtonVisuals, IconButton, IconButtonStyle};
+use egui::{Color32, Painter, Pos2, Rect, Shape, Stroke, Vec2, pos2, vec2};
 
 struct Pen<'a> {
     p: &'a Painter,
@@ -1073,23 +1074,32 @@ pub fn button(
     tip: &str,
 ) -> egui::Response {
     let t = crate::theme::Tokens::get(ui.ctx());
-    let (r, resp) = ui.allocate_exact_size(vec2(size, size), egui::Sense::click());
-    if selected {
-        ui.painter().rect_filled(r, 3.0, t.tool_active);
-    } else if resp.hovered() {
-        ui.painter().rect_filled(r, 3.0, t.hover);
-    }
-    let pad = size * 0.16;
-    paint(
-        ui.painter(),
-        r.shrink(pad),
-        name,
-        if selected { t.text_strong } else { t.icon },
-    );
-    let enabled = ui.is_enabled();
-    resp.widget_info(|| {
-        egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, tip)
-    });
+    let style = IconButtonStyle {
+        normal: ButtonVisuals {
+            fill: Color32::TRANSPARENT,
+            stroke: Stroke::NONE,
+            icon: t.icon,
+        },
+        hovered: ButtonVisuals {
+            fill: t.hover,
+            stroke: Stroke::NONE,
+            icon: t.icon,
+        },
+        pressed: None,
+        selected: ButtonVisuals {
+            fill: t.tool_active,
+            stroke: Stroke::NONE,
+            icon: t.text_strong,
+        },
+        corner_radius: craft_ui::theme::shape::CONTROL,
+        focus_stroke: Stroke::new(1.0, t.accent),
+    };
+    let label = if tip.is_empty() { name } else { tip };
+    let resp = IconButton::new(label, Vec2::splat(size), &style)
+        .selected(selected)
+        .show(ui, |ui, rect, tint| {
+            paint(ui.painter(), rect.shrink(size * 0.16), name, tint);
+        });
     if tip.is_empty() {
         resp
     } else {

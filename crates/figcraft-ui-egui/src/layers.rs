@@ -137,7 +137,7 @@ pub fn rail(app: &mut FigApp, ui: &mut Ui) {
             ui.painter(),
             Rect::from_center_size(ir.center(), vec2(16.0, 16.0)),
             icon,
-            if active { t.accent_text } else { t.icon },
+            if active { t.selected_icon } else { t.icon },
         );
         ui.painter().text(
             pos2(r.center().x, y + 38.0),

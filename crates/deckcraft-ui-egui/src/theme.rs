@@ -61,7 +61,7 @@ impl Tokens {
         self.pressed = palette.color(Role::SecondaryContainer);
         self.selected = palette.color(Role::SecondaryContainer);
         self.accent = palette.color(Role::Primary);
-        self.accent_text = palette.color(Role::Primary);
+        self.accent_text = palette.color(Role::OnPrimary);
         self.caret = palette.color(Role::Primary);
         self.field_bg = palette.color(Role::SurfaceContainerHighest);
         self

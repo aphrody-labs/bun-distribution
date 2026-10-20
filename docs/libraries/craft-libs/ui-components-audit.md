@@ -1,14 +1,14 @@
 # Shared UI component audit
 
-The best first extraction is the embedded SVG icon catalog used by PhotoCraft, VectorCraft and PdfCraft. It has a small boundary, real consumers and little dependence on application behavior. The pilot puts that machinery in `craft-ui::icons` and adopts it in all three apps. A second component, `craft-ui::buttons::IconButton`, is adopted by PhotoCraft and PdfCraft. The pane extension adds tab fitting and interaction in PhotoCraft/VectorCraft, split geometry in DesignCraft/PhotoCraft, and split geometry plus resize handles in FilmCraft/EffectCraft.
+The best first extraction is the embedded SVG icon catalog used by PhotoCraft, VectorCraft and PdfCraft. It has a small boundary, real consumers and little dependence on application behavior. The pilot puts that machinery in `craft-ui::icons` and adopts it in all three apps. The `craft-ui::buttons::IconButton` is now adopted by PhotoCraft, VectorCraft, PdfCraft, DesignCraft, GridCraft and CADCraft. The pane extension adds tab fitting and interaction in PhotoCraft/VectorCraft, split geometry in DesignCraft/PhotoCraft, and split geometry plus resize handles in FilmCraft/EffectCraft.
 
-The broader opportunity is a collection of reusable UI components. All twelve Rust Craft apps use egui 0.36, but their themes, document models, numeric fields and docking behavior have evolved differently. Shared components should accept small style values and return interactions; each app should continue to choose its layout, command, localization and document semantics.
+The broader opportunity is a collection of reusable UI components. All thirteen Rust Craft apps use egui 0.36, but their themes, document models, numeric fields and docking behavior have evolved differently. Shared components should accept small style values and return interactions; each app should continue to choose its layout, command, localization and document semantics.
 
 This covers item 3 of [craft-libs issue 2](https://github.com/storytold/craft-libs/issues/2). The [earlier four-app comparison](https://github.com/storytold/vectorcraft/issues/647) is useful background, but the findings below come from the pinned source revisions listed at the end. This is a source audit, not a claim that every application has passed interactive or cross-platform acceptance.
 
 ## Scope and current libraries
 
-The inventory covers the twelve Rust editor apps. The current docking migration covers nine creative editors: PhotoCraft, VectorCraft, DesignCraft, LightCraft, FilmCraft, EffectCraft, SoundCraft, CADCraft and PdfCraft. The WordCraft, GridCraft and DeckCraft pilots remain supporting evidence for earlier component reuse and are outside that migration. Service repositories, fonts, test corpora, archived predecessors and unrelated organization repositories are outside the UI scope.
+The inventory covers the thirteen Rust editor apps. The current docking migration covers nine creative editors: PhotoCraft, VectorCraft, DesignCraft, LightCraft, FilmCraft, EffectCraft, SoundCraft, CADCraft and PdfCraft. The WordCraft, GridCraft and DeckCraft pilots remain supporting evidence for earlier component reuse and are outside that migration. FigCraft is the thirteenth app; its interface-design canvas and collaboration UI remain app-owned while its frontend adopts the shared Aphrody identity and M3 roles/shapes. Service repositories, fonts, test corpora, archived predecessors and unrelated organization repositories are outside the UI scope.
 
 | App | Current UI and useful source | Behavior a shared component must preserve |
 | --- | --- | --- |
@@ -24,6 +24,7 @@ The inventory covers the twelve Rust editor apps. The current docking migration 
 | DeckCraft | egui/eframe 0.36; [tokens][deck-theme], [ribbon widgets][deck-widgets], [canvas rulers][deck-canvas] | Light/dark appearance, split buttons and galleries, slide theme references, contextual ribbon tabs and shape editing. |
 | CADCraft | egui/eframe 0.36; [tokens][cad-theme], [chrome][cad-chrome], [palettes][cad-palettes], [dialogs][cad-dialogs] | Drafting toggles, command-line state, model/layout tabs, CAD property types and multicolor painter icons. |
 | SoundCraft | egui/eframe 0.36; [tokens][sc-theme], [widgets][sc-widgets], [toolbar][sc-toolbar], [edit window][sc-edit] | Edit/mix controls, nonlinear dB meters, pan/fader interaction, record state and selectable audio rulers. |
+| FigCraft | egui 0.36; `crates/figcraft-ui-egui/src/theme.rs`, canvas, layers and collaboration panels | Interface-design canvas, live collaboration and design/prototype modes; document state, component semantics and collaboration remain app-owned. |
 
 The Rust applications keep egui at the frontend layer. The pilot follows that rule: only their UI crates depend on `craft-ui`; engine, document and rendering crates do not. Their layer checkers reject a direct dependency on the shared crate below the UI layer: L6 in PhotoCraft/VectorCraft/DesignCraft/WordCraft/GridCraft/DeckCraft/SoundCraft, L5 in FilmCraft/EffectCraft/LightCraft/CADCraft and L7 in PdfCraft. The crate depends on egui without enabling its default features. Apps retain their existing `egui_extras` SVG loader and renderer setup.
 
@@ -120,22 +121,23 @@ The shared geometry relaxes minima in tiny areas and rejects non-finite or inver
 
 ## Adoption and acceptance
 
-`craft-ui` exposes focused components; each app adopts them independently through its UI crate and pins an immutable shared revision. The original primitive-adapter trial covered all twelve Rust apps; its evidence below is separate from the current nine-app docking integration:
+`craft-ui` exposes focused components; each app adopts them independently through its UI crate and pins an immutable shared revision. The original primitive-adapter trial covered the twelve Rust apps present at that time; FigCraft is now the thirteenth consumer of `craft-ui`, with its current Aphrody identity and M3 palette/shape adapter recorded separately from that historical trial. The evidence below is also separate from the current nine-app docking integration:
 
 | App | Shared mechanisms | Preserved application responsibilities |
 | --- | --- | --- |
 | PhotoCraft | SVG catalogs, icon buttons, tabs, split geometry | Five themes, Classic bevels, dock groups, canvas state and commands |
-| VectorCraft | SVG catalogs, tabs, widget-state theme application | Theme presets, dock/floating models and tool aliases |
-| DesignCraft | Split geometry, widget-state theme application | High Contrast, input exceptions, taskbars and document focus |
+| VectorCraft | SVG catalogs, icon buttons, tabs, widget-state theme application | Theme presets, dock/floating models and tool aliases |
+| DesignCraft | Icon buttons, split geometry, widget-state theme application | High Contrast, input exceptions, taskbars and document focus |
 | PdfCraft | SVG catalogs, icon buttons, document/Combine tab interaction | Horizontal scrolling, stable document IDs, dirty/RTL labels and close requests |
 | FilmCraft | Split geometry and resize handles | Fixed/relative pane sizing, workspace state and timeline focus |
 | EffectCraft | Split geometry and resize handles | Accordion stacks, floating layouts and composition identity |
 | LightCraft | Widget-state theme application | Full dark palette, label colors, fonts and catalog state |
 | WordCraft | Ribbon-tab interaction | File/backstage state, contextual tabs, double-click collapse and commands |
-| GridCraft | Ribbon-tab interaction and icon/toggle buttons | Formula/cell focus, command dispatch, undo and contextual tabs |
+| GridCraft | Icon buttons, ribbon-tab interaction and toggle buttons | Formula/cell focus, command dispatch, undo and contextual tabs |
 | DeckCraft | Ribbon-tab interaction | Active-tab collapse, contextual selection, galleries and split buttons |
 | CADCraft | Icon buttons | Multicolor icon painting, disabled tint and drafting commands |
 | SoundCraft | Icon and record-enable buttons | Transport-specific colors, track arming and audio commands |
+| FigCraft | Aphrody identity, M3 palette roles and shapes | Figma-compatible document, prototype, component and collaboration behavior |
 
 The trials reuse existing APIs except for an opt-in `IconButton::single_shape_frame()` method.
 SoundCraft paints fill and border with one `Painter::rect`; splitting them changes translucent

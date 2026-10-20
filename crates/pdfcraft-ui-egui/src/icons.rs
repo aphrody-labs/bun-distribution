@@ -65,7 +65,7 @@ pub fn button(
         hovered: clear(t.icon),
         pressed: Some(clear(t.icon)),
         selected: clear(t.accent_text),
-        corner_radius: t.radius.into(),
+        corner_radius: craft_ui::theme::shape::CONTROL,
         focus_stroke: Stroke::new(1.0, t.accent),
     };
     let label = if tooltip.is_empty() { name } else { tooltip };

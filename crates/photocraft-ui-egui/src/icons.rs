@@ -256,6 +256,7 @@ pub fn button_with_icon_size_tip(
     show_tip: bool,
 ) -> Response {
     let t = Tokens::get(ui.ctx());
+    let radius = craft_ui::theme::shape::CONTROL;
     let style = IconButtonStyle {
         normal: ButtonVisuals {
             fill: Color32::TRANSPARENT,
@@ -273,7 +274,7 @@ pub fn button_with_icon_size_tip(
             stroke: egui::Stroke::new(1.0, t.accent_border),
             icon: t.accent_text,
         },
-        corner_radius: t.radius_sm.into(),
+        corner_radius: radius,
         focus_stroke: egui::Stroke::new(1.0, t.accent),
     };
     let label = if tooltip.is_empty() {

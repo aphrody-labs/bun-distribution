@@ -197,6 +197,8 @@ impl Tokens {
         self.accent = palette.color(Role::Primary);
         self.accent_soft = palette.color(Role::PrimaryContainer);
         self.accent_text = palette.color(Role::Primary);
+        self.primary_bg = palette.color(Role::Primary);
+        self.primary_text = palette.color(Role::OnPrimary);
         self.separator = palette.color(Role::OutlineVariant);
         self.danger = palette.color(Role::Error);
         self.tab_strip = palette.color(Role::SurfaceContainerLow);

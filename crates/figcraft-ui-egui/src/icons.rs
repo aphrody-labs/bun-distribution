@@ -1257,7 +1257,7 @@ pub fn button(
     };
     ui.painter()
         .rect_filled(rect, egui::CornerRadius::same(5), bg);
-    let col = if active { t.accent_text } else { t.icon };
+    let col = if active { t.selected_icon } else { t.icon };
     // The glyph at its native 16 px in the usual buttons, smaller in compact ones.
     let glyph = if size >= 22.0 { 16.0 } else { 12.0 };
     paint(
