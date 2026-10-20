@@ -231,6 +231,8 @@
       "name": "@aphrody/webos",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/app-ui": "workspace:*",
+        "@aphrody/bun-workspace": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/webos-wasm": "workspace:*",
       },

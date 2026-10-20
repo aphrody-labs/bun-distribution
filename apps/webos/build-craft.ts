@@ -6,6 +6,10 @@
 import { cp } from "node:fs/promises";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { loadConfig, runNative } from "@aphrody/bun-workspace";
+
+if (process.platform !== "linux")
+  throw new Error("Build Craft WebAssembly apps on the Linux VPS factory.");
 
 const root = resolve(import.meta.dir, "../..");
 const out = join(import.meta.dir, "out/craft");
@@ -67,6 +71,8 @@ const ALL: Craft[] = [
   },
 ];
 const wanted = Bun.argv.slice(2);
+const unknown = wanted.filter(id => !ALL.some(app => app.id === id));
+if (unknown.length) throw new Error(`Unknown Craft app IDs: ${unknown.join(", ")}`);
 const apps = wanted.length ? ALL.filter(a => wanted.includes(a.id)) : ALL;
 
 async function run(cmd: string[], env: Record<string, string> = {}) {
@@ -76,6 +82,7 @@ async function run(cmd: string[], env: Record<string, string> = {}) {
 }
 
 function findFile(dir: string, name: string): string | undefined {
+  if (!existsSync(dir)) return undefined;
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) {
@@ -111,14 +118,12 @@ const FEATURES = [
   "--enable-multivalue",
   "--enable-simd",
 ];
-const exe = (n: string) => (process.platform === "win32" ? `${n}.exe` : n);
-const msvc = process.platform === "win32" ? ["bun", "msvc", "exec", "--toolset", "14.44", "--"] : [];
-// sccache cannot pass web-sys's ~1,500 --cfg flags on a Windows command line (os error 206).
-await run(
+const buildCode = await runNative(await loadConfig(),
   [
-    ...msvc,
     "cargo",
     "build",
+    "--locked",
+    "--jobs", "4",
     "--target",
     "wasm32-unknown-unknown",
     "--profile",
@@ -126,16 +131,18 @@ await run(
     ...apps.flatMap(a => ["-p", a.crate]),
   ],
   {
-    RUSTC_WRAPPER: "",
-    CARGO_BUILD_RUSTC_WRAPPER: "",
+    cwd: root,
+    runtimePolicy: "development",
+    timeoutMs: 1_800_000,
+    env: { CARGO_BUILD_JOBS: "4" },
   },
 );
+if (buildCode !== 0) throw new Error(`Craft Cargo build exited with ${buildCode}`);
 
-const targetDir = existsSync(join(root, "build/rust/wasm32-unknown-unknown/release"))
-  ? join(root, "build/rust")
-  : join(root, "target");
-const bindgen = await tool("wasm-bindgen", exe("wasm-bindgen"));
-const wasmOpt = await tool("binaryen", exe("wasm-opt"));
+// runNative owns this shared Cargo target directory.
+const targetDir = join(root, "target");
+const bindgen = await tool("wasm-bindgen", "wasm-bindgen");
+const wasmOpt = await tool("binaryen", "wasm-opt");
 rmSync(out, { recursive: true, force: true });
 const index: { id: string; name: string; glyph: string; description: string; version: string }[] = [];
 for (const app of apps) {
@@ -144,7 +151,7 @@ for (const app of apps) {
   // With a split build directory cargo writes the final artifact under release/build/<package>/<hash>/out.
   const raw =
     [`${bin}.wasm`, `${app.crate}.wasm`].map(n => join(release, n)).find(existsSync) ??
-    findFile(join(release, "build", app.crate), `${bin}.wasm`) ??
+    findFile(join(release, "build"), `${bin}.wasm`) ??
     join(release, `${bin}.wasm`);
   if (!existsSync(raw)) throw new Error(`${app.crate}: ${raw} was not produced`);
   const dest = join(out, app.id);
@@ -152,14 +159,13 @@ for (const app of apps) {
   await run([bindgen, "--target", "web", "--out-dir", dest, "--out-name", bin, "--no-typescript", raw]);
   const bound = join(dest, `${bin}_bg.wasm`);
   await run([wasmOpt, "-Oz", ...FEATURES, "--strip-debug", "--strip-producers", bound, "-o", bound]);
-  if (app.web || !(await Bun.file(join(root, "apps", app.crate, "Trunk.toml")).exists()) && (await Bun.file(join(root, "apps", app.crate, "index.html")).text()).includes("from \"./" + bin + ".js\"")) {
+  if (app.web) {
+    await cp(join(root, "apps", app.crate, "web"), dest, { recursive: true });
+  } else if (!(await Bun.file(join(root, "apps", app.crate, "Trunk.toml")).exists()) && (await Bun.file(join(root, "apps", app.crate, "index.html")).text()).includes("from \"./" + bin + ".js\"")) {
     // Hand-written page: it imports ./<bin>.js itself, so ship the page unchanged.
     await Bun.write(join(dest, "index.html"), await Bun.file(join(root, "apps", app.crate, "index.html")).text());
     const web = join(root, "apps", app.crate, "web");
     if (existsSync(web)) await cp(web, dest, { recursive: true });
-  } else if (app.web) {
-    const { cp } = await import("node:fs/promises");
-    await cp(join(root, "apps", app.crate, "web"), dest, { recursive: true });
   } else {
     // Trunk's <link data-trunk rel="rust"> becomes the module loader.
     const src = await Bun.file(join(root, "apps", app.crate, "index.html")).text();

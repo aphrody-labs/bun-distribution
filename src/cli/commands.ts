@@ -610,7 +610,7 @@ define(
     group: "webos",
     name: "build",
     summary: "Build aphrody.com into apps/webos/dist",
-    ...script("apps/webos/build.ts"),
+    ...script("apps/webos/build-product.ts"),
   },
   {
     group: "webos",
@@ -632,7 +632,7 @@ define(
     summary: "Build and deploy aphrody.com to Cloudflare",
     target: "apps/webos/wrangler.jsonc",
     ...sequence(
-      () => spawn([process.execPath, abs("apps/webos/build.ts")]),
+      () => spawn([process.execPath, abs("apps/webos/build-product.ts")]),
       () => spawn(["wrangler", "deploy"], { cwd: abs("apps/webos") }),
     ),
   },
@@ -640,7 +640,7 @@ define(
     group: "superapp",
     name: "build",
     summary: "Build the unified Aphrody super-site and workspace catalog",
-    ...script("apps/webos/build.ts"),
+    ...script("apps/webos/build-product.ts"),
   },
   {
     group: "superapp",
@@ -662,7 +662,7 @@ define(
     summary: "Build and deploy the unified Aphrody super-site",
     target: "apps/webos/wrangler.jsonc",
     ...sequence(
-      () => spawn([process.execPath, abs("apps/webos/build.ts")]),
+      () => spawn([process.execPath, abs("apps/webos/build-product.ts")]),
       () => spawn(["wrangler", "deploy"], { cwd: abs("apps/webos") }),
     ),
   },

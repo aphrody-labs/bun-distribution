@@ -7,12 +7,15 @@
   "author": "aphrody-dev <contact@aphrody.com>",
   "type": "module",
   "scripts": {
-    "build": "bun build.ts",
-    "dev": "bun build.ts && wrangler dev",
-    "deploy": "bun build.ts && wrangler deploy",
+    "build": "bun build-product.ts",
+    "build:shell": "bun build.ts",
+    "dev": "bun build-product.ts && wrangler dev",
+    "deploy": "bun build-product.ts && wrangler deploy",
     "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@aphrody/app-ui": "workspace:*",
+    "@aphrody/bun-workspace": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/webos-wasm": "workspace:*"
   },
