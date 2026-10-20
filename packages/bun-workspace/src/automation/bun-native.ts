@@ -265,9 +265,9 @@ export async function runBunNative(argv: string[], options: { signal?: AbortSign
     if (expectedHash && !existingArtifact) throw new Error("--artifact-sha256 requires --stage-existing");
     if (existingArtifact && flags.has("--jobs"))
       throw new Error("staging an existing artifact forbids --jobs; build features are unknown");
-    packageRoot = resolve(packageRoot ?? join(repo, "packages/interop/native"));
+    packageRoot = resolve(packageRoot ?? join(repo, "packages/aphrody-bun"));
     const manifest = join(repo, "Cargo.toml");
-    const ffiManifest = join(repo, "crates/interop/ffi/Cargo.toml");
+    const ffiManifest = join(repo, "crates/aphrody-ffi/Cargo.toml");
     if (!existsSync(ffiManifest)) throw new Error(`aggregate crate missing: ${ffiManifest}`);
     const pkg = await Bun.file(join(packageRoot, "package.json")).json();
     if (pkg.name !== "@aphrody/bun") throw new Error(`consumer is not @aphrody/bun: ${packageRoot}`);

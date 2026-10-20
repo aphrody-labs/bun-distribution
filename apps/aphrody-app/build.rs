@@ -13,14 +13,13 @@ use std::{
     process,
 };
 
-/// `<destination under ui-dist/> <source under Aphrody or Material>`, one pair per line.
+/// `<destination under ui-dist/> <source under the repository root>`, one pair per line.
 const UI_DIST_MANIFEST: &str = include_str!("ui-dist.manifest");
 
 fn main() {
     stamp_build_identity();
     println!("cargo:rerun-if-changed=windows-app-manifest.xml");
     println!("cargo:rerun-if-changed=ui-dist.manifest");
-    println!("cargo:rerun-if-env-changed=APHRODY_MATERIAL_CHECKOUT");
     // libcef must be the first DT_NEEDED entry of the executable. Chromium resolves libc functions
     // with `dlsym(RTLD_NEXT, ..)` from inside libcef at startup (`close symbol missing`, then a
     // trap): a libc that the link map lists before libcef is invisible to it. Native libraries of
@@ -29,7 +28,7 @@ fn main() {
     if env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "linux") {
         println!("cargo:rustc-link-lib=dylib=cef");
     }
-    // `frontendDist` is generated from Material's `packages/app-ui` into
+    // `frontendDist` is generated from the root `packages/app-ui` into
     // ui-dist. Track the generated entry files (not the staged fonts, which are tracked per source
     // below) so Cargo/Tauri re-embed after a UI rebuild.
     for generated in ["ui-dist/index.html", "ui-dist/app.js", "ui-dist/app.css"] {
@@ -94,7 +93,7 @@ fn stamp_build_identity() {
 /// serves the embedded `ui-dist`) is being built, because the webview would lose its fonts.
 fn stage_ui_dist_assets() {
     let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("manifest dir"));
-    let repository_root = manifest_dir.join("../../docs/aphrody");
+    let repository_root = manifest_dir.join("../..");
     let ui_dist = manifest_dir.join("ui-dist");
 
     let mut missing: Vec<String> = Vec::new();
@@ -106,7 +105,7 @@ fn stage_ui_dist_assets() {
         let Some((destination, source)) = line.split_once(' ') else {
             panic!("ui-dist.manifest: expected `<destination> <source>`, got {line:?}");
         };
-        let source = canonical_asset_source(&repository_root, source.trim());
+        let source = repository_root.join(source.trim());
         let destination = ui_dist.join(destination.trim());
         println!("cargo:rerun-if-changed={}", source.display());
         if let Err(error) = sync_file(&source, &destination)
@@ -130,17 +129,6 @@ fn stage_ui_dist_assets() {
         );
         println!("cargo:warning={message}");
     }
-}
-
-fn canonical_asset_source(repository_root: &Path, source: &str) -> PathBuf {
-    let Some(relative) = source.strip_prefix("material/") else {
-        return repository_root.join(source);
-    };
-    let material = env::var_os("APHRODY_MATERIAL_CHECKOUT")
-        .filter(|path| !path.is_empty())
-        .map(PathBuf::from)
-        .unwrap_or_else(|| repository_root.join("../material"));
-    material.join(relative)
 }
 
 /// Make `destination` byte-identical to `source`, writing only when they differ.

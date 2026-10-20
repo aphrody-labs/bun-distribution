@@ -24,7 +24,7 @@ export function webOptions(args: string[], env: NodeJS.ProcessEnv = process.env)
       : {}),
     staticRoot: configuredRoot
       ? resolve(configuredRoot)
-      : resolve(findWorkspaceRoot(undefined, env), "crates/ui/app/ui-dist"),
+      : resolve(findWorkspaceRoot(undefined, env), "packages/app-ui/dist"),
     hostname,
     port,
   };

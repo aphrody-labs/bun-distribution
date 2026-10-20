@@ -1,8 +1,8 @@
-import { dirname, join } from "node:path";
+import { dirname, join, posix } from "node:path";
 import { runProcess } from "@aphrody/bun-workspace/process";
 
 type CargoManifest = {
-  package?: { name?: string; version?: unknown };
+  package?: { name?: string; version?: unknown; workspace?: string };
   workspace?: { members?: string[]; exclude?: string[] };
 };
 type PackageManifest = { name?: string; version?: string; private?: boolean; workspaces?: string[] | { packages?: string[] } };
@@ -47,6 +47,7 @@ export async function inspectWorkspaceManifests(root: string) {
   })));
   const paths = [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort();
   const manifests: Record<string, unknown>[] = [];
+  const parsedManifests = new Map<string, CargoManifest | PackageManifest>();
   const failures: { path: string; error: string }[] = [];
   for (let offset = 0; offset < paths.length; offset += 16) {
     await Promise.all(paths.slice(offset, offset + 16).map(async path => {
@@ -55,6 +56,7 @@ export async function inspectWorkspaceManifests(root: string) {
         const rust = path.endsWith("Cargo.toml");
         const content = await Bun.file(join(root, path)).text();
         const parsed = rust ? Bun.TOML.parse(content) as CargoManifest : JSON.parse(content) as PackageManifest;
+        parsedManifests.set(path, parsed);
         const name = rust ? (parsed as CargoManifest).package?.name : (parsed as PackageManifest).name;
         const submodule = submodules.filter(item => directory === item.path || directory.startsWith(`${item.path}/`)).sort((a, b) => b.path.length - a.path.length)[0];
         manifests.push({ path, directory, type: rust ? "cargo" : "bun-package", name: name ?? null,
@@ -67,6 +69,57 @@ export async function inspectWorkspaceManifests(root: string) {
     }));
   }
   manifests.sort((a, b) => String(a.path).localeCompare(String(b.path)));
+  // Workspace membership and the closest source boundary are different facts.
+  // Keep declarations visible even when a nested owner conflicts with them.
+  const ownershipConflicts: { path: string; declaredOwner: string; discoveredOwner: string | null }[] = [];
+  for (const manifest of manifests) {
+    const directory = String(manifest.directory);
+    const rust = manifest.type === "cargo";
+    const filename = rust ? "Cargo.toml" : "package.json";
+    const parsed = parsedManifests.get(String(manifest.path))!;
+    const explicitOwner = rust ? (parsed as CargoManifest).package?.workspace : undefined;
+    let owner: string | null = null;
+    let ownerParsed: CargoManifest | PackageManifest | undefined;
+    if (explicitOwner !== undefined) {
+      owner = posix.normalize(posix.join(directory, explicitOwner));
+      ownerParsed = parsedManifests.get(posix.join(owner, filename));
+    } else {
+      let candidate = directory;
+      while (true) {
+        const candidateParsed = parsedManifests.get(posix.join(candidate, filename));
+        if (rust ? Boolean((candidateParsed as CargoManifest | undefined)?.workspace) : Boolean((candidateParsed as PackageManifest | undefined)?.workspaces)) {
+          owner = candidate;
+          ownerParsed = candidateParsed;
+          break;
+        }
+        // Independent Git owners cannot inherit the distribution's workspace.
+        if (candidate === manifest.sourceOwner || candidate === ".") break;
+        candidate = posix.dirname(candidate);
+      }
+    }
+    if (owner === null && matches(directory, rust ? cargoWorkspace.members ?? [] : bunMembers)) {
+      owner = ".";
+      ownerParsed = parsedManifests.get(filename);
+    }
+    const relativePath = owner === null ? null : posix.relative(owner, directory) || ".";
+    const workspace = rust ? (ownerParsed as CargoManifest | undefined)?.workspace : undefined;
+    const packageWorkspace = (ownerParsed as PackageManifest | undefined)?.workspaces;
+    const members = rust ? workspace?.members ?? [] : Array.isArray(packageWorkspace) ? packageWorkspace : packageWorkspace?.packages ?? [];
+    const exclusions = rust ? workspace?.exclude ?? [] : [];
+    const excluded = relativePath !== null && exclusions.some(pattern => matches(relativePath, [pattern]) || matches(relativePath, [`${pattern.replace(/\/$/, "")}/**`]));
+    const declared = relativePath !== null && matches(relativePath, members);
+    const rootDeclared = directory !== "." && matches(directory, rust ? cargoWorkspace.members ?? [] : bunMembers);
+    const rootExcluded = rust && (cargoWorkspace.exclude ?? []).some(pattern => matches(directory, [pattern]) || matches(directory, [`${pattern.replace(/\/$/, "")}/**`]));
+    manifest.rootWorkspaceDeclared = rootDeclared;
+    manifest.rootWorkspaceExcluded = rootExcluded;
+    manifest.rootWorkspaceMember = rootDeclared && !rootExcluded && owner === ".";
+    manifest.workspaceOwner = excluded ? null : owner;
+    manifest.workspaceOwnerManifest = owner === null ? null : posix.join(owner, filename);
+    manifest.workspaceMembership = owner === null ? "standalone" : !(rust ? workspace : packageWorkspace) ? "missing-explicit-owner" : excluded ? "excluded" : relativePath === "." ? "workspace-root" : declared ? "declared-member" : rust ? "ancestor-workspace-membership-unverified" : "outside-declared-members";
+    manifest.workspaceOwnerEvidence = explicitOwner !== undefined ? "package.workspace" : owner === "." && rootDeclared ? "root-workspace-members" : owner !== null ? "nearest-ancestor-workspace-manifest" : "no-ancestor-workspace-in-source-owner";
+    manifest.sourceRole = /(?:^|\/)(?:fixtures?|__fixtures__)(?:\/|$)/.test(directory) ? "fixture" : /(?:^|\/)(?:tests?|__tests__)(?:\/|$)/.test(directory) ? "test" : /(?:^|\/)(?:examples?|bench(?:marks?)?)(?:\/|$)/.test(directory) ? "example-or-benchmark" : "source";
+    if (rootDeclared && !rootExcluded && owner !== ".") ownershipConflicts.push({ path: String(manifest.path), declaredOwner: ".", discoveredOwner: owner });
+  }
   const missingMembers = [
     ...(cargoWorkspace.members ?? []).filter(pattern => !manifests.some(item => item.type === "cargo" && matches(String(item.directory), [pattern]))).map(path => ({ type: "cargo", path })),
     ...bunMembers.filter(pattern => !manifests.some(item => item.type === "bun-package" && matches(String(item.directory), [pattern]))).map(path => ({ type: "bun-package", path })),
@@ -110,7 +163,9 @@ export async function inspectWorkspaceManifests(root: string) {
   return {
     schemaVersion: 1,
     coverage: "Current tracked manifests in root and initialized submodules, plus nonignored untracked root manifests. Uninitialized sources are reported without inventing their manifests.",
-    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, submodules: submodules.length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
+    counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
+    ownershipCoverage: "Owners follow explicit package.workspace or nearest ancestor workspace within the Git source boundary. Cargo implicit path-dependency membership is unverified without Cargo metadata. Source roles are path-based labels; all parsed manifests remain listed.",
+    ownershipConflicts,
     manifests, submodules, missingMembers, failures,
     undeclaredGitlinks: pins.filter(pin => !declarations.some(item => item.path === pin.path)),
     vendorConsumerCoverage: "Literal forward-slash paths in tracked root text files, excluding vendor, toolchains, docs and lockfiles. References are candidates, not proven runtime consumers; absent references do not prove a vendor removable.",

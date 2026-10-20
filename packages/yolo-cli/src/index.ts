@@ -65,20 +65,20 @@ export const generateBunCatalog: Catalog["generateBunCatalog"] = async (...args)
 export const parseTsSource: Parse["parseTsSource"] = async (...args) => (await vfsParse()).parseTsSource(...args);
 // The pure renderers are synchronous in the core API, so they load their module with a lazy `require`.
 export const renderStatusMarkdown: Status["renderStatusMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
+  (require("@aphrody/yolo-core/src/vendor/status.ts") as Status).renderStatusMarkdown(...args);
 export const renderParseMarkdown: Parse["renderParseMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
+  (require("@aphrody/yolo-core/src/vfs/parse.ts") as Parse).renderParseMarkdown(...args);
 export const runBenchMetrics: Bench["runBenchMetrics"] = (...args) =>
-  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
+  (require("@aphrody/yolo-core/src/sys/benchmark.ts") as Bench).runBenchMetrics(...args);
 export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
+  (require("@aphrody/yolo-core/src/sys/benchmark.ts") as Bench).renderBenchMarkdown(...args);
 
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
 const rootDir = (): string => (cachedRoot ??= yoloHome());
 
-/** `yolo web|desktop|tauri`: the web frontend of the single desktop app (m3/packages/app-ui, embedded by crates/ui/app). */
-export const WEB_APP_DIR = "m3/packages/app-ui";
+/** `yolo web|desktop|tauri`: the web frontend of the single desktop app (packages/app-ui, embedded by apps/aphrody-app). */
+export const WEB_APP_DIR = "packages/app-ui";
 /** The checkout enclosing the working directory, else the working directory (ai, mcp, api). */
 const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 
@@ -286,7 +286,7 @@ async function main(): Promise<void> {
     case "desktop":
     case "tauri": {
       const sub = args[1] || "build";
-      // The web frontend of the single desktop app (crates/ui/app embeds its build).
+      // The web frontend of the single desktop app (apps/aphrody-app embeds its build).
       const webDir = resolve(rootDir(), WEB_APP_DIR);
       if (!existsSync(webDir)) {
         console.error(`\x1b[31mError:\x1b[0m web app not found at ${webDir}`);

@@ -56,8 +56,10 @@ if (mode === "health") {
   } else if (mode === "exec") {
     if (!args.length) throw new Error("exec requires an executable and its arguments");
     command = args;
+  } else if (mode === "bun") {
+    command = [process.execPath, ...args];
   } else {
-    command = ["/usr/local/bin/bun", mode, ...args];
+    command = [process.execPath, mode, ...args];
   }
   const child = Bun.spawn(command, { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
   const terminate = () => child.kill("SIGTERM");

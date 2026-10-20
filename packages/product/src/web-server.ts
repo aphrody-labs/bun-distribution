@@ -24,7 +24,7 @@ export async function startProductUiServer(options: ProductUiServerOptions = {})
     port = 3000,
     host = "127.0.0.1",
     backendUrl,
-    uiDist = resolve(findWorkspaceRoot(), "crates/ui/app/ui-dist"),
+    uiDist = resolve(findWorkspaceRoot(), "packages/app-ui/dist"),
   } = options;
   if (!isLoopbackHost(host)) throw new Error("The private product UI must bind to a loopback address.");
   const root = await realpath(uiDist);

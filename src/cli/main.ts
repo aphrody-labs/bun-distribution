@@ -14,7 +14,18 @@ interface ToolBin {
 /** Every `bin` of every workspace package: the `tool` group is discovered, never hard-coded. */
 async function discoverTools(): Promise<ToolBin[]> {
   const out: ToolBin[] = [];
-  for await (const file of new Bun.Glob("packages/*/package.json").scan({ cwd: root })) {
+  const workspace = await Bun.file(join(root, "package.json")).json() as {
+    workspaces?: string[] | { packages?: string[] };
+  };
+  const members = Array.isArray(workspace.workspaces)
+    ? workspace.workspaces
+    : workspace.workspaces?.packages ?? [];
+  const manifests = new Set<string>();
+  for (const member of members) {
+    for await (const file of new Bun.Glob(`${member.replace(/\/$/, "")}/package.json`).scan({ cwd: root }))
+      manifests.add(file.replaceAll("\\", "/"));
+  }
+  for (const file of [...manifests].sort()) {
     let json: { name?: string; bin?: string | Record<string, string> };
     try {
       json = await Bun.file(join(root, file)).json();
@@ -22,7 +33,8 @@ async function discoverTools(): Promise<ToolBin[]> {
       continue;
     }
     if (!json.bin) continue;
-    const entries = typeof json.bin === "string" ? { [json.name ?? dirname(file)]: json.bin } : json.bin;
+    const packageName = json.name?.split("/").pop() ?? dirname(file).split("/").pop()!;
+    const entries = typeof json.bin === "string" ? { [packageName]: json.bin } : json.bin;
     for (const [bin, path] of Object.entries(entries)) {
       out.push({ bin, pkg: dirname(file), target: join(dirname(file), path).replaceAll("\\", "/") });
     }
@@ -32,6 +44,8 @@ async function discoverTools(): Promise<ToolBin[]> {
 
 function registerTools(tools: ToolBin[]) {
   for (const t of tools) {
+    const existing = commands.find(command => command.group === "tool" && command.name === t.bin);
+    if (existing?.target === t.target) continue;
     define({
       group: "tool",
       name: t.bin,

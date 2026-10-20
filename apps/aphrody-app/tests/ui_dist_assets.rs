@@ -6,7 +6,7 @@
 //! build script stages them from their canonical packages (`ui-dist.manifest`). These checks fail
 //! when that staging did not happen or when a canonical source moved or changed.
 
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 fn app_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -23,18 +23,7 @@ fn manifest_entries() -> Vec<(String, PathBuf)> {
             let (destination, source) = line
                 .split_once(' ')
                 .unwrap_or_else(|| panic!("ui-dist.manifest: bad line {line:?}"));
-            let root = app_dir().join("../../../docs/aphrody/crates");
-            let source = source.trim();
-            let canonical = source.strip_prefix("material/").map_or_else(
-                || root.join(source),
-                |relative| {
-                    env::var_os("APHRODY_MATERIAL_CHECKOUT")
-                        .filter(|path| !path.is_empty())
-                        .map(PathBuf::from)
-                        .unwrap_or_else(|| root.join("../material"))
-                        .join(relative)
-                },
-            );
+            let canonical = app_dir().join("../..").join(source.trim());
             (destination.trim().to_owned(), canonical)
         })
         .collect()

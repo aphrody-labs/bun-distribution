@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Desktop app (crates/ui/app, tauri-runtime-cef) builder and packager: the single owner behind `bun run desktop:*`.
+ * Desktop app (apps/aphrody-app, tauri-runtime-cef) builder and packager: the single owner behind `bun run desktop:*`.
  *
  * Usage:
  *   bun run desktop:<check|build|run|dev|bundle> [-- --bundles <bundles>]
@@ -38,11 +38,11 @@ function parseArgs(args: string[]): {
 
 /** Resolve only the active monorepo's desktop owners. */
 export function resolveTauriLayout(repo: string) {
-  const appDir = join(repo, "crates", "ui", "app");
-  const uiDir = join(repo, "m3", "packages", "app-ui");
+  const appDir = join(repo, "apps", "aphrody-app");
+  const uiDir = join(repo, "packages", "app-ui");
   const cargoSerial = cargoSerialPath(repo);
   if (!existsSync(join(repo, "Cargo.toml")) || !existsSync(join(appDir, "Cargo.toml"))) {
-    throw new Error("--root must be the active Aphrody monorepo with crates/ui/app");
+    throw new Error("--root must be the active Aphrody monorepo with apps/aphrody-app");
   }
   if (!existsSync(cargoSerial)) throw new Error(`serialized Cargo wrapper missing: ${cargoSerial}`);
   return { appDir, uiDir, cargoSerial, cargo: cargoSerialCommand(repo) };

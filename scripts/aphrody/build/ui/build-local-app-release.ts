@@ -70,26 +70,26 @@ if ((await bindgen.exited) || installedBindgen !== `wasm-bindgen ${bindgenVersio
 await run(
   [
     "bun",
-    "packages/engine/yolo/src/index.ts",
+    "packages/yolo-cli/src/index.ts",
     "ops",
     "bun-native",
-    `--root=${root}`,
-    `--package-root=${join(source, "packages/interop/native")}`,
+    `--root=${source}`,
+    `--package-root=${join(source, "packages/aphrody-bun")}`,
   ],
   root,
 );
 const target = Bun.env.CARGO_TARGET_DIR ?? join(source, "target");
-const library = join(source, "packages/interop/native/native/x86_64-unknown-linux-gnu/libaphrody_ffi.so");
+const library = join(source, "packages/aphrody-bun/native/x86_64-unknown-linux-gnu/libaphrody_ffi.so");
 Bun.env.APHRODY_FFI_LIB = library;
 if (await buildDependencies(source, ["@aphrody/app-ui"])) throw new Error("UI dependency build failed");
-await run(["bun", "run", "typecheck"], join(source, "m3/packages/app-ui"));
-await run(["bun", "test", "src"], join(source, "m3/packages/app-ui"));
-await run(["bun", "run", "build"], join(source, "m3/packages/app-ui"), {
+await run(["bun", "run", "typecheck"], join(source, "packages/app-ui"));
+await run(["bun", "test", "src"], join(source, "packages/app-ui"));
+await run(["bun", "run", "build"], join(source, "packages/app-ui"), {
   APHRODY_FFI_LIB: library,
 });
-const ui = join(source, "crates/ui/app/ui-dist");
+const ui = join(source, "packages/app-ui/dist");
 // The web release needs the same canonical fonts, icons and sounds as the native host.
-for (const line of (await readFile(join(source, "crates/ui/app/ui-dist.manifest"), "utf8")).split("\n")) {
+for (const line of (await readFile(join(source, "apps/aphrody-app/ui-dist.manifest"), "utf8")).split("\n")) {
   if (!line.trim() || line.trim().startsWith("#")) continue;
   const [destination, canonical] = line.trim().split(/\s+/);
   if (!destination || !canonical || destination.includes("..") || canonical.startsWith("/")) {

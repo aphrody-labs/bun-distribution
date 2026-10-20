@@ -6,14 +6,16 @@
  * `just yolo::runtime-build` (profile `runtime`, unwinding panics).
  */
 import { mkdirSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { libraryFile, Runtime } from "@aphrody/runtime-sdk";
 import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const root = resolve(import.meta.dir, "../../../");
 const sha256 = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 // A producer packages its build, independently of whichever version the user installed.
-const libraryPath = process.env["YOLO_RUNTIME_LIB"] || resolve(root, "target/runtime", libraryFile());
+const libraryPath =
+  process.env["YOLO_RUNTIME_LIB"] ||
+  resolve(root, process.env["CARGO_TARGET_DIR"] || "target", "runtime", libraryFile());
 if (!(await Bun.file(libraryPath).exists())) {
   console.error(`Missing ${libraryPath}: run \`just yolo::runtime-build\` first.`);
   process.exit(1);
@@ -25,6 +27,7 @@ async function git(...args: string[]): Promise<string> {
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
+    timeout: 30_000,
   });
   const out = await new Response(proc.stdout).text();
   return (await proc.exited) === 0 ? out.trim() : "unknown";
@@ -55,7 +58,11 @@ async function crossInfo(target: string, path: string): Promise<{ info: BuildInf
   if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
   const rustc = text.match(/rustc \d+\.\d+\.\d+(?:-[a-z]+)? \([0-9a-f]{9} \d{4}-\d{2}-\d{2}\)/)?.[0];
   if (!rustc) throw new Error(`${path} embeds no rustc version`);
-  const lib = await Bun.file(resolve(root, "crates/engine/yolo-runtime/src/lib.rs")).text();
+  const runtimeManifestPath = resolve(root, "crates/yolo-runtime/Cargo.toml");
+  const runtimeManifest = Bun.TOML.parse(await Bun.file(runtimeManifestPath).text()) as {
+    lib?: { path?: string };
+  };
+  const lib = await Bun.file(resolve(dirname(runtimeManifestPath), runtimeManifest.lib?.path ?? "src/lib.rs")).text();
   const major = lib.match(/pub const ABI_MAJOR: u32 = (\d+);/)?.[1];
   const minor = lib.match(/pub const ABI_MINOR: u32 = (\d+);/)?.[1];
   if (!major || !minor) throw new Error("ABI constants not found in yolo-runtime");
@@ -77,7 +84,7 @@ async function crossInfo(target: string, path: string): Promise<{ info: BuildInf
 }
 
 /** The single header of the aphrody_ffi library; it declares the yolo_* ABI among the others. */
-const HEADER_SOURCE = "crates/interop/ffi/include/aphrody.h";
+const HEADER_SOURCE = "crates/aphrody-ffi/include/aphrody.h";
 /** Former header name, kept in artifacts as a one-line include of aphrody.h for existing C consumers. */
 const COMPAT_HEADER = `/* SPDX-License-Identifier: Apache-2.0 */
 /* Deprecated: the yolo_* runtime ABI is declared in aphrody.h. */
@@ -109,17 +116,29 @@ await Bun.write(resolve(outDir, libName), lib);
 const compatHeader = new TextEncoder().encode(COMPAT_HEADER);
 await Bun.write(resolve(outDir, "aphrody.h"), header);
 await Bun.write(resolve(outDir, "yolo_runtime.h"), compatHeader);
-// The workspace has no root LICENSE; use its canonical Apache text by default. Historical
+// The runtime crate declares Apache-2.0; retain the canonical Apache text after its owner move. Historical
 // artifacts may supply their original license explicitly rather than silently relabeling it.
 const licenseId = process.env["YOLO_RUNTIME_LICENSE_ID"] || "Apache-2.0";
 const licensePath =
-  process.env["YOLO_RUNTIME_LICENSE"] || resolve(root, "crates/tauri/aphrody-tauri-build/LICENSE-APACHE-2.0");
+  process.env["YOLO_RUNTIME_LICENSE"] ||
+  resolve(root, "packages/bun-tauri/crates/aphrody-tauri-build/LICENSE-APACHE-2.0");
 const license = new Uint8Array(await Bun.file(licensePath).arrayBuffer());
 await Bun.write(resolve(outDir, "LICENSE"), license);
 
-const vendor = (await Bun.file(resolve(root, "vendor.lock")).json()) as {
-  sources: { name: string; sha: string }[];
-};
+const vendorLock = Bun.file(resolve(root, "vendor.lock"));
+const hasVendorLock = await vendorLock.exists();
+const vendor: { sources: { name: string; sha: string }[] } = hasVendorLock
+  ? await vendorLock.json()
+  : { sources: [] };
+// The canonical distribution pins imported owners as flat Git submodules rather than vendor.lock.
+if (!hasVendorLock) {
+  const tree = await git("ls-tree", "-r", "HEAD", "--", "vendor", "toolchains", "crates", "packages", "apps");
+  if (tree === "unknown") throw new Error("Cannot read pinned workspace sources");
+  for (const line of tree.split("\n")) {
+    const link = /^160000 commit ([0-9a-f]{40})\t(.+)$/.exec(line);
+    if (link) vendor.sources.push({ name: link[2]!, sha: link[1]! });
+  }
+}
 const manifest = {
   schema: 1,
   name: info.name,

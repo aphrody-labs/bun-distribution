@@ -13,7 +13,7 @@ afterEach(() => {
 test("Tauri check uses only the current app and serialized Cargo wrapper", async () => {
   const root = mkdtempSync(join(tmpdir(), "aphrody-tauri-owner-"));
   roots.push(root);
-  const app = join(root, "crates/ui/app");
+  const app = join(root, "apps/aphrody-app");
   const scripts = join(root, "scripts/aphrody/build/rust");
   mkdirSync(app, { recursive: true });
   mkdirSync(scripts, { recursive: true });
@@ -43,7 +43,7 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   Bun.env.RUSTC_WRAPPER = "test-sccache-wrapper";
   try {
     const layout = resolveTauriLayout(root);
-    expect(layout.uiDir).toBe(join(root, "m3/packages/app-ui"));
+    expect(layout.uiDir).toBe(join(root, "packages/app-ui"));
     expect(layout.appDir).toBe(app);
     expect(await runTauri(["check", "--root", root])).toBe(0);
     expect(readFileSync(join(root, "invocation"), "utf8")).toBe("check\n--locked\n");

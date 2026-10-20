@@ -12,13 +12,13 @@ import {
   m3LlmsTxt,
   m3RobotsTxt,
   m3SitemapXml,
-} from "../../../packages/aphrody-migrated/m3/aphrody-m3/packages/m3-next/src/crawl.ts";
+} from "../../../../packages/m3-next/src/crawl.ts";
 import type { PageKind, SitePage } from "./web-crawlability.ts";
 
 /** Origin written into the pages; the CLI swaps it for the loopback origin when it serves them. */
 export const FIXTURE_ORIGIN = "http://fixture.invalid";
 
-const UI = resolve(import.meta.dir, "../../../packages/aphrody-migrated/m3/aphrody-m3/packages");
+const UI = resolve(import.meta.dir, "../../../../packages");
 const PAGES_MODULE = resolve(import.meta.dir, "./web-crawlability-pages.tsx");
 let installed = false;
 

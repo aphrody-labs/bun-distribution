@@ -2,15 +2,15 @@ import { describe, expect, it } from "bun:test";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { bunCheckout } from "../../core/src/vendor/catalog";
+import { bunCheckout } from "../../yolo-core/src/vendor/catalog";
 import { generateBunCatalog, inspectPackages, parseTsSource, readWorkspaceCargo } from "../src/index";
 
-const rootDir = resolve(import.meta.dir, "../../../docs/aphrody");
+const rootDir = resolve(import.meta.dir, "../../..");
 // These tests read the configured or workspace-sibling Bun fork checkout; skipped when absent.
 const haveBunFork = bunCheckout() !== undefined;
-const cliPkgPath = resolve(rootDir, "packages/engine/yolo/package.json");
-const cliEntryPath = resolve(rootDir, "packages/engine/yolo/src/index.ts");
-const generatedCatalogPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
+const cliPkgPath = resolve(rootDir, "packages/yolo-cli/package.json");
+const cliEntryPath = resolve(rootDir, "packages/yolo-cli/src/index.ts");
+const generatedCatalogPath = resolve(rootDir, "packages/app-ui/src/generated/bun-catalog.ts");
 
 describe("direct native Python tool CLI", () => {
   it.each(["uv", "ruff"])("forwards %s arguments and process context outside a checkout", async tool => {
@@ -364,7 +364,7 @@ describe("YOLO vendoring", () => {
     expect(status?.sources.map(source => source.name).toSorted()).toEqual(
       declaration.source.map(source => source.name).toSorted(),
     );
-    const { readGitHead } = await import("../../core/src/vendor/status");
+    const { readGitHead } = await import("../../yolo-core/src/vendor/status");
     const heads = await Promise.all(
       status!.sources.map(source => readGitHead(resolve(rootDir, "vendor", source.name))),
     );

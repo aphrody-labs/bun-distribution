@@ -78,8 +78,8 @@ async function run(args: string[], env = process.env) {
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-native-builder-"));
-  const ffi = join(root, "crates/interop/ffi");
-  const consumer = join(root, "packages/interop/native");
+  const ffi = join(root, "crates/aphrody-ffi");
+  const consumer = join(root, "packages/aphrody-bun");
   await mkdir(join(ffi, "src"), { recursive: true });
   await mkdir(join(consumer, "src"), { recursive: true });
   const wrapper =
@@ -87,7 +87,7 @@ async function fixture() {
   const serialScript = join(root, wrapper);
   await mkdir(dirname(serialScript), { recursive: true });
   await cp(join(import.meta.dir, "../../../..", wrapper), serialScript);
-  await writeFile(join(root, "Cargo.toml"), '[workspace]\nresolver="3"\nmembers=["crates/interop/ffi"]\n');
+  await writeFile(join(root, "Cargo.toml"), '[workspace]\nresolver="3"\nmembers=["crates/aphrody-ffi"]\n');
   await writeFile(
     join(ffi, "Cargo.toml"),
     '[package]\nname="aphrody-ffi"\nversion="1.0.0"\nedition="2024"\n[features]\ngpu=[]\n[lib]\ncrate-type=["cdylib"]\n',
@@ -177,10 +177,10 @@ test("native builder requires the aggregate monorepo owner", async () => {
   try {
     expect(await run([`--root=${root}`, "--debug"])).toEqual({
       stdout: "",
-      stderr: `bun-native: aggregate crate missing: ${join(root, "crates/interop/ffi/Cargo.toml")}\n`,
+      stderr: `bun-native: aggregate crate missing: ${join(root, "crates/aphrody-ffi/Cargo.toml")}\n`,
       code: 1,
     });
-    expect(await Bun.file(join(root, "packages/interop/native/native/manifest.json")).exists()).toBe(false);
+    expect(await Bun.file(join(root, "packages/aphrody-bun/native/manifest.json")).exists()).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -379,7 +379,7 @@ test.skipIf(!nativeRoot)(
     const temporary = await mkdtemp(join(tmpdir(), "aphrody-native-clean-"));
     try {
       const consumer = join(temporary, "consumer");
-      const source = join(nativeRoot!, "packages/interop/native");
+      const source = join(nativeRoot!, "packages/aphrody-bun");
       await mkdir(consumer, { recursive: true });
       await cp(join(source, "src"), join(consumer, "src"), { recursive: true });
       await cp(join(source, "package.json"), join(consumer, "package.json"));
