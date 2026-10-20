@@ -19,6 +19,7 @@ export interface PackageManifest {
   glyph: string;
   /** Needs cross-origin isolation (threads); the site always serves it. */
   threads?: boolean;
+  licenseNotices?: { status: "partial"; manifest: string; missingOwners: string[] };
   size: number;
   files: { path: string; sha256: string; bytes: number }[];
 }
@@ -55,6 +56,59 @@ async function finalize(dist: string, meta: Omit<PackageManifest, "files" | "siz
   };
   await Bun.write(join(dir, "app.json"), JSON.stringify(manifest));
   return manifest;
+}
+
+/** Copy actual upstream text; a registry's license label is never substituted for a notice. */
+async function emulatorNotices(dest: string, core: string, fixtures: { path: string; source: string; license: string }[]) {
+  const lock = await Bun.file(join(root, "packages/bun-engine/web-emulation/web-emulation.lock.json")).json();
+  const sourceKeys: Record<string, string> = { "zakuro-3ds": "zakuro", "tetanes-nes": "tetanes", "rustboyadvance-gba": "rustboyadvance-ng", "starpsx-psx": "starpsx" };
+  const owners: { id: string; directory?: string; explicit?: string[]; source?: string; release?: string; commit?: string; license?: string }[] = [
+    { id: "bun-engine", directory: "crates/bun-engine-core", source: "https://github.com/aphrody-labs/bun-engine" },
+  ];
+  if (core === "dust-nds") owners.push({ id: "dust", explicit: ["docs/licenses/iecode/licenses/dust/LICENSE"], source: "crates/aphrody-dust-core/Cargo.toml" });
+  else {
+    const key = sourceKeys[core] ?? core;
+    const pin = lock.sources[key];
+    owners.push({ id: key, directory: pin?.path, source: pin?.url, commit: pin?.commit });
+  }
+  for (const fixture of fixtures) {
+    // Resolve only an actual existing source checkout. A binary release cache has no license text.
+    const match = /^https:\/\/github\.com\/([^/]+)\/([^/]+)(?:\/|$)/.exec(fixture.source);
+    const repository = match ? `https://github.com/${match[1]}/${match[2]}` : undefined;
+    const ownerID = fixture.path.split("/").slice(0, 2).join("-").replace(/[^a-zA-Z0-9_-]/g, "-");
+    const godmode = fixture.path.startsWith("fixtures/godmode9i/");
+    owners.push({ id: ownerID, directory: godmode ? undefined : match ? `vendor/${match[2].toLowerCase()}` : undefined, explicit: godmode ? ["packages/bun-engine/web-emulation/notices/godmode9i/LICENSE"] : undefined, source: godmode ? "https://raw.githubusercontent.com/DS-Homebrew/GodMode9i/v3.10.0/LICENSE" : repository ?? fixture.source, release: fixture.source, license: fixture.license });
+  }
+  const records = [];
+  const missingOwners: string[] = [];
+  for (const owner of owners) {
+    const paths = new Set<string>(owner.explicit ?? []);
+    if (owner.directory) {
+      const directory = join(root, owner.directory);
+      const available = await stat(directory).then(s => s.isDirectory()).catch((error: any) => {
+        if (error.code === "ENOENT") return false;
+        throw error;
+      });
+      // Includes nested third-party notices retained by the available source owner.
+      if (available) {
+        for await (const file of new Bun.Glob("**/{LICENSE,LICENSE.*,LICENSE-*,COPYING,COPYING.*,NOTICE,NOTICE.*,license.txt}").scan({ cwd: directory, onlyFiles: true, followSymlinks: false })) {
+          if (!file.split(/[\\/]/).some(part => ["node_modules", "target", ".git", "build"].includes(part))) paths.add(`${owner.directory}/${file.replaceAll("\\", "/")}`);
+        }
+      }
+    }
+    const notices = [];
+    for (const path of [...paths].sort()) {
+      if (!(await Bun.file(join(root, path)).exists())) continue;
+      const target = `licenses/${owner.id}/${path}`;
+      await Bun.write(join(dest, target), Bun.file(join(root, path)));
+      notices.push({ path: target, sourcePath: path, sha256: await sha256(join(root, path)) });
+    }
+    if (!notices.length) missingOwners.push(owner.id);
+    records.push({ ...owner, notices, status: notices.length ? "source-notices-copied" : "missing-source-notices" });
+  }
+  await Bun.write(join(dest, "LICENSES.json"), JSON.stringify({ schemaVersion: 1, status: "partial", scope: "Exact notices found in available primary source owners. Transitive dependency license coverage and corresponding-source delivery are not established by this manifest.", missingOwners, owners: records }, null, 2));
+  if (missingOwners.length) console.warn(`${core}: missing upstream license texts: ${missingOwners.join(", ")}`);
+  return { status: "partial" as const, manifest: "LICENSES.json", missingOwners };
 }
 
 /** Browser emulators built by packages/bun-engine/web-emulation into dist/web-emulation. */
@@ -100,6 +154,7 @@ async function emulators(dist: string): Promise<PackageManifest[]> {
       }
     }
     await Bun.write(join(dest, "qualification.json"), JSON.stringify(receipt));
+    const licenseNotices = await emulatorNotices(dest, core, receipt.fixtures);
     await Bun.write(join(dest, "emulator.json"), JSON.stringify({ core, manifest: `payload/${core}/manifest.json`, qualification: "qualification.json", fixtures: receipt.fixtures, qualificationHarnessRevision: receipt.sourceRevision }));
     await Bun.write(join(dest, "PROVENANCE.json"), JSON.stringify({ core: { id: core, license: manifest.license, build: manifest.build ?? null }, qualificationHarnessRevision: receipt.sourceRevision, fixtures: receipt.fixtures, note: "License descriptions and source URLs are retained from the canonical registries; this metadata does not replace upstream license notices." }, null, 2));
     await Bun.write(join(dest, "index.html"), player);
@@ -113,6 +168,7 @@ async function emulators(dist: string): Promise<PackageManifest[]> {
         license: manifest.license,
         glyph: (manifest.systems?.[0] ?? core).toUpperCase().slice(0, 4),
         threads: manifest.threads === true,
+        licenseNotices,
       }),
     );
   }

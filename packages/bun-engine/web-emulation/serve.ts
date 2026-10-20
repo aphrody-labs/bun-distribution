@@ -9,7 +9,7 @@
  *   /roms/<pack>/<file> free homebrew from the bep cache (usr/var/cache/bep/roms), read-only
  *   /smoke/             the smoke-test page (smoke.html)
  */
-import { join, normalize, resolve } from "node:path";
+import { join, normalize, resolve, sep } from "node:path";
 
 const here = import.meta.dir;
 const root = resolve(here, "../../..");
@@ -28,7 +28,7 @@ const types: Record<string, string> = {
 
 function contained(base: string, path: string): string | undefined {
   const full = normalize(join(base, decodeURIComponent(path)));
-  return full.startsWith(base) ? full : undefined;
+  return full.startsWith(`${base}${sep}`) ? full : undefined;
 }
 
 async function file(path: string | undefined): Promise<Response> {
@@ -58,7 +58,8 @@ export function serve(port = Number(Bun.env.PORT ?? 8787)) {
     async fetch(request) {
       const url = new URL(request.url);
       let response: Response;
-      if (url.pathname === "/api/emulation") response = await file(join(dist, "index.json"));
+      if (url.pathname === "/favicon.ico") response = new Response(null, { status: 204 });
+      else if (url.pathname === "/api/emulation") response = await file(join(dist, "index.json"));
       else if (url.pathname.startsWith("/emulation/"))
         response = await file(contained(dist, url.pathname.slice("/emulation/".length)));
       else if (url.pathname.startsWith("/roms/"))
