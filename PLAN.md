@@ -61,9 +61,25 @@ logs do not define the current state; use Git history for prior batches.
 - Product payload preparation, independent CLI discovery qualification and
   receipt-bound Docker staging are implemented in the root factory graph.
   Qualification requires a complete product source closure, a matching runtime
-  pin, prepared package archives/sidecars and a frozen installed dependency tree.
-  No product payload or image has yet been built through this path on the VPS.
-  Native command and aggregate product qualification remain separate gates.
+  pin, prepared package archives/sidecars (including the generated
+  `@aphrody/cli-wasm` glue, module and provenance files) and a frozen installed
+  dependency tree. The product sidecar contract now admits only the exact
+  generated WASM paths owned by that declared package. The WASM staging receipt
+  also points to its current source file. Neither path has been built or run on
+  the VPS yet.
+- Product discovery currently proves command targets only. The root `mcp`
+  command dispatches Bun's native MCP server; it does not package or qualify the
+  Rust `aphrody-mcp` server. MCP protocol initialization/tool listing, plugin
+  resources, WASM execution and FFI ABI loading need their own receipt-bound
+  gates before claiming complete product qualification. FFI companions and the
+  Alpine/Ubuntu/gaming image owners also still need integration with the frozen
+  product receipt.
+- The source-only audit of all 92 uninitialized root submodules found zero
+  proven removals: 24 have implementation/manifest consumers and 67 retain
+  catalog/owner contracts. Material Design Icons has a concrete packaging gap:
+  its package loads assets from `vendor/` but excludes those assets from its
+  published file set. Migrate and qualify the assets, license and consumers
+  before considering retirement of that vendor.
 
 ## Delivery rules
 
