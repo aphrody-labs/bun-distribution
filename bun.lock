@@ -236,6 +236,9 @@
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/webos-wasm": "workspace:*",
       },
+      "devDependencies": {
+        "@aphrody/bun-types": "workspace:*",
+      },
     },
     "packages/a2a": {
       "name": "@aphrody/a2a",

@@ -19,6 +19,9 @@
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/webos-wasm": "workspace:*"
   },
+  "devDependencies": {
+    "@aphrody/bun-types": "workspace:*"
+  },
   "engines": {
     "bun": "=1.4.4"
   }
