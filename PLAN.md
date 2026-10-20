@@ -56,6 +56,14 @@ logs do not define the current state; use Git history for prior batches.
 2. Migrate Rust owners into the root Cargo workspace in bounded batches. Before
    each migration, verify dependency consumers, nested workspace behavior,
    submodule history, licenses, build ownership and qualification.
+   `crates/sqlite_tasks` is deliberately excluded until its SQLx 0.7 runtime
+   and `_sqlx_migrations` history are migrated to the existing `aphrody-sql`
+   rusqlite 0.40 owner. Root `cargo metadata` proved that adding it directly
+   conflicts on Cargo's unique `links = "sqlite3"` invariant with
+   `libsqlite3-sys 0.38.2` from `rookie-cookies`; SQLx 0.7 requires 0.27, and
+   the root has no shared SQLx dependency. Preserve the current app/database
+   contract, migrate query and migration compatibility first, then re-add the
+   crate and verify one root lockfile.
 3. Audit every vendor against pins, build definitions and consumers. Remove a
    vendor only when the source is demonstrably unused or replaced by a verified
    package, documentation reference or prebuilt artifact.
