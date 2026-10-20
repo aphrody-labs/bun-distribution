@@ -32,9 +32,11 @@ bun packages/bun-engine/web-emulation/serve.ts                            # http
 
 ```
 dist/web-emulation/
-  index.json                      every manifest (served as /api/emulation)
+  index.json                      qualified cores plus explicit pending reasons (served as /api/emulation)
   report.json                     build sizes and times per core and variant
   smoke.json                      last smoke results (frames, frame hash, timings, console errors)
+  <core>/qualification.json       receipt binding runtime/core files, locked test content and browser result
+  fixtures/<pack>/<file>          pinned open-source test ROMs included in qualified packages
   firmware/firmware.json          open-source firmware served with the cores (sha256, sha512, SRI, source order)
   firmware/<file>                 openbios.bin, normatt_gba_bios.bin
   runtime/{firmware,touch,melonds}.js
@@ -44,6 +46,22 @@ dist/web-emulation/
   <core>/threads/<hash>/...       optional +atomics variant (`build.ts rust --threads`)
   melonds/<hash>/{index.js,melonDS.js,melonDS.wasm,qtloader.js,melonDS.html,build.json}
 ```
+
+## Qualified installable packages
+
+Run the browser smoke qualification on the VPS, then regenerate `build.ts index`
+and build the superapp. WebOS discovers every built core and publishes only those
+whose qualification receipt still matches the complete artifact set, runtime,
+lock file and test content. A successful run requires at least 120 frames, a lit
+frame, a frame hash and no browser errors. A build manifest alone is insufficient.
+The receipt source revision identifies the qualification harness checkout.
+
+Each installable emulator carries the receipt and its pinned open-source ROMs
+and required free firmware, with hashes and provenance. GodMode9i and FBI are the
+currently pinned source-licensed ROMs. Other cores remain pending until their WASM
+build and source-licensed test content are qualified; freeware labels and empty
+placeholder ROMs do not qualify. Existing upstream licenses and corresponding
+source obligations remain applicable to each emulator and fixture.
 
 `<hash>` is the first 12 hex digits of the wasm's SHA-256: every file under it can be served
 with `Cache-Control: public, max-age=31536000, immutable`; `manifest.json` (which names the

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Assembles the installable app packages of the Bun OS web distribution into dist/apps/<id>/ and writes
 // dist/registry.json. Every package lists its files with sha256 so the client verifies each download.
-import { cp, mkdir, readdir, stat } from "node:fs/promises";
+import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
+import { verifyQualification } from "../../packages/bun-engine/web-emulation/qualification.ts";
 
 const root = resolve(import.meta.dir, "../..");
 
@@ -56,57 +57,66 @@ async function finalize(dist: string, meta: Omit<PackageManifest, "files" | "siz
   return manifest;
 }
 
-const EMULATORS = [
-  {
-    core: "dust-nds",
-    id: "game-nds-dust",
-    name: "Nintendo DS (Dust)",
-    glyph: "DS",
-    description: "Play Nintendo DS games you own. Runs fully in your browser with WebGPU; touch screen supported.",
-  },
-  {
-    core: "melonds",
-    id: "game-nds-melonds",
-    name: "Nintendo DS (melonDS)",
-    glyph: "mDS",
-    description: "Second Nintendo DS engine with the full melonDS feature set. Uses several threads.",
-    threads: true,
-  },
-] as const;
-
 /** Browser emulators built by packages/bun-engine/web-emulation into dist/web-emulation. */
 async function emulators(dist: string): Promise<PackageManifest[]> {
   const out: PackageManifest[] = [];
   const src = join(root, "dist/web-emulation");
   const player = await Bun.file(join(import.meta.dir, "player.html")).text();
-  for (const e of EMULATORS) {
-    const coreDir = join(src, e.core);
-    if (!(await Bun.file(join(coreDir, "manifest.json")).exists())) {
-      console.warn(`skip ${e.id}: ${coreDir} is not built`);
+  const rejected: { core: string; reason: string }[] = [];
+  const entries = await readdir(src, { withFileTypes: true }).catch((error: any) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (!entry.isDirectory() || !(await Bun.file(join(src, entry.name, "manifest.json")).exists())) continue;
+    const core = entry.name;
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(core)) throw new Error(`Unsafe emulator core: ${core}`);
+    const id = `game-${core}`;
+    const dest = join(dist, "apps", id);
+    // A rejected rebuild must not leave an old installable package behind.
+    await rm(dest, { recursive: true, force: true });
+    let receipt;
+    try { receipt = await verifyQualification(src, core, { root }); }
+    catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      rejected.push({ core, reason });
+      console.warn(`reject ${id}: ${reason}`);
       continue;
     }
-    const manifest = JSON.parse(await Bun.file(join(coreDir, "manifest.json")).text()) as {
-      license?: string;
-      version?: string;
-    };
-    const dest = join(dist, "apps", e.id);
+    const manifest = await Bun.file(join(src, core, "manifest.json")).json();
+    if (typeof manifest.license !== "string" || !manifest.license.trim()) throw new Error(`${core}: core license metadata is missing`);
     await mkdir(dest, { recursive: true });
-    await cp(coreDir, join(dest, "core"), { recursive: true });
-    await cp(join(src, "runtime"), join(dest, "runtime"), { recursive: true });
+    for (const path of Object.keys(receipt.files)) {
+      await Bun.write(join(dest, "payload", path), Bun.file(join(src, path)));
+    }
+    // The loader registry must be included verbatim among the qualified files.
+    const firmwareIDs = manifest.firmware ?? [];
+    if (firmwareIDs.length) {
+      const registry = await Bun.file(join(src, "firmware/firmware.json")).json();
+      if (!receipt.files["firmware/firmware.json"]) throw new Error(`${core}: firmware registry was not qualified`);
+      for (const firmwareID of firmwareIDs) {
+        const pin = registry.firmware[firmwareID];
+        if (!pin || !receipt.fixtures.some(f => f.path === `firmware/${pin.file}` && f.sha256 === pin.sha256)) throw new Error(`${core}: missing qualified firmware ${firmwareID}`);
+      }
+    }
+    await Bun.write(join(dest, "qualification.json"), JSON.stringify(receipt));
+    await Bun.write(join(dest, "emulator.json"), JSON.stringify({ core, manifest: `payload/${core}/manifest.json`, qualification: "qualification.json", fixtures: receipt.fixtures, qualificationHarnessRevision: receipt.sourceRevision }));
+    await Bun.write(join(dest, "PROVENANCE.json"), JSON.stringify({ core: { id: core, license: manifest.license, build: manifest.build ?? null }, qualificationHarnessRevision: receipt.sourceRevision, fixtures: receipt.fixtures, note: "License descriptions and source URLs are retained from the canonical registries; this metadata does not replace upstream license notices." }, null, 2));
     await Bun.write(join(dest, "index.html"), player);
     out.push(
       await finalize(dist, {
-        id: e.id,
-        name: e.name,
+        id,
+        name: manifest.name ?? core,
         version: manifest.version ?? "0.0.0",
         category: "games",
-        description: e.description,
-        license: manifest.license ?? "GPL-3.0-or-later",
-        glyph: e.glyph,
-        threads: "threads" in e ? e.threads : undefined,
+        description: "Qualified browser emulator with bundled open-source test content.",
+        license: manifest.license,
+        glyph: (manifest.systems?.[0] ?? core).toUpperCase().slice(0, 4),
+        threads: manifest.threads === true,
       }),
     );
   }
+  await Bun.write(join(dist, "emulation-rejections.json"), JSON.stringify({ schemaVersion: 1, rejected }, null, 2));
   return out;
 }
 

@@ -10,24 +10,31 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { serve } from "./serve.ts";
+import { createQualificationSnapshot, qualificationSHA256, writeQualification, type QualificationFixture } from "./qualification.ts";
 
 const root = resolve(import.meta.dir, "../../..");
 const dist = join(root, "dist", "web-emulation");
 const shots = join(root, "build", "web-emulation", "screens");
 
-/** Free test content per core (bep packs, pinned by sha256 in roms.json). */
-const cases: Record<string, { system: string; rom: string; firmware?: string; frames?: number }> = {
-  "dust-nds": { system: "nds", rom: "/roms/godmode9i/GodMode9i.nds" },
-  melonds: { system: "nds", rom: "/roms/godmode9i/GodMode9i.nds" },
-  "zakuro-3ds": { system: "3ds", rom: "/roms/fbi/FBI.3dsx" },
-  "tetanes-nes": { system: "nes", rom: "/roms/tetanes-homebrew/alter_ego.nes" },
-  "rustboyadvance-gba": { system: "gba", rom: "/roms/gba-tests/arm.gba" },
-  "starpsx-psx": {
-    system: "psx",
-    rom: "/roms/psx/empty.bin",
-    firmware: "openbios",
-  },
+/** Only source-licensed release fixtures with exact binary pins are admitted. */
+const cases: Record<string, { system: string; pack: string; firmware?: string; frames?: number }> = {
+  "dust-nds": { system: "nds", pack: "godmode9i" },
+  melonds: { system: "nds", pack: "godmode9i" },
+  "zakuro-3ds": { system: "3ds", pack: "fbi" },
 };
+
+async function stageFixture(packID: string): Promise<QualificationFixture> {
+  const lock = await Bun.file(join(import.meta.dir, "web-emulation.lock.json")).json();
+  const catalog = await Bun.file(join(root, "packages/bun-engine/plugins/consoles/roms.json")).json();
+  const pin = lock.testContent[packID];
+  const pack = catalog.packs.find((p: any) => p.id === packID);
+  if (!pin || !pack?.url || pack.sha256 !== pin.sha256) throw new Error(`${packID}: missing matching open-source fixture pins`);
+  const source = join(root, "usr/var/cache/bep/roms", packID, pin.file);
+  if (await qualificationSHA256(source) !== pin.sha256) throw new Error(`${packID}: cached ROM digest mismatch`);
+  const path = `fixtures/${packID}/${pin.file}`;
+  await Bun.write(join(dist, path), Bun.file(source));
+  return { path, sha256: pin.sha256, license: pack.license, source: pack.url };
+}
 
 function chromePath() {
   const candidates = [
@@ -76,12 +83,20 @@ class Cdp {
 }
 
 export async function smoke(cores: string[], threads: boolean) {
-  const server = serve(0);
+  // Invalidate old claims before setup too: missing browser/content must not retain qualification.
+  for (const core of cores) {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(core)) throw new Error(`Invalid core: ${core}`);
+    rmSync(join(dist, core, "qualification.json"), { force: true });
+  }
   const chrome = chromePath();
   if (!chrome) throw new Error("no Chrome/Chromium found (set CHROME)");
   const profile = join(root, "build", "web-emulation", "chrome-profile");
   rmSync(profile, { recursive: true, force: true });
   mkdirSync(shots, { recursive: true });
+  const server = serve(0);
+  let cleanupBrowser: (() => void) | undefined;
+  let cdp: Cdp | undefined;
+  try {
   const browser = Bun.spawn(
     [
       chrome,
@@ -107,6 +122,7 @@ export async function smoke(cores: string[], threads: boolean) {
     ],
     { stderr: "pipe", stdout: "ignore" },
   );
+  cleanupBrowser = () => { browser.kill(); };
   let endpoint = "";
   const reader = browser.stderr.getReader();
   const decoder = new TextDecoder();
@@ -117,18 +133,26 @@ export async function smoke(cores: string[], threads: boolean) {
     buffered += decoder.decode(value);
     endpoint = buffered.match(/DevTools listening on (ws:\/\/\S+)/)?.[1] ?? "";
   }
-  const cdp = await Cdp.connect(endpoint);
+  cdp = await Cdp.connect(endpoint);
   const results: Record<string, unknown> = (await Bun.file(join(dist, "smoke.json")).exists())
     ? await Bun.file(join(dist, "smoke.json")).json()
     : {};
-  try {
     for (const core of cores) {
       const test = cases[core];
-      if (!test) throw new Error(`no smoke case for ${core}`);
+      if (!test) throw new Error(`no pinned open-source smoke case for ${core}; freeware and placeholder images cannot qualify`);
+      const fixture = await stageFixture(test.pack);
+      const fixtures = [fixture];
+      if (test.firmware) {
+        const registry = await Bun.file(join(root, "packages/bun-engine/plugins/consoles/free-firmware.json")).json();
+        const pin = registry.firmware[test.firmware];
+        if (!pin) throw new Error(`No free firmware pin: ${test.firmware}`);
+        fixtures.push({ path: `firmware/${pin.file}`, sha256: pin.sha256, license: pin.license, source: pin.source });
+      }
+      const snapshot = await createQualificationSnapshot(dist, core, fixtures);
       const query = new URLSearchParams({
         core,
         system: test.system,
-        rom: test.rom,
+        rom: `/emulation/${fixture.path}`,
         frames: String(test.frames ?? 120),
       });
       if (test.firmware) query.set("firmware", test.firmware);
@@ -184,21 +208,30 @@ export async function smoke(cores: string[], threads: boolean) {
         testedAt: new Date().toISOString(),
       };
       results[`${core}${threads ? ":threads" : ""}`] = entry;
+      if (entry.ok) await writeQualification(dist, snapshot, {
+        ok: entry.ok,
+        frames: entry.frames,
+        lit: entry.lit,
+        hash: entry.hash,
+        errors: [...(entry.errors ?? []), ...logs],
+      });
       console.log(
         `${core}${threads ? " (threads)" : ""}: ${entry.ok ? "ok" : "FAIL"} frames=${entry.frames} hash=${entry.hash} lit=${entry.lit} ${entry.renderer ?? ""} first=${Math.round(entry.ms?.firstFrame ?? -1)}ms ${entry.error ?? ""}`,
       );
       await Bun.write(join(dist, "smoke.json"), `${JSON.stringify(results, null, 2)}\n`);
     }
+  return results;
   } finally {
-    cdp.close();
-    browser.kill();
+    cdp?.close();
+    cleanupBrowser?.();
     server.stop(true);
   }
-  return results;
 }
 
 if (import.meta.main) {
   const args = Bun.argv.slice(2);
   const cores = args.filter(a => !a.startsWith("--"));
-  await smoke(cores.length ? cores : ["dust-nds"], args.includes("--threads"));
+  const selected = cores.length ? cores : ["dust-nds"];
+  const results = await smoke(selected, args.includes("--threads"));
+  if (selected.some(core => (results[`${core}${args.includes("--threads") ? ":threads" : ""}`] as any)?.ok !== true)) process.exitCode = 1;
 }

@@ -13,6 +13,7 @@
 import { brotliCompressSync, constants } from "node:zlib";
 import { join, relative, resolve } from "node:path";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { verifyQualification } from "./qualification.ts";
 
 const here = import.meta.dir;
 const root = resolve(here, "../../..");
@@ -534,11 +535,19 @@ async function index() {
     await Bun.write(join(dist, "runtime", file), Bun.file(join(here, "runtime", file)));
   }
   const manifests = [];
+  const pending: { id: string; reason: string }[] = [];
   for (const entry of readdirSync(dist, { withFileTypes: true })) {
     const path = join(dist, entry.name, "manifest.json");
-    if (entry.isDirectory() && existsSync(path)) manifests.push(await Bun.file(path).json());
+    if (entry.isDirectory() && existsSync(path)) {
+      try {
+        await verifyQualification(dist, entry.name);
+        manifests.push(await Bun.file(path).json());
+      } catch (error) {
+        pending.push({ id: entry.name, reason: String(error) });
+      }
+    }
   }
-  await Bun.write(join(dist, "index.json"), `${JSON.stringify({ schemaVersion: 1, cores: manifests }, null, 2)}\n`);
+  await Bun.write(join(dist, "index.json"), `${JSON.stringify({ schemaVersion: 1, cores: manifests, pending }, null, 2)}\n`);
   log(`index: ${manifests.map(m => m.id).join(", ") || "no cores"}`);
 }
 

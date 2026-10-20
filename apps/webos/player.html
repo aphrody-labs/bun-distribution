@@ -12,8 +12,10 @@
   #pick { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 24px; }
   #pick h1 { margin: 0; font-size: 28px; font-weight: 500; }
   #pick p { margin: 0; color: #cac4d0; max-width: 34em; }
-  label.btn { cursor: pointer; padding: 12px 26px; border-radius: 999px; background: #d0bcff; color: #381e72; font-weight: 600; }
-  input { display: none; }
+  .btn { cursor: pointer; padding: 12px 26px; border: 0; border-radius: 999px; background: #d0bcff; color: #381e72; font: inherit; font-weight: 600; }
+  .btn:focus-visible { outline: 3px solid #eaddff; outline-offset: 4px; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  #file { max-width: 100%; }
   #drop { border: 2px dashed #49454f; border-radius: 24px; padding: 28px 40px; }
   #drop.over { border-color: #d0bcff; background: #1d1b20; }
   #msg { min-height: 1.4em; color: #f2b8b5; }
@@ -24,33 +26,57 @@
 <div id="pick">
   <h1 id="title">Game</h1>
   <p id="hint">Choose a game file from your device. It stays in your browser and is never uploaded.</p>
-  <div id="drop"><label class="btn">Choose a game<input id="file" type="file"></label></div>
+  <button id="test" class="btn" type="button" disabled>Launch bundled test</button>
+  <div id="drop"><label for="file">Choose a game</label><br><input id="file" type="file" disabled></div>
   <div id="msg" role="status"></div>
 </div>
 <script type="module">
   const $ = id => document.getElementById(id);
   const msg = $("msg");
-  let manifest, mod, started = false;
+  let manifest, product, mod, readyOK = false, started = false;
+  async function json(path) {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Missing player resource (${response.status})`);
+    return response.json();
+  }
+  function payloadURL(path) {
+    if (typeof path !== "string" || !path || /[\\:?#]/.test(path) || path.startsWith("/") || path.split("/").some(p => !p || p === "." || p === "..")) throw new Error("Invalid emulator resource path");
+    return new URL(`./payload/${path}`, location.href);
+  }
   async function boot() {
-    manifest = await (await fetch("./core/manifest.json")).json();
+    product = await json("./emulator.json");
+    manifest = await json(payloadURL(`${product.core}/manifest.json`));
     $("title").textContent = manifest.name;
     $("file").accept = manifest.extensions.join(",");
-    mod = await import(`./core/${manifest.module}`);
-    await mod.default({ module_or_path: `./core/${manifest.wasm}` });
+    if (manifest.threads && !globalThis.crossOriginIsolated) throw new Error("This emulator needs a cross-origin isolated page for shared memory.");
+    if (!globalThis.WebAssembly) throw new Error("This browser does not support WebAssembly.");
+    mod = await import(payloadURL(`${product.core}/${manifest.module}`).href);
+    await mod.default({ module_or_path: payloadURL(`${product.core}/${manifest.wasm}`).href });
+    readyOK = true;
+    $("file").disabled = false;
+    $("test").disabled = false;
   }
   async function run(file) {
-    if (started) return;
+    if (started || !readyOK) return;
     started = true;
     try {
       msg.style.color = "";
       msg.textContent = "Starting…";
       const rom = new Uint8Array(await file.arrayBuffer());
+      const options = { system: manifest.systems[0], audio: true };
+      if (manifest.firmware?.length) {
+        if (manifest.firmware.length !== 1) throw new Error("This player requires a single registered BIOS component.");
+        const { loadFreeFirmware } = await import("./payload/runtime/firmware.js");
+        const id = manifest.firmware[0];
+        const firmware = await loadFreeFirmware(id, { base: new URL("./payload/", location.href).href, Verifier: mod.FirmwareVerifier });
+        Object.assign(options, { bios: firmware.bytes, firmware: id });
+      }
       $("pick").style.display = "none";
       $("stage").style.display = "block";
       const canvas = $("screen");
-      const handle = await mod[manifest.start ?? "start"](canvas, rom, { system: manifest.systems[0], audio: true });
+      const handle = await mod[manifest.start ?? "start"](canvas, rom, options);
       if (manifest.touch) {
-        const { bindTouch } = await import("./runtime/touch.js");
+        const { bindTouch } = await import("./payload/runtime/touch.js");
         bindTouch(handle.canvas ?? canvas, handle, manifest.systems[0]);
       }
       canvas.focus();
@@ -63,6 +89,23 @@
     }
   }
   const ready = boot().catch(error => { msg.textContent = `This player could not load: ${error?.message ?? error}`; });
+  $("test").addEventListener("click", async () => {
+    await ready;
+    if (!readyOK) return;
+    $("test").disabled = true;
+    try {
+      const fixture = product.fixtures.find(f => f.path.startsWith("fixtures/"));
+      if (!fixture) throw new Error("No bundled test ROM is available.");
+      if (!crypto.subtle) throw new Error("Test verification requires a secure browser context.");
+      const response = await fetch(payloadURL(fixture.path));
+      if (!response.ok) throw new Error(`Test download failed (${response.status})`);
+      const bytes = await response.arrayBuffer();
+      const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
+      if (digest !== fixture.sha256) throw new Error("Bundled test ROM integrity check failed.");
+      await run(new File([bytes], fixture.path.split("/").pop()));
+    } catch (error) { msg.textContent = `Could not launch bundled test: ${error?.message ?? error}`; }
+    finally { $("test").disabled = false; }
+  });
   $("file").addEventListener("change", async e => { await ready; const f = e.target.files[0]; if (f) run(f); });
   const drop = $("drop");
   addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
