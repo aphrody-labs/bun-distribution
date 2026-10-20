@@ -58,6 +58,8 @@ if (mode === "health") {
     command = args;
   } else if (mode === "bun") {
     command = [process.execPath, ...args];
+  } else if (mode === "bunos" || mode === "bun-os") {
+    command = [process.execPath, `${root}/product/src/cli.ts`, ...args];
   } else {
     command = [process.execPath, mode, ...args];
   }

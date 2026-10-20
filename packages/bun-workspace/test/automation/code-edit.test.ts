@@ -59,7 +59,7 @@ test("YOLO rename delegates path selection and literal rules to the owner CLI", 
     "/tmp/yolo",
   ]);
   const command = editCommand(options, []);
-  expect(command).toContain(resolve("/tmp/yolo/packages/engine/yolo/src/index.ts"));
+  expect(command).toContain(resolve("/tmp/yolo/packages/yolo-cli/src/index.ts"));
   expect(command).toContain(resolve("/tmp/source repo"));
   expect(command).toContain("--exclude");
   expect(command).toContain("**/*.test.ts");

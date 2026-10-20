@@ -398,7 +398,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
     // The source path is host-specific; the remote factory selects the repository root.
     const remoteArgs = args.filter((arg, index) => arg !== "--root" && args[index - 1] !== "--root");
     const dispatched = await routeHeavyBuild(
-      ["bun", "packages/engine/yolo/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
+      ["bun", "packages/yolo-cli/src/index.ts", "ops", "monorepo-gate", ...remoteArgs],
       plan.root,
     );
     if (dispatched !== undefined) return dispatched;

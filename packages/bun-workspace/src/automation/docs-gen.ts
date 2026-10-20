@@ -9,7 +9,7 @@
  *                                      the Bun workspaces and the git log
  *   docs/README.md                     generated documentation index
  *   docs/reference/ai/llms.txt         llms.txt index of the canonical docs
- *   docs/ecosystem/*                   delegated to scripts/tools/workspace/ecosystem.ts
+ *   docs/ecosystem/*                   delegated to scripts/aphrody/tools/workspace/ecosystem.ts
  *   docs/reference/infra/UPSTREAMS.md  delegated to `yolo update upstream docs`
  *   docs/reference/workspace/DEPS-INVENTORY.md  only with --deps (network, registry-dependent, never checked)
  *
@@ -448,17 +448,17 @@ export async function runDocsGen(args: string[]): Promise<number> {
   apply("docs/README.md", renderDocsIndex(root));
 
   const bun = process.execPath;
-  const upstreamArgs = ["packages/engine/yolo/src/index.ts", "update", "upstream", "docs", "--root", root];
+  const upstreamArgs = ["packages/yolo-cli/src/index.ts", "update", "upstream", "docs", "--root", root];
   if (delegate(root, "UPSTREAMS.md", [bun, ...upstreamArgs, ...(check ? [] : ["--apply"])]) !== 0) failures++;
   if (ecosystem) {
-    const ecoArgs = ["scripts/tools/workspace/ecosystem.ts", ...(check ? ["--check"] : [])];
+    const ecoArgs = ["scripts/aphrody/tools/workspace/ecosystem.ts", ...(check ? ["--check"] : [])];
     if (delegate(root, "docs/ecosystem", [bun, ...ecoArgs]) !== 0) failures++;
   }
   if (deps && !check) {
     if (
       delegate(root, "DEPS-INVENTORY.md", [
         bun,
-        "packages/engine/yolo/src/index.ts",
+        "packages/yolo-cli/src/index.ts",
         "update",
         "deps",
         "inventory",

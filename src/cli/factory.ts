@@ -36,6 +36,9 @@ const OPTIONS = {
   config: { type: "string" },
   runtime: { type: "string" },
   receipt: { type: "string" },
+  product: { type: "string" },
+  "product-receipt": { type: "string" },
+  "product-qualification": { type: "string" },
   material: { type: "string" },
   tag: { type: "string" },
   action: { type: "string", default: "plan" },
@@ -54,6 +57,7 @@ const OPTIONS = {
 export const FACTORY_USAGE = `  --profile full|perf  --target linux-x64|linux-arm64|windows-x64|macos-arm64|wasm  --config FILE
   --composition server|desktop|gaming  --snapshot YYYY-MM-DD  --root ABSOLUTE_FACTORY  --lock FILE
   --out DIR  --runtime FILE  --receipt FILE  --tag TAG  --executor docker|native
+  --product WORKSPACE --product-receipt FILE --product-qualification FILE  (qualified product staging)
   --action plan|host|resolve|rootfs  (arch)   --abi msvc-x64|msvc-arm64|msys-x64|ucrt64-x64|clang64-x64|clangarm64-arm64  (msys2)
 
 Config: { "checkouts": { "material": "../material", "cosmic-epoch": "../cosmic" } }
@@ -93,6 +97,17 @@ export async function runFactoryCli(argv: string[]): Promise<number> {
       for (const [id, path] of Object.entries(config.sourceExport.repositories ?? {}))
         config.sourceExport.repositories![id] = resolve(file, "..", path);
       config.sourceExport.protectedRoots = config.sourceExport.protectedRoots?.map(path => resolve(file, "..", path));
+    }
+    if (config.productPayload) {
+      if (config.productPayload.installCache)
+        config.productPayload.installCache = resolve(file, "..", config.productPayload.installCache);
+      const options = config.productPayload.sources;
+      if (options.cache) options.cache = resolve(file, "..", options.cache);
+      for (const mapping of [options.checkouts, options.repositories])
+        for (const [id, path] of Object.entries(mapping ?? {})) mapping![id] = resolve(file, "..", path);
+      options.protectedRoots = options.protectedRoots?.map(path => resolve(file, "..", path));
+      for (const input of config.productPayload.preparedInputs ?? [])
+        input.artifact = resolve(file, "..", input.artifact);
     }
   }
   let exitCode = 0;
@@ -174,15 +189,43 @@ export async function runFactoryCli(argv: string[]): Promise<number> {
       break;
     case "stage":
       if (target === "wasm") throw new Error("Use the wasm command for the portable library target");
+      if ([values.product, values["product-receipt"], values["product-qualification"]].some(Boolean) &&
+          ![values.product, values["product-receipt"], values["product-qualification"]].every(Boolean))
+        throw new Error("Product staging requires --product, --product-receipt and --product-qualification together");
       await stageRuntime(
         resolve(required("out")),
         resolve(required("runtime")),
         resolve(required("receipt")),
         profile,
         target,
+        values.product ? {
+          workspace: resolve(values.product),
+          receipt: resolve(values["product-receipt"]!),
+          qualification: resolve(values["product-qualification"]!),
+        } : undefined,
       );
       result = { staged: true, profile, target };
       break;
+    case "product": {
+      if (!config.productPayload) throw new Error("Configure productPayload with the complete pinned source graph and storage estimates");
+      const { prepareProductPayload } = await import("../../factory/product-payload.ts");
+      const runtime = await Bun.file(resolve(required("receipt"))).json();
+      if (runtime.target !== target) throw new Error("Product target must match the selected runtime receipt");
+      result = await prepareProductPayload(resolve(required("out")), {
+        ...config.productPayload,
+        executable: resolve(required("runtime")),
+        runtime,
+      });
+      break;
+    }
+    case "product-qualify": {
+      if (!values.product || !values["product-receipt"])
+        throw new Error("Product qualification requires --product and --product-receipt");
+      const { qualifyProductPayload } = await import("../../factory/product-qualification.ts");
+      result = await qualifyProductPayload(resolve(values.product), resolve(values["product-receipt"]),
+        resolve(required("runtime")), resolve(required("out")));
+      break;
+    }
     case "rootfs-stage":
       result = await stageArchRootfs(resolve(required("out")), resolve(required("receipt")), target, composition);
       break;

@@ -55,12 +55,15 @@ logs do not define the current state; use Git history for prior batches.
   all other product packages retain the shared version contract. This source
   correction still requires VPS qualification before reporting Cargo inspection
   as passing.
-- `vendor/recalbox` remains declared without a Git pin. Resolve its source
-  contract before initialization; do not invent a revision or report the full
-  source graph as available. Restored source pins still need initialization.
-- The container payload does not yet stage the distribution CLI and its complete
-  workspace dependency graph. Runtime and upstream source staging alone do not
-  establish a complete product image.
+- Declared root submodules now have Git pins, including the Recalbox revision
+  read from its upstream repository. Pins still need initialization and source
+  qualification; declarations alone do not make the source graph available.
+- Product payload preparation, independent CLI discovery qualification and
+  receipt-bound Docker staging are implemented in the root factory graph.
+  Qualification requires a complete product source closure, a matching runtime
+  pin, prepared package archives/sidecars and a frozen installed dependency tree.
+  No product payload or image has yet been built through this path on the VPS.
+  Native command and aggregate product qualification remain separate gates.
 
 ## Delivery rules
 

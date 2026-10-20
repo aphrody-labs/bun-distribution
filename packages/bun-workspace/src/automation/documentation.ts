@@ -348,7 +348,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     const child = Bun.spawn(
       [
         process.execPath,
-        join(root, "packages/engine/yolo/src/index.ts"),
+        join(root, "packages/yolo-cli/src/index.ts"),
         "doc-ai",
         "translate",
         documentationPath(root, path),
@@ -367,7 +367,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   }
   // Compatibility adapter: an explicit invocation retains doc-ai's original arguments.
   if (command === "assist") {
-    const child = Bun.spawn([process.execPath, join(root, "packages/engine/yolo/src/index.ts"), "doc-ai", ...rest], {
+    const child = Bun.spawn([process.execPath, join(root, "packages/yolo-cli/src/index.ts"), "doc-ai", ...rest], {
       windowsHide: true,
       cwd: root,
       stdin: "inherit",

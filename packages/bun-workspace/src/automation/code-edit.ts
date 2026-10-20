@@ -119,7 +119,7 @@ export function editCommand(options: EditOptions, paths: string[]): string[] {
   if (options.engine === "yolo")
     return [
       process.execPath,
-      resolve(options.yoloRoot, "packages/engine/yolo/src/index.ts"),
+      resolve(options.yoloRoot, "packages/yolo-cli/src/index.ts"),
       "rename",
       ...(options.operation === "restore"
         ? ["--restore", options.journal!]
@@ -232,7 +232,7 @@ export function runCodeEdit(argv: string[]): number {
       return 0;
     }
     if (options.engine === "yolo") {
-      const entry = resolve(options.yoloRoot, "packages/engine/yolo/src/index.ts");
+      const entry = resolve(options.yoloRoot, "packages/yolo-cli/src/index.ts");
       if (!existsSync(entry)) throw new Error("YOLO CLI missing; set --yolo-root to its checkout");
       const result = execute(editCommand(options, []), options.yoloRoot);
       process.stdout.write(result.stdout);

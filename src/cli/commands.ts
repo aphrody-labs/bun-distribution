@@ -354,8 +354,22 @@ define(
     group: "build",
     name: "stage",
     summary: "Stage a runtime into a distribution",
-    usage: "--out DIR --runtime FILE --receipt FILE",
+    usage: "--out DIR --runtime FILE --receipt FILE [--product DIR --product-receipt FILE --product-qualification FILE]",
     ...viaFactory("stage"),
+  },
+  {
+    group: "build",
+    name: "product",
+    summary: "Prepare the pinned product workspace and frozen dependencies on the Linux factory",
+    usage: "--out DIR --runtime FILE --receipt FILE --config FILE",
+    ...viaFactory("product"),
+  },
+  {
+    group: "build",
+    name: "product-qualify",
+    summary: "Qualify product CLI discovery against its frozen payload on the Linux factory",
+    usage: "--product DIR --product-receipt FILE --runtime FILE --out FILE",
+    ...viaFactory("product-qualify"),
   },
   {
     group: "build",

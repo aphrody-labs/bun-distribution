@@ -1,4 +1,5 @@
 import { sourceIntegrity } from "./source-integrity.ts";
+import { verifyQualifiedProduct } from "./verify-product.ts";
 
 type RuntimeReceipt = {
   repository: string;
@@ -15,6 +16,13 @@ export async function verifyPayload(root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os")
   const receipt = (await Bun.file(`${root}/distribution.json`).json()) as {
     name: string;
     runtime: RuntimeReceipt;
+    product?: {
+      sourceRevision: string;
+      installedTreeSHA256: string;
+      installedModesSHA256: string;
+      receiptSHA256: string;
+      qualificationSHA256: string;
+    };
   };
   const runtime = receipt.runtime;
   if (Bun.env.BUN_OS_PACKAGE_MANAGER === "pacman") {
@@ -93,6 +101,17 @@ export async function verifyPayload(root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os")
   const contents = await sourceIntegrity(`${root}/sources`);
   if (contents.treeSHA256 !== sourceReceipt.treeSHA256)
     throw new Error("Image sources differ from their exported content checksum");
+  if (!receipt.product) throw new Error("The image requires the qualified distribution CLI workspace");
+  const product = await verifyQualifiedProduct(`${root}/product`, `${root}/product.receipt.json`,
+    `${root}/product.qualification.json`, { target: runtime.target, runtime });
+  const digest = async (path: string) => new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
+  if (
+    product.receipt.sourceRevision !== receipt.product.sourceRevision ||
+    product.receipt.installedTreeSHA256 !== receipt.product.installedTreeSHA256 ||
+    product.receipt.installedModesSHA256 !== receipt.product.installedModesSHA256 ||
+    await digest(`${root}/product.receipt.json`) !== receipt.product.receiptSHA256 ||
+    await digest(`${root}/product.qualification.json`) !== receipt.product.qualificationSHA256
+  ) throw new Error("Product payload receipts differ from the staged distribution identity");
   return receipt;
 }
 

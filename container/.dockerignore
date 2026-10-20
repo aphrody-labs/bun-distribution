@@ -4,6 +4,10 @@
 !.dockerignore
 !distribution.json
 !sources.receipt.json
+!product.receipt.json
+!product.qualification.json
+!product/
+!product/**
 !container/
 !container/**
 !runtime/

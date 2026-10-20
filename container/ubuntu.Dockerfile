@@ -14,11 +14,14 @@ FROM base AS payload
 COPY runtime/ /opt/bun-os/runtime/
 COPY sources/ /opt/bun-os/sources/
 COPY wasm/ /opt/bun-os/wasm/
+COPY product/ /opt/bun-os/product/
+COPY product.receipt.json product.qualification.json /opt/bun-os/
 COPY distribution.json /opt/bun-os/distribution.json
 COPY sources.receipt.json /opt/bun-os/sources.receipt.json
 COPY container/ /opt/bun-os/container/
-RUN chmod 0755 /opt/bun-os/runtime/bun \
+RUN chmod 0755 /opt/bun-os/runtime/bun /opt/bun-os/container/bunos \
     && ln -s /opt/bun-os/runtime/bun /usr/local/bin/bun \
+    && ln -s /opt/bun-os/container/bunos /usr/local/bin/bunos \
     && if [ -f /opt/bun-os/runtime/bun-cosmic ]; then \
          chmod 0755 /opt/bun-os/runtime/bun-cosmic \
          && ln -s /opt/bun-os/runtime/bun-cosmic /usr/local/bin/bun-cosmic; fi \

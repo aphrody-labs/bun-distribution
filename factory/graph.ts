@@ -585,13 +585,36 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       ],
     });
   }
+  add({
+    id: "product:payload",
+    kind: "package",
+    owner: "factory/product-payload.ts prepareProductPayload",
+    catalog: "root productPayload configuration + package.json + bun.lock",
+    dependsOn: ["workspace:sources", "toolchain:bun"],
+    state: "blocked",
+    reasons: ["Select a fresh Linux factory output, complete pinned product source closure, shared install cache and source-bound generated inputs."],
+    requiredReceipts: [await receipt("factory/product-payload.ts", "Frozen installed product tree, permissions, source inventory, lock and selected runtime identity")],
+    metadata: { route: ["build", "product"], configured: Boolean(options.config?.productPayload), nativeCommandsQualified: false },
+  });
+  add({
+    id: "qualification:product-cli",
+    kind: "qualification",
+    owner: "factory/product-qualification.ts qualifyProductPayload",
+    catalog: "product payload + product CLI qualification receipts",
+    dependsOn: ["product:payload"],
+    state: "blocked",
+    reasons: ["Execute CLI discovery and route-target gates on the matching Linux factory runtime. Native commands and the full product retain separate qualification."],
+    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli discovery bound to installed bytes, permissions, runtime and source revision")],
+    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery and route targets" },
+  });
+  nodes.find(node => node.id === "arch:payload")?.dependsOn.push("qualification:product-cli");
   const imageStage = factoryArch.graph.find(stage => stage.id === "arch:image");
   add({
     id: "image:composition",
     kind: "image",
     owner: imageStage?.owner ?? "src/distribution.ts buildImage",
     catalog: "factory/profile.json + distribution.json + Arch package lock",
-    dependsOn: [...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]), "toolchain:bun"],
+    dependsOn: [...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]), "toolchain:bun", "qualification:product-cli"],
     state: "blocked",
     reasons: [
       "Arch rootfs and staged Bun payload must bind the exact package lock, source/runtime identity, target and selected composition.",
@@ -612,6 +635,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
         "Arch rootfs artifact hash, signed exact package inventory and lock digest",
       ),
       await receipt("src/cli.ts stage", "Complete staged source/runtime identity"),
+      await receipt("factory/product-qualification.ts", "CLI workspace identity and passed discovery bound to the staged product"),
       await receipt(
         "src/cli.ts image",
         "Immutable image digest and target/composition runtime smoke; boot/session remains separate",

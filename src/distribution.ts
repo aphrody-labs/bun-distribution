@@ -5,6 +5,7 @@ import { mkdir, lstat, copyFile, open, unlink, cp } from "node:fs/promises";
 import { existsSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { sourceIntegrity } from "../container/source-integrity.ts";
+import { verifyQualifiedProduct } from "../container/verify-product.ts";
 import { inspectLinuxABI } from "./elf.ts";
 import { sourceWorkspaceLocations } from "./source-workspace.ts";
 import type { Composition } from "../factory/arch/index.ts";
@@ -72,6 +73,13 @@ export interface Config {
   msys2?: Msys2SourceOptions;
   cargoCommand?: string[];
   sourceExport?: Omit<SourceExportOptions, "lock" | "checkouts">;
+  productPayload?: Omit<import("../factory/product-payload.ts").ProductPayloadOptions, "runtime" | "executable">;
+}
+
+export interface ProductStageInput {
+  workspace: string;
+  receipt: string;
+  qualification: string;
 }
 
 async function inspectLockedCheckout(checkout: string, revision: string) {
@@ -270,6 +278,7 @@ export async function stageRuntime(
   receiptPath: string,
   profile: Profile,
   target: Exclude<Target, "wasm">,
+  product?: ProductStageInput,
 ) {
   const receipt: RuntimeReceipt = await Bun.file(receiptPath).json();
   const lock = await readLock();
@@ -293,6 +302,9 @@ export async function stageRuntime(
     throw new Error(
       "Bun runtime must match the locked source, target, checksum and a passed native-runtime qualification",
     );
+  const qualifiedProduct = product ? await verifyQualifiedProduct(
+    product.workspace, product.receipt, product.qualification, { target, runtime: receipt },
+  ) : undefined;
   const sourcesReceipt = await Bun.file(join(output, "sources.receipt.json")).json();
   if (
     !sourcesReceipt.complete ||
@@ -303,6 +315,24 @@ export async function stageRuntime(
   const contents = await sourceIntegrity(join(output, "sources"));
   if (contents.treeSHA256 !== sourcesReceipt.treeSHA256)
     throw new Error("Assembled source content changed after export");
+  let productIdentity;
+  if (product && qualifiedProduct) {
+    await cp(product.workspace, join(output, "product"), {
+      recursive: true, errorOnExist: true, force: false, dereference: false, verbatimSymlinks: true,
+    });
+    await copyFile(product.receipt, join(output, "product.receipt.json"));
+    await copyFile(product.qualification, join(output, "product.qualification.json"));
+    await verifyQualifiedProduct(join(output, "product"), join(output, "product.receipt.json"),
+      join(output, "product.qualification.json"), { target, runtime: receipt });
+    productIdentity = {
+      sourceRevision: qualifiedProduct.receipt.sourceRevision,
+      installedTreeSHA256: qualifiedProduct.receipt.installedTreeSHA256,
+      installedModesSHA256: qualifiedProduct.receipt.installedModesSHA256,
+      receiptSHA256: (await identity(join(output, "product.receipt.json"))).sha256,
+      qualificationSHA256: (await identity(join(output, "product.qualification.json"))).sha256,
+      qualification: "product-cli",
+    };
+  }
   await mkdir(join(output, "runtime"), { recursive: true });
   await copyFile(binary, join(output, "runtime", target === "windows-x64" ? "bun.exe" : "bun"));
   await Bun.write(join(output, "runtime", "receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
@@ -315,6 +345,7 @@ export async function stageRuntime(
         profile,
         target,
         runtime: receipt,
+        ...(productIdentity ? { product: productIdentity } : {}),
         binaryABI,
         qualification: "runtime-qualified; desktop and image remain unqualified",
       },
@@ -497,6 +528,15 @@ async function assembleArchImage(
   const receipt = await Bun.file(join(output, "distribution.json")).json();
   if (receipt.profile !== profile || receipt.target !== target)
     throw new Error("Image profile and target must match the staged artifact");
+  if (!receipt.product) throw new Error("Stage a qualified product workspace before assembling the image");
+  const product = await verifyQualifiedProduct(join(output, "product"), join(output, "product.receipt.json"),
+    join(output, "product.qualification.json"), { target, runtime: receipt.runtime });
+  if (product.receipt.installedTreeSHA256 !== receipt.product.installedTreeSHA256 ||
+      product.receipt.installedModesSHA256 !== receipt.product.installedModesSHA256 ||
+      product.receipt.sourceRevision !== receipt.product.sourceRevision ||
+      (await identity(join(output, "product.receipt.json"))).sha256 !== receipt.product.receiptSHA256 ||
+      (await identity(join(output, "product.qualification.json"))).sha256 !== receipt.product.qualificationSHA256)
+    throw new Error("Product payload changed after distribution staging");
   const rootfs = await verifyArchRootfs(
     join(output, "arch/rootfs.tar"),
     join(output, "arch/rootfs.receipt.json"),
@@ -519,7 +559,7 @@ async function assembleArchImage(
       "--tag",
       tag,
       "--build-arg",
-      `SOURCE_REVISION=${receipt.runtime.revision}`,
+      `SOURCE_REVISION=${receipt.product.sourceRevision}`,
       "--build-arg",
       `DISTRIBUTION_VERSION=${receipt.version}`,
       resolve(output),
@@ -539,6 +579,13 @@ async function assembleArchImage(
     "--version",
   ]);
   if (smoke !== "1.4.4") throw new Error(`Image Bun version mismatch: ${smoke}`);
+  const productCommands = JSON.parse(await command([
+    "docker", "run", "--rm", "--network=none", "--entrypoint", "/usr/local/bin/bunos", tag,
+    "commands", "--all", "--json",
+  ]));
+  if (!Array.isArray(productCommands) || !["mcp", "agent-plugin", "wasm"].every(name =>
+    productCommands.some(entry => entry.group === "" && entry.name === name)))
+    throw new Error("Image product CLI does not expose the required native capability routes");
   const result = {
     schemaVersion: 1,
     kind: "bun-os-image",
@@ -549,6 +596,13 @@ async function assembleArchImage(
     imageId: image[0].Id,
     bytes: image[0].Size,
     runtimeSmoke: smoke,
+    product: {
+      sourceRevision: product.receipt.sourceRevision,
+      installedTreeSHA256: product.receipt.installedTreeSHA256,
+      installedModesSHA256: product.receipt.installedModesSHA256,
+      commandDiscovery: productCommands.length,
+      scope: "CLI discovery; native commands and full product require their own qualification",
+    },
     packageManager: "pacman",
     rootfs: {
       sha256: rootfs.artifact.sha256,
