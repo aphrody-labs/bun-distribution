@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "bun-os-usr",
   "description": "Arch-style merged-usr /usr for Bun OS, assembled from real pacman packages plus Bun OS overlays",
   "architecture": "x86_64",
@@ -54,7 +54,6 @@
   "basePackages": [
     "bunos-filesystem",
     "base",
-    "linux-cachyos",
     "linux-firmware",
     "systemd",
     "pacman",
@@ -67,7 +66,12 @@
     "man-db",
     "man-pages"
   ],
-  "kernelFallback": "linux",
+  "kernelFallback": null,
+  "kernelSelection": {
+    "source": null,
+    "state": "blocked",
+    "reason": "No kernel source has been selected and qualified for the /usr factory."
+  },
   "compositions": {
     "server": {
       "profile": "server",
@@ -93,7 +97,16 @@
       "sbin": "bin",
       "lib64": "lib"
     },
-    "usrDirectories": ["bin", "lib", "lib32", "include", "share", "local", "src", "libexec"],
+    "usrDirectories": [
+      "bin",
+      "lib",
+      "lib32",
+      "include",
+      "share",
+      "local",
+      "src",
+      "libexec"
+    ],
     "required": [
       "usr/share/licenses",
       "usr/share/man",

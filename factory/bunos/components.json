@@ -25,7 +25,13 @@
   ],
   "compositionPackages": {
     "server": ["aphrody"],
-    "cosmic": ["aphrody", "bun-video-native", "bun-os-fonts", "material-design-icons-bunos", "bun-os-webapps"],
+    "cosmic": [
+      "aphrody",
+      "bun-video-native",
+      "bun-os-fonts",
+      "material-design-icons-bunos",
+      "bun-os-webapps"
+    ],
     "gaming": ["aphrody", "bun-video-native", "bun-os-fonts", "bun-engine"]
   },
   "components": [
@@ -347,12 +353,12 @@
       "id": "omarchy",
       "path": "vendor/omarchy",
       "size": "378 MiB",
-      "origin": "aphrody-labs/omarchy (basecamp v4.0.4)",
+      "origin": "aphrody-labs/omarchy (current upstream fork; optional source catalog)",
       "kind": "vendor",
       "integration": {
-        "mode": "image",
-        "package": "omarchy pacman repository pin",
-        "image": "factory/images manifest pins.omarchy"
+        "mode": "reference-catalog",
+        "package": "Omarchy recipe and configuration catalog",
+        "image": "factory/arch/omarchy/integration.json; disabled until a Bun OS session profile is selected and qualified"
       }
     },
     {

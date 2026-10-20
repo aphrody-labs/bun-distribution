@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "host": "vps",
   "distribution": "archlinux",
   "packageManager": "pacman",
@@ -58,19 +58,8 @@
     "desktop": {
       "description": "Bun OS desktop using the existing COSMIC owner",
       "extends": "server",
-      "packages": [
-        "cosmic-session",
-        "cosmic-comp",
-        "cosmic-panel",
-        "cosmic-settings",
-        "cosmic-files",
-        "cosmic-term",
-        "mesa",
-        "vulkan-icd-loader",
-        "pipewire",
-        "wireplumber"
-      ],
-      "session": "cosmic-session"
+      "packages": ["mesa", "vulkan-icd-loader", "pipewire", "wireplumber"],
+      "defaultSession": "cosmic"
     },
     "gaming": {
       "description": "Optional Gamescope gaming session and qualified device/input tools",
@@ -89,13 +78,42 @@
       "repositories": ["core", "extra", "multilib"]
     }
   },
+  "desktopSessions": {
+    "cosmic": {
+      "owner": "existing Bun OS COSMIC source and package owner",
+      "session": "cosmic-session",
+      "packages": [
+        "cosmic-session",
+        "cosmic-comp",
+        "cosmic-panel",
+        "cosmic-settings",
+        "cosmic-files",
+        "cosmic-term"
+      ],
+      "state": "unqualified",
+      "blockers": [
+        "Selected COSMIC package closure and desktop boot/display qualification are pending."
+      ]
+    },
+    "omarchy-hyprland": {
+      "owner": "factory/arch/omarchy/integration.json",
+      "session": "Hyprland + UWSM + SDDM + Quickshell",
+      "packages": [],
+      "state": "blocked",
+      "blockers": [
+        "No compatible Omarchy session package subset has been selected from the source catalog.",
+        "No exact signed package closure or boot/session qualification exists for this session."
+      ]
+    }
+  },
   "policy": {
     "repositorySnapshotRequired": true,
     "exactPackageClosureRequired": true,
     "packageSignaturesRequired": true,
     "cpuBaseline": "x86-64",
     "optionalCpuVariants": ["x86-64-v3", "x86-64-v4", "znver4"],
-    "defaultKernelSource": "cachyos-linux",
+    "defaultKernelSource": null,
+    "kernelSourceSelectionRequired": true,
     "kernelArtifactQualificationRequired": true,
     "upstreamInstallerExecution": false,
     "servicesEnabledAutomatically": false,

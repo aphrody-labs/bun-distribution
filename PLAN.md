@@ -23,6 +23,15 @@ logs do not define the current state; use Git history for prior batches.
   Desktop and Gamescope Gaming remain distinct compositions; Alpine and Ubuntu
   are compatibility targets in the checked-in product configuration. The
   distribution manifest currently labels qualification as `development`.
+- Desktop session selection is separate from OS composition. Desktop defaults
+  to COSMIC, whose exact closure and boot/display qualification remain pending;
+  Omarchy Hyprland is explicitly blocked until its package subset and signed
+  closure are selected. Neither session is represented as qualified.
+- No kernel source is selected in the root profile. The `/usr` boot path and
+  gaming image's bootable target are blocked until a kernel composition and
+  artifact qualification exist; container gaming continues to use its host
+  kernel. CachyOS kernel packages remain catalog candidates rather than a
+  default installed kernel.
 
 ## Remaining work
 

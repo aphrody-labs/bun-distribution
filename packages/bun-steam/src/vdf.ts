@@ -21,7 +21,8 @@ export function parseTextKv(text: string): KvObject {
   const skipWs = () => {
     while (i < n) {
       const c = text.charCodeAt(i);
-      if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0xfeff) i++;
+      if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0xfeff)
+        i++;
       else if (c === 0x2f && text.charCodeAt(i + 1) === 0x2f) {
         while (i < n && text.charCodeAt(i) !== 0x0a) i++;
       } else break;
@@ -42,7 +43,14 @@ export function parseTextKv(text: string): KvObject {
         const ch = text[i];
         if (ch === "\\") {
           const nx = text[i + 1];
-          out += nx === "n" ? "\n" : nx === "t" ? "\t" : nx === "r" ? "\r" : (nx ?? "");
+          out +=
+            nx === "n"
+              ? "\n"
+              : nx === "t"
+                ? "\t"
+                : nx === "r"
+                  ? "\r"
+                  : (nx ?? "");
           i += 2;
         } else if (ch === '"') {
           i++;
@@ -84,7 +92,10 @@ export function parseTextKv(text: string): KvObject {
   return root;
 }
 
-export const kvGet = (obj: KvValue | null | undefined, ...path: string[]): KvValue | undefined => {
+export const kvGet = (
+  obj: KvValue | null | undefined,
+  ...path: string[]
+): KvValue | undefined => {
   let cur: KvValue | undefined = obj ?? undefined;
   for (const p of path) {
     if (cur === undefined || typeof cur === "string") return undefined;
@@ -92,17 +103,26 @@ export const kvGet = (obj: KvValue | null | undefined, ...path: string[]): KvVal
   }
   return cur;
 };
-export const kvStr = (obj: KvValue | null | undefined, ...path: string[]): string | null => {
+export const kvStr = (
+  obj: KvValue | null | undefined,
+  ...path: string[]
+): string | null => {
   const v = kvGet(obj, ...path);
   return typeof v === "string" ? v : null;
 };
-export const kvInt = (obj: KvValue | null | undefined, ...path: string[]): number | null => {
+export const kvInt = (
+  obj: KvValue | null | undefined,
+  ...path: string[]
+): number | null => {
   const s = kvStr(obj, ...path);
   if (s === null) return null;
   const v = Number(s);
   return Number.isFinite(v) ? v : null;
 };
-export const kvObj = (obj: KvValue | null | undefined, ...path: string[]): KvObject | null => {
+export const kvObj = (
+  obj: KvValue | null | undefined,
+  ...path: string[]
+): KvObject | null => {
   const v = kvGet(obj, ...path);
   return v !== undefined && typeof v !== "string" ? v : null;
 };
@@ -111,63 +131,94 @@ export const kvObj = (obj: KvValue | null | undefined, ...path: string[]): KvObj
 export class Cursor {
   pos = 0;
   readonly view: DataView;
-  constructor(readonly bytes: Uint8Array) {
+  constructor(
+    readonly bytes: Uint8Array,
+    readonly end = bytes.byteLength,
+  ) {
+    if (!Number.isSafeInteger(end) || end < 0 || end > bytes.byteLength) {
+      throw new RangeError("binary KV: invalid cursor boundary");
+    }
     this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   }
   get remaining(): number {
-    return this.bytes.length - this.pos;
+    return this.end - this.pos;
+  }
+  private require(length: number): void {
+    if (
+      !Number.isSafeInteger(this.pos) ||
+      this.pos < 0 ||
+      !Number.isSafeInteger(length) ||
+      length < 0 ||
+      length > this.remaining
+    ) {
+      throw new RangeError(`binary KV: truncated input at ${this.pos}`);
+    }
   }
   u8(): number {
+    this.require(1);
     return this.bytes[this.pos++]!;
   }
   u32(): number {
+    this.require(4);
     const v = this.view.getUint32(this.pos, true);
     this.pos += 4;
     return v;
   }
   i32(): number {
+    this.require(4);
     const v = this.view.getInt32(this.pos, true);
     this.pos += 4;
     return v;
   }
   f32(): number {
+    this.require(4);
     const v = this.view.getFloat32(this.pos, true);
     this.pos += 4;
     return v;
   }
   u64(): bigint {
+    this.require(8);
     const v = this.view.getBigUint64(this.pos, true);
     this.pos += 8;
     return v;
   }
   i64(): bigint {
+    this.require(8);
     const v = this.view.getBigInt64(this.pos, true);
     this.pos += 8;
     return v;
   }
   take(len: number): Uint8Array {
+    this.require(len);
     const out = this.bytes.subarray(this.pos, this.pos + len);
     this.pos += len;
     return out;
   }
   cstr(): string {
     const start = this.pos;
-    while (this.pos < this.bytes.length && this.bytes[this.pos] !== 0) this.pos++;
+    while (this.pos < this.end && this.bytes[this.pos] !== 0) this.pos++;
+    if (this.pos >= this.end)
+      throw new Error(`binary KV: unterminated UTF-8 string at ${start}`);
     const s = utf8.decode(this.bytes.subarray(start, this.pos));
     this.pos++;
     return s;
   }
   wstr(): string {
     const start = this.pos;
-    while (this.pos + 1 < this.bytes.length && !(this.bytes[this.pos] === 0 && this.bytes[this.pos + 1] === 0))
+    while (
+      this.pos + 1 < this.end &&
+      !(this.bytes[this.pos] === 0 && this.bytes[this.pos + 1] === 0)
+    )
       this.pos += 2;
+    if (this.pos + 1 >= this.end)
+      throw new Error(`binary KV: unterminated UTF-16LE string at ${start}`);
     const s = utf16.decode(this.bytes.subarray(start, this.pos));
     this.pos += 2;
     return s;
   }
 }
-const utf8 = new TextDecoder("utf-8");
-const utf16 = new TextDecoder("utf-16le");
+const utf8 = new TextDecoder("utf-8", { fatal: true });
+const utf16 = new TextDecoder("utf-16le", { fatal: true });
 
 export const BIN_KV = {
   OBJECT: 0x00,
@@ -188,18 +239,25 @@ export const BIN_KV = {
  * a `u32` index into the table instead of an inline C string. Values are normalized to strings so
  * the result shares the text-KV shape.
  */
-export function parseBinaryKv(cur: Cursor, stringTable: string[] | null): KvObject {
+export function parseBinaryKv(
+  cur: Cursor,
+  stringTable: string[] | null,
+): KvObject {
   const readKey = (): string => {
     if (stringTable) {
       const idx = cur.u32();
-      return stringTable[idx] ?? `#${idx}`;
+      const key = stringTable[idx];
+      if (key === undefined)
+        throw new Error(`binary KV: string-table index ${idx} is out of range`);
+      return key;
     }
     return cur.cstr();
   };
   const readObject = (): KvObject => {
     const obj: KvObject = {};
     for (;;) {
-      if (cur.remaining <= 0) return obj;
+      if (cur.remaining <= 0)
+        throw new Error(`binary KV: missing object terminator at ${cur.pos}`);
       const type = cur.u8();
       if (type === BIN_KV.END || type === BIN_KV.END_ALT) return obj;
       const key = readKey();
@@ -228,7 +286,9 @@ export function parseBinaryKv(cur: Cursor, stringTable: string[] | null): KvObje
           obj[key] = cur.i64().toString();
           break;
         default:
-          throw new Error(`binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`);
+          throw new Error(
+            `binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`,
+          );
       }
     }
   };
@@ -236,7 +296,11 @@ export function parseBinaryKv(cur: Cursor, stringTable: string[] | null): KvObje
 }
 
 /** Flattens nested KV into `a/b/c` → string pairs. */
-export function flattenKv(obj: KvObject, prefix = "", out: Record<string, string> = {}): Record<string, string> {
+export function flattenKv(
+  obj: KvObject,
+  prefix = "",
+  out: Record<string, string> = {},
+): Record<string, string> {
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}/${k}` : k;
     if (typeof v === "string") out[key] = v;
@@ -249,7 +313,7 @@ export function flattenKv(obj: KvObject, prefix = "", out: Record<string, string
  * Escapes a text VDF token the way the Steam client writes it: backslash and double quote only
  * (the client keeps newlines and tabs raw inside quoted values, e.g. SDL controller mappings).
  */
-const escapeKv = (s: string): string => s.replace(/[\\"]/g, c => `\\${c}`);
+const escapeKv = (s: string): string => s.replace(/[\\"]/g, (c) => `\\${c}`);
 
 /**
  * Serializes nested objects to text VDF in the Steam client layout (tab indentation, two tabs
@@ -272,7 +336,7 @@ export function stringifyTextKv(obj: KvObject, depth = 0): string {
 export function kvKey(obj: KvObject, key: string): string | undefined {
   if (Object.hasOwn(obj, key)) return key;
   const lower = key.toLowerCase();
-  return Object.keys(obj).find(k => k.toLowerCase() === lower);
+  return Object.keys(obj).find((k) => k.toLowerCase() === lower);
 }
 
 /** Returns the child object at `path`, creating missing levels (case-insensitive match). */
@@ -303,7 +367,9 @@ export interface BinKvObject {
 }
 
 const isLeaf = (v: BinKvValue): v is BinKvLeaf =>
-  typeof (v as BinKvLeaf).type === "string" && "value" in v && Object.keys(v).length === 2;
+  typeof (v as BinKvLeaf).type === "string" &&
+  "value" in v &&
+  Object.keys(v).length === 2;
 
 /**
  * Parses binary KeyValues keeping each value's wire type, so {@link writeBinaryKv} reproduces
@@ -312,7 +378,8 @@ const isLeaf = (v: BinKvValue): v is BinKvLeaf =>
 export function parseBinaryKvTyped(cur: Cursor): BinKvObject {
   const obj: BinKvObject = {};
   for (;;) {
-    if (cur.remaining <= 0) return obj;
+    if (cur.remaining <= 0)
+      throw new Error(`binary KV: missing object terminator at ${cur.pos}`);
     const type = cur.u8();
     if (type === BIN_KV.END || type === BIN_KV.END_ALT) return obj;
     const key = cur.cstr();
@@ -345,7 +412,9 @@ export function parseBinaryKvTyped(cur: Cursor): BinKvObject {
         obj[key] = { type: "int64", value: cur.i64() };
         break;
       default:
-        throw new Error(`binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`);
+        throw new Error(
+          `binary KV: unknown type 0x${type.toString(16)} at ${cur.pos - 1}`,
+        );
     }
   }
 }
@@ -384,31 +453,38 @@ export function writeBinaryKv(obj: BinKvObject): Uint8Array {
           cstr(key);
           const units = new Uint8Array(v.value.length * 2 + 2);
           const dv = new DataView(units.buffer);
-          for (let i = 0; i < v.value.length; i++) dv.setUint16(i * 2, v.value.charCodeAt(i), true);
+          for (let i = 0; i < v.value.length; i++)
+            dv.setUint16(i * 2, v.value.charCodeAt(i), true);
           chunks.push(units);
           break;
         }
         case "int32":
         case "pointer":
         case "color":
-          byte(v.type === "int32" ? BIN_KV.INT32 : v.type === "pointer" ? BIN_KV.POINTER : BIN_KV.COLOR);
+          byte(
+            v.type === "int32"
+              ? BIN_KV.INT32
+              : v.type === "pointer"
+                ? BIN_KV.POINTER
+                : BIN_KV.COLOR,
+          );
           cstr(key);
-          num(4, d => d.setInt32(0, v.value, true));
+          num(4, (d) => d.setInt32(0, v.value, true));
           break;
         case "float32":
           byte(BIN_KV.FLOAT32);
           cstr(key);
-          num(4, d => d.setFloat32(0, v.value, true));
+          num(4, (d) => d.setFloat32(0, v.value, true));
           break;
         case "uint64":
           byte(BIN_KV.UINT64);
           cstr(key);
-          num(8, d => d.setBigUint64(0, v.value, true));
+          num(8, (d) => d.setBigUint64(0, v.value, true));
           break;
         case "int64":
           byte(BIN_KV.INT64);
           cstr(key);
-          num(8, d => d.setBigInt64(0, v.value, true));
+          num(8, (d) => d.setBigInt64(0, v.value, true));
           break;
       }
     }

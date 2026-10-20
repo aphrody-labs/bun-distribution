@@ -1,4 +1,5 @@
-# Bootable rootfs only: the container shares the host kernel.
+# BLOCKED candidate list: the image contract has no selected, qualified kernel composition.
+# Container gaming continues to use the host kernel; this file is inert until that contract changes.
 linux-cachyos
 linux-cachyos-headers
 linux-cachyos-nvidia-open

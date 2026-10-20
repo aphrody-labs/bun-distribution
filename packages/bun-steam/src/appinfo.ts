@@ -33,52 +33,85 @@ const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 export function parseAppInfo(bytes: Uint8Array): AppInfoFile {
   const cur = new Cursor(bytes);
   const magic = cur.u32();
-  if (magic !== APPINFO_MAGIC.v39 && magic !== APPINFO_MAGIC.v40 && magic !== APPINFO_MAGIC.v41) {
+  if (
+    magic !== APPINFO_MAGIC.v39 &&
+    magic !== APPINFO_MAGIC.v40 &&
+    magic !== APPINFO_MAGIC.v41
+  ) {
     throw new Error(`appinfo.vdf: unknown magic 0x${magic.toString(16)}`);
   }
   const universe = cur.u32();
   let stringTable: string[] | null = null;
   if (magic === APPINFO_MAGIC.v41) {
     const offset = Number(cur.u64());
+    if (
+      !Number.isSafeInteger(offset) ||
+      offset < cur.pos ||
+      offset > bytes.byteLength - 4
+    ) {
+      throw new Error("appinfo.vdf: invalid string-table offset");
+    }
     const tc = new Cursor(bytes);
     tc.pos = offset;
     const count = tc.u32();
+    if (count > tc.remaining)
+      throw new Error("appinfo.vdf: invalid string-table count");
     stringTable = [];
     for (let i = 0; i < count; i++) stringTable.push(tc.cstr());
   }
   const apps: AppInfoEntry[] = [];
   const end = stringTable
-    ? Number(new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(0, true))
+    ? Number(
+        new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(
+          0,
+          true,
+        ),
+      )
     : bytes.length;
   while (cur.pos + 4 <= end) {
-    const appid = cur.u32();
-    if (appid === 0) break;
-    const size = cur.u32();
-    const entryEnd = cur.pos + size;
-    const infoState = cur.u32();
-    const lastUpdated = cur.u32();
-    const picsToken = cur.u64();
-    const sha1 = hex(cur.take(20));
-    const changeNumber = cur.u32();
-    const binarySha1 = magic >= APPINFO_MAGIC.v40 ? hex(cur.take(20)) : null;
-    let kv: KvObject = {};
+    let appid: number;
+    let size: number;
     try {
-      kv = parseBinaryKv(cur, stringTable);
+      appid = cur.u32();
     } catch {
-      kv = { _error: "binary kv parse failed" };
+      break;
+    }
+    if (appid === 0) break;
+    try {
+      size = cur.u32();
+    } catch {
+      break;
+    }
+    const entryStart = cur.pos;
+    const entryEnd = entryStart + size;
+    if (!Number.isSafeInteger(entryEnd) || size <= 0 || entryEnd > end) break;
+    const entry = new Cursor(bytes, entryEnd);
+    entry.pos = entryStart;
+    let parsed: Omit<AppInfoEntry, "appid" | "size">;
+    try {
+      const infoState = entry.u32();
+      const lastUpdated = entry.u32();
+      const picsToken = entry.u64();
+      const sha1 = hex(entry.take(20));
+      const changeNumber = entry.u32();
+      const binarySha1 =
+        magic >= APPINFO_MAGIC.v40 ? hex(entry.take(20)) : null;
+      const kv = parseBinaryKv(entry, stringTable);
+      parsed = {
+        infoState,
+        lastUpdated,
+        picsToken,
+        sha1,
+        changeNumber,
+        binarySha1,
+        kv,
+      };
+    } catch {
+      // A malformed tail is not an app record; retain earlier complete records and stop here.
+      break;
     }
     cur.pos = entryEnd;
-    apps.push({
-      appid,
-      size,
-      infoState,
-      lastUpdated,
-      picsToken,
-      sha1,
-      changeNumber,
-      binarySha1,
-      kv,
-    });
+    apps.push({ appid, size, ...parsed });
   }
   return {
     version: magic,

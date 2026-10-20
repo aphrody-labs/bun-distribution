@@ -16,12 +16,19 @@ transitions its factory; they do not own the primary Bun OS image pipeline.
 All compositions come from the same pinned source and package graph. Availability
 in the catalogue does not mean installation in every profile.
 
-| Composition               | Selected capabilities                                                                               | Excluded defaults                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Server                    | Headless runtime, networking, storage, administration and explicit services; glibc primary          | Desktop compositors, display managers, Steam/Proton, gaming overlays and graphical first-run setup                 |
-| Desktop                   | COSMIC session/compositor, selected greeter, portals, graphics, audio and Bun applications          | Automatic Omarchy session/defaults and gaming autologin                                                            |
-| Gaming                    | Qualified graphics/input stack, Gamescope session, selected Steam/Proton compatibility capabilities | Unrelated desktop services, upstream account/password defaults and automatic host repair                           |
-| Optional Hyprland desktop | Explicit Hyprland/UWSM/SDDM/Quickshell composition when selected                                    | Simultaneous COSMIC/Hyprland ownership of the default compositor, portal, session or display-manager configuration |
+| Composition              | Selected capabilities                                                                               | Excluded defaults                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Server                   | Headless runtime, networking, storage, administration and explicit services; glibc primary          | Desktop compositors, display managers, Steam/Proton, gaming overlays and graphical first-run setup |
+| Desktop                  | COSMIC session/compositor, selected greeter, portals, graphics, audio and Bun applications          | Automatic Omarchy session/defaults and gaming autologin                                            |
+| Gaming                   | Qualified graphics/input stack, Gamescope session, selected Steam/Proton compatibility capabilities | Unrelated desktop services, upstream account/password defaults and automatic host repair           |
+| Desktop session selector | One explicit COSMIC or Omarchy/Hyprland session owner attached to the Desktop composition           | Combining sessions or inferring a session from the distribution catalog                            |
+
+The factory records `desktopSession` independently from `composition`. Server
+and Gaming have no desktop session; Desktop defaults to COSMIC. COSMIC remains
+unqualified pending an exact signed package closure and boot/display evidence.
+Omarchy Hyprland is visible as an opt-in plan but blocked until its compatible
+package subset and qualification exist. A blocked session cannot produce a
+package lock or rootfs receipt.
 
 Gamescope may also run nested for individual games inside a desktop. That is a
 different target from its direct DRM/KMS gaming session. Its upstream documents
@@ -31,8 +38,8 @@ by building the executable. [Gamescope source](https://github.com/ValveSoftware/
 COSMIC already declares separate desktop components, libraries and a toolkit;
 reuse those owners and the distribution's existing pinned COSMIC/Material
 contracts. A Hyprland configuration cannot implement COSMIC by renaming its
-session or bindings. Alternate sessions may coexist as explicit choices, with
-one owner for each default and an isolated settings namespace.
+session or bindings. Additional sessions can be admitted as explicit choices
+only with separate package, portal, greeter, boot and settings ownership.
 [COSMIC components and packaging](https://github.com/pop-os/cosmic-epoch#components-of-cosmic-desktop)
 
 Alpine/musl remains a distinct qualification target where useful. Its libc,
@@ -120,6 +127,10 @@ inputs. Reconcile Bun's acceleration changes with a selected kernel explicitly.
 CachyOS, Omarchy platform kernels and Chimera/OGC source contracts are candidates,
 not cumulative patches or interchangeable authenticated binary artifacts.
 Kernel Rust remains owned by Linux Kbuild rather than an invented Cargo workspace.
+The profile has no implicit kernel source: CachyOS, Arch and other kernel inputs
+remain candidates until one source/configuration/ISA/artifact contract is
+selected and qualified. The current `/usr` bootable path and Docker `bootable`
+target are blocked on that gate; the gaming container uses its host kernel.
 
 External Rust applications, compiler-facing tools and libraries retain their
 Cargo manifests, workspace roots, lockfiles and declared feature/target policy.

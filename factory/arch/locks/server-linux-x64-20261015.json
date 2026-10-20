@@ -1,10 +1,12 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "target": "linux-x64",
   "architecture": "x86_64",
   "snapshot": "2026-10-15",
   "image": "archlinux@sha256:061679925e5d5028f2df9395d441ce6c4b9accf0157ff3486c06b6962e014ef1",
   "composition": "server",
+  "desktopSession": null,
+  "desktopSessionState": "not-applicable",
   "packages": [
     {
       "name": "acl",

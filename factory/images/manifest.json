@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "bun-os-images",
   "observedAt": "2026-10-16",
   "host": "vps",
@@ -20,26 +20,6 @@
       "version": "1.4.6",
       "revision": "4bece04a9928383aacf36fc66620b8ef0a79e6b2",
       "note": "Source candidate only. Build requires local fork musl binaries and native target qualification receipts; no upstream runtime substitution."
-    },
-    "omarchy": {
-      "version": "4.0.4",
-      "commit": "c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
-      "published": "2026-09-15",
-      "file": "omarchy-v4.0.4.tar.gz",
-      "url": "https://github.com/basecamp/omarchy/archive/refs/tags/v4.0.4.tar.gz",
-      "sha256": "cd576f3ea0d1d87ed45dd3f34c7dfd42c982884ac15fe8bf5b858241254ec508",
-      "pacmanRepository": {
-        "name": "omarchy",
-        "server": "https://pkgs.omarchy.org/stable/$arch"
-      },
-      "key": "40DFB630FF42BCFFB047046CF0134EE680CAC571",
-      "keyserver": "keys.openpgp.org"
-    },
-    "linux-cachyos": {
-      "version": "7.2.7-1",
-      "file": "linux-cachyos-7.2.7-1-x86_64.pkg.tar.zst",
-      "url": "https://mirror.cachyos.org/repo/x86_64/cachyos/linux-cachyos-7.2.7-1-x86_64.pkg.tar.zst",
-      "sha256": "cb164037efbdc8703580da9cca2a1f067e22a0ffc8a0fc1b7c03d4419e99fd37"
     },
     "ubuntu": {
       "version": "26.10",
@@ -94,7 +74,13 @@
       "usrComposition": "gaming",
       "agentTooling": {
         "note": "Claude Code and Codex skills and MCP servers for Omarchy/Arch; installed into /etc/skel/.claude and /etc/skel/.codex.",
-        "packages": ["arch-wiki-docs", "namcap", "expac", "pacman-contrib", "devtools"],
+        "packages": [
+          "arch-wiki-docs",
+          "namcap",
+          "expac",
+          "pacman-contrib",
+          "devtools"
+        ],
         "skills": [
           {
             "name": "arch-linux",
@@ -162,6 +148,9 @@
         "gaming": "image",
         "emulation": "image",
         "bootable": "rootfs"
+      },
+      "blockedTargets": {
+        "bootable": "No explicit kernel composition is selected or qualified; container gaming remains host-kernel based."
       }
     },
     "bunos-alpine": {

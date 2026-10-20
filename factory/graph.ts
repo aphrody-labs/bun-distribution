@@ -1,8 +1,17 @@
 import { join, resolve } from "node:path";
 import { appCapabilities } from "../packages/bun-workspace/src/capabilities.ts";
 import type { Config as LibraryConfig } from "../packages/bun-workspace/src/index.ts";
-import { packageRoot, type Config, type Profile, type Target } from "../src/distribution.ts";
-import { planArchDistribution, type Composition } from "./arch/index.ts";
+import {
+  packageRoot,
+  type Config,
+  type Profile,
+  type Target,
+} from "../src/distribution.ts";
+import {
+  planArchDistribution,
+  type Composition,
+  type DesktopSession,
+} from "./arch/index.ts";
 import { inspectGitSourceOwners } from "../src/workspace-manifests.ts";
 
 export interface FactoryGraphOptions {
@@ -12,6 +21,7 @@ export interface FactoryGraphOptions {
   config?: Config;
   /** Release/performance profile and installed OS composition are independent. */
   composition?: Composition;
+  desktopSession?: DesktopSession;
   snapshot?: string;
 }
 
@@ -56,12 +66,13 @@ export interface FactoryGraphNode {
 }
 
 export interface FactoryGraphPlan {
-  schemaVersion: 1;
+  schemaVersion: 2;
   kind: "bun-os-factory-graph";
   root: string;
   target: string;
   profile: string;
   composition: Composition;
+  desktopSession: DesktopSession | null;
   inputs: { factoryArch: Awaited<ReturnType<typeof planArchDistribution>> };
   executable: false;
   qualified: false;
@@ -82,11 +93,20 @@ interface BunManifest {
 
 interface Distribution {
   profiles: Record<string, Record<string, unknown>>;
-  targets: Record<string, { rust: string; abi: string; libc: string; container: boolean }>;
+  targets: Record<
+    string,
+    { rust: string; abi: string; libc: string; container: boolean }
+  >;
 }
 
 interface SourceLock {
-  repositories: { id: string; repository: string; revision: string; mount: string; parent?: string }[];
+  repositories: {
+    id: string;
+    repository: string;
+    revision: string;
+    mount: string;
+    parent?: string;
+  }[];
 }
 
 interface ArchSourceReference {
@@ -117,9 +137,12 @@ interface AppCatalog {
 }
 
 /** A graph of existing owners and missing contracts; this function never starts a job. */
-export async function planFactoryGraph(options: FactoryGraphOptions): Promise<FactoryGraphPlan> {
+export async function planFactoryGraph(
+  options: FactoryGraphOptions,
+): Promise<FactoryGraphPlan> {
   const root = resolve(options.root ?? packageRoot);
-  const read = async <T>(path: string): Promise<T> => Bun.file(join(root, path)).json();
+  const read = async <T>(path: string): Promise<T> =>
+    Bun.file(join(root, path)).json();
   const distribution = await read<Distribution>("distribution.json");
   const sources = await read<SourceLock>("sources.lock.json");
   const libraries = await read<LibraryConfig>("aphrody.config.json");
@@ -127,14 +150,25 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   const applications = await read<AppCatalog>("infra/apps.json");
   const product = await read<BunManifest>("package.json");
   const gitSources = await inspectGitSourceOwners(root);
-  const cargo = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
+  const cargo = Bun.TOML.parse(
+    await Bun.file(join(root, "Cargo.toml")).text(),
+  ) as {
     workspace: { members: string[] };
   };
   const target = distribution.targets[options.target];
-  if (!target || !distribution.profiles[options.profile]) throw new Error("Unknown factory target or profile.");
+  if (!target || !distribution.profiles[options.profile])
+    throw new Error("Unknown factory target or profile.");
   const composition = options.composition ?? "server";
-  const factoryArch = await planArchDistribution({ target: options.target, composition, snapshot: options.snapshot });
-  if (!Array.isArray(product.workspaces) || !Array.isArray(cargo.workspace?.members))
+  const factoryArch = await planArchDistribution({
+    target: options.target,
+    composition,
+    desktopSession: options.desktopSession,
+    snapshot: options.snapshot,
+  });
+  if (
+    !Array.isArray(product.workspaces) ||
+    !Array.isArray(cargo.workspace?.members)
+  )
     throw new Error("Root workspace membership is missing.");
   const nodes: FactoryGraphNode[] = [];
   const diagnostics: string[] = [...factoryArch.blockers];
@@ -142,14 +176,25 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     cwd: root,
     argv: [process.execPath, path, ...args],
   });
-  const receipt = async (owner: string, requirement: string, path?: string): Promise<FactoryGraphReceipt> => ({
+  const receipt = async (
+    owner: string,
+    requirement: string,
+    path?: string,
+  ): Promise<FactoryGraphReceipt> => ({
     owner,
     requirement,
     ...(path ? { path } : {}),
-    state: path ? ((await Bun.file(join(root, path)).exists()) ? "present-unverified" : "missing") : "input-required",
+    state: path
+      ? (await Bun.file(join(root, path)).exists())
+        ? "present-unverified"
+        : "missing"
+      : "input-required",
   });
   const add = (
-    node: Omit<FactoryGraphNode, "target" | "profile" | "composition" | "requiredReceipts" | "reasons"> & {
+    node: Omit<
+      FactoryGraphNode,
+      "target" | "profile" | "composition" | "requiredReceipts" | "reasons"
+    > & {
       reasons?: string[];
       requiredReceipts?: FactoryGraphReceipt[];
     },
@@ -182,7 +227,10 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       owner: source.repository,
       catalog: "sources.lock.json",
       path: source.mount,
-      dependsOn: ["workspace:sources", ...(source.parent ? [`source:${source.parent}`] : [])],
+      dependsOn: [
+        "workspace:sources",
+        ...(source.parent ? [`source:${source.parent}`] : []),
+      ],
       state: "source-only",
       metadata: { revision: source.revision, repository: source.repository },
       requiredReceipts: [
@@ -193,9 +241,16 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       ],
     });
   }
-  if (!Array.isArray(gitSources.submodules) || !Array.isArray(factoryArch.sources.sources))
-    throw new Error("Vendor Git owners and Arch source references are missing.");
-  const archReferences = (factoryArch.sources.sources as ArchSourceReference[]).map(source => ({
+  if (
+    !Array.isArray(gitSources.submodules) ||
+    !Array.isArray(factoryArch.sources.sources)
+  )
+    throw new Error(
+      "Vendor Git owners and Arch source references are missing.",
+    );
+  const archReferences = (
+    factoryArch.sources.sources as ArchSourceReference[]
+  ).map((source) => ({
     id: source.id,
     repository: source.repository,
     mount: source.mount,
@@ -204,10 +259,13 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     checkoutRevision: source.checkoutRevision,
   }));
   const vendorIds = new Map<string, string>();
-  for (const source of gitSources.submodules.filter(source => source.path.startsWith("vendor/"))) {
+  for (const source of gitSources.submodules.filter((source) =>
+    source.path.startsWith("vendor/"),
+  )) {
     if (
       !/^vendor\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(source.path) ||
-      !source.revision || !/^[a-f0-9]{40}$/.test(source.revision) ||
+      !source.revision ||
+      !/^[a-f0-9]{40}$/.test(source.revision) ||
       typeof source.repository !== "string" ||
       !source.repository ||
       typeof source.initialized !== "boolean"
@@ -215,7 +273,8 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       throw new Error("Invalid flat vendor Git owner.");
     const path = source.path;
     const key = path.toLowerCase();
-    if (vendorIds.has(key)) throw new Error(`Duplicate vendor source owner: ${path}`);
+    if (vendorIds.has(key))
+      throw new Error(`Duplicate vendor source owner: ${path}`);
     const id = `vendor:${source.path.slice("vendor/".length)}`;
     vendorIds.set(key, id);
     add({
@@ -237,7 +296,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
         remotes: { declared: source.repository },
         sourceOnly: true,
         lazy: !source.initialized,
-        references: archReferences.filter(reference => reference.mount === path),
+        references: archReferences.filter(
+          (reference) => reference.mount === path,
+        ),
       },
       requiredReceipts: [
         await receipt(
@@ -249,41 +310,72 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   }
   const archSourceOwners = [
     ...new Set(
-      archReferences.map(source => {
-        let declaration = gitSources.submodules.find(owner => owner.path === source.mount);
+      archReferences.map((source) => {
+        let declaration = gitSources.submodules.find(
+          (owner) => owner.path === source.mount,
+        );
         if (!declaration) {
-          const candidates = gitSources.submodules.filter(owner => owner.path.startsWith("vendor/") &&
-            owner.repository?.replace(/^(?:https?:\/\/github\.com\/|git@github\.com:)/, "").replace(/\.git$/, "") === source.repository);
+          const candidates = gitSources.submodules.filter(
+            (owner) =>
+              owner.path.startsWith("vendor/") &&
+              owner.repository
+                ?.replace(/^(?:https?:\/\/github\.com\/|git@github\.com:)/, "")
+                .replace(/\.git$/, "") === source.repository,
+          );
           if (candidates.length === 1) declaration = candidates[0];
         }
         const id = declaration && vendorIds.get(declaration.path.toLowerCase());
         if (!id || !declaration) {
           const missing = `source:unresolved-arch-${source.id}`;
-          diagnostics.push(`Arch source has no indexed Git owner: ${source.mount}`);
-          add({ id: missing, kind: "source", owner: source.repository, catalog: "factory/arch/sources.json",
-            path: source.mount, dependsOn: ["workspace:sources"], state: "blocked",
-            reasons: ["The source contract has no unambiguous indexed Git owner."],
+          diagnostics.push(
+            `Arch source has no indexed Git owner: ${source.mount}`,
+          );
+          add({
+            id: missing,
+            kind: "source",
+            owner: source.repository,
+            catalog: "factory/arch/sources.json",
+            path: source.mount,
+            dependsOn: ["workspace:sources"],
+            state: "blocked",
+            reasons: [
+              "The source contract has no unambiguous indexed Git owner.",
+            ],
             metadata: { expectedRevision: source.revision },
           });
           return missing;
         }
-        const node = nodes.find(node => node.id === id)!;
+        const node = nodes.find((node) => node.id === id)!;
         if (declaration.path !== source.mount) {
-          diagnostics.push(`Arch source mount requires reconciliation: ${source.mount} -> ${declaration.path}`);
+          diagnostics.push(
+            `Arch source mount requires reconciliation: ${source.mount} -> ${declaration.path}`,
+          );
           node.state = "blocked";
-          node.reasons.push(`Factory mount ${source.mount} differs from the indexed owner ${declaration.path}.`);
-          node.metadata = { ...node.metadata, references: [...(node.metadata?.references as ArchSourceReference[] ?? []), source] };
+          node.reasons.push(
+            `Factory mount ${source.mount} differs from the indexed owner ${declaration.path}.`,
+          );
+          node.metadata = {
+            ...node.metadata,
+            references: [
+              ...((node.metadata?.references as ArchSourceReference[]) ?? []),
+              source,
+            ],
+          };
         }
         if (declaration.revision !== source.revision) {
-          diagnostics.push(`Arch source pin differs from indexed owner: ${source.id}`);
+          diagnostics.push(
+            `Arch source pin differs from indexed owner: ${source.id}`,
+          );
           node.state = "blocked";
-          node.reasons.push(`Factory pin ${source.revision} differs from index pin ${declaration.revision}.`);
+          node.reasons.push(
+            `Factory pin ${source.revision} differs from index pin ${declaration.revision}.`,
+          );
         }
         return id;
       }),
     ),
   ];
-  const sourceIds = new Set(sources.repositories.map(source => source.id));
+  const sourceIds = new Set(sources.repositories.map((source) => source.id));
   const runtime = add({
     id: "toolchain:bun",
     kind: "toolchain",
@@ -301,10 +393,12 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       ),
     ],
     metadata: {
-      source: sources.repositories.find(source => source.id === "bun"),
+      source: sources.repositories.find((source) => source.id === "bun"),
       releasePin:
         libraries.runtimeTargets?.[
-          (options.target === "macos-arm64" ? "darwin-arm64" : options.target) as keyof NonNullable<
+          (options.target === "macos-arm64"
+            ? "darwin-arm64"
+            : options.target) as keyof NonNullable<
             LibraryConfig["runtimeTargets"]
           >
         ] ?? libraries.runtime,
@@ -312,7 +406,10 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     },
   });
   if (options.config?.checkouts?.bun) {
-    runtime.command = { cwd: resolve(root, options.config.checkouts.bun), argv: [process.execPath, "bd", "--release"] };
+    runtime.command = {
+      cwd: resolve(root, options.config.checkouts.bun),
+      argv: [process.execPath, "bd", "--release"],
+    };
   }
   add({
     id: "workspace:install",
@@ -321,7 +418,10 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     catalog: "package.json + bun.lock + bunfig.toml",
     dependsOn: ["workspace:sources", "toolchain:bun"],
     state: "declared",
-    command: { cwd: root, argv: [process.execPath, "install", "--frozen-lockfile"] },
+    command: {
+      cwd: root,
+      argv: [process.execPath, "install", "--frozen-lockfile"],
+    },
     requiredReceipts: [
       await receipt(
         "scripts/node-modules.ts",
@@ -333,11 +433,14 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     id: "workspace:cargo",
     kind: "workspace",
     owner: "scripts/cargo.ts",
-    catalog: "Cargo.toml + Cargo.lock + rust-toolchain.toml + .cargo/config.toml",
+    catalog:
+      "Cargo.toml + Cargo.lock + rust-toolchain.toml + .cargo/config.toml",
     dependsOn: ["workspace:sources", "toolchain:bun"],
     state: "declared",
     command: command("scripts/cargo.ts", ["metadata"]),
-    reasons: ["Root membership does not prove migration of remaining nested source workspaces."],
+    reasons: [
+      "Root membership does not prove migration of remaining nested source workspaces.",
+    ],
   });
 
   const crateIds = new Map<string, string>();
@@ -360,7 +463,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       });
       continue;
     }
-    const manifest = Bun.TOML.parse(await file.text()) as { package?: { name?: string } };
+    const manifest = Bun.TOML.parse(await file.text()) as {
+      package?: { name?: string };
+    };
     const name = manifest.package?.name;
     if (!name) throw new Error(`Cargo package identity missing: ${member}`);
     const id = `cargo:${name}`;
@@ -394,7 +499,8 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       metadata: {
         package: name,
         rustTarget: target.rust,
-        profileFeatures: "No target/profile feature mapping has been qualified.",
+        profileFeatures:
+          "No target/profile feature mapping has been qualified.",
       },
     });
   }
@@ -420,7 +526,8 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       continue;
     }
     const manifest = await read<BunManifest>(`${member}/package.json`);
-    if (!manifest.name) throw new Error(`Bun package identity missing: ${member}`);
+    if (!manifest.name)
+      throw new Error(`Bun package identity missing: ${member}`);
     const build = manifest.scripts?.build;
     const node = add({
       id: `package:${manifest.name}`,
@@ -430,14 +537,28 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       path: member,
       dependsOn: ["workspace:install"],
       state: build ? "declared" : "source-only",
-      ...(build ? { command: { cwd: join(root, member), argv: [process.execPath, "run", "build"] } } : {}),
+      ...(build
+        ? {
+            command: {
+              cwd: join(root, member),
+              argv: [process.execPath, "run", "build"],
+            },
+          }
+        : {}),
       reasons: build
         ? [
             "Uses the existing declared leaf build recipe; profile/target support and output receipt remain unqualified.",
           ]
-        : ["No build script declared; source-only classification is not an execution qualification."],
+        : [
+            "No build script declared; source-only classification is not an execution qualification.",
+          ],
       requiredReceipts: build
-        ? [await receipt(member, "Build outputs, consumed input closure, target/profile and exact native gates")]
+        ? [
+            await receipt(
+              member,
+              "Build outputs, consumed input closure, target/profile and exact native gates",
+            ),
+          ]
         : [],
       metadata: { name: manifest.name, script: build ?? null },
     });
@@ -449,11 +570,13 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     // Shared installation owns development tooling; it is not a production artifact edge.
     node.metadata = {
       ...node.metadata,
-      developmentDependencies: Object.keys(manifest.devDependencies ?? {}).map(name => ({
-        name,
-        provider: packageNodes.get(name)?.id ?? null,
-        owner: "workspace:install",
-      })),
+      developmentDependencies: Object.keys(manifest.devDependencies ?? {}).map(
+        (name) => ({
+          name,
+          provider: packageNodes.get(name)?.id ?? null,
+          owner: "workspace:install",
+        }),
+      ),
     };
     for (const dependency of Object.keys({
       ...manifest.dependencies,
@@ -481,13 +604,20 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
           "build/frontend/artcraft/build-receipt.json",
         ),
       ],
-      reasons: ["Default output must be fresh. Source fingerprint does not yet bind the entire mutable input tree."],
+      reasons: [
+        "Default output must be fresh. Source fingerprint does not yet bind the entire mutable input tree.",
+      ],
     });
   }
 
-  const capabilities = new Map(appCapabilities(libraries).map(capability => [capability.libraryId, capability.id]));
+  const capabilities = new Map(
+    appCapabilities(libraries).map((capability) => [
+      capability.libraryId,
+      capability.id,
+    ]),
+  );
   for (const app of applications.apps) {
-    const module = libraries.modules.find(module => module.id === app.id);
+    const module = libraries.modules.find((module) => module.id === app.id);
     const capability = module && capabilities.get(module.id);
     const crate = module?.cargoPackage && crateIds.get(module.cargoPackage);
     const reasons = [];
@@ -496,7 +626,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     if (app.kind === "native-cli" && (!module?.binary || !capability))
       reasons.push("Native engine binary/capability owner is not declared.");
     if (app.kind === "native-cli" && !crate)
-      reasons.push("Native engine still builds from its source workspace, outside the migrated root Cargo graph.");
+      reasons.push(
+        "Native engine still builds from its source workspace, outside the migrated root Cargo graph.",
+      );
     const commandArgs = capability
       ? [
           "scripts/build-apps.ts",
@@ -506,14 +638,28 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
           "--target",
           `bun-${options.target.replace("macos-", "darwin-")}`,
         ]
-      : ["infra/app-build.ts", "build", app.id, "--config", "infra/apps.json", "--target", options.target];
+      : [
+          "infra/app-build.ts",
+          "build",
+          app.id,
+          "--config",
+          "infra/apps.json",
+          "--target",
+          options.target,
+        ];
     add({
       id: `app:${app.id}`,
       kind: "app",
-      owner: capability ? "scripts/build-apps.ts + @aphrody/bun-artifacts" : "infra/app-build.ts",
+      owner: capability
+        ? "scripts/build-apps.ts + @aphrody/bun-artifacts"
+        : "infra/app-build.ts",
       catalog: "infra/apps.json + aphrody.config.json",
       path: app.entrypoint,
-      dependsOn: ["toolchain:bun", "workspace:install", ...(crate ? [crate] : [])],
+      dependsOn: [
+        "toolchain:bun",
+        "workspace:install",
+        ...(crate ? [crate] : []),
+      ],
       state: "blocked",
       command: command(commandArgs[0]!, commandArgs.slice(1)),
       reasons: [
@@ -530,7 +676,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   }
 
   for (const recipe of native.targets) {
-    const source = sources.repositories.find(source => source.id === recipe.sourceId);
+    const source = sources.repositories.find(
+      (source) => source.id === recipe.sourceId,
+    );
     add({
       id: `system:${recipe.id}`,
       kind: "system",
@@ -540,8 +688,12 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       state: "blocked",
       reasons: [
         "Select explicit source, fresh output, toolchain inputs and admitted execution host.",
-        ...(recipe.portRequired ? ["The source owner has not implemented the required native port."] : []),
-        ...(source?.revision !== recipe.revision ? ["Recipe pin differs from source lock."] : []),
+        ...(recipe.portRequired
+          ? ["The source owner has not implemented the required native port."]
+          : []),
+        ...(source?.revision !== recipe.revision
+          ? ["Recipe pin differs from source lock."]
+          : []),
         ...recipe.unqualified,
       ],
       requiredReceipts: [
@@ -550,7 +702,12 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
           "Pinned source/toolchain/ABI artifact hashes; runtime qualification is a separate gate",
         ),
       ],
-      metadata: { host: recipe.host, architecture: recipe.architecture, abi: recipe.abi, revision: recipe.revision },
+      metadata: {
+        host: recipe.host,
+        architecture: recipe.architecture,
+        abi: recipe.abi,
+        revision: recipe.revision,
+      },
     });
   }
   const archNodeIds = new Map([
@@ -574,7 +731,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       catalog: "factory/profile.json + factory/arch/index.ts",
       dependsOn: [
         ...stage.dependsOn.map(archId),
-        ...(stage.id === "arch:sources" ? ["workspace:sources", ...archSourceOwners] : []),
+        ...(stage.id === "arch:sources"
+          ? ["workspace:sources", ...archSourceOwners]
+          : []),
         ...(stage.id === "arch:payload" ? ["toolchain:bun"] : []),
       ],
       state: "blocked",
@@ -586,7 +745,9 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
         releaseProfile: options.profile,
         composition,
         input: "inputs.factoryArch",
-        ...(stage.id === "arch:sources" ? { sourceReferences: archReferences } : {}),
+        ...(stage.id === "arch:sources"
+          ? { sourceReferences: archReferences }
+          : {}),
       },
       requiredReceipts: [
         await receipt(
@@ -609,9 +770,20 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     catalog: "root productPayload configuration + package.json + bun.lock",
     dependsOn: ["workspace:sources", "toolchain:bun"],
     state: "blocked",
-    reasons: ["Select a fresh Linux factory output, complete pinned product source closure, shared install cache and source-bound generated inputs."],
-    requiredReceipts: [await receipt("factory/product-payload.ts", "Frozen installed product tree, permissions, source inventory, lock and selected runtime identity")],
-    metadata: { route: ["build", "product"], configured: Boolean(options.config?.productPayload), nativeCommandsQualified: false },
+    reasons: [
+      "Select a fresh Linux factory output, complete pinned product source closure, shared install cache and source-bound generated inputs.",
+    ],
+    requiredReceipts: [
+      await receipt(
+        "factory/product-payload.ts",
+        "Frozen installed product tree, permissions, source inventory, lock and selected runtime identity",
+      ),
+    ],
+    metadata: {
+      route: ["build", "product"],
+      configured: Boolean(options.config?.productPayload),
+      nativeCommandsQualified: false,
+    },
   });
   add({
     id: "qualification:product-surfaces",
@@ -620,18 +792,37 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     catalog: "product payload + product CLI qualification receipts",
     dependsOn: ["product:payload"],
     state: "blocked",
-    reasons: ["Execute CLI discovery, route-target, CLI-WASM, native FFI, all agent-plugin provider adapters and MCP protocol/resource gates on the matching Linux factory runtime. Remaining native commands and the full product retain separate qualification."],
-    requiredReceipts: [await receipt("factory/product-qualification.ts", "Passed product-cli, cli-wasm, ffi, agent-plugin and mcp gates bound to installed bytes, permissions, runtime and source revision")],
-    metadata: { route: ["build", "product-qualify"], scope: "CLI discovery, CLI-WASM, native FFI, all plugin adapters dry-run, MCP tools/resources/prompts" },
+    reasons: [
+      "Execute CLI discovery, route-target, CLI-WASM, native FFI, all agent-plugin provider adapters and MCP protocol/resource gates on the matching Linux factory runtime. Remaining native commands and the full product retain separate qualification.",
+    ],
+    requiredReceipts: [
+      await receipt(
+        "factory/product-qualification.ts",
+        "Passed product-cli, cli-wasm, ffi, agent-plugin and mcp gates bound to installed bytes, permissions, runtime and source revision",
+      ),
+    ],
+    metadata: {
+      route: ["build", "product-qualify"],
+      scope:
+        "CLI discovery, CLI-WASM, native FFI, all plugin adapters dry-run, MCP tools/resources/prompts",
+    },
   });
-  nodes.find(node => node.id === "arch:payload")?.dependsOn.push("qualification:product-surfaces");
-  const imageStage = factoryArch.graph.find(stage => stage.id === "arch:image");
+  nodes
+    .find((node) => node.id === "arch:payload")
+    ?.dependsOn.push("qualification:product-surfaces");
+  const imageStage = factoryArch.graph.find(
+    (stage) => stage.id === "arch:image",
+  );
   add({
     id: "image:composition",
     kind: "image",
     owner: imageStage?.owner ?? "src/distribution.ts buildImage",
     catalog: "factory/profile.json + distribution.json + Arch package lock",
-    dependsOn: [...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]), "toolchain:bun", "qualification:product-surfaces"],
+    dependsOn: [
+      ...(imageStage?.dependsOn.map(archId) ?? ["arch:rootfs", "arch:payload"]),
+      "toolchain:bun",
+      "qualification:product-surfaces",
+    ],
     state: "blocked",
     reasons: [
       "Arch rootfs and staged Bun payload must bind the exact package lock, source/runtime identity, target and selected composition.",
@@ -643,6 +834,7 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       packageManager: factoryArch.packageManager,
       releaseProfile: options.profile,
       composition,
+      desktopSession: factoryArch.desktopSession,
       snapshot: factoryArch.snapshot,
       input: "inputs.factoryArch",
     },
@@ -651,8 +843,14 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
         "factory/arch/pacman.ts",
         "Arch rootfs artifact hash, signed exact package inventory and lock digest",
       ),
-      await receipt("src/cli.ts stage", "Complete staged source/runtime identity"),
-      await receipt("factory/product-qualification.ts", "CLI workspace identity and passed discovery bound to the staged product"),
+      await receipt(
+        "src/cli.ts stage",
+        "Complete staged source/runtime identity",
+      ),
+      await receipt(
+        "factory/product-qualification.ts",
+        "CLI workspace identity and passed discovery bound to the staged product",
+      ),
       await receipt(
         "src/cli.ts image",
         "Immutable image digest, in-rootfs CLI/WASM/FFI/plugin/MCP qualification and target/composition runtime smoke; boot/session remains separate",
@@ -663,10 +861,15 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
     id: "qualification:product",
     kind: "qualification",
     owner: "existing native/source/app/image validators",
-    catalog: "factory/profile.json + distribution.json + existing receipt contracts",
+    catalog:
+      "factory/profile.json + distribution.json + existing receipt contracts",
     dependsOn: nodes
-      .filter(node => ["cargo", "package", "frontend", "app", "system", "image"].includes(node.kind))
-      .map(node => node.id),
+      .filter((node) =>
+        ["cargo", "package", "frontend", "app", "system", "image"].includes(
+          node.kind,
+        ),
+      )
+      .map((node) => node.id),
     state: "blocked",
     reasons: [
       "No aggregate product qualification recipe binds all selected receipts yet. Declared sources/recipes are not passing gates.",
@@ -690,22 +893,30 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
       "No unified distribution release recipe is declared. Imported release routes contain unresolved legacy/out-of-scope inputs; host activation remains Infra-owned.",
     ],
     requiredReceipts: [
-      await receipt("infra/app-build.ts stageAppRelease", "Immutable artifact/notice hashes and qualified ABI/runtime"),
-      await receipt("Aphrody Infra/edge", "Publication/catalog/channel readback and host-specific activation"),
+      await receipt(
+        "infra/app-build.ts stageAppRelease",
+        "Immutable artifact/notice hashes and qualified ABI/runtime",
+      ),
+      await receipt(
+        "Aphrody Infra/edge",
+        "Publication/catalog/channel readback and host-specific activation",
+      ),
     ],
   });
 
   const ids = new Set<string>();
   for (const node of nodes) {
-    if (ids.has(node.id)) throw new Error(`Duplicate factory graph identity: ${node.id}`);
+    if (ids.has(node.id))
+      throw new Error(`Duplicate factory graph identity: ${node.id}`);
     ids.add(node.id);
     node.dependsOn = [...new Set(node.dependsOn)];
   }
   for (const node of nodes)
     for (const dependency of node.dependsOn) {
-      if (!ids.has(dependency)) throw new Error(`Missing factory graph dependency: ${dependency}`);
+      if (!ids.has(dependency))
+        throw new Error(`Missing factory graph dependency: ${dependency}`);
     }
-  const byId = new Map(nodes.map(node => [node.id, node]));
+  const byId = new Map(nodes.map((node) => [node.id, node]));
   const visited = new Set<string>();
   const active = new Set<string>();
   const cycles = new Set<string>();
@@ -722,19 +933,24 @@ export async function planFactoryGraph(options: FactoryGraphOptions): Promise<Fa
   }
   for (const id of ids) visit(id);
   if (cycles.size)
-    diagnostics.push(`Declared member dependency cycles require owner review: ${[...cycles].sort().join(", ")}`);
+    diagnostics.push(
+      `Declared member dependency cycles require owner review: ${[...cycles].sort().join(", ")}`,
+    );
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "bun-os-factory-graph",
     root,
     target: options.target,
     profile: options.profile,
     composition,
+    desktopSession: factoryArch.desktopSession,
     inputs: { factoryArch },
     executable: false,
     qualified: false,
     nodes,
-    edges: nodes.flatMap(node => node.dependsOn.map(from => ({ from, to: node.id }))),
+    edges: nodes.flatMap((node) =>
+      node.dependsOn.map((from) => ({ from, to: node.id })),
+    ),
     diagnostics,
     limits: [
       "Read-only catalog graph; no child commands, builds, installs, tests or remote calls were executed.",
