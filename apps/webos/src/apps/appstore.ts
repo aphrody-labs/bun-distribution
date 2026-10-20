@@ -15,7 +15,8 @@ const fmt = (n: number) => (n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} 
 /** App store backed by the package manager: verified installs, offline use, updates, removal. */
 export async function appStore(root: HTMLElement, onChange: () => void, launch: (entry: RegistryEntry) => void) {
   const entries = await registry();
-  let category: (typeof CATEGORIES)[number]["id"] = "all";
+  const requestedCategory = new URLSearchParams(location.search).get("category");
+  let category: (typeof CATEGORIES)[number]["id"] = CATEGORIES.find(entry => entry.id === requestedCategory)?.id ?? "all";
   const grid = h("div", { class: "store-list" });
   const tabs = document.createElement("md-tabs");
   const buttons = CATEGORIES.map(c =>
@@ -31,6 +32,7 @@ export async function appStore(root: HTMLElement, onChange: () => void, launch: 
     ),
   );
   tabs.append(...buttons);
+  tabs.setAttribute("active-tab-index", String(CATEGORIES.findIndex(entry => entry.id === category)));
 
   function card(e: RegistryEntry) {
     const have = installed()[e.id];

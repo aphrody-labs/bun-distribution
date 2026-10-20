@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // aphrody.com edge: static Bun OS shell + /api/health + /api/browse (script-free reader proxy for the Bun Browser).
 import { workspaceResponse } from "./workspace";
+import { playRedirect, playResponse } from "./play";
 
 interface R2ObjectBodyLike {
   body: ReadableStream;
@@ -261,6 +262,8 @@ const CRAFT_PACKAGE: Record<string, string> = {
 };
 
 function redirectFor(url: URL): string | undefined {
+  const play = playRedirect(url);
+  if (play) return play;
   const host = url.hostname;
   if (host === "www.aphrody.com")
     return `https://aphrody.com${url.pathname}${url.search}`;
@@ -285,6 +288,13 @@ export default {
     // API clients of the old hosts keep working (no redirect): the same routes answer on every host.
     const moved = legacyPath ? undefined : redirectFor(url);
     if (moved) return Response.redirect(moved, 301);
+    const gaming = await playResponse(request, env.ASSETS);
+    if (gaming) {
+      const out = new Response(gaming.body, gaming);
+      for (const [key, value] of Object.entries(ISOLATION)) out.headers.set(key, value);
+      out.headers.set("x-content-type-options", "nosniff");
+      return out;
+    }
     if (legacyPath) {
       const target = new Request(
         `${LEGACY_ORIGIN}${url.pathname}${url.search}`,

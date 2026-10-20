@@ -8,6 +8,7 @@ import { legacyRouteRedirects } from "./desktop-navigation";
 import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
+import { GamesRoute } from "./routes/games";
 import { StudioRoute } from "./routes/studio";
 import { TerminalRoute } from "./routes/terminal/TerminalRoute";
 import { AdminRoute } from "./routes/admin";
@@ -89,6 +90,10 @@ export const explorerRoutes = [
       {
         path: "models",
         element: <ModelsHub />,
+      },
+      {
+        path: "games/:core?",
+        element: <GamesRoute />,
       },
       {
         path: "terminal",

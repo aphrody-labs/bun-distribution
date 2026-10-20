@@ -420,6 +420,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
   const isModelsActive = location.pathname.startsWith("/models");
   const isStudioActive = location.pathname.startsWith("/studio");
   const isTerminalActive = location.pathname.startsWith(browserOnlyRoutes.terminal);
+  const isGamesActive = location.pathname.startsWith(browserOnlyRoutes.games);
   const isCreatorActive = location.pathname.startsWith(desktopRoutes.creator);
   const isAdminActive = location.pathname.startsWith(desktopRoutes.admin);
   const showCreator = useKitVisible("creator") || isCreatorActive;
@@ -547,6 +548,14 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                   terminal
                 </span>
                 <span className="truncate">Terminal</span>
+              </button>
+            )}
+            {platform.platform !== "tauri" && (
+              <button type="button" onClick={() => navigate(browserOnlyRoutes.games)} aria-current={isGamesActive ? "page" : undefined}
+                className={clsx("flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isGamesActive ? "bg-secondary-container text-on-secondary-container font-semibold" : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20")}>
+                <span aria-hidden="true" className="material-symbol text-title-medium">sports_esports</span>
+                <span className="truncate">{language === "fr" ? "Jeux" : "Games"}</span>
               </button>
             )}
             <button

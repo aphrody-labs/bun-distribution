@@ -12,7 +12,7 @@ export const desktopRoutes = {
 } as const;
 
 /** Destinations served by the in-browser Rust WebAssembly backend; absent from the Tauri app. */
-export const browserOnlyRoutes = { terminal: "/terminal" } as const;
+export const browserOnlyRoutes = { terminal: "/terminal", games: "/games" } as const;
 
 /**
  * Kit surfaces (crates/ui/app/src/kits.rs): shown in the navigation only when the kit answers,

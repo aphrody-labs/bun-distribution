@@ -10,6 +10,13 @@ dependencies. Native execution remains host-bound: the desktop and identity
 owners are `apps/aphrody-app` and `crates/aphrody-identity`. Workspace membership
 does not prove that a native desktop artifact has been built or launched.
 
+The browser shell includes `/games/:core?` (`/workspace/games` in WebOS).
+Its Games navigation, M3 cards and controls consume the public qualified package
+registry at `/registry.json`. Selecting an emulator embeds its existing product
+player; closing the player removes the iframe and ends that browser session.
+No second emulator loader or runtime is implemented in App UI. Publication and
+qualification of emulator packages remain with Bun Engine and WebOS assembly.
+
 | Script              | Does                                                                         |
 | ------------------- | ---------------------------------------------------------------------------- |
 | `bun run dev`       | Native M3 development server on port 1421 (`tauri.conf.json` `build.devUrl`) |

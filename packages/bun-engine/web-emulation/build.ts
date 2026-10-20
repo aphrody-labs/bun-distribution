@@ -186,6 +186,9 @@ async function buildRust(id: string, core: RustCore, threads: boolean) {
   const rustflags = [`-Ctarget-feature=${targetFeatures.map(f => `+${f}`).join(",")}`];
   const cargo = [
     "build",
+    "--locked",
+    "--jobs",
+    "4",
     "-p",
     "bun-engine",
     "--lib",
@@ -197,7 +200,7 @@ async function buildRust(id: string, core: RustCore, threads: boolean) {
     "--features",
     features.join(","),
     "--target-dir",
-    join(work, `rust-${variant}`),
+    join(root, "target"),
   ];
   if (threads) {
     cargo.push("-Zbuild-std=panic_abort,std");
@@ -214,17 +217,18 @@ async function buildRust(id: string, core: RustCore, threads: boolean) {
   log(`cargo ${id} (${variant}): ${features.join(",")}`);
   // Windows needs the MSVC environment for build scripts; Linux runs the wrapper directly.
   const msvc = process.platform === "win32" ? ["bun", "msvc", "exec", "--toolset", "14.44", "--"] : [];
-  const cargoSeconds = await run([...msvc, "bun", "scripts/cargo.ts", "exec", "--", ...cargo], {
+  const cargoSeconds = await run([...msvc, process.execPath, "scripts/cargo.ts", "exec", "--", ...cargo], {
     env: {
       CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUSTFLAGS: rustflags.join(" "),
-      CARGO_BUILD_BUILD_DIR: join(work, `rust-${variant}`, "build"),
+      CARGO_BUILD_BUILD_DIR: join(root, "build", "rust"),
+      CARGO_BUILD_JOBS: "4",
       // sccache passes web-sys's ~1,500 --cfg flags on a command line Windows rejects
       // (os error 206); compile these crates without the wrapper.
       RUSTC_WRAPPER: "",
       CARGO_BUILD_RUSTC_WRAPPER: "",
     },
   });
-  const raw = join(work, `rust-${variant}`, "wasm32-unknown-unknown", lock.rust.profile, "bun_engine.wasm");
+  const raw = join(root, "target", "wasm32-unknown-unknown", lock.rust.profile, "bun_engine.wasm");
   const out = join(work, "out", id, variant);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });

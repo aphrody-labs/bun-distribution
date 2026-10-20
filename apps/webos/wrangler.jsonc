@@ -14,6 +14,7 @@
   "routes": [
     { "pattern": "aphrody.com/*", "zone_name": "aphrody.com" },
     { "pattern": "www.aphrody.com/*", "zone_name": "aphrody.com" },
+    { "pattern": "play.aphrody.app/*", "zone_name": "aphrody.app" },
   ],
   "observability": { "enabled": true },
 }
