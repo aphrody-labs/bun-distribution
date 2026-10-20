@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Build the desktop webview with the same native M3 bundler used in development.
-import { buildM3 } from "@aphrody/m3/build";
+import { buildM3, TAURI_LAYOUT } from "@aphrody/m3/build";
 import { loadM3Config } from "@aphrody/m3/config";
 import { m3Bun } from "@aphrody/m3-bun/plugin";
 import { m3Plugin } from "@aphrody/m3/plugin";
@@ -105,6 +105,8 @@ if (import.meta.main) {
     minify: config.minify,
     optimizeImports: config.optimizeImports,
     outdir,
+    // Browser and native hosts consume the same fixed App UI artifact layout.
+    tauri: { uiDist: outdir },
     plugin: false,
     plugins: [
       m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }),
@@ -119,24 +121,9 @@ if (import.meta.main) {
   );
   await Bun.write(join(result.outdir, "wasm", "LICENSE-APACHE"), Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
-  // The bundler emits the app as hashed chunks; the page shell is the source HTML with those bundles referenced.
-  const jsChunk = result.outputs.find(
-    (o) =>
-      (o.kind === "entry-point" && o.path.endsWith(".js")) ||
-      (o.path.startsWith("chunk-") && o.path.endsWith(".js")),
-  );
-  const cssChunk = result.outputs.find((o) => o.path.endsWith(".css"));
-  let shell = (await Bun.file(resolve(import.meta.dir, config.entry)).text())
-    .replace('<base href="/"', `<base href="${base}"`)
-    .replace(/<script type="module" src="[^"]*"><\/script>/, "")
-    .replace(
-      "</body>",
-      `<script type="module" src="./${jsChunk?.path}"></script></body>`,
-    )
-    .replace(
-      "</head>",
-      `<link rel="stylesheet" href="./${cssChunk?.path}"></head>`,
-    );
+  // Preserve the bundler's rewritten script, stylesheet and asset references.
+  let shell = (await Bun.file(join(result.outdir, TAURI_LAYOUT.html)).text())
+    .replace('<base href="/"', `<base href="${base}"`);
   await Bun.write(join(result.outdir, "index.html"), shell);
   if (values.out) {
     // Web artifacts keep stable file names: version the entry URLs in the no-cache shell so a
