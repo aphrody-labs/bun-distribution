@@ -225,7 +225,17 @@ async function browse(request: Request): Promise<Response> {
 }
 
 /** Routes of the former aphrody.app Worker, now served under aphrody.com (same handler, same bindings). */
-const LEGACY_ROUTES = ["/api/site/", "/api/yolo/", "/mcp", "/v1/", "/rpc", "/events", "/notifications", "/health", "/healthz"];
+const LEGACY_ROUTES = [
+  "/api/site/",
+  "/api/yolo/",
+  "/mcp",
+  "/v1/",
+  "/rpc",
+  "/events",
+  "/notifications",
+  "/health",
+  "/healthz",
+];
 const LEGACY_ORIGIN = "https://aphrody.app";
 
 /** Old product hosts redirect to the Web OS; each Craft capability opens its package. */
@@ -238,8 +248,8 @@ const CRAFT_PACKAGE: Record<string, string> = {
   images: "craft-photo",
   vectorcraft: "craft-vector",
   vectors: "craft-vector",
-  effectcraft: "apps",
-  compositing: "apps",
+  effectcraft: "craft-effect",
+  compositing: "craft-effect",
   lightcraft: "craft-light",
   "photo-processing": "craft-light",
   pdfcraft: "craft-pdf",
@@ -294,7 +304,8 @@ export default {
     const gaming = await playResponse(request, env.ASSETS);
     if (gaming) {
       const out = new Response(gaming.body, gaming);
-      for (const [key, value] of Object.entries(ISOLATION)) out.headers.set(key, value);
+      for (const [key, value] of Object.entries(ISOLATION))
+        out.headers.set(key, value);
       out.headers.set("x-content-type-options", "nosniff");
       return out;
     }
@@ -367,7 +378,8 @@ export default {
       out.headers.set("cache-control", "no-cache");
     else if (res.ok && /\/[a-f0-9]{12,64}\//.test(url.pathname))
       out.headers.set("cache-control", "public, max-age=31536000, immutable");
-    else if (!out.headers.has("cache-control")) out.headers.set("cache-control", "no-cache");
+    else if (!out.headers.has("cache-control"))
+      out.headers.set("cache-control", "no-cache");
     return out;
   },
 };
