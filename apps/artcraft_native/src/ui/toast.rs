@@ -84,7 +84,7 @@ impl Toasts {
                 p.rect(
                     rect,
                     theme::RADIUS,
-                    theme::fade(theme::CONTROLS, 0.97),
+                    theme::fade(theme::controls(), 0.97),
                     theme::hairline(),
                     egui::StrokeKind::Inside,
                 );

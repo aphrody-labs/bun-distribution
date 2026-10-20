@@ -22,11 +22,11 @@ pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Opt
         vec2(width, area.height() - 56.0),
     )));
     let ui = &mut col;
-    widgets::hud(ui, "01 / ArtCraft", theme::FAINT);
+    widgets::hud(ui, "01 / ArtCraft", theme::faint());
     ui.add_space(10.0);
     ui.label(widgets::heading("Capable tools for artists.", 52.0));
     ui.add_space(10.0);
-    ui.label(egui::RichText::new("Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.").size(17.0).color(theme::MUTED));
+    ui.label(egui::RichText::new("Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.").size(17.0).color(theme::muted()));
     ui.add_space(28.0);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 16.0;
@@ -90,9 +90,9 @@ fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
         egui::Stroke::new(
             1.0,
             if hovered {
-                theme::LINE_STRONG
+                theme::line_strong()
             } else {
-                theme::LINE
+                theme::line()
             },
         ),
         egui::StrokeKind::Inside,
@@ -102,7 +102,7 @@ fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
         p,
         Rect::from_min_size(rect.min + vec2(24.0, 24.0), vec2(26.0, 26.0)),
         icon,
-        theme::INK,
+        theme::ink(),
     );
     let body = Rect::from_min_max(
         pos2(rect.left() + 24.0, rect.top() + 76.0),
@@ -115,7 +115,7 @@ fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
     );
     inner.label(widgets::heading(title, 26.0));
     inner.add_space(4.0);
-    inner.label(egui::RichText::new(text).size(14.0).color(theme::MUTED));
+    inner.label(egui::RichText::new(text).size(14.0).color(theme::muted()));
     icons::paint(
         ui.painter(),
         Rect::from_center_size(
@@ -123,7 +123,11 @@ fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
             vec2(16.0, 16.0),
         ),
         Icon::ChevronRight,
-        if hovered { theme::INK } else { theme::FAINT },
+        if hovered {
+            theme::ink()
+        } else {
+            theme::faint()
+        },
     );
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
         .clicked()
@@ -238,7 +242,7 @@ fn placeholder(ui: &mut Ui, area: Rect, title: &str, text: &str, web_url: Option
         ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 44.0))));
     child.label(widgets::heading(title, 44.0));
     child.add_space(10.0);
-    child.label(egui::RichText::new(text).size(15.0).color(theme::MUTED));
+    child.label(egui::RichText::new(text).size(15.0).color(theme::muted()));
     if let Some(url) = web_url {
         child.add_space(20.0);
         if widgets::button(

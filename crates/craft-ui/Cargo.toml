@@ -16,6 +16,8 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
+aphrody-m3 = { path = "../aphrody-m3", default-features = false }
+aphrody-m3-tokens = { workspace = true }
 egui = { workspace = true }
 serde = { workspace = true, optional = true }
 

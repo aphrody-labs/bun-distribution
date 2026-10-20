@@ -106,129 +106,161 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.app_bar = palette.color(Role::Surface);
+        self.panel = palette.color(Role::SurfaceContainer);
+        self.panel_darker = palette.color(Role::SurfaceContainerLow);
+        self.input = palette.color(Role::SurfaceContainerHighest);
+        self.input_border = palette.color(Role::Outline);
+        self.border = palette.color(Role::OutlineVariant);
+        self.divider = palette.color(Role::OutlineVariant);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.tool_active = palette.color(Role::SecondaryContainer);
+        self.accent = palette.color(Role::Primary);
+        self.accent_strong = palette.color(Role::Primary);
+        self.row_selected = palette.color(Role::SecondaryContainer);
+        self.pasteboard = palette.color(Role::SurfaceContainerLowest);
+        self.ruler_tick = palette.color(Role::OnSurfaceVariant);
+        self.button = palette.color(Role::SurfaceContainerHigh);
+        self.text_strong = palette.color(Role::OnSurface);
+        self.tab_strip = palette.color(Role::SurfaceContainerLow);
+        self.button_border = palette.color(Role::Outline);
+        self.error = palette.color(Role::Error);
+        self
+    }
+
     pub fn for_brightness(b: Brightness) -> Self {
-        let hex = |s: u32| Color32::from_rgb((s >> 16) as u8, (s >> 8) as u8, s as u8);
-        let base = Tokens {
-            dark: true,
-            app_bar: hex(0x262626),
-            panel: hex(0x323232),
-            panel_darker: hex(0x282828),
-            input: hex(0x1f1f1f),
-            input_border: hex(0x464646),
-            border: hex(0x1b1b1b),
-            divider: hex(0x3f3f3f),
-            text: hex(0xd8d8d8),
-            text_dim: hex(0xa8a8a8),
-            text_disabled: hex(0x6e6e6e),
-            icon: hex(0xcfcfcf),
-            hover: hex(0x444444),
-            tool_active: hex(0x1d1d1d),
-            accent: hex(0x378ef0),
-            accent_strong: hex(0x1473e6),
-            row_selected: hex(0x484b50),
-            pasteboard: hex(0x1e1e1e),
-            ruler: hex(0x2f2f2f),
-            ruler_tick: hex(0x8a8a8a),
-            smart_guide: hex(0xff3dfc),
-            guide: hex(0x4affff),
-            measure_bg: Color32::from_rgba_unmultiplied(92, 92, 92, 235),
-            button: hex(0x444444),
-            radius: 2,
-            text_strong: hex(0xf5f5f5),
-            tab_strip: hex(0x282828),
-            button_border: hex(0x6a6a6a),
-            selection: hex(0x4f80ff),
-            anchor_selected: hex(0x3d82ff),
-            flyout_active: hex(0x54b2f7),
-            font_size: 13.0,
-            caption_close: hex(0xc42b1c),
-            caption_close_text: Color32::WHITE,
-            highlight: hex(0xff3030),
-            bleed: hex(0xf03030),
-            error: hex(0xe34850),
-            warning: hex(0xf0a330),
-            axis_x: hex(0xef6058),
-            axis_y: hex(0x45af63),
-            axis_z: hex(0x378ef0),
-        };
-        match b {
-            Brightness::Dark => base,
-            // Measured from Illustrator 2026 (plan/illustrator/10-observed-ui.md §1).
-            Brightness::MediumDark => Tokens {
-                app_bar: hex(0x535353),
-                panel: hex(0x535353),
-                panel_darker: hex(0x424242),
-                tab_strip: hex(0x424242),
-                input: hex(0x454545),
-                input_border: hex(0x5f5f5f),
-                border: hex(0x383838),
-                divider: hex(0x4b4b4b),
-                text: hex(0xd1d1d1),
-                text_strong: hex(0xffffff),
-                text_dim: hex(0xb0b0b0),
-                text_disabled: hex(0x7a7a7a),
-                icon: hex(0xc2c2c2),
-                hover: hex(0x606060),
-                tool_active: hex(0x303030),
-                row_selected: hex(0x52677c),
-                pasteboard: hex(0x606060),
-                ruler: hex(0x333333),
+        let tokens = (|| {
+            let hex = |s: u32| Color32::from_rgb((s >> 16) as u8, (s >> 8) as u8, s as u8);
+            let base = Tokens {
+                dark: true,
+                app_bar: hex(0x262626),
+                panel: hex(0x323232),
+                panel_darker: hex(0x282828),
+                input: hex(0x1f1f1f),
+                input_border: hex(0x464646),
+                border: hex(0x1b1b1b),
+                divider: hex(0x3f3f3f),
+                text: hex(0xd8d8d8),
+                text_dim: hex(0xa8a8a8),
+                text_disabled: hex(0x6e6e6e),
+                icon: hex(0xcfcfcf),
+                hover: hex(0x444444),
+                tool_active: hex(0x1d1d1d),
+                accent: hex(0x378ef0),
+                accent_strong: hex(0x1473e6),
+                row_selected: hex(0x484b50),
+                pasteboard: hex(0x1e1e1e),
+                ruler: hex(0x2f2f2f),
                 ruler_tick: hex(0x8a8a8a),
-                button: hex(0x535353),
-                button_border: hex(0x747474),
-                ..base
-            },
-            Brightness::MediumLight => Tokens {
-                tab_strip: hex(0xa6a6a6),
-                text_strong: hex(0x000000),
-                button_border: hex(0x7a7a7a),
-                dark: false,
-                app_bar: hex(0xa9a9a9),
-                panel: hex(0xb8b8b8),
-                panel_darker: hex(0xaaaaaa),
-                input: hex(0xd6d6d6),
-                input_border: hex(0x8c8c8c),
-                border: hex(0x969696),
-                divider: hex(0x9e9e9e),
-                text: hex(0x1f1f1f),
-                text_dim: hex(0x3c3c3c),
-                text_disabled: hex(0x7c7c7c),
-                icon: hex(0x2a2a2a),
-                hover: hex(0xc8c8c8),
-                tool_active: hex(0x969696),
-                row_selected: hex(0x9fb4d6),
-                pasteboard: hex(0xa0a0a0),
-                ruler: hex(0xc2c2c2),
-                ruler_tick: hex(0x4a4a4a),
-                button: hex(0xcacaca),
-                ..base
-            },
-            Brightness::Light => Tokens {
-                tab_strip: hex(0xdddddd),
-                text_strong: hex(0x000000),
-                button_border: hex(0x9a9a9a),
-                dark: false,
-                app_bar: hex(0xe4e4e4),
-                panel: hex(0xf0f0f0),
-                panel_darker: hex(0xe2e2e2),
-                input: hex(0xffffff),
-                input_border: hex(0xb4b4b4),
-                border: hex(0xcfcfcf),
-                divider: hex(0xd6d6d6),
-                text: hex(0x1f1f1f),
-                text_dim: hex(0x4b4b4b),
-                text_disabled: hex(0x9a9a9a),
-                icon: hex(0x303030),
-                hover: hex(0xdddddd),
-                tool_active: hex(0xcdcdcd),
-                row_selected: hex(0xc8daf7),
-                pasteboard: hex(0xdcdcdc),
-                ruler: hex(0xeaeaea),
-                ruler_tick: hex(0x5a5a5a),
-                button: hex(0xe0e0e0),
-                ..base
-            },
-        }
+                smart_guide: hex(0xff3dfc),
+                guide: hex(0x4affff),
+                measure_bg: Color32::from_rgba_unmultiplied(92, 92, 92, 235),
+                button: hex(0x444444),
+                radius: 2,
+                text_strong: hex(0xf5f5f5),
+                tab_strip: hex(0x282828),
+                button_border: hex(0x6a6a6a),
+                selection: hex(0x4f80ff),
+                anchor_selected: hex(0x3d82ff),
+                flyout_active: hex(0x54b2f7),
+                font_size: 13.0,
+                caption_close: hex(0xc42b1c),
+                caption_close_text: Color32::WHITE,
+                highlight: hex(0xff3030),
+                bleed: hex(0xf03030),
+                error: hex(0xe34850),
+                warning: hex(0xf0a330),
+                axis_x: hex(0xef6058),
+                axis_y: hex(0x45af63),
+                axis_z: hex(0x378ef0),
+            };
+            match b {
+                Brightness::Dark => base,
+                // Measured from Illustrator 2026 (plan/illustrator/10-observed-ui.md §1).
+                Brightness::MediumDark => Tokens {
+                    app_bar: hex(0x535353),
+                    panel: hex(0x535353),
+                    panel_darker: hex(0x424242),
+                    tab_strip: hex(0x424242),
+                    input: hex(0x454545),
+                    input_border: hex(0x5f5f5f),
+                    border: hex(0x383838),
+                    divider: hex(0x4b4b4b),
+                    text: hex(0xd1d1d1),
+                    text_strong: hex(0xffffff),
+                    text_dim: hex(0xb0b0b0),
+                    text_disabled: hex(0x7a7a7a),
+                    icon: hex(0xc2c2c2),
+                    hover: hex(0x606060),
+                    tool_active: hex(0x303030),
+                    row_selected: hex(0x52677c),
+                    pasteboard: hex(0x606060),
+                    ruler: hex(0x333333),
+                    ruler_tick: hex(0x8a8a8a),
+                    button: hex(0x535353),
+                    button_border: hex(0x747474),
+                    ..base
+                },
+                Brightness::MediumLight => Tokens {
+                    tab_strip: hex(0xa6a6a6),
+                    text_strong: hex(0x000000),
+                    button_border: hex(0x7a7a7a),
+                    dark: false,
+                    app_bar: hex(0xa9a9a9),
+                    panel: hex(0xb8b8b8),
+                    panel_darker: hex(0xaaaaaa),
+                    input: hex(0xd6d6d6),
+                    input_border: hex(0x8c8c8c),
+                    border: hex(0x969696),
+                    divider: hex(0x9e9e9e),
+                    text: hex(0x1f1f1f),
+                    text_dim: hex(0x3c3c3c),
+                    text_disabled: hex(0x7c7c7c),
+                    icon: hex(0x2a2a2a),
+                    hover: hex(0xc8c8c8),
+                    tool_active: hex(0x969696),
+                    row_selected: hex(0x9fb4d6),
+                    pasteboard: hex(0xa0a0a0),
+                    ruler: hex(0xc2c2c2),
+                    ruler_tick: hex(0x4a4a4a),
+                    button: hex(0xcacaca),
+                    ..base
+                },
+                Brightness::Light => Tokens {
+                    tab_strip: hex(0xdddddd),
+                    text_strong: hex(0x000000),
+                    button_border: hex(0x9a9a9a),
+                    dark: false,
+                    app_bar: hex(0xe4e4e4),
+                    panel: hex(0xf0f0f0),
+                    panel_darker: hex(0xe2e2e2),
+                    input: hex(0xffffff),
+                    input_border: hex(0xb4b4b4),
+                    border: hex(0xcfcfcf),
+                    divider: hex(0xd6d6d6),
+                    text: hex(0x1f1f1f),
+                    text_dim: hex(0x4b4b4b),
+                    text_disabled: hex(0x9a9a9a),
+                    icon: hex(0x303030),
+                    hover: hex(0xdddddd),
+                    tool_active: hex(0xcdcdcd),
+                    row_selected: hex(0xc8daf7),
+                    pasteboard: hex(0xdcdcdc),
+                    ruler: hex(0xeaeaea),
+                    ruler_tick: hex(0x5a5a5a),
+                    button: hex(0xe0e0e0),
+                    ..base
+                },
+            }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {

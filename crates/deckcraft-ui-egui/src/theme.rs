@@ -45,8 +45,30 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.chrome = palette.color(Role::SurfaceContainer);
+        self.card = palette.color(Role::SurfaceContainerHigh);
+        self.card_border = palette.color(Role::OutlineVariant);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.text_faint = palette.color(Role::OnSurfaceVariant);
+        self.border = palette.color(Role::OutlineVariant);
+        self.separator = palette.color(Role::OutlineVariant);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.selected = palette.color(Role::SecondaryContainer);
+        self.accent = palette.color(Role::Primary);
+        self.accent_text = palette.color(Role::Primary);
+        self.caret = palette.color(Role::Primary);
+        self.field_bg = palette.color(Role::SurfaceContainerHighest);
+        self
+    }
+
     pub fn light() -> Self {
-        Tokens {
+        let tokens = (|| Tokens {
             dark: false,
             chrome: Color32::from_rgb(0xF5, 0xF5, 0xF5),
             card: Color32::WHITE,
@@ -71,10 +93,11 @@ impl Tokens {
             text_selection: Color32::from_rgba_unmultiplied(0x5A, 0x8F, 0xE0, 90),
             field_bg: Color32::WHITE,
             shadow: Color32::from_black_alpha(28),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
     pub fn dark() -> Self {
-        Tokens {
+        let tokens = (|| Tokens {
             dark: true,
             chrome: Color32::from_rgb(0x26, 0x26, 0x26),
             card: Color32::from_rgb(0x33, 0x33, 0x33),
@@ -99,13 +122,15 @@ impl Tokens {
             text_selection: Color32::from_rgba_unmultiplied(0x5A, 0x8F, 0xE0, 90),
             field_bg: Color32::from_rgb(0x2A, 0x2A, 0x2A),
             shadow: Color32::from_black_alpha(90),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
     pub fn for_brightness(b: Brightness) -> Self {
-        match b {
+        let tokens = (|| match b {
             Brightness::Light => Self::light(),
             Brightness::Dark => Self::dark(),
-        }
+        })();
+        tokens.with_aphrody(tokens.dark, false)
     }
     pub fn get(ctx: &egui::Context) -> Self {
         if ctx.global_style().visuals.dark_mode {

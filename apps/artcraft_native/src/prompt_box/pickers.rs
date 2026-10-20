@@ -167,21 +167,21 @@ pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) ->
                 ui.label(
                     egui::RichText::new(format!("{min}s"))
                         .size(11.0)
-                        .color(theme::FAINT),
+                        .color(theme::faint()),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.add_space(8.0);
                     ui.label(
                         egui::RichText::new(format!("{max}s"))
                             .size(11.0)
-                            .color(theme::FAINT),
+                            .color(theme::faint()),
                     );
                     ui.centered_and_justified(|ui| {
                         ui.label(
                             egui::RichText::new(format!("{value}s"))
                                 .size(13.0)
                                 .family(theme::semibold())
-                                .color(theme::INK),
+                                .color(theme::ink()),
                         );
                     });
                 });

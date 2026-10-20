@@ -120,6 +120,36 @@ pub fn gradient_rect(painter: &egui::Painter, rect: egui::Rect, top: Color32, bo
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.app_bg = palette.color(Role::Surface);
+        self.header_bg = palette.color(Role::SurfaceContainerLow);
+        self.panel_bg = palette.color(Role::SurfaceContainer);
+        self.tab_text = palette.color(Role::OnSurfaceVariant);
+        self.tab_text_active = palette.color(Role::OnSurface);
+        self.focus = palette.color(Role::Primary);
+        self.accent = palette.color(Role::Primary);
+        self.accent_hover = palette.color(Role::Primary);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.text_faint = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.icon_active = palette.color(Role::OnSecondaryContainer);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.pressed = palette.color(Role::SecondaryContainer);
+        self.field_bg = palette.color(Role::SurfaceContainerHighest);
+        self.field_border = palette.color(Role::Outline);
+        self.separator = palette.color(Role::OutlineVariant);
+        self.row_alt = palette.color(Role::SurfaceContainerHigh);
+        self.row_selected = palette.color(Role::SecondaryContainer);
+        self.hot_text = palette.color(Role::Primary);
+        self.pasteboard = palette.color(Role::SurfaceContainerLowest);
+        self.danger = palette.color(Role::Error);
+        self
+    }
+
     /// The gradient top colour for a fill (a little lighter), or the fill itself when gradients
     /// are off.
     pub fn grad_top(&self, c: Color32) -> Color32 {
@@ -133,114 +163,117 @@ impl Tokens {
 
 impl Tokens {
     pub fn for_kind(kind: ThemeKind) -> Self {
-        let dark = Tokens {
-            kind,
-            app_bg: Color32::from_rgb(0x12, 0x12, 0x12),
-            header_bg: Color32::from_rgb(0x1f, 0x1f, 0x1f),
-            panel_bg: Color32::from_rgb(0x23, 0x23, 0x23),
-            tab_text: Color32::from_rgb(0x9a, 0x9a, 0x9a),
-            tab_text_active: Color32::from_rgb(0xe3, 0xe3, 0xe3),
-            focus: Color32::from_rgb(0x2d, 0x8c, 0xeb),
-            accent: Color32::from_rgb(0x2d, 0x8c, 0xeb),
-            accent_hover: Color32::from_rgb(0x4a, 0xa0, 0xf5),
-            text: Color32::from_rgb(0xc8, 0xc8, 0xc8),
-            text_dim: Color32::from_rgb(0x9a, 0x9a, 0x9a),
-            text_faint: Color32::from_rgb(0x8c, 0x8c, 0x8c),
-            icon: Color32::from_rgb(0xb4, 0xb4, 0xb4),
-            icon_active: Color32::from_rgb(0xf0, 0xf0, 0xf0),
-            hover: Color32::from_rgb(0x30, 0x30, 0x30),
-            pressed: Color32::from_rgb(0x45, 0x45, 0x45),
-            field_bg: Color32::from_rgb(0x17, 0x17, 0x17),
-            field_border: Color32::from_rgb(0x3a, 0x3a, 0x3a),
-            separator: Color32::from_rgb(0x34, 0x34, 0x34),
-            row: Color32::from_rgb(0x23, 0x23, 0x23),
-            row_alt: Color32::from_rgb(0x27, 0x27, 0x27),
-            row_selected: Color32::from_rgb(0x3a, 0x3a, 0x3a),
-            hot_text: Color32::from_rgb(0x3d, 0x8f, 0xf5),
-            tl_bg: Color32::from_rgb(0x1b, 0x1b, 0x1b),
-            tl_ruler_bg: Color32::from_rgb(0x23, 0x23, 0x23),
-            tl_ruler_tick: Color32::from_rgb(0x70, 0x70, 0x70),
-            tl_ruler_text: Color32::from_rgb(0x9a, 0x9a, 0x9a),
-            cti: Color32::from_rgb(0x2d, 0x8c, 0xeb),
-            work_area: Color32::from_rgb(0x4a, 0x4a, 0x4a),
-            cache_green: Color32::from_rgb(0x3c, 0xa6, 0x4c),
-            cache_blue: Color32::from_rgb(0x3a, 0x6f, 0xd8),
-            keyframe: Color32::from_rgb(0xa8, 0xa8, 0xa8),
-            keyframe_selected: Color32::from_rgb(0x3d, 0x8f, 0xf5),
-            pasteboard: Color32::from_rgb(0x1a, 0x1a, 0x1a),
-            timecode: Color32::from_rgb(0x3d, 0x8f, 0xf5),
-            danger: Color32::from_rgb(0xe0, 0x4a, 0x3c),
-            warning: Color32::from_rgb(0xe8, 0x9a, 0x2c),
-            fx_header: Color32::from_rgb(0x2a, 0x2a, 0x2a),
-            fx_header_active: Color32::from_rgb(0x2f, 0x3a, 0x52),
-            tl_graph_selected: Color32::from_rgb(0x2a, 0x2a, 0x2a),
-            switch_well: Color32::from_rgb(0x19, 0x19, 0x19),
-            tl_nav_bar: Color32::from_rgb(0x55, 0x55, 0x55),
-            tl_work_area_bar: Color32::from_rgb(0x5c, 0x5c, 0x5c),
-            expr_bg: Color32::from_rgb(0x1a, 0x1a, 0x1a),
-            expr_text: Color32::from_rgb(0xe8, 0x7c, 0x5c),
-            labels: default_labels(),
-            radius: 6.0,
-            radius_sm: 3.0,
-            gap: 4.0,
-            tab_h: 30.0,
-            row_h: 19.0,
-            gradients: true,
-        };
-        match kind {
-            ThemeKind::Dark => dark,
-            ThemeKind::Darker => Tokens {
-                app_bg: Color32::from_rgb(0x08, 0x08, 0x08),
-                header_bg: Color32::from_rgb(0x16, 0x16, 0x16),
-                panel_bg: Color32::from_rgb(0x19, 0x19, 0x19),
-                row: Color32::from_rgb(0x19, 0x19, 0x19),
-                row_alt: Color32::from_rgb(0x1d, 0x1d, 0x1d),
-                tl_bg: Color32::from_rgb(0x12, 0x12, 0x12),
-                tl_ruler_bg: Color32::from_rgb(0x19, 0x19, 0x19),
-                field_bg: Color32::from_rgb(0x0e, 0x0e, 0x0e),
-                pasteboard: Color32::from_rgb(0x11, 0x11, 0x11),
-                ..dark
-            },
-            ThemeKind::Light => Tokens {
-                app_bg: Color32::from_rgb(0xb4, 0xb4, 0xb4),
-                header_bg: Color32::from_rgb(0xd6, 0xd6, 0xd6),
-                panel_bg: Color32::from_rgb(0xe6, 0xe6, 0xe6),
-                tab_text: Color32::from_rgb(0x5a, 0x5a, 0x5a),
-                tab_text_active: Color32::from_rgb(0x14, 0x14, 0x14),
-                text: Color32::from_rgb(0x22, 0x22, 0x22),
-                text_dim: Color32::from_rgb(0x5a, 0x5a, 0x5a),
-                text_faint: Color32::from_rgb(0x68, 0x68, 0x68),
-                hot_text: Color32::from_rgb(0x00, 0x5a, 0x9c),
-                timecode: Color32::from_rgb(0x00, 0x5a, 0x9c),
-                icon: Color32::from_rgb(0x3c, 0x3c, 0x3c),
-                icon_active: Color32::from_rgb(0x10, 0x10, 0x10),
-                hover: Color32::from_rgb(0xd0, 0xd0, 0xd0),
-                pressed: Color32::from_rgb(0xc0, 0xc0, 0xc0),
-                field_bg: Color32::from_rgb(0xfa, 0xfa, 0xfa),
-                field_border: Color32::from_rgb(0xaa, 0xaa, 0xaa),
-                separator: Color32::from_rgb(0xc8, 0xc8, 0xc8),
-                row: Color32::from_rgb(0xe6, 0xe6, 0xe6),
-                row_alt: Color32::from_rgb(0xde, 0xde, 0xde),
-                row_selected: Color32::from_rgb(0xaa, 0xc8, 0xf0),
-                tl_bg: Color32::from_rgb(0xd2, 0xd2, 0xd2),
-                tl_ruler_bg: Color32::from_rgb(0xe2, 0xe2, 0xe2),
-                tl_ruler_text: Color32::from_rgb(0x50, 0x50, 0x50),
-                pasteboard: Color32::from_rgb(0xa8, 0xa8, 0xa8),
-                // Keyframes have no outline: dark enough to stand out on the light time graph.
-                keyframe: Color32::from_rgb(0x6c, 0x6c, 0x6c),
-                // Custom-painted surfaces in the Light palette, so dark text stays readable on
-                // them (#644).
-                fx_header: Color32::from_rgb(0xd8, 0xd8, 0xd8),
-                fx_header_active: Color32::from_rgb(0xb0, 0xcf, 0xec),
-                tl_graph_selected: Color32::from_rgb(0xc2, 0xc2, 0xc2),
-                switch_well: Color32::from_rgb(0xf2, 0xf2, 0xf2),
-                tl_nav_bar: Color32::from_rgb(0x9a, 0x9a, 0x9a),
-                tl_work_area_bar: Color32::from_rgb(0x94, 0x94, 0x94),
-                expr_bg: Color32::from_rgb(0xf2, 0xf2, 0xf2),
-                expr_text: Color32::from_rgb(0xa3, 0x34, 0x17),
-                ..dark
-            },
-        }
+        let tokens = (|| {
+            let dark = Tokens {
+                kind,
+                app_bg: Color32::from_rgb(0x12, 0x12, 0x12),
+                header_bg: Color32::from_rgb(0x1f, 0x1f, 0x1f),
+                panel_bg: Color32::from_rgb(0x23, 0x23, 0x23),
+                tab_text: Color32::from_rgb(0x9a, 0x9a, 0x9a),
+                tab_text_active: Color32::from_rgb(0xe3, 0xe3, 0xe3),
+                focus: Color32::from_rgb(0x2d, 0x8c, 0xeb),
+                accent: Color32::from_rgb(0x2d, 0x8c, 0xeb),
+                accent_hover: Color32::from_rgb(0x4a, 0xa0, 0xf5),
+                text: Color32::from_rgb(0xc8, 0xc8, 0xc8),
+                text_dim: Color32::from_rgb(0x9a, 0x9a, 0x9a),
+                text_faint: Color32::from_rgb(0x8c, 0x8c, 0x8c),
+                icon: Color32::from_rgb(0xb4, 0xb4, 0xb4),
+                icon_active: Color32::from_rgb(0xf0, 0xf0, 0xf0),
+                hover: Color32::from_rgb(0x30, 0x30, 0x30),
+                pressed: Color32::from_rgb(0x45, 0x45, 0x45),
+                field_bg: Color32::from_rgb(0x17, 0x17, 0x17),
+                field_border: Color32::from_rgb(0x3a, 0x3a, 0x3a),
+                separator: Color32::from_rgb(0x34, 0x34, 0x34),
+                row: Color32::from_rgb(0x23, 0x23, 0x23),
+                row_alt: Color32::from_rgb(0x27, 0x27, 0x27),
+                row_selected: Color32::from_rgb(0x3a, 0x3a, 0x3a),
+                hot_text: Color32::from_rgb(0x3d, 0x8f, 0xf5),
+                tl_bg: Color32::from_rgb(0x1b, 0x1b, 0x1b),
+                tl_ruler_bg: Color32::from_rgb(0x23, 0x23, 0x23),
+                tl_ruler_tick: Color32::from_rgb(0x70, 0x70, 0x70),
+                tl_ruler_text: Color32::from_rgb(0x9a, 0x9a, 0x9a),
+                cti: Color32::from_rgb(0x2d, 0x8c, 0xeb),
+                work_area: Color32::from_rgb(0x4a, 0x4a, 0x4a),
+                cache_green: Color32::from_rgb(0x3c, 0xa6, 0x4c),
+                cache_blue: Color32::from_rgb(0x3a, 0x6f, 0xd8),
+                keyframe: Color32::from_rgb(0xa8, 0xa8, 0xa8),
+                keyframe_selected: Color32::from_rgb(0x3d, 0x8f, 0xf5),
+                pasteboard: Color32::from_rgb(0x1a, 0x1a, 0x1a),
+                timecode: Color32::from_rgb(0x3d, 0x8f, 0xf5),
+                danger: Color32::from_rgb(0xe0, 0x4a, 0x3c),
+                warning: Color32::from_rgb(0xe8, 0x9a, 0x2c),
+                fx_header: Color32::from_rgb(0x2a, 0x2a, 0x2a),
+                fx_header_active: Color32::from_rgb(0x2f, 0x3a, 0x52),
+                tl_graph_selected: Color32::from_rgb(0x2a, 0x2a, 0x2a),
+                switch_well: Color32::from_rgb(0x19, 0x19, 0x19),
+                tl_nav_bar: Color32::from_rgb(0x55, 0x55, 0x55),
+                tl_work_area_bar: Color32::from_rgb(0x5c, 0x5c, 0x5c),
+                expr_bg: Color32::from_rgb(0x1a, 0x1a, 0x1a),
+                expr_text: Color32::from_rgb(0xe8, 0x7c, 0x5c),
+                labels: default_labels(),
+                radius: 6.0,
+                radius_sm: 3.0,
+                gap: 4.0,
+                tab_h: 30.0,
+                row_h: 19.0,
+                gradients: true,
+            };
+            match kind {
+                ThemeKind::Dark => dark,
+                ThemeKind::Darker => Tokens {
+                    app_bg: Color32::from_rgb(0x08, 0x08, 0x08),
+                    header_bg: Color32::from_rgb(0x16, 0x16, 0x16),
+                    panel_bg: Color32::from_rgb(0x19, 0x19, 0x19),
+                    row: Color32::from_rgb(0x19, 0x19, 0x19),
+                    row_alt: Color32::from_rgb(0x1d, 0x1d, 0x1d),
+                    tl_bg: Color32::from_rgb(0x12, 0x12, 0x12),
+                    tl_ruler_bg: Color32::from_rgb(0x19, 0x19, 0x19),
+                    field_bg: Color32::from_rgb(0x0e, 0x0e, 0x0e),
+                    pasteboard: Color32::from_rgb(0x11, 0x11, 0x11),
+                    ..dark
+                },
+                ThemeKind::Light => Tokens {
+                    app_bg: Color32::from_rgb(0xb4, 0xb4, 0xb4),
+                    header_bg: Color32::from_rgb(0xd6, 0xd6, 0xd6),
+                    panel_bg: Color32::from_rgb(0xe6, 0xe6, 0xe6),
+                    tab_text: Color32::from_rgb(0x5a, 0x5a, 0x5a),
+                    tab_text_active: Color32::from_rgb(0x14, 0x14, 0x14),
+                    text: Color32::from_rgb(0x22, 0x22, 0x22),
+                    text_dim: Color32::from_rgb(0x5a, 0x5a, 0x5a),
+                    text_faint: Color32::from_rgb(0x68, 0x68, 0x68),
+                    hot_text: Color32::from_rgb(0x00, 0x5a, 0x9c),
+                    timecode: Color32::from_rgb(0x00, 0x5a, 0x9c),
+                    icon: Color32::from_rgb(0x3c, 0x3c, 0x3c),
+                    icon_active: Color32::from_rgb(0x10, 0x10, 0x10),
+                    hover: Color32::from_rgb(0xd0, 0xd0, 0xd0),
+                    pressed: Color32::from_rgb(0xc0, 0xc0, 0xc0),
+                    field_bg: Color32::from_rgb(0xfa, 0xfa, 0xfa),
+                    field_border: Color32::from_rgb(0xaa, 0xaa, 0xaa),
+                    separator: Color32::from_rgb(0xc8, 0xc8, 0xc8),
+                    row: Color32::from_rgb(0xe6, 0xe6, 0xe6),
+                    row_alt: Color32::from_rgb(0xde, 0xde, 0xde),
+                    row_selected: Color32::from_rgb(0xaa, 0xc8, 0xf0),
+                    tl_bg: Color32::from_rgb(0xd2, 0xd2, 0xd2),
+                    tl_ruler_bg: Color32::from_rgb(0xe2, 0xe2, 0xe2),
+                    tl_ruler_text: Color32::from_rgb(0x50, 0x50, 0x50),
+                    pasteboard: Color32::from_rgb(0xa8, 0xa8, 0xa8),
+                    // Keyframes have no outline: dark enough to stand out on the light time graph.
+                    keyframe: Color32::from_rgb(0x6c, 0x6c, 0x6c),
+                    // Custom-painted surfaces in the Light palette, so dark text stays readable on
+                    // them (#644).
+                    fx_header: Color32::from_rgb(0xd8, 0xd8, 0xd8),
+                    fx_header_active: Color32::from_rgb(0xb0, 0xcf, 0xec),
+                    tl_graph_selected: Color32::from_rgb(0xc2, 0xc2, 0xc2),
+                    switch_well: Color32::from_rgb(0xf2, 0xf2, 0xf2),
+                    tl_nav_bar: Color32::from_rgb(0x9a, 0x9a, 0x9a),
+                    tl_work_area_bar: Color32::from_rgb(0x94, 0x94, 0x94),
+                    expr_bg: Color32::from_rgb(0xf2, 0xf2, 0xf2),
+                    expr_text: Color32::from_rgb(0xa3, 0x34, 0x17),
+                    ..dark
+                },
+            }
+        })();
+        tokens.with_aphrody(!kind.is_light(), false)
     }
 
     pub fn mono(size: f32) -> FontId {

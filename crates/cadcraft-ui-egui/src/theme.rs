@@ -129,6 +129,31 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.chrome = palette.color(Role::SurfaceContainer);
+        self.chrome_dark = palette.color(Role::SurfaceContainerLow);
+        self.panel = palette.color(Role::SurfaceContainer);
+        self.tab_active = palette.color(Role::SecondaryContainer);
+        self.control = palette.color(Role::SurfaceContainerHigh);
+        self.control_hover = palette.color(Role::SurfaceContainerHighest);
+        self.border = palette.color(Role::OutlineVariant);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.text_faint = palette.color(Role::OnSurfaceVariant);
+        self.icon = palette.color(Role::OnSurface);
+        self.icon_accent = palette.color(Role::Primary);
+        self.accent = palette.color(Role::Primary);
+        self.hover = palette.color(Role::SurfaceContainerHighest);
+        self.cmd_bg = palette.color(Role::SurfaceContainerLowest);
+        self.field = palette.color(Role::SurfaceContainerHighest);
+        self.cmd_border = palette.color(Role::Outline);
+        self.list_bg = palette.color(Role::SurfaceContainerLowest);
+        self
+    }
+
     pub const DARK: Tokens = Tokens {
         chrome: Color32::from_rgb(0x3b, 0x44, 0x53),
         chrome_dark: Color32::from_rgb(0x31, 0x38, 0x44),
@@ -210,10 +235,11 @@ impl Tokens {
 
     /// The palette of `theme`.
     pub fn of(theme: Theme) -> Tokens {
-        match theme {
+        let tokens = (|| match theme {
             Theme::Dark => Tokens::DARK,
             Theme::Light => Tokens::LIGHT,
-        }
+        })();
+        tokens.with_aphrody(theme == Theme::Dark, false)
     }
 
     /// The palette of the theme in use, with the user's drawing-area colours ([`set_canvas`]).

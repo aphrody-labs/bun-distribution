@@ -184,7 +184,7 @@ impl Lightbox {
                 icons::paint_spinner(
                     ui,
                     Rect::from_center_size(rect.center(), vec2(32.0, 32.0)),
-                    theme::MUTED,
+                    theme::muted(),
                 );
             }
             _ => {
@@ -193,7 +193,7 @@ impl Lightbox {
                     Align2::CENTER_CENTER,
                     "Image not available",
                     FontId::new(14.0, egui::FontFamily::Proportional),
-                    theme::FAINT,
+                    theme::faint(),
                 );
             }
         }
@@ -282,7 +282,7 @@ impl Lightbox {
         actions: &mut Vec<LightboxAction>,
     ) {
         ui.horizontal(|ui| {
-            widgets::hud(ui, item.kind.label(), theme::MUTED);
+            widgets::hud(ui, item.kind.label(), theme::muted());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
                     actions.push(LightboxAction::Close);
@@ -294,7 +294,7 @@ impl Lightbox {
             .and_then(|p| p.maybe_positive_prompt.clone())
             .filter(|t| !t.is_empty());
         ui.horizontal(|ui| {
-            widgets::hud(ui, "Prompt", theme::FAINT);
+            widgets::hud(ui, "Prompt", theme::faint());
             if let Some(t) = &text {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
@@ -312,7 +312,7 @@ impl Lightbox {
                 let mut job = egui::text::LayoutJob::simple(
                     t.clone(),
                     FontId::new(13.0, egui::FontFamily::Proportional),
-                    theme::INK,
+                    theme::ink(),
                     ui.available_width(),
                 );
                 if !self.prompt_expanded {
@@ -332,7 +332,7 @@ impl Lightbox {
                             egui::Button::new(
                                 egui::RichText::new(label)
                                     .size(11.5)
-                                    .color(theme::ACCENT_INK),
+                                    .color(theme::accent_ink()),
                             )
                             .frame(false),
                         )
@@ -344,25 +344,25 @@ impl Lightbox {
             }
             (None, true, false) => {
                 let (rect, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
-                icons::paint_spinner(ui, rect, theme::FAINT);
+                icons::paint_spinner(ui, rect, theme::faint());
             }
             _ => {
                 ui.label(
                     egui::RichText::new("No prompt")
                         .size(13.0)
-                        .color(theme::FAINT),
+                        .color(theme::faint()),
                 );
             }
         }
         ui.add_space(14.0);
-        widgets::hud(ui, "Information", theme::FAINT);
+        widgets::hud(ui, "Information", theme::faint());
         ui.add_space(4.0);
         if let Some(model) = item.model_id.as_deref() {
             info_row(ui, "Model", |ui| {
                 let tex = creator_icons::texture(ui.ctx(), &names.creator(model));
                 ui.add(
                     egui::Image::new(&tex)
-                        .tint(theme::INK)
+                        .tint(theme::ink())
                         .fit_to_exact_size(vec2(13.0, 13.0)),
                 );
                 ui.label(egui::RichText::new(names.display_name(model)).size(12.5));
@@ -479,7 +479,7 @@ impl Lightbox {
         let close = widgets::modal(ctx, Id::new("lightbox-delete"), 420.0, |ui| {
             ui.label(widgets::heading("Delete this media?", 20.0));
             ui.add_space(8.0);
-            ui.label(egui::RichText::new("This will permanently remove the media from your library. This action cannot be undone.").color(theme::MUTED));
+            ui.label(egui::RichText::new("This will permanently remove the media from your library. This action cannot be undone.").color(theme::muted()));
             ui.add_space(16.0);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if widgets::button(
@@ -527,7 +527,7 @@ fn audio_panel(ui: &mut Ui, rect: Rect, item: &FeedItem, audio: &mut AudioPlayer
     ui.painter().rect(
         panel,
         theme::RADIUS,
-        theme::fade(theme::CONTROLS, 0.6),
+        theme::fade(theme::controls(), 0.6),
         theme::hairline(),
         egui::StrokeKind::Inside,
     );
@@ -568,7 +568,7 @@ fn info_row(ui: &mut Ui, label: &str, value: impl FnOnce(&mut Ui)) {
             Align2::LEFT_CENTER,
             label,
             FontId::new(12.0, egui::FontFamily::Proportional),
-            theme::MUTED,
+            theme::muted(),
         );
         value(ui);
     });

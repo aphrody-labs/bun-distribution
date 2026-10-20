@@ -45,7 +45,7 @@ pub fn setup_dialog(
     let mut action = None;
     let close = widgets::modal(ctx, Id::new("provider-setup"), 460.0, |ui| {
         ui.horizontal(|ui| {
-            widgets::hud(ui, "Connect account", theme::FAINT);
+            widgets::hud(ui, "Connect account", theme::faint());
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
                     action = Some(SetupAction::Close);
@@ -68,7 +68,7 @@ pub fn setup_dialog(
         ui.label(
             egui::RichText::new(description)
                 .size(13.0)
-                .color(theme::MUTED),
+                .color(theme::muted()),
         );
         ui.add_space(16.0);
         if provider == Provider::Fal {
@@ -204,7 +204,7 @@ fn account_row(
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             ui.set_width(300.0);
-            widgets::hud(ui, label, theme::MUTED);
+            widgets::hud(ui, label, theme::muted());
             ui.label(egui::RichText::new(detail).size(13.0));
         });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), button)
@@ -259,7 +259,7 @@ impl MidjourneyLogin {
             ui.add_space(10.0);
             let (rect, _) =
                 ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::hover());
-            ui.painter().rect_filled(rect, 0.0, theme::SUNKEN);
+            ui.painter().rect_filled(rect, 0.0, theme::sunken());
             match &self.error {
                 Some(err) => {
                     let mut note = ui.new_child(
@@ -271,13 +271,13 @@ impl MidjourneyLogin {
                     note.label(
                         egui::RichText::new(format!("Couldn't open the sign-in window: {err}"))
                             .size(13.0)
-                            .color(theme::BAD),
+                            .color(theme::bad()),
                     );
                 }
                 None => icons::paint_spinner(
                     ui,
                     Rect::from_center_size(rect.center(), vec2(28.0, 28.0)),
-                    theme::MUTED,
+                    theme::muted(),
                 ),
             }
             slot = rect;

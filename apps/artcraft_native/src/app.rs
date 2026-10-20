@@ -781,7 +781,7 @@ impl ArtcraftApp {
         };
         let mark = creator_icons::texture(ui.ctx(), "artcraft");
         let mut actions = Vec::new();
-        let chrome = egui::Frame::NONE.fill(theme::CHROME);
+        let chrome = egui::Frame::NONE.fill(theme::chrome());
         egui::Panel::top("titlebar")
             .exact_size(shell::TITLEBAR_HEIGHT)
             .resizable(false)
@@ -845,10 +845,10 @@ impl ArtcraftApp {
         let mut header_action = None;
         let mut open_page = None;
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(theme::CHROME).inner_margin(margin))
+            .frame(egui::Frame::NONE.fill(theme::chrome()).inner_margin(margin))
             .show(ui, |ui| {
                 let panel = egui::Frame::new()
-                    .fill(theme::BG)
+                    .fill(theme::bg())
                     .stroke(theme::hairline())
                     .corner_radius(shell::PANEL_RADIUS);
                 panel.show(ui, |ui| {
@@ -1257,7 +1257,7 @@ impl eframe::App for ArtcraftApp {
     }
 
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
-        theme::CHROME.to_normalized_gamma_f32()
+        theme::chrome().to_normalized_gamma_f32()
     }
 }
 

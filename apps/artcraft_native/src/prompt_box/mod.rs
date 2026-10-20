@@ -110,13 +110,13 @@ pub fn show(
 ) -> Vec<PromptBoxAction> {
     let mut actions = Vec::new();
     let frame = egui::Frame::new()
-        .fill(theme::fade(theme::CONTROLS, 0.95))
+        .fill(theme::fade(theme::controls(), 0.95))
         .stroke(Stroke::new(
             1.0,
             if state.focused {
-                theme::ACCENT
+                theme::accent()
             } else {
-                theme::LINE
+                theme::line()
             },
         ))
         .corner_radius(theme::RADIUS)
@@ -260,7 +260,7 @@ fn generate_cluster(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<P
         actions.push(PromptBoxAction::Generate);
     }
     if let Some(credits) = props.credits {
-        let ink = theme::fade(theme::INK, if props.generate_enabled { 0.8 } else { 0.4 });
+        let ink = theme::fade(theme::ink(), if props.generate_enabled { 0.8 } else { 0.4 });
         let galley = ui.painter().layout_no_wrap(
             credits.to_string(),
             FontId::new(13.0, theme::semibold()),
@@ -297,7 +297,7 @@ fn clear_all_button(
 ) {
     let (rule, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
     ui.painter()
-        .rect_filled(rule, 0.0, theme::fade(theme::INK, 0.15));
+        .rect_filled(rule, 0.0, theme::fade(theme::ink(), 0.15));
     let clearable = !prompt.is_empty() || !refs.is_empty() || extra_input;
     let resp = ui
         .add_enabled_ui(clearable, |ui| {
@@ -326,7 +326,7 @@ fn confirm_clear(
         ui.add_space(8.0);
         ui.label(
             egui::RichText::new("This clears the prompt and also removes the attached references.")
-                .color(theme::MUTED),
+                .color(theme::muted()),
         );
         ui.add_space(16.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -395,13 +395,13 @@ fn expand_toggle(ui: &mut Ui, id: Id, rect: Rect, state: &mut PromptBoxState) {
 
 fn warning_label(ui: &mut Ui, text: &str) {
     let pulse = (ui.input(|i| i.time) * 2.0).sin() as f32 * 0.25 + 0.75;
-    ui.label(egui::RichText::new(text).size(12.0).color(theme::BAD));
+    ui.label(egui::RichText::new(text).size(12.0).color(theme::bad()));
     let (rect, _) = ui.allocate_exact_size(vec2(14.0, 14.0), Sense::hover());
     icons::paint(
         ui.painter(),
         rect,
         Icon::Info,
-        theme::fade(theme::BAD, pulse),
+        theme::fade(theme::bad(), pulse),
     );
     ui.ctx()
         .request_repaint_after(std::time::Duration::from_millis(50));
@@ -409,14 +409,14 @@ fn warning_label(ui: &mut Ui, text: &str) {
 
 fn info_banner(ui: &mut Ui, text: &str) {
     egui::Frame::new()
-        .fill(theme::fade(theme::ACCENT, 0.12))
-        .stroke(Stroke::new(1.0, theme::fade(theme::ACCENT, 0.35)))
+        .fill(theme::fade(theme::accent(), 0.12))
+        .stroke(Stroke::new(1.0, theme::fade(theme::accent(), 0.35)))
         .corner_radius(theme::RADIUS)
         .inner_margin(egui::Margin::symmetric(10, 6))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                icons::icon(ui, Icon::Info, 14.0, theme::ACCENT_INK);
-                ui.label(egui::RichText::new(text).size(12.5).color(theme::INK));
+                icons::icon(ui, Icon::Info, 14.0, theme::accent_ink());
+                ui.label(egui::RichText::new(text).size(12.5).color(theme::ink()));
             });
         });
     ui.add_space(10.0);
@@ -459,18 +459,18 @@ fn drop_target(
         egui::Order::Foreground,
         props.id.with("drop-overlay"),
     ));
-    p.rect_filled(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.85));
+    p.rect_filled(rect, theme::RADIUS, theme::fade(theme::controls(), 0.85));
     let border = if accepted {
         theme::fade(Color32::WHITE, 0.6)
     } else {
-        theme::fade(theme::BAD, 0.8)
+        theme::fade(theme::bad(), 0.8)
     };
     icons::dashed_rect(&p, rect.shrink(1.0), Stroke::new(2.0, border), 6.0, 4.0);
     let chip = Rect::from_center_size(rect.center() - vec2(0.0, 22.0), vec2(36.0, 36.0));
     p.rect(
         chip,
         theme::RADIUS,
-        theme::CONTROLS,
+        theme::controls(),
         theme::hairline(),
         egui::StrokeKind::Inside,
     );
@@ -482,7 +482,7 @@ fn drop_target(
         } else {
             Icon::AlertCircle
         },
-        if accepted { theme::INK } else { theme::BAD },
+        if accepted { theme::ink() } else { theme::bad() },
     );
     let names: Vec<&str> = props
         .accepts
@@ -508,14 +508,14 @@ fn drop_target(
         Align2::CENTER_CENTER,
         title,
         FontId::new(14.0, theme::semibold()),
-        theme::INK,
+        theme::ink(),
     );
     p.text(
         rect.center() + vec2(0.0, 28.0),
         Align2::CENTER_CENTER,
         subtitle,
         FontId::new(12.0, egui::FontFamily::Proportional),
-        theme::MUTED,
+        theme::muted(),
     );
 }
 
@@ -589,7 +589,7 @@ fn focus_mode(
                         .color(if over {
                             Color32::from_rgb(0xef, 0x44, 0x44)
                         } else {
-                            theme::FAINT
+                            theme::faint()
                         }),
                 );
             });

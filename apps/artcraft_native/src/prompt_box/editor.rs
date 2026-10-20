@@ -185,7 +185,7 @@ pub fn show(
                 .font(FontId::new(FONT_SIZE, FontFamily::Proportional))
                 .hint_text(
                     egui::RichText::new(opts.placeholder)
-                        .color(theme::MUTED)
+                        .color(theme::muted())
                         .size(FONT_SIZE),
                 )
                 .desired_width(text_width)
@@ -237,9 +237,9 @@ pub fn show(
             button,
             theme::RADIUS,
             if resp.hovered() {
-                theme::WASH_HOVER
+                theme::wash_hover()
             } else {
-                theme::WASH
+                theme::wash()
             },
         );
         icons::paint(
@@ -247,9 +247,9 @@ pub fn show(
             button.shrink(6.0),
             Icon::Maximize,
             if resp.hovered() {
-                theme::INK
+                theme::ink()
             } else {
-                theme::DIM
+                theme::dim()
             },
         );
         out.open_fullscreen = resp.clicked();
@@ -269,7 +269,7 @@ pub fn show(
         let color = if over {
             Color32::from_rgb(0xef, 0x44, 0x44)
         } else {
-            theme::FAINT
+            theme::faint()
         };
         ui.painter().text(
             pos2(field_rect.right() - 16.0, field_rect.bottom() + 4.0),
@@ -447,7 +447,7 @@ fn mention_dropdown(
             p.rect(
                 rect,
                 theme::RADIUS,
-                theme::CONTROLS,
+                theme::controls(),
                 theme::hairline(),
                 egui::StrokeKind::Inside,
             );
@@ -456,7 +456,7 @@ fn mention_dropdown(
                 Align2::LEFT_CENTER,
                 "MENTIONS",
                 FontId::new(11.0, theme::mono_bold()),
-                theme::fade(theme::INK, 0.5),
+                theme::fade(theme::ink(), 0.5),
             );
             for (i, item) in filtered.iter().enumerate() {
                 let row = Rect::from_min_size(
@@ -477,7 +477,7 @@ fn mention_dropdown(
                 }
                 let p = ui.painter();
                 if i == selected {
-                    p.rect_filled(row, 0.0, theme::WASH_HOVER);
+                    p.rect_filled(row, 0.0, theme::wash_hover());
                 }
                 let tile = Rect::from_min_size(
                     pos2(row.left() + 12.0, row.center().y - 16.0),
@@ -566,7 +566,7 @@ fn resize_grip(ui: &mut Ui, id: Id, field: Rect, state: &mut EditorState) {
 fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
     let plain = TextFormat {
         font_id: FontId::new(FONT_SIZE, FontFamily::Proportional),
-        color: theme::INK,
+        color: theme::ink(),
         ..Default::default()
     };
     let mut job = LayoutJob::default();
@@ -660,7 +660,7 @@ mod tests {
         let coloured: Vec<&str> = job
             .sections
             .iter()
-            .filter(|s| s.format.color != theme::INK)
+            .filter(|s| s.format.color != theme::ink())
             .map(|s| &job.text[s.byte_range.start.0..s.byte_range.end.0])
             .collect();
         assert_eq!(coloured, ["@image2", "@Image1"]);

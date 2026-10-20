@@ -1,3 +1,4 @@
+import { AphrodyAvatar } from "@aphrody/identity";
 import {
   CalculatorIcon,
   CheckIcon,
@@ -21,8 +22,14 @@ import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
 import { ProviderSetupModal } from "@storyteller/provider-setup-modal";
 import { useSubscriptionState } from "@storyteller/subscription";
-import { useCreditsBalanceChangedEvent, useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
-import { useTauriPlatform, useTauriWindowControls } from "@storyteller/tauri-utils";
+import {
+  useCreditsBalanceChangedEvent,
+  useSubscriptionPlanChangedEvent,
+} from "@storyteller/tauri-events";
+import {
+  useTauriPlatform,
+  useTauriWindowControls,
+} from "@storyteller/tauri-utils";
 import { Button } from "@storyteller/ui-button";
 import {
   GalleryModal,
@@ -30,7 +37,10 @@ import {
   galleryModalVisibleDuringDrag,
   galleryModalVisibleViewMode,
 } from "@storyteller/ui-gallery-modal";
-import { MenuIconItem, MenuIconSelector } from "@storyteller/ui-menu-icon-selector";
+import {
+  MenuIconItem,
+  MenuIconSelector,
+} from "@storyteller/ui-menu-icon-selector";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import {
   useCreditsModalStore,
@@ -39,7 +49,11 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { GalleryAutoplayToggle, GallerySelectToggle, GalleryViewToggle } from "@storyteller/ui-generation-list";
+import {
+  GalleryAutoplayToggle,
+  GallerySelectToggle,
+  GalleryViewToggle,
+} from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -60,7 +74,10 @@ import { AUTH_STATUS } from "~/enums";
 import { authentication } from "~/signals";
 import { setLogoutStates } from "~/signals/authentication/utilities";
 import type { BaseSelectorImage } from "@storyteller/ui-pagedraw";
-import { galleryModalDeleteMedia, galleryModalSubscribeToMediaEvents } from "~/Helpers/galleryModalTauriBindings";
+import {
+  galleryModalDeleteMedia,
+  galleryModalSubscribeToMediaEvents,
+} from "~/Helpers/galleryModalTauriBindings";
 import { AppsQuickMenu } from "./AppsQuickMenu";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { TaskQueue } from "./TaskQueue";
@@ -72,7 +89,8 @@ interface Props {
 }
 
 // Settings section type to match the SettingsModal component
-type SettingsSection = "general" | "accounts" | "alerts" | "about" | "provider_priority" | "billing";
+type SettingsSection =
+  "general" | "accounts" | "alerts" | "about" | "provider_priority" | "billing";
 
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 const CREDITS_POLL_INTERVAL = 60_000; // milliseconds
@@ -90,7 +108,7 @@ const appMenuTabs: MenuIconItem[] = [
     tooltipInteractive: true,
     tooltipPosition: "bottom",
   },
-  ...APP_DESCRIPTORS.map(d => ({
+  ...APP_DESCRIPTORS.map((d) => ({
     id: d.id,
     label: d.label,
     icon: <DynamicIcon icon={d.icon} />,
@@ -103,7 +121,11 @@ const appMenuTabs: MenuIconItem[] = [
 export const topNavMediaId = signal<string>("");
 export const topNavMediaUrl = signal<string>("");
 
-const CreditsCoinWithStatus = ({ iconStatus }: { iconStatus: CreditsIconStatus }) => {
+const CreditsCoinWithStatus = ({
+  iconStatus,
+}: {
+  iconStatus: CreditsIconStatus;
+}) => {
   const showBadge = iconStatus !== "hidden";
 
   const badgeColorClass =
@@ -142,7 +164,11 @@ const CreditsCoinWithStatus = ({ iconStatus }: { iconStatus: CreditsIconStatus }
         <div className="flex max-w-[220px] flex-col gap-2 text-xs text-base-fg">
           <span>{tooltipMessage}</span>
           {showRetry && (
-            <Button variant="secondary" className="h-7 self-start px-2 text-xs" onClick={handleRetry}>
+            <Button
+              variant="secondary"
+              className="h-7 self-start px-2 text-xs"
+              onClick={handleRetry}
+            >
               Retry
             </Button>
           )}
@@ -167,9 +193,11 @@ export const TopBar = ({ pageName }: Props) => {
   useSignals();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>("general");
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("general");
 
-  const { isDesktop, isMaximized, minimize, toggleMaximize, close } = useTauriWindowControls();
+  const { isDesktop, isMaximized, minimize, toggleMaximize, close } =
+    useTauriWindowControls();
   const platform = useTauriPlatform();
 
   const handleOpenGalleryModal = () => {
@@ -190,13 +218,13 @@ export const TopBar = ({ pageName }: Props) => {
 
   const tabStore = useTabStore();
 
-  const is3DSceneReady = usePageSceneStore(s => s.is3DSceneLoaded);
-  const is3DEditorReady = usePageSceneStore(s => s.is3DEditorInitialized);
+  const is3DSceneReady = usePageSceneStore((s) => s.is3DSceneLoaded);
+  const is3DEditorReady = usePageSceneStore((s) => s.is3DEditorInitialized);
   const [disableSwitcher, setDisableSwitcher] = useState(false);
   const switcherThrottle = useRef(false);
 
-  const sumTotalCredits = useCreditsState(s => s.totalCredits);
-  const creditsIconStatus = useCreditsState(s => s.iconStatus);
+  const sumTotalCredits = useCreditsState((s) => s.totalCredits);
+  const creditsIconStatus = useCreditsState((s) => s.iconStatus);
 
   // Just calling this function kills the app:
   const subscriptionStore = useSubscriptionState();
@@ -241,7 +269,12 @@ export const TopBar = ({ pageName }: Props) => {
   });
 
   const disableTabSwitcher = () => {
-    return disableSwitcher || (useTabStore.getState().activeTabId === "3D" && !is3DEditorReady && !is3DSceneReady);
+    return (
+      disableSwitcher ||
+      (useTabStore.getState().activeTabId === "3D" &&
+        !is3DEditorReady &&
+        !is3DSceneReady)
+    );
   };
 
   const downloadFile = downloadMediaFileToDisk;
@@ -289,7 +322,10 @@ export const TopBar = ({ pageName }: Props) => {
     }
   };
 
-  const handleMake3DObjectFromGallery = async (url: string, mediaId?: string) => {
+  const handleMake3DObjectFromGallery = async (
+    url: string,
+    mediaId?: string,
+  ) => {
     try {
       if (mediaId) {
         useImageTo3DStore.getState().setPendingExternalImage(url, mediaId);
@@ -303,7 +339,10 @@ export const TopBar = ({ pageName }: Props) => {
     }
   };
 
-  const handleMake3DWorldFromGallery = async (url: string, mediaId?: string) => {
+  const handleMake3DWorldFromGallery = async (
+    url: string,
+    mediaId?: string,
+  ) => {
     try {
       if (mediaId) {
         useImageTo3DWorldStore.getState().setPendingExternalImage(url, mediaId);
@@ -365,57 +404,27 @@ export const TopBar = ({ pageName }: Props) => {
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
-  // Pick logo based on current theme (light uses black logo; others use white)
-  const [_logoSrc, setLogoSrc] = useState<string>("/resources/logo/artcraft-logo-color-white.svg");
-  useEffect(() => {
-    const computeLogo = () => {
-      const root = document.documentElement;
-      const isLight = root.classList.contains("theme-light");
-      setLogoSrc(
-        isLight ? "/resources/logo/artcraft-logo-color-black.svg" : "/resources/logo/artcraft-logo-color-white.svg",
-      );
-    };
-    computeLogo();
-    const mo = new MutationObserver(muts => {
-      for (const m of muts) {
-        if (m.type === "attributes" && m.attributeName === "class") {
-          computeLogo();
-          break;
-        }
-      }
-    });
-    mo.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => mo.disconnect();
-  }, []);
-
   return (
     <>
-      <header className="fixed left-0 top-0 z-[60] w-full border-b border-ui-border bg-ui-panel" data-tauri-drag-region>
+      <header
+        className="fixed left-0 top-0 z-[60] w-full border-b border-ui-border bg-ui-panel"
+        data-tauri-drag-region
+      >
         <nav
           className="mx-auto grid h-[56px] w-screen grid-cols-3 items-center justify-between ps-3"
           aria-label="navigation"
           data-tauri-drag-region
         >
-          <div className={`flex items-center gap-3 ${platform === "macos" ? "ml-14" : ""}`} data-tauri-drag-region>
-            {/* <div className="mr-2" data-tauri-drag-region>
-              <span className="sr-only" data-tauri-drag-region>
-                ArtCraft
-              </span>
-              <img
-                className="h-[24px] w-auto"
-                src={logoSrc}
-                alt="ArtCraft Logo"
-                data-tauri-drag-region
-              />
-            </div> */}
+          <div
+            className={`flex items-center gap-3 ${platform === "macos" ? "ml-14" : ""}`}
+            data-tauri-drag-region
+          >
+            <AphrodyAvatar size={28} label="Aphrody ArtCraft" />
             <MenuIconSelector
               menuItems={appMenuTabs}
               activeMenu={tabStore.activeTabId}
               disabled={disableTabSwitcher()}
-              onMenuChange={tabId => {
+              onMenuChange={(tabId) => {
                 gtagEvent("switch_tab", { tab: tabId });
 
                 // Prevent a second input if the switcher is throttled.
@@ -455,7 +464,10 @@ export const TopBar = ({ pageName }: Props) => {
             {tabStore.activeTabId === "3D" ? (
               <SceneTitleInput pageName={pageName} />
             ) : (
-              <h1 className="hud-label flex min-w-0 items-center gap-1.5 text-base-fg/70" data-tauri-drag-region>
+              <h1
+                className="hud-label flex min-w-0 items-center gap-1.5 text-base-fg/70"
+                data-tauri-drag-region
+              >
                 {pageCrumbs.map((crumb, i) => {
                   const isLast = i === pageCrumbs.length - 1;
                   return (
@@ -468,7 +480,11 @@ export const TopBar = ({ pageName }: Props) => {
                         />
                       )}
                       <span
-                        className={isLast ? "truncate bg-ui-ink px-1.5 py-1 text-ui-panel" : "truncate"}
+                        className={
+                          isLast
+                            ? "truncate bg-ui-ink px-1.5 py-1 text-ui-panel"
+                            : "truncate"
+                        }
                         aria-current={isLast ? "page" : undefined}
                         data-tauri-drag-region
                       >
@@ -483,7 +499,8 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5 sm:gap-2">
-              {(tabStore.activeTabId === "IMAGE" || tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
+              {(tabStore.activeTabId === "IMAGE" ||
+                tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
               {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO" ||
@@ -491,17 +508,23 @@ export const TopBar = ({ pageName }: Props) => {
               <PopoverMenu
                 position="bottom"
                 align="end"
-                triggerIcon={<CreditsCoinWithStatus iconStatus={creditsIconStatus} />}
+                triggerIcon={
+                  <CreditsCoinWithStatus iconStatus={creditsIconStatus} />
+                }
                 triggerLabel={
-                  <span className="whitespace-nowrap text-sm font-medium">{sumTotalCredits.toLocaleString()}</span>
+                  <span className="whitespace-nowrap text-sm font-medium">
+                    {sumTotalCredits.toLocaleString()}
+                  </span>
                 }
                 buttonClassName="h-8 px-3 ps-2.5 bg-transparent hover:bg-white/10 border border-white/15 hover:border-white/30 shadow-none text-white/80 rounded-[3px] gap-1.5"
                 panelClassName="mt-2 bg-[#101014] border border-white/15 text-white rounded-[3px]"
               >
-                {close => (
+                {(close) => (
                   <div className="w-72 p-3 text-white">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-white/70">Your credit balance</span>
+                      <span className="text-sm font-medium text-white/70">
+                        Your credit balance
+                      </span>
                       <button
                         className="text-sm font-medium text-primary transition-colors hover:text-primary-300"
                         onClick={() => {
@@ -556,7 +579,12 @@ export const TopBar = ({ pageName }: Props) => {
               </PopoverMenu>
 
               {!hasPaidPlan && (
-                <Button variant="primary" icon={GemIcon} onClick={toggleSubscriptionModal} className="h-8 px-3">
+                <Button
+                  variant="primary"
+                  icon={GemIcon}
+                  onClick={toggleSubscriptionModal}
+                  className="h-8 px-3"
+                >
                   Upgrade
                 </Button>
               )}
@@ -570,7 +598,9 @@ export const TopBar = ({ pageName }: Props) => {
                 className="flex h-8 items-center gap-1.5 rounded-[3px] border border-white/15 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/30 hover:bg-white/10"
               >
                 <ImagesIcon className="text-[11px]" />
-                <span className="hidden whitespace-nowrap xl:block">My Library</span>
+                <span className="hidden whitespace-nowrap xl:block">
+                  My Library
+                </span>
               </button>
 
               <UploadImagesButton />
@@ -609,7 +639,10 @@ export const TopBar = ({ pageName }: Props) => {
                   className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-white/10 hover:opacity-100"
                   onClick={toggleMaximize}
                 >
-                  <DynamicIcon icon={isMaximized ? PictureInPicture2Icon : SquareIcon} className="text-xs" />
+                  <DynamicIcon
+                    icon={isMaximized ? PictureInPicture2Icon : SquareIcon}
+                    className="text-xs"
+                  />
                 </Button>
                 <Button
                   variant="secondary"

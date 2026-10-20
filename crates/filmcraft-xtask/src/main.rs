@@ -409,6 +409,10 @@ fn web(args: &[String]) -> Result<(), String> {
         format!("{h:016x}")
     };
     let web = std::path::Path::new("apps/filmcraft-web/web");
+    run(Command::new("bun")
+        .arg("scripts/craft-web-shell.ts")
+        .arg("filmcraft-web")
+        .arg(&dist))?;
     for e in std::fs::read_dir(web).map_err(|e| e.to_string())?.flatten() {
         let name = e.file_name().to_string_lossy().to_string();
         if name == "index.html" {

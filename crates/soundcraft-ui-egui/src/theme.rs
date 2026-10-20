@@ -163,6 +163,37 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    /// Map editor chrome to the canonical Aphrody M3 semantic roles.
+    fn with_aphrody(mut self, dark: bool, high_contrast: bool) -> Self {
+        use craft_ui::theme::aphrody::{Palette, Role};
+        let palette = Palette::get(dark, high_contrast);
+        self.window_bg = palette.color(Role::Surface);
+        self.panel_bg = palette.color(Role::SurfaceContainer);
+        self.panel_bg2 = palette.color(Role::SurfaceContainerHigh);
+        self.toolbar_bg = palette.color(Role::SurfaceContainer);
+        self.toolbar_group = palette.color(Role::SurfaceContainerLow);
+        self.border = palette.color(Role::OutlineVariant);
+        self.border_light = palette.color(Role::OutlineVariant);
+        self.text = palette.color(Role::OnSurface);
+        self.text_dim = palette.color(Role::OnSurfaceVariant);
+        self.header_text = palette.color(Role::OnSurface);
+        self.accent = palette.color(Role::Primary);
+        self.accent_dark = palette.color(Role::Primary);
+        self.mode_on = palette.color(Role::PrimaryContainer);
+        self.mode_on_text = palette.color(Role::OnPrimary);
+        self.mode_off_text = palette.color(Role::OnSurfaceVariant);
+        self.button = palette.color(Role::SurfaceContainerHigh);
+        self.button_hi = palette.color(Role::SurfaceContainerHigh);
+        self.button_border = palette.color(Role::Outline);
+        self.name_field = palette.color(Role::SurfaceContainerHighest);
+        self.ruler_text = palette.color(Role::OnSurfaceVariant);
+        self.ruler_tick = palette.color(Role::OnSurfaceVariant);
+        self.input = palette.color(Role::SurfaceContainerHighest);
+        self.row_selected = palette.color(Role::SecondaryContainer);
+        self.section_label = palette.color(Role::OnSurfaceVariant);
+        self
+    }
+
     pub const DARK: Tokens = Tokens {
         window_bg: Color32::from_rgb(30, 30, 30),
         panel_bg: Color32::from_rgb(37, 37, 38),
@@ -330,7 +361,10 @@ impl Tokens {
     };
 
     pub fn current() -> Tokens {
-        if is_light() { Self::LIGHT } else { Self::DARK }
+        let tokens = (|| {
+            if is_light() { Self::LIGHT } else { Self::DARK }
+        })();
+        tokens.with_aphrody(!is_light(), false)
     }
 }
 

@@ -16,6 +16,8 @@
     "format": "bun fmt --write --config ../../bun-format.json app/src"
   },
   "dependencies": {
+    "@aphrody/m3": "workspace:*",
+    "@aphrody/identity": "workspace:*",
     "@mediapipe/tasks-vision": "^0.10.20",
     "@preact/signals-react": "catalog:",
     "@radix-ui/react-tooltip": "catalog:",

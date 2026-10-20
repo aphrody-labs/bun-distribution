@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VectorCraft</title>
     <link
       data-trunk
@@ -14,40 +11,32 @@
       data-wasm-opt="z"
       data-weak-refs
     />
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #262626;
-      }
-      #vectorcraft_canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      #vectorcraft_loading {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #b8b8b8;
-        font:
-          14px system-ui,
-          sans-serif;
-        pointer-events: none;
-      }
-    </style>
+    <link
+      data-trunk
+      rel="css"
+      href="../../build/craft-web/vectorcraft-web/theme.css"
+    />
+    <link
+      data-trunk
+      rel="icon"
+      href="../../packages/identity/assets/icon-64.png"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="../../build/craft-web/vectorcraft-web/aphrody-icon.png"
+    />
   </head>
   <body>
-    <canvas id="vectorcraft_canvas"></canvas>
-    <div id="vectorcraft_loading">Loading VectorCraft&hellip;</div>
+    <canvas id="vectorcraft_canvas" aria-label="vectorcraft editor"></canvas>
+    <div id="vectorcraft_loading" role="status">
+      <img
+        class="craft-identity"
+        src="aphrody-icon.png"
+        alt=""
+        width="48"
+        height="48"
+      />Loading VectorCraft&hellip;
+    </div>
   </body>
 </html>

@@ -232,14 +232,14 @@ impl Rows<'_> {
 fn provider_chip(ui: &Ui, row: Rect, provider: Provider, selected: bool) {
     let chip = Rect::from_center_size(pos2(row.right() - 22.0, row.center().y), vec2(26.0, 20.0));
     let fill = if selected {
-        theme::fade(theme::ACCENT, 0.6)
+        theme::fade(theme::accent(), 0.6)
     } else {
-        theme::WASH
+        theme::wash()
     };
     ui.painter().rect_filled(chip, theme::RADIUS, fill);
     let tex = creator_icons::texture(ui.ctx(), provider.icon());
     egui::Image::new(&tex)
-        .tint(theme::INK)
+        .tint(theme::ink())
         .paint_at(ui, Rect::from_center_size(chip.center(), vec2(12.0, 12.0)));
 }
 
@@ -276,7 +276,7 @@ fn provider_flyout(
                         ui.painter().vline(
                             resp.rect.left() + 1.5,
                             resp.rect.y_range(),
-                            Stroke::new(3.0, theme::ACCENT),
+                            Stroke::new(3.0, theme::accent()),
                         );
                     }
                     if resp.clicked() {

@@ -1,7 +1,4 @@
-//! Colours, type and shapes of the ArtCraft webapp's brutalist system
-//! (`artcraft-services/frontend/apps/artcraft-webapp`): near-black surfaces, white/15 hairlines,
-//! Archivo display type, Inter body text, Geist Mono labels and 3 px corners on anything
-//! pressable. Large surfaces (panels, cards, media tiles) stay square.
+//! Aphrody M3 semantic chrome for ArtCraft; document and media colors remain independent.
 
 use std::sync::Arc;
 
@@ -11,69 +8,132 @@ use egui::{
     TextStyle, Visuals,
 };
 
-const fn hex(rgb: u32) -> Color32 {
-    let [_, r, g, b] = rgb.to_be_bytes();
-    Color32::from_rgb(r, g, b)
-}
-
-const fn alpha(rgb: u32, a: u8) -> Color32 {
-    let [_, r, g, b] = rgb.to_be_bytes();
-    Color32::from_rgba_unmultiplied_const(r, g, b, a)
-}
-
 /// `ui-background`: the page behind the feed.
-pub const BG: Color32 = hex(0x121316);
+pub fn bg() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Surface)
+}
 /// `ui-panel`: the top bar, modals and the lightbox.
-pub const PANEL: Color32 = hex(0x101014);
+pub fn panel() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainer)
+}
 /// `ui-controls`: the sidebar, the prompt box and toolbar buttons.
-pub const CONTROLS: Color32 = hex(0x1e1f22);
+pub fn controls() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainerHigh)
+}
 /// The window chrome behind the content panel: the title bar and the sidebar.
-pub const CHROME: Color32 = hex(0x0a0a0c);
+pub fn chrome() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainerLow)
+}
 /// `ui-sunken`: wells and inputs.
-pub const SUNKEN: Color32 = hex(0x060607);
+pub fn sunken() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainerLowest)
+}
 
 /// `base-fg`: body text.
-pub const INK: Color32 = hex(0xf2f1ee);
-pub const INK_STRONG: Color32 = Color32::WHITE;
+pub fn ink() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurface)
+}
+pub fn ink_strong() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurface)
+}
 /// `base-fg/60`: secondary text and placeholders.
-pub const MUTED: Color32 = alpha(0xf2f1ee, 153);
+pub fn muted() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurfaceVariant)
+}
 /// `base-fg/50`: idle toolbar icons.
-pub const DIM: Color32 = alpha(0xf2f1ee, 128);
+pub fn dim() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurfaceVariant)
+}
 /// `base-fg/40`: counters and captions.
-pub const FAINT: Color32 = alpha(0xf2f1ee, 102);
+pub fn faint() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurfaceVariant)
+}
 /// The sidebar's link colour (`white/72`).
-pub const SIDEBAR_INK: Color32 = alpha(0xffffff, 184);
+pub fn sidebar_ink() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnSurfaceVariant)
+}
 
 /// `white/15`: every hairline.
-pub const LINE: Color32 = alpha(0xffffff, 38);
+pub fn line() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OutlineVariant)
+}
 /// `white/25`: dashed drop targets.
-pub const LINE_DASHED: Color32 = alpha(0xffffff, 64);
+pub fn line_dashed() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Outline)
+}
 /// `base-fg/40`: outlined buttons and corner marks.
-pub const LINE_STRONG: Color32 = alpha(0xf2f1ee, 102);
+pub fn line_strong() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Outline)
+}
 /// `white/5`: quiet fills.
-pub const WASH: Color32 = alpha(0xffffff, 13);
+pub fn wash() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainerHigh)
+}
 /// `white/8`: the selected sidebar row.
-pub const WASH_SELECTED: Color32 = alpha(0xffffff, 20);
+pub fn wash_selected() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SecondaryContainer)
+}
 /// `white/10`: hovered menu rows.
-pub const WASH_HOVER: Color32 = alpha(0xffffff, 26);
+pub fn wash_hover() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::SurfaceContainerHighest)
+}
 
 /// The brand blue (`primary`).
-pub const ACCENT: Color32 = hex(0x2d81ff);
+pub fn accent() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Primary)
+}
 /// `primary-400`: progress bars and selection rings.
-pub const ACCENT_400: Color32 = hex(0x59a7ff);
+pub fn accent_400() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Primary)
+}
 /// `ui-accent-ink`: blue text and focus rings.
-pub const ACCENT_INK: Color32 = hex(0x74aaff);
+pub fn accent_ink() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Primary)
+}
 
 /// The inverted primary button (white block, near-black text).
-pub const INVERT_BG: Color32 = Color32::WHITE;
-pub const INVERT_FG: Color32 = hex(0x0b0b0c);
+pub fn invert_bg() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Primary)
+}
+pub fn invert_fg() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::OnPrimary)
+}
 
 /// `red-400`: failure text.
-pub const BAD: Color32 = hex(0xf87171);
+pub fn bad() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false).color(craft_ui::theme::aphrody::Role::Error)
+}
 /// `red`: destructive fills.
-pub const DANGER: Color32 = hex(0xd33242);
+pub fn danger() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false).color(craft_ui::theme::aphrody::Role::Error)
+}
 /// The "BETA" / "NEW" sidebar badges.
-pub const BADGE_BETA: Color32 = hex(0xffc14d);
+pub fn badge_beta() -> Color32 {
+    craft_ui::theme::aphrody::Palette::get(true, false)
+        .color(craft_ui::theme::aphrody::Role::Tertiary)
+}
 
 /// 3 px: buttons, inputs, menus and the prompt box.
 pub const RADIUS: CornerRadius = CornerRadius::same(3);
@@ -87,7 +147,7 @@ pub const HUD_SPACING: f32 = HUD_SIZE * 0.15;
 pub const LABEL_SPACING: f32 = HUD_SIZE * 0.12;
 
 pub fn hairline() -> Stroke {
-    Stroke::new(1.0, LINE)
+    Stroke::new(1.0, line())
 }
 
 /// `c` at `a` (0–1) of its opacity.
@@ -132,31 +192,46 @@ pub fn mono_bold() -> FontFamily {
 
 fn visuals() -> Visuals {
     let mut v = Visuals::dark();
-    v.panel_fill = BG;
-    v.window_fill = PANEL;
-    v.extreme_bg_color = SUNKEN;
+    v.panel_fill = bg();
+    v.window_fill = panel();
+    v.extreme_bg_color = sunken();
     v.text_edit_bg_color = Some(Color32::TRANSPARENT);
-    v.faint_bg_color = CONTROLS;
-    v.code_bg_color = SUNKEN;
+    v.faint_bg_color = controls();
+    v.code_bg_color = sunken();
     v.window_stroke = hairline();
     v.window_corner_radius = RADIUS;
     v.menu_corner_radius = RADIUS;
     v.window_shadow = shadow();
     v.popup_shadow = shadow();
-    v.override_text_color = Some(INK);
-    v.hyperlink_color = ACCENT_INK;
-    v.selection.bg_fill = ACCENT;
+    v.override_text_color = Some(ink());
+    v.hyperlink_color = accent_ink();
+    v.selection.bg_fill = accent();
     v.selection.stroke = Stroke::new(1.0, Color32::WHITE);
     v.text_cursor.stroke = Stroke::new(1.5, Color32::WHITE);
-    v.warn_fg_color = BADGE_BETA;
-    v.error_fg_color = BAD;
+    v.warn_fg_color = badge_beta();
+    v.error_fg_color = bad();
     v.striped = false;
     for (w, fill, stroke, fg) in [
-        (&mut v.widgets.noninteractive, CONTROLS, LINE, MUTED),
-        (&mut v.widgets.inactive, CONTROLS, LINE, INK),
-        (&mut v.widgets.hovered, WASH_HOVER, LINE_STRONG, INK_STRONG),
-        (&mut v.widgets.active, WASH_HOVER, LINE_STRONG, INK_STRONG),
-        (&mut v.widgets.open, WASH_HOVER, LINE_STRONG, INK_STRONG),
+        (&mut v.widgets.noninteractive, controls(), line(), muted()),
+        (&mut v.widgets.inactive, controls(), line(), ink()),
+        (
+            &mut v.widgets.hovered,
+            wash_hover(),
+            line_strong(),
+            ink_strong(),
+        ),
+        (
+            &mut v.widgets.active,
+            wash_hover(),
+            line_strong(),
+            ink_strong(),
+        ),
+        (
+            &mut v.widgets.open,
+            wash_hover(),
+            line_strong(),
+            ink_strong(),
+        ),
     ] {
         w.bg_fill = fill;
         w.weak_bg_fill = fill;

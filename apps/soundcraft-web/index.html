@@ -1,18 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SoundCraft</title>
-    <link
-      data-trunk
-      rel="icon"
-      type="image/png"
-      href="../../assets/soundcraft/app-icon/hicolor/64x64/apps/ai.storyteller.soundcraft.png"
-    />
     <link
       data-trunk
       rel="rust"
@@ -20,40 +11,24 @@
       data-wasm-opt="z"
       data-weak-refs
     />
-    <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #1e1f22;
-      }
-      #soundcraft_canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-      #soundcraft_loading {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #b8b8b8;
-        font:
-          14px system-ui,
-          sans-serif;
-        pointer-events: none;
-      }
-    </style>
+    <link
+      data-trunk
+      rel="css"
+      href="../../build/craft-web/soundcraft-web/theme.css"
+    />
+    <link
+      data-trunk
+      rel="icon"
+      href="../../packages/identity/assets/icon-64.png"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="../../build/craft-web/soundcraft-web/aphrody-icon.png"
+    />
   </head>
   <body>
-    <canvas id="soundcraft_canvas"></canvas>
+    <canvas id="soundcraft_canvas" aria-label="soundcraft editor"></canvas>
     <script>
       // cpal (wasm) builds the output stream at startup, before any user gesture, so the
       // WebAudio AudioContext stays 'suspended': no audio is heard and the transport clock
@@ -85,6 +60,14 @@
         );
       })();
     </script>
-    <div id="soundcraft_loading">Loading SoundCraft&hellip;</div>
+    <div id="soundcraft_loading" role="status">
+      <img
+        class="craft-identity"
+        src="aphrody-icon.png"
+        alt=""
+        width="48"
+        height="48"
+      />Loading SoundCraft&hellip;
+    </div>
   </body>
 </html>

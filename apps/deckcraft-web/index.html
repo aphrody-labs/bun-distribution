@@ -1,11 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="light">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DeckCraft</title>
     <link
       data-trunk
@@ -13,11 +10,6 @@
       data-bin="deckcraft-web"
       data-wasm-opt="z"
       data-weak-refs
-    />
-    <link
-      data-trunk
-      rel="icon"
-      href="../../assets/deckcraft/app-icon/hicolor/32x32/apps/ai.storyteller.deckcraft.png"
     />
     <style>
       html,
@@ -50,9 +42,22 @@
         pointer-events: none;
       }
     </style>
+    <link
+      data-trunk
+      rel="copy-file"
+      href="../../build/craft-web/deckcraft-web/aphrody-icon.png"
+    />
   </head>
   <body>
-    <canvas id="deckcraft_canvas"></canvas>
-    <div id="deckcraft_loading">Loading DeckCraft&hellip;</div>
+    <canvas id="deckcraft_canvas" aria-label="deckcraft editor"></canvas>
+    <div id="deckcraft_loading" role="status">
+      <img
+        class="craft-identity"
+        src="aphrody-icon.png"
+        alt=""
+        width="48"
+        height="48"
+      />Loading DeckCraft&hellip;
+    </div>
   </body>
 </html>
