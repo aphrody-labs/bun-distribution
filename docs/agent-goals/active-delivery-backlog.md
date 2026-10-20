@@ -17,6 +17,7 @@ newer requests extend this scope rather than silently replacing it.
 ## One product
 
 - [ ] Complete integration of App UI, Aphrody App, WebOS, Drive, Craft and Bun packages into one superapp/site.
+- [ ] Reconcile the latest SpaceDrive engine/client/mobile source against the active Bun OS owners; restore every compatible missing Drive capability through `packages/app-ui`, `@aphrody/m3-explorer`, `@aphrody/drive-client`, `crates/aphrody-drive` and `sd-daemon`, while retaining version-specific upstream licenses and an explicit disposition for each incompatible host path.
 - [ ] Finish adopting the common M3 design system and UI UX Pro Max across all consumers.
 - [ ] Finish serving, documenting and installing Bun Engine, Bun RE, REA and Replica with the product.
 - [ ] Complete CLI, MCP, plugin, WASM, FFI and Docker coverage; retain an explicit unsupported-capability list until qualified.

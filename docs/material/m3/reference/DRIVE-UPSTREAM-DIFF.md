@@ -22,7 +22,7 @@ shared `*.rs` / `*.toml` / `build.rs` whose blob hash differs.
 
 No other ignore rule matches an upstream-tracked path after the fix.
 
-## Current upstream parity audit (2026-09-28)
+## Baseline upstream parity audit (2026-09-28)
 
 The [upstream tree at `6dfeccf`](https://github.com/spacedriveapp/spacedrive/tree/6dfeccf2113039e35f2ce735f945e70dc3e4ea45)
 has 3,468 tree entries. This is a source comparison against the current upstream revision,
@@ -83,3 +83,29 @@ quarantine until a real model, failure path and index-time enforcement are quali
 | `core/src/service/sync/{backfill,state}.rs`, `infra/sync/checkpoints.rs` | No-op checkpoint `save`/`load` | Durable `BackfillCheckpointStore` in `sync.db` + restart test | Replaces upstream TODO. |
 | `core/build.rs` | `cargo:warning` when Swift client absent | `rerun-if-changed` | Swift client not vendored; avoids warning noise. |
 | `crates/archive/*`, `crates/os/drive/crates/task-system/src/system.rs` | Unused imports/bindings; `fetch_update` | Removed; `try_update` | Warning-clean under current toolchain. |
+
+## Latest source recovery (2026-10-20)
+
+The upstream repository was cloned to a separate reference checkout and audited at
+[`4d41a379`](https://github.com/spacedriveapp/spacedrive/commit/4d41a379f612e23ac43a66ffd67df52ca77f57d4),
+the 2026-10-13 main revision. The audit covers 3,107 file blobs. Its 287-file
+`packages/interface` tree is restored byte-for-byte at
+[`docs/material/m3/reference/drive/packages/interface`](./drive/packages/interface), with the
+upstream `LICENSE`, `NOTICE`, and revision metadata. That package declares Apache-2.0; the daemon
+workspace retains its own FSL-1.1-ALv2 terms. The reference package is below `docs/` and is not
+in either build workspace.
+
+The product already connects its active Files surface across `packages/app-ui`, the reusable
+`@aphrody/m3-explorer` package, `@aphrody/drive-client`, `crates/aphrody-drive`, and the
+separately supervised `sd-daemon` under `apps/aphrody-drive`. The latest audit confirms the
+restored interface source is exact; it does not establish route, operation, daemon startup,
+installation, or data-migration parity.
+
+At that revision, the path audit finds 525 identical, 407 changed, and 320 absent files across
+the mapped Drive engine and adapters. The four-file delta for the client is one identical, 35
+changed, and four absent. Upstream's 155 mobile-host files have no counterpart at the mapped
+`apps/aphrody-drive/apps/mobile` path; qualify the existing Bun OS Android product against those
+flows before treating that as a user-visible loss. The upstream desktop host is intentionally
+replaced by the Bun OS host. These are source-path counts, not feature or behavioral scores.
+Reproduce with `bun packages/bun-workspace/src/automation/drive-upstream-audit.ts --revision
+4d41a379f612e23ac43a66ffd67df52ca77f57d4 --root . --drive-root apps/aphrody-drive`.
