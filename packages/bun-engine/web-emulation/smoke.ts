@@ -98,6 +98,26 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   if (!chrome) throw new Error("no Chrome/Chromium found (set CHROME)");
   const profileRoot = resolve(root, "build/web-emulation");
   const profile = join(profileRoot, `chrome-profile-${crypto.randomUUID()}`);
+  const browserStderrPath = join(profileRoot, "browser-logs", `${crypto.randomUUID()}.stderr.log`);
+  mkdirSync(join(profileRoot, "browser-logs"), { recursive: true });
+  console.log(`Browser stderr: ${browserStderrPath}`);
+  // Browser process diagnostics include Dawn/GPU-process crashes which CDP page errors do
+  // not report. Retain a bounded tail outside redistributable dist and keep draining the
+  // pipe throughout qualification so browser stderr can never block its GPU process.
+  const stderrLimit = 1024 * 1024;
+  let stderrTail = Buffer.alloc(0);
+  let stderrTruncated = false;
+  const captureStderr = (chunk: Uint8Array) => {
+    const combined = Buffer.concat([stderrTail, chunk]);
+    stderrTruncated ||= combined.byteLength > stderrLimit;
+    stderrTail = Buffer.from(combined.subarray(Math.max(0, combined.byteLength - stderrLimit)));
+  };
+  const saveStderr = () => Bun.write(browserStderrPath, Buffer.concat([
+    Buffer.from(stderrTruncated ? "[Earlier browser stderr omitted; retaining the last 1 MiB]\n" : ""),
+    stderrTail,
+  ]));
+  let stderrReader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let stderrDrain: Promise<void> | undefined;
   const screenshotDir = privateROM || comparison ? reportDir : shots;
   mkdirSync(screenshotDir, { recursive: true });
   const server = serve(0, { privateROM });
@@ -120,7 +140,11 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
       ...(process.platform === "linux"
         ? [
             "--enable-features=Vulkan",
+            // Chrome's documented headless Vulkan path avoids platform swapchain surfaces.
+            // https://developer.chrome.com/blog/supercharge-web-ai-testing
+            "--use-angle=vulkan",
             "--use-vulkan=swiftshader",
+            "--disable-vulkan-surface",
             "--use-webgpu-adapter=swiftshader",
             "--enable-unsafe-swiftshader",
             ...(process.getuid?.() === 0 ? ["--no-sandbox"] : []),
@@ -135,14 +159,29 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   cleanupBrowser = async () => { browser.kill(); await browser.exited; };
   let endpoint = "";
   const reader = browser.stderr.getReader();
+  stderrReader = reader;
   const decoder = new TextDecoder();
   let buffered = "";
   while (!endpoint) {
     const { value, done } = await reader.read();
     if (done) throw new Error("Chrome exited before DevTools was ready");
+    captureStderr(value);
     buffered += decoder.decode(value);
     endpoint = buffered.match(/DevTools listening on (ws:\/\/\S+)/)?.[1] ?? "";
+    if (buffered.length > stderrLimit) buffered = buffered.slice(-stderrLimit);
   }
+  await saveStderr();
+  stderrDrain = (async () => {
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) return;
+        captureStderr(value);
+      }
+    } catch (error) {
+      captureStderr(new TextEncoder().encode(`\n[Browser stderr capture: ${String(error)}]\n`));
+    }
+  })();
   cdp = await Cdp.connect(endpoint);
   const results: Record<string, unknown> = !privateROM && !comparison && (await Bun.file(join(dist, "smoke.json")).exists())
     ? await Bun.file(join(dist, "smoke.json")).json()
@@ -244,6 +283,7 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
         ...(result ?? { ok: false, error: "timeout" }),
         ok: result?.ok === true && logs.length === 0,
         browserLog: logs,
+        browserStderr: browserStderrPath,
         screenshot: shotPath,
         testedAt: new Date().toISOString(),
         ...(privateROM ? { privateROM: { path: privateROM.path, sha256: privateROM.sha256 }, artifacts: privateArtifacts, redistributable: false } : {}),
@@ -269,6 +309,9 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   } finally {
     cdp?.close();
     await cleanupBrowser?.();
+    await stderrReader?.cancel().catch(() => {});
+    await stderrDrain;
+    await saveStderr();
     server.stop(true);
     const profileName = profile.slice(profileRoot.length + 1);
     if (!/^chrome-profile-[a-f0-9-]+$/.test(profileName) || resolve(profile) !== join(profileRoot, profileName)) throw new Error("Unsafe browser profile cleanup path");
