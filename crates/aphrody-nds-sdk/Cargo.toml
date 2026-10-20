@@ -17,6 +17,8 @@ workspace = true
 default = ["nds", "ctr"]
 # Nintendo DS on Dust (interpreter CPUs, software 2D and 3D renderers, HLE BIOS).
 nds = ["dep:aphrody-dust-core", "dep:aphrody-dust-soft-2d", "dep:aphrody-dust-soft-3d"]
+# Retained Dust GPU renderers on the host's existing wgpu device; CPU display-capture remains exact.
+nds-gpu = ["nds", "dep:aphrody-dust-wgpu"]
 # Nintendo 3DS on Zakuro through aphrody-ctr-emu (HLE kernel and services, PICA200 renderer).
 ctr = ["dep:aphrody-ctr-emu"]
 # Bevy plugin: `HandheldPlugin`, screen images, input, audio, events.
@@ -49,6 +51,7 @@ viewer = [
 aphrody-dust-core = { workspace = true, optional = true }
 aphrody-dust-soft-2d = { path = "../aphrody-dust-soft-2d", optional = true }
 aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", optional = true }
+aphrody-dust-wgpu = { path = "../aphrody-dust-wgpu", default-features = false, optional = true }
 aphrody-ctr-emu = { path = "../aphrody-ctr-emu", optional = true }
 # The key must stay `bevy`: Bevy's derive macros resolve `bevy::ecs` through that name.
 bevy = { workspace = true, optional = true }

@@ -201,10 +201,46 @@ struct Shared {
     first_frame_ms: Option<f64>,
     stopped: Option<String>,
     system: &'static str,
+    gpu_rendering: bool,
+    gpu_submitted_frames: u64,
 }
 
 #[derive(Resource, Clone)]
 struct Page(Arc<Mutex<Shared>>);
+
+/// Dust must be built after Bevy's asynchronous browser renderer has supplied its device.
+#[cfg(feature = "nds-gpu")]
+#[derive(Resource)]
+struct PendingDs(Vec<u8>);
+
+#[cfg(feature = "nds-gpu")]
+fn boot_pending_ds(world: &mut World) {
+    use crate::bevy::render::renderer::{RenderDevice, RenderQueue};
+    use crate::runtime::{MachineOptions, MachineWorldExt};
+
+    if !world.contains_resource::<PendingDs>() {
+        return;
+    }
+    let (Some(device), Some(queue)) = (
+        world.get_resource::<RenderDevice>(),
+        world.get_resource::<RenderQueue>(),
+    ) else {
+        return;
+    };
+    let device = Arc::new(device.wgpu_device().clone());
+    let queue = Arc::new((**queue).clone());
+    let rom = world.remove_resource::<PendingDs>().unwrap().0;
+    match crate::machine::handheld::HandheldMachine::from_nds_gpu(&rom, device, queue, 0) {
+        Ok(machine) => {
+            world.resource::<Page>().0.lock().unwrap().gpu_rendering = true;
+            world.insert_machine_with(Box::new(machine), MachineOptions::default());
+        }
+        Err(error) => {
+            world.resource::<Page>().0.lock().unwrap().stopped = Some(error);
+            world.write_message(AppExit::error());
+        }
+    }
+}
 
 /// `PreUpdate`, before the engine folds its input sources: the page's buttons.
 fn page_keys(page: Res<Page>, mut pads: ResMut<ExternalPads>) {
@@ -225,16 +261,24 @@ fn page_touch(page: Res<Page>, mut input: ResMut<EngineInput>) {
 fn page_status(
     page: Res<Page>,
     status: Res<MachineStatus>,
-    slot: NonSend<MachineSlot>,
+    mut slot: NonSendMut<MachineSlot>,
     mut exit: MessageWriter<AppExit>,
 ) {
     let mut shared = page.0.lock().unwrap();
     shared.frames = status.frames;
+    #[cfg(feature = "nds-gpu")]
+    {
+        shared.gpu_rendering = slot.0.gpu_rendering();
+        if let Some(frame) = slot.0.gpu_frame() {
+            shared.gpu_submitted_frames = frame.submitted_frames;
+        }
+    }
     if status.frames > 0 && shared.first_frame_ms.is_none() {
         shared.first_frame_ms = Some(js_sys::Date::now() - shared.started_at);
     }
-    // Every 15 frames (and the first one) is enough for diagnostics; screens() copies.
-    if status.frames != shared.hashed_at
+    // CPU reference images are authoritative only in software mode. GPU qualification uses
+    // canvas pixels and the independent submission counter instead of stale CPU images.
+    if !shared.gpu_rendering && status.frames != shared.hashed_at
         && (shared.hashed_at == 0 || status.frames - shared.hashed_at >= 15)
     {
         let screens = slot.0.screens();
@@ -269,7 +313,9 @@ pub struct Emulator {
 
 /// Boot `rom` for `options.system` in a Bevy app drawing into `canvas`.
 ///
-/// `options`: `{ system, bios?: Uint8Array, firmware?: string }`. `firmware` names the registry
+/// `options`: `{ system, bios?: Uint8Array, firmware?: string, renderer?: "auto" | "gpu" | "software" }`.
+/// Dust uses its GPU renderer when compiled with `nds-gpu`; `software` selects the CPU reference.
+/// `firmware` names the registry
 /// component `bios` must match (for example `openbios`); without it `bios` is a local user file.
 /// One machine per module instance: winit cannot recreate its browser event loop, so switching
 /// games means a page reload (or a fresh module instance).
@@ -288,11 +334,27 @@ pub fn start(
             "this module already runs a machine; Bevy's browser event loop cannot be recreated, reload the page",
         ));
     }
-    let machine = match build_machine(&system, &rom.to_vec(), &options) {
-        Ok(machine) => machine,
-        Err(e) => {
-            STARTED.store(false, Ordering::SeqCst);
-            return Err(e);
+    let renderer = option::<js_sys::JsString>(&options, "renderer")
+        .map(String::from).unwrap_or_else(|| "auto".into());
+    if !matches!(renderer.as_str(), "auto" | "gpu" | "software") {
+        STARTED.store(false, Ordering::SeqCst);
+        return Err(JsError::new("options.renderer must be auto, gpu or software"));
+    }
+    let gpu_ds = cfg!(feature = "nds-gpu")
+        && matches!(system.as_str(), "nds" | "nintendo-ds")
+        && renderer != "software";
+    if renderer == "gpu" && !gpu_ds {
+        STARTED.store(false, Ordering::SeqCst);
+        return Err(JsError::new("GPU emulation requires a Dust module compiled with nds-gpu"));
+    }
+    let bytes = rom.to_vec();
+    let machine = if gpu_ds { None } else {
+        match build_machine(&system, &bytes, &options) {
+            Ok(machine) => Some(machine),
+            Err(e) => {
+                STARTED.store(false, Ordering::SeqCst);
+                return Err(e);
+            }
         }
     };
     if canvas.id().is_empty() {
@@ -303,7 +365,7 @@ pub fn start(
     }
     let shared = Arc::new(Mutex::new(Shared {
         started_at,
-        system: machine.name(),
+        system: machine.as_ref().map_or("nintendo-ds", |machine| machine.name()),
         ..Shared::default()
     }));
 
@@ -335,7 +397,14 @@ pub fn start(
         page_touch.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
     )
     .add_systems(Last, page_status);
-    app.insert_machine(machine);
+    if let Some(machine) = machine {
+        app.insert_machine(machine);
+    }
+    #[cfg(feature = "nds-gpu")]
+    if gpu_ds {
+        app.insert_resource(PendingDs(bytes))
+            .add_systems(crate::bevy::app::Update, boot_pending_ds);
+    }
     // On the web the winit runner hands the app to requestAnimationFrame and returns.
     app.run();
     Ok(Emulator { shared })
@@ -386,7 +455,19 @@ impl Emulator {
 
     #[wasm_bindgen(getter)]
     pub fn renderer(&self) -> String {
+        if self.shared.lock().unwrap().gpu_rendering { "wgpu30-dust" } else { "software" }.into()
+    }
+
+    /// Browser presentation is separate from the machine's emulation renderer.
+    #[wasm_bindgen(getter)]
+    pub fn presentation_renderer(&self) -> String {
         "webgpu".into()
+    }
+
+    /// Actual Dust 3D command submissions, independently from presentation frames.
+    #[wasm_bindgen(getter)]
+    pub fn gpu_submitted_frames(&self) -> f64 {
+        self.shared.lock().unwrap().gpu_submitted_frames as f64
     }
 
     #[wasm_bindgen(getter)]

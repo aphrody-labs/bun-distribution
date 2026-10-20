@@ -14,6 +14,8 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream"]
 # Nintendo DS on Dust through aphrody-nds-sdk (software 2D/3D rendering, saves, saved states).
 nds = ["dep:aphrody-nds-sdk", "aphrody-nds-sdk/nds"]
+# Dust 2D/3D on the host's existing WGPU 30 device; CPU mode remains available.
+nds-gpu = ["nds", "render", "aphrody-nds-sdk/nds-gpu"]
 # Bevy scheduling of the DS core (wasm and desktop hosts).
 host = ["nds", "runtime"]
 bevy-web = ["host", "bevy/web"]

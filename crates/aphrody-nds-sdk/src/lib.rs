@@ -27,6 +27,10 @@ pub use format::{Format, Platform};
 pub use handheld::{
     Error, Handheld, Image, Input, Result, ScreenId, ScreenSpec, Step, button, frame_hash,
 };
+#[cfg(feature = "nds-gpu")]
+pub use handheld::GpuFrame;
+#[cfg(feature = "nds-gpu")]
+pub use aphrody_dust_wgpu::wgpu;
 #[cfg(feature = "bevy")]
 pub use plugin::{HandheldPlugin, HandheldScreens};
 

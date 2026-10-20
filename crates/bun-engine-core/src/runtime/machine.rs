@@ -19,6 +19,10 @@ use crate::bevy::{
 use super::{EngineExit, EngineInput, EngineMode, EngineSystems};
 use crate::machine::{Machine, Screen, Step};
 
+#[cfg(feature = "nds-gpu")]
+#[path = "machine_gpu.rs"]
+mod gpu;
+
 /// The running machine (non-send: cores own raw pointers and JIT state).
 pub struct MachineSlot(pub Box<dyn Machine>);
 
@@ -230,7 +234,7 @@ pub trait MachineWorldExt {
 }
 
 impl MachineWorldExt for World {
-    fn insert_machine_with(&mut self, machine: Box<dyn Machine>, options: MachineOptions) {
+    fn insert_machine_with(&mut self, mut machine: Box<dyn Machine>, options: MachineOptions) {
         self.remove_machine();
         let mode = self
             .get_resource::<EngineMode>()
@@ -246,7 +250,7 @@ impl MachineWorldExt for World {
         }
         #[cfg(feature = "render")]
         if mode == EngineMode::Windowed {
-            view::install(self, &machine.screens(), options.spawn_view);
+            view::install(self, &mut *machine, options.spawn_view);
         }
         #[cfg(feature = "audio")]
         if mode == EngineMode::Windowed && machine.sample_rate() > 0 {
@@ -493,7 +497,7 @@ pub mod view {
         pub first_height: u32,
         /// The engine shows it with a sprite (`MachineOptions::spawn_view`).
         pub spawn_view: bool,
-        presented: u64,
+        pub(super) presented: u64,
     }
 
     /// Marker of the sprite showing [`MachineScreen`].
@@ -501,6 +505,8 @@ pub mod view {
     pub struct MachineView;
 
     pub(super) fn register(app: &mut App) {
+        #[cfg(feature = "nds-gpu")]
+        super::gpu::register(app);
         app.configure_sets(PostUpdate, EngineSystems::Present)
             .add_systems(Update, spawn.run_if(resource_added::<MachineScreen>))
             .add_systems(
@@ -518,11 +524,17 @@ pub mod view {
             );
     }
 
-    pub(super) fn install(world: &mut World, first: &[crate::machine::Screen], spawn_view: bool) {
+    pub(super) fn install(world: &mut World, machine: &mut dyn crate::machine::Machine, spawn_view: bool) {
+        #[cfg(feature = "nds-gpu")]
+        if machine.gpu_rendering() {
+            super::gpu::install(world, machine, spawn_view);
+            return;
+        }
+        let first = machine.screens();
         let Some(mut images) = world.get_resource_mut::<Assets<Image>>() else {
             return;
         };
-        let ((w, h), first_height) = stacked_size(first);
+        let ((w, h), first_height) = stacked_size(&first);
         let mut image = Image::new_fill(
             Extent3d {
                 width: w,
@@ -546,6 +558,8 @@ pub mod view {
     }
 
     pub(super) fn uninstall(world: &mut World) {
+        #[cfg(feature = "nds-gpu")]
+        world.remove_resource::<super::gpu::MachineGpuImage>();
         if let Some(screen) = world.remove_resource::<MachineScreen>()
             && let Some(mut images) = world.get_resource_mut::<Assets<Image>>()
         {
@@ -609,6 +623,10 @@ pub mod view {
         mut scratch: Local<Vec<u8>>,
     ) {
         let Some(slot) = slot else { return };
+        #[cfg(feature = "nds-gpu")]
+        if slot.0.gpu_rendering() {
+            return;
+        }
         if screen.presented == status.frames {
             return;
         }

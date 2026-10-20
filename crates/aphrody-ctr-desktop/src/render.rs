@@ -1,4 +1,8 @@
 use aphrody_ctr_emu::{Image, Video};
+use aphrody_gpu_backend::{
+    DeviceLimits, DeviceRequest, SurfaceFormat, SurfaceRequest, request_adapter, request_device,
+    surface_configuration, wgpu,
+};
 
 use crate::Layout;
 
@@ -68,43 +72,47 @@ impl Renderer {
         surface: wgpu::Surface<'static>,
         size: (u32, u32),
     ) -> Result<Self, String> {
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
+        let adapter = request_adapter(
+            instance,
+            &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
                 apply_limit_buckets: false,
-            })
-            .await
-            .map_err(|e| format!("no GPU adapter: {e}"))?;
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .map_err(|e| format!("device: {e}"))?;
+            },
+        )
+        .await
+        .map_err(|e| format!("no GPU adapter: {e}"))?;
+        let gpu = request_device(
+            &adapter,
+            DeviceRequest::new(
+                Some("ctr_screens"),
+                DeviceLimits::DownlevelWithAdapterResolution,
+            ),
+        )
+        .await
+        .map_err(|e| format!("device: {e}"))?;
+        let (device, queue) = (gpu.device, gpu.queue);
         let caps = surface.get_capabilities(&adapter);
         // The emulator's pixels are already display-encoded: use a non-sRGB surface.
-        let format = caps
-            .formats
-            .iter()
-            .copied()
-            .find(|f| !f.is_srgb())
-            .or_else(|| caps.formats.first().copied())
-            .ok_or("surface has no formats")?;
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            width: size.0.max(1),
-            height: size.1.max(1),
-            present_mode: wgpu::PresentMode::Fifo,
-            desired_maximum_frame_latency: 2,
-            alpha_mode: caps
-                .alpha_modes
-                .first()
-                .copied()
-                .unwrap_or(wgpu::CompositeAlphaMode::Auto),
-            view_formats: Vec::new(),
-            color_space: wgpu::SurfaceColorSpace::Auto,
-        };
+        let config = surface_configuration(
+            &caps,
+            SurfaceRequest {
+                format: SurfaceFormat::Linear,
+                width: size.0.max(1),
+                height: size.1.max(1),
+                present_mode: Some(wgpu::PresentMode::Fifo),
+                desired_maximum_frame_latency: 2,
+                alpha_mode: Some(
+                    caps.alpha_modes
+                        .first()
+                        .copied()
+                        .unwrap_or(wgpu::CompositeAlphaMode::Auto),
+                ),
+            },
+        )
+        .ok_or("surface has no compatible configuration")?;
+        let format = config.format;
         surface.configure(&device, &config);
 
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {

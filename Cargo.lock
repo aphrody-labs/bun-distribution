@@ -1374,6 +1374,7 @@ name = "aphrody-ctr-desktop"
 version = "1.4.4"
 dependencies = [
  "aphrody-ctr-emu",
+ "aphrody-gpu-backend",
  "console_error_panic_hook",
  "cpal 0.16.0",
  "pollster 1.0.1",
@@ -2379,6 +2380,7 @@ dependencies = [
  "aphrody-dust-core",
  "aphrody-dust-soft-2d",
  "aphrody-dust-soft-3d",
+ "aphrody-dust-wgpu",
  "bevy",
 ]
 

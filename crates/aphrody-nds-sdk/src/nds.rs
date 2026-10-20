@@ -69,6 +69,37 @@ struct Rx {
     output: Scanline<u32>,
 }
 
+struct Renderers {
+    two_d: Box<dyn aphrody_dust_core::gpu::engine_2d::Renderer>,
+    three_d: Box<dyn RendererTx>,
+    #[cfg(feature = "nds-gpu")]
+    gpu: Option<GpuPresentation>,
+}
+
+#[cfg(feature = "nds-gpu")]
+struct GpuPresentation {
+    two_d: aphrody_dust_wgpu::render_2d::threaded::lockstep_scanlines::FrontendChannels,
+    three_d: aphrody_dust_wgpu::render_3d::local::Frontend,
+    view: aphrody_dust_wgpu::wgpu::TextureView,
+    scale_shift: u8,
+}
+
+fn software_renderers() -> Renderers {
+    let shared = Rc::new(RefCell::new(Soft3d {
+        // The retained software data consists of integer/SIMD arrays; zero is valid.
+        data: unsafe { Box::new_zeroed().assume_init() },
+        renderer: Renderer::new(),
+        output: unsafe { Box::new_zeroed().assume_init() },
+    }));
+    let rx = Rx { shared: shared.clone(), line: 0, output: Scanline([0; 256]) };
+    Renderers {
+        two_d: Box::new(aphrody_dust_soft_2d::sync::Renderer::new(Box::new(rx))),
+        three_d: Box::new(Tx(shared)),
+        #[cfg(feature = "nds-gpu")]
+        gpu: None,
+    }
+}
+
 impl RendererTx for Tx {
     fn set_capture_enabled(&mut self, _: bool) {}
 
@@ -140,6 +171,8 @@ pub struct Nds {
     samples: Rc<RefCell<Vec<f32>>>,
     images: [Image; 2],
     save_path: Option<PathBuf>,
+    #[cfg(feature = "nds-gpu")]
+    gpu: Option<GpuPresentation>,
 }
 
 /// Cartridge backup chip for a save size in bytes.
@@ -176,6 +209,40 @@ fn backup(size: usize, save: Option<BoxedByteSlice>) -> Result<Spi> {
 impl Nds {
     /// Boots a cartridge image directly, without BIOS or firmware files.
     pub fn from_rom(rom: &[u8], options: &Options) -> Result<Self> {
+        Self::from_rom_with_renderers(rom, options, software_renderers())
+    }
+
+    /// Boot on the existing host device, preserving software rasterization for guest display capture.
+    #[cfg(feature = "nds-gpu")]
+    pub fn from_rom_gpu(
+        rom: &[u8],
+        options: &Options,
+        device: Arc<aphrody_dust_wgpu::wgpu::Device>,
+        queue: Arc<aphrody_dust_wgpu::wgpu::Queue>,
+        resolution_scale_shift: u8,
+    ) -> Result<Self> {
+        if resolution_scale_shift > 4 {
+            return Err(err("DS GPU", "resolution scale must be between 1x and 16x"));
+        }
+        let (tx, rx, three_d) = aphrody_dust_wgpu::render_3d::local::init(
+            Arc::clone(&device), Arc::clone(&queue), resolution_scale_shift,
+        );
+        let output = three_d.output_view();
+        let next_view = three_d.clone();
+        let (two_d, view, frontend) = aphrody_dust_wgpu::render_2d::threaded::lockstep_scanlines::Renderer::new(
+            device, queue, resolution_scale_shift,
+            aphrody_dust_wgpu::render_2d::Renderer3dRx::LocalAccel {
+                rx: Box::new(rx), color_output_view: output,
+                new_color_output_view: Box::new(move || next_view.output_view()),
+            },
+        );
+        Self::from_rom_with_renderers(rom, options, Renderers {
+            two_d: Box::new(two_d), three_d: Box::new(tx),
+            gpu: Some(GpuPresentation { two_d: frontend, three_d, view, scale_shift: resolution_scale_shift }),
+        })
+    }
+
+    fn from_rom_with_renderers(rom: &[u8], options: &Options, renderers: Renderers) -> Result<Self> {
         let existing = options
             .save_path
             .as_ref()
@@ -196,17 +263,6 @@ impl Nds {
         });
         let spi = backup(size, existing)?;
 
-        // The renderer buffers are plain integer arrays; zero is a valid state.
-        let shared = Rc::new(RefCell::new(Soft3d {
-            data: unsafe { Box::new_zeroed().assume_init() },
-            renderer: Renderer::new(),
-            output: unsafe { Box::new_zeroed().assume_init() },
-        }));
-        let rx = Rx {
-            shared: shared.clone(),
-            line: 0,
-            output: Scanline([0; 256]),
-        };
         // Cartridge chips are power-of-two sized; dumps and homebrew builds are often trimmed.
         // Pad with 0xFF (erased flash) like a real cartridge reads past the image.
         let padded = rom.len().max(0x200).next_power_of_two();
@@ -226,8 +282,8 @@ impl Nds {
             Box::new(Capture(samples.clone())),
             None,
             Box::new(rtc::DummyBackend),
-            Box::new(aphrody_dust_soft_2d::sync::Renderer::new(Box::new(rx))),
-            Box::new(Tx(shared)),
+            renderers.two_d,
+            renderers.three_d,
             None,
         );
         let emu = builder.build(Interpreter).map_err(|e| {
@@ -265,10 +321,19 @@ impl Nds {
             samples,
             images: [blank(), blank()],
             save_path: options.save_path.clone(),
+            #[cfg(feature = "nds-gpu")]
+            gpu: renderers.gpu,
         })
     }
 
     fn capture(&mut self) {
+        // The accelerated renderer owns a GPU texture; its framebuffer() CPU
+        // adapter is intentionally unavailable. Guest display capture is handled
+        // within the renderer itself, independently from host screenshots.
+        #[cfg(feature = "nds-gpu")]
+        if self.gpu.is_some() {
+            return;
+        }
         for (image, fb) in self
             .images
             .iter_mut()
@@ -364,6 +429,23 @@ impl Handheld for Nds {
 
     fn image(&self, screen: ScreenId) -> Image {
         self.images[usize::from(screen == ScreenId::Bottom)].clone()
+    }
+
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_frame(&mut self) -> Option<crate::GpuFrame> {
+        let gpu = self.gpu.as_mut()?;
+        if let Some(view) = gpu.two_d.new_color_output_view() { gpu.view = view; }
+        Some(crate::GpuFrame {
+            texture: gpu.view.texture().clone(),
+            view: gpu.view.clone(), width: WIDTH << gpu.scale_shift,
+            height: (HEIGHT * 2) << gpu.scale_shift,
+            submitted_frames: gpu.three_d.submitted_frames(),
+        })
+    }
+
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_rendering(&self) -> bool {
+        self.gpu.is_some()
     }
 
     fn set_input(&mut self, input: &Input) {

@@ -35,7 +35,7 @@ interface RustCore {
 export const rustCores: Record<string, RustCore> = {
   "dust-nds": {
     name: "Dust (Nintendo DS)",
-    features: ["nds"],
+    features: ["nds-gpu"],
     systems: ["nds"],
     extensions: [".nds", ".srl"],
     touch: true,

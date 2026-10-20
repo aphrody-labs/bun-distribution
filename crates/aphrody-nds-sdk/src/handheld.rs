@@ -58,6 +58,19 @@ pub struct Image {
     pub rgba: Arc<Vec<u8>>,
 }
 
+/// A host-device texture containing the DS screens stacked vertically, top screen first.
+/// It belongs to the device supplied at boot; no CPU readback or second GPU is introduced.
+#[cfg(feature = "nds-gpu")]
+#[derive(Clone)]
+pub struct GpuFrame {
+    pub texture: aphrody_dust_wgpu::wgpu::Texture,
+    pub view: aphrody_dust_wgpu::wgpu::TextureView,
+    pub width: u32,
+    pub height: u32,
+    /// 3D command submissions, independent from presentation refreshes.
+    pub submitted_frames: u64,
+}
+
 /// How a frame ended.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Step {
@@ -102,8 +115,19 @@ pub trait Handheld {
     fn run_frame(&mut self) -> Step;
     /// Frames completed since boot.
     fn frames(&self) -> u64;
-    /// Picture of `screen` as of the last frame.
+    /// CPU picture of `screen` as of the last frame. GPU hosts use `gpu_frame`
+    /// when `gpu_rendering` is true; this adapter does not perform GPU readback.
     fn image(&self, screen: ScreenId) -> Image;
+    /// GPU presentation replaces CPU image upload when available. Refresh once per emulated frame.
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_frame(&mut self) -> Option<GpuFrame> {
+        None
+    }
+    /// Whether presentation must use the host texture instead of the CPU image adapter.
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_rendering(&self) -> bool {
+        false
+    }
     /// 3DS right-eye picture while the title renders in stereo.
     fn image_right_eye(&self) -> Option<Image> {
         None

@@ -49,6 +49,10 @@ pub struct Screen {
     pub rgb: Vec<u8>,
 }
 
+/// A machine frame rendered on the host's existing WGPU device.
+#[cfg(feature = "nds-gpu")]
+pub use aphrody_nds_sdk::GpuFrame;
+
 /// Write every screen as `screen<i>.ppm` (binary P6) into `dir`.
 ///
 /// # Errors
@@ -75,6 +79,16 @@ pub trait Machine {
     fn name(&self) -> &'static str;
     fn run_frame(&mut self) -> Step;
     fn screens(&self) -> Vec<Screen>;
+    /// GPU-owned screens, when the core renders directly on the host device.
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_frame(&mut self) -> Option<GpuFrame> {
+        None
+    }
+    /// True when CPU screen images are not the authoritative display output.
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_rendering(&self) -> bool {
+        false
+    }
     fn set_input(&mut self, _input: Input) {}
     /// Why the machine stopped, when it stopped abnormally.
     fn diagnostic(&self) -> Option<String> {

@@ -31,6 +31,29 @@ fn rgb(machine: &dyn Handheld, id: ScreenId) -> Screen {
 }
 
 impl HandheldMachine {
+    /// Boots Dust on the renderer's device and queue, without creating a second GPU context.
+    #[cfg(feature = "nds-gpu")]
+    pub fn from_nds_gpu(
+        image: &[u8],
+        device: std::sync::Arc<aphrody_nds_sdk::wgpu::Device>,
+        queue: std::sync::Arc<aphrody_nds_sdk::wgpu::Queue>,
+        resolution_scale_shift: u8,
+    ) -> Result<Self, String> {
+        let inner = aphrody_nds_sdk::nds::Nds::from_rom_gpu(
+            image,
+            &Options::default(),
+            device,
+            queue,
+            resolution_scale_shift,
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(Self {
+            inner: Box::new(inner),
+            fault: None,
+            console: Vec::new(),
+        })
+    }
+
     /// Boots an image held in memory (browser hosts); the format is detected from the content.
     pub fn from_image(name: &str, image: &[u8]) -> Result<Self, String> {
         let inner =
@@ -68,6 +91,16 @@ impl HandheldMachine {
 }
 
 impl Machine for HandheldMachine {
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_frame(&mut self) -> Option<super::GpuFrame> {
+        self.inner.gpu_frame()
+    }
+
+    #[cfg(feature = "nds-gpu")]
+    fn gpu_rendering(&self) -> bool {
+        self.inner.gpu_rendering()
+    }
+
     fn name(&self) -> &'static str {
         match self.inner.platform() {
             Platform::Ds => "nintendo-ds",

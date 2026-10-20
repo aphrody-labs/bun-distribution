@@ -11,6 +11,7 @@
 //! ```
 
 use aphrody_ctr_emu::{Buttons, Emu, Frame, Input};
+use aphrody_gpu_backend::{create_instance, wgpu};
 use wasm_bindgen::prelude::*;
 
 use crate::{Layout, Renderer, Stereo};
@@ -39,7 +40,7 @@ impl Ctr3ds {
             .boot_bytes(&name, &image)
             .map_err(|e| JsValue::from_str(&e.0))?;
         let (width, height) = (canvas.width().max(1), canvas.height().max(1));
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        let instance = create_instance(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::BROWSER_WEBGPU,
             ..wgpu::InstanceDescriptor::new_without_display_handle()
         });

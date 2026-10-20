@@ -25,6 +25,7 @@ web = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:conso
 
 [dependencies]
 aphrody-ctr-emu = { path = "../aphrody-ctr-emu" }
+aphrody-gpu-backend = { workspace = true }
 wgpu = { workspace = true }
 winit = { workspace = true, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"], optional = true }
 cpal = { version = "0.16", optional = true }
