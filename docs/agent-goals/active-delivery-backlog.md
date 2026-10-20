@@ -17,6 +17,8 @@ newer requests extend this scope rather than silently replacing it.
 ## One product
 
 - [ ] Complete integration of App UI, Aphrody App, WebOS, Drive, Craft and Bun packages into one superapp/site.
+- [ ] Inventory every public Aphrody site and subdomain against its canonical source owner, build artifact and active production target; route each eligible host from the real owner source rather than stale or generic content.
+- [ ] Add one authenticated, receipt-producing automatic deployment flow for eligible sites, triggered by canonical source updates and deployable builds; keep independent owners and protected credentials intact. The VPS WebOS build succeeded at `a23cdb57e1`, but Wrangler could not publish because the VPS has no `CLOUDFLARE_API_TOKEN`; no Cloudflare deployment occurred.
 - [ ] Reconcile the latest SpaceDrive engine/client/mobile source against the active Bun OS owners; restore every compatible missing Drive capability through `packages/app-ui`, `@aphrody/m3-explorer`, `@aphrody/drive-client`, `crates/aphrody-drive` and `sd-daemon`, while retaining version-specific upstream licenses and an explicit disposition for each incompatible host path.
 - [ ] Wire `sd-daemon` into the actual cross-platform desktop release build and install flow; `tauri.drive.conf.json` exists, but target-suffixed sidecar staging and packaged startup are not yet proven. Integrate and qualify Drive Files workflows in the unified Android host as well.
 - [ ] Finish adopting the common M3 design system and UI UX Pro Max across all consumers.
