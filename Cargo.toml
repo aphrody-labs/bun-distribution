@@ -170,6 +170,7 @@ members = [
     "crates/artcraft-url_utils",
     "crates/artcraft-uuid_utils",
     "crates/artcraft-web_base64",
+    "crates/sqlite_tasks",
     "crates/artcraft_api_defs",
     "crates/artcraft_client",
     "crates/artcraft_client_identity",
