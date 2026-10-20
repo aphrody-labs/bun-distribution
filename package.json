@@ -4,6 +4,13 @@
   "private": true,
   "description": "Arch-based Linux distribution and product workspace built on the Aphrody Bun runtime",
   "license": "MIT",
+  "workspaceVersionExceptions": {
+    "vendor/rea": {
+      "name": "rea-agents",
+      "version": "6.5.0",
+      "revision": "987fcf07191c818ca0b62c2b75568c2355751ca6"
+    }
+  },
   "bin": {
     "bun-os": "src/cli.ts",
     "bunos": "./src/cli.ts"

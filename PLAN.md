@@ -48,15 +48,19 @@ logs do not define the current state; use Git history for prior batches.
    source batch is complete. Record actual command output and distinguish
    source validation from artifact, deployment and release qualification.
 
-## Known validation blocker
+## Pending source and qualification gates
 
-- The current local read-only workspace inspection via
-  `bun scripts/cargo.ts metadata --no-deps --format-version 1` aborts in the
-  shared workspace inspector because `vendor/rea/package.json` has a different
-  version from the root product package. Resolve whether that vendor is
-  intentionally exempt or the manifest is wrong before reporting workspace
-  inspection as passing. This failure is not evidence that Cargo metadata
-  itself failed.
+- The root manifest explicitly preserves the independent `vendor/rea` version.
+  The workspace inspector requires its declared name, version and Git pin;
+  all other product packages retain the shared version contract. This source
+  correction still requires VPS qualification before reporting Cargo inspection
+  as passing.
+- `vendor/recalbox` remains declared without a Git pin. Resolve its source
+  contract before initialization; do not invent a revision or report the full
+  source graph as available. Restored source pins still need initialization.
+- The container payload does not yet stage the distribution CLI and its complete
+  workspace dependency graph. Runtime and upstream source staging alone do not
+  establish a complete product image.
 
 ## Delivery rules
 

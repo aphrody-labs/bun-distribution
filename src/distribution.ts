@@ -14,18 +14,20 @@ import { acquireArchHeavyLock, validateArchPackageLock } from "../factory/arch/p
 
 export const packageRoot = resolve(import.meta.dir, "..");
 export function materialCheckout(config: Config = {}): string {
-  const checkout = resolve(config.checkouts?.material ?? join(packageRoot, "../material"));
+  const checkout = resolve(config.checkouts?.material ?? packageRoot);
   if (
     !existsSync(join(checkout, "crates/libm3/Cargo.toml")) ||
-    !existsSync(join(checkout, "crates/m3-tokens/Cargo.toml"))
+    !existsSync(join(checkout, "crates/aphrody-m3-tokens/Cargo.toml")) ||
+    !existsSync(join(checkout, "crates/aphrody-m3/Cargo.toml")) ||
+    !existsSync(join(checkout, "crates/libm3-wasm/Cargo.toml"))
   )
-    throw new Error("Configure checkouts.material with the canonical Material Rust workspace");
+    throw new Error("Material build inputs require the flat Bun OS Rust workspace");
   return checkout;
 }
 export function runtimeCheckout(config: Config = {}): string {
   const explicitCheckout = config.checkouts?.bun;
   const configured = explicitCheckout ?? Bun.env.APHRODY_BUN_CHECKOUT;
-  const workspaceCheckout = resolve(packageRoot, "../bun");
+  const workspaceCheckout = join(packageRoot, "toolchains/bun");
   if (configured) {
     const root = resolve(configured);
     if (!existsSync(join(root, "scripts/build.ts")))
@@ -110,8 +112,7 @@ async function inspectLockedCheckout(checkout: string, revision: string) {
 
 function cargoOwner(config: Config): string[] {
   if (config.cargoCommand?.length) return config.cargoCommand;
-  const checkout = runtimeCheckout(config);
-  const wrapper = join(checkout, "scripts/aphrody/build/rust/cargo-serial.ts");
+  const wrapper = join(packageRoot, "scripts/aphrody/build/rust/cargo-serial.ts");
   if (!existsSync(wrapper)) throw new Error("Configure the serialized native Cargo owner in cargoCommand");
   return [process.execPath, wrapper];
 }
@@ -233,7 +234,7 @@ export async function plan(profile: Profile, target: Target, config: Config = {}
     materialBuild: {
       cwd: materialCheckout(config),
       argv: [
-        "cargo",
+        ...cargoOwner(config),
         "build",
         "--manifest-path",
         join(materialCheckout(config), "Cargo.toml"),
@@ -351,8 +352,6 @@ export async function buildWasm(output: string, config: Config) {
         "wasm32-unknown-unknown",
         "--target-dir",
         targetDir,
-        "-j",
-        "2",
       ],
       material,
       1_800_000,
@@ -367,7 +366,7 @@ export async function buildWasm(output: string, config: Config) {
     const sourceFiles = [];
     for (const path of ["Cargo.toml", "Cargo.lock"])
       sourceFiles.push({ path, ...(await identity(join(material, path))) });
-    for await (const path of new Bun.Glob("crates/{m3-tokens,m3,libm3,libm3-wasm}/**/*.{rs,toml}").scan({
+    for await (const path of new Bun.Glob("crates/{aphrody-m3-tokens,aphrody-m3,libm3,libm3-wasm}/**/*.{rs,toml}").scan({
       cwd: material,
       onlyFiles: true,
     }))
@@ -379,12 +378,14 @@ export async function buildWasm(output: string, config: Config) {
     const receipt = {
       schemaVersion: 1,
       kind: "libm3-wasm",
-      sourceRepository: "aphrody-labs/material",
+      sourceRepository: "aphrody-labs/bun-distribution",
       sourceRevision: await command(["git", "rev-parse", "HEAD"], material),
       sourceDirty: Boolean(
         await command(["git", "status", "--porcelain", "--", "Cargo.toml", "Cargo.lock", "crates"], material),
       ),
       sourceFiles,
+      sourceCoverage:
+        "Material crate sources and workspace manifests; transitive local crates and embedded assets require separate qualification",
       target: "wasm32-unknown-unknown",
       compiler: await command(["rustc", "--version"]),
       ...digest,

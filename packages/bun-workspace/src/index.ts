@@ -930,6 +930,7 @@ export async function inspectCargoWorkspace(
   const product = (await Bun.file(join(root, "package.json")).json()) as {
     version?: string;
     workspaces?: string[];
+    workspaceVersionExceptions?: Record<string, { name: string; version: string; revision: string }>;
   };
   const manifest = Bun.TOML.parse(await Bun.file(join(root, "Cargo.toml")).text()) as {
     workspace?: { package?: { version?: string } };
@@ -938,6 +939,19 @@ export async function inspectCargoWorkspace(
     throw new Error("Bun and Cargo product versions differ.");
   const bunPackageNames: string[] = [];
   const bunManifests = new Set<string>();
+  const versionExceptions = product.workspaceVersionExceptions ?? {};
+  if (!object(versionExceptions)) throw new Error("Invalid workspace version exceptions.");
+  for (const [path, exception] of Object.entries(versionExceptions)) {
+    if (
+      !/^vendor\/[\w.-]+$/.test(path) || !object(exception) ||
+      typeof exception.name !== "string" || !exception.name ||
+      typeof exception.version !== "string" || !exception.version ||
+      typeof exception.revision !== "string" || !/^[a-f0-9]{40}$/.test(exception.revision)
+    ) throw new Error(`Invalid independent workspace version: ${path}`);
+    const pin = await command(["git", "ls-files", "--stage", "--", path], root);
+    if (pin.code !== 0 || pin.stdout.trim() !== `160000 ${exception.revision} 0\t${path}`)
+      throw new Error(`Independent workspace version requires its declared Git pin: ${path}`);
+  }
   for (const member of product.workspaces ?? []) {
     const pattern = member.replaceAll("\\", "/").replace(/\/$/, "");
     checkoutPath(root, `${pattern}/package.json`);
@@ -958,11 +972,19 @@ export async function inspectCargoWorkspace(
       name?: string;
       version?: string;
     };
-    if (!entry.name || entry.version !== product.version)
+    const directory = relative(root, dirname(path)).replaceAll("\\", "/");
+    const independent = versionExceptions[directory];
+    if (!entry.name || (independent
+      ? entry.name !== independent.name || entry.version !== independent.version
+      : entry.version !== product.version))
       throw new Error(`Bun workspace package version differs: ${relative(root, path)}`);
     if (bunPackageNames.includes(entry.name))
       throw new Error(`Duplicate Bun workspace package identity: ${entry.name}`);
     bunPackageNames.push(entry.name);
+  }
+  for (const path of Object.keys(versionExceptions)) {
+    if (!bunManifests.has(join(root, path, "package.json")))
+      throw new Error(`Independent workspace version is not a declared member: ${path}`);
   }
   const result = await serializedCargo(
     config,
