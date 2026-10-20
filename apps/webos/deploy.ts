@@ -66,7 +66,7 @@ async function run(command: string[]) {
 
 await run([process.execPath, join(workerRoot, "build-product.ts")]);
 await run([
-  "wrangler",
+  join(root, "node_modules/.bin/wrangler"),
   "deploy",
   "--config",
   join(workerRoot, "wrangler.jsonc"),
