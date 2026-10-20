@@ -242,8 +242,8 @@ const LEGACY_ORIGIN = "https://aphrody.app";
 const CRAFT_PACKAGE: Record<string, string> = {
   filmcraft: "craft-film",
   video: "craft-film",
-  artcraft: "apps",
-  generation: "apps",
+  artcraft: "creative",
+  generation: "creative",
   photocraft: "craft-photo",
   images: "craft-photo",
   vectorcraft: "craft-vector",
