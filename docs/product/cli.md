@@ -12,7 +12,7 @@ The root `bunos` command is the product entry point. It routes to the existing p
 
 `apps/webos` assembles the browser super-site and mounts the canonical `packages/app-ui` at `/workspace/`. The same App UI runs in the native `apps/aphrody-app` host. `superapp build` first builds App UI with this deployment prefix, then assembles WebOS using that artifact. `BUN_OS_APP_UI_DIST` selects the shared intermediate artifact directory (default `build/app-ui`). Browser App UI already adapts the WebOS-WASM RPC envelope through `webOsTransport`; native Aphrody Drive uses its native transport. These storage domains remain distinct.
 
-Run assembly and Craft compilation on the Linux VPS factory. WebOS-WASM must already be built by its native owner; missing inputs are reported before App UI compilation. `superapp craft [id ...]` uses the root serialized Cargo owner, the shared root target directory and at most four compiler jobs.
+Run assembly and Craft compilation on the Linux VPS factory. A custom intermediate directory must stay under the root `build/`. WebOS-WASM must already be built by its native owner; missing inputs are reported before App UI compilation. `superapp craft [id ...]` uses the root serialized Cargo owner, the shared root target directory and at most four compiler jobs.
 
 The root workspace directly depends on M3 Design, Bun Engine, Bun OS RE and REA so package installation resolves these owners with the product. The UI/UX guidance uses the canonical M3 token, theme and component packages for Bun OS and Aphrody Labs interfaces.
 

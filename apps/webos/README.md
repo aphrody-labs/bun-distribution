@@ -16,7 +16,7 @@ bun src/cli.ts superapp serve
 
 The product build compiles App UI with `--base /workspace/` into `build/app-ui`,
 then assembles this site using that artifact. Set `BUN_OS_APP_UI_DIST` to select
-a different intermediate directory. Build WebOS-WASM through its native owner
+a different intermediate directory under the root `build/`. Build WebOS-WASM through its native owner
 before assembly; the App UI build reports missing WASM inputs explicitly.
 Craft compilation uses the root serialized Cargo owner and four compiler jobs.
 
