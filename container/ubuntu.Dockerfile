@@ -25,7 +25,7 @@ RUN chmod 0755 /opt/bun-os/runtime/bun /opt/bun-os/container/bunos \
     && if [ -f /opt/bun-os/runtime/bun-cosmic ]; then \
          chmod 0755 /opt/bun-os/runtime/bun-cosmic \
          && ln -s /opt/bun-os/runtime/bun-cosmic /usr/local/bin/bun-cosmic; fi \
-    && bun /opt/bun-os/container/verify-payload.ts \
+    && bun /opt/bun-os/container/qualify-image.ts \
     && getconf GNU_LIBC_VERSION > /opt/bun-os/runtime/libc-version.txt \
     && ldd /usr/local/bin/bun > /opt/bun-os/runtime/shared-libraries.txt \
     && ! grep -q 'not found' /opt/bun-os/runtime/shared-libraries.txt
