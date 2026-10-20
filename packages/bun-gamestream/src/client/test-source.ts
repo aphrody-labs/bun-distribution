@@ -1,5 +1,5 @@
 /**
- * Local test source (`?source=test`, or automatically when the server has no sender): an
+ * Explicit local diagnostic source (`?source=test` only): an
  * animated 1280x720 canvas captured as a MediaStreamTrack, so the WebGPU/FSR presentation and
  * input capture can be qualified in a browser without the streaming host.
  */

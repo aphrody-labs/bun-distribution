@@ -13,6 +13,7 @@ declare class MediaStreamTrackProcessor {
 }
 
 interface ClientState {
+  phase: "connecting" | "playing" | "unavailable" | "diagnostic";
   path: "pending" | "webgpu-trackprocessor" | "webgpu-videoframecallback" | "video-fallback";
   source: "webrtc" | "test";
   adapter: string;
@@ -32,6 +33,7 @@ interface ClientState {
 
 const query = new URLSearchParams(location.search);
 const state: ClientState = {
+  phase: "connecting",
   path: "pending",
   source: "webrtc",
   adapter: "",
@@ -50,6 +52,7 @@ const state: ClientState = {
 };
 (globalThis as unknown as { gamestream: ClientState }).gamestream = state;
 let lastFrame: VideoFrame | null = null;
+let halted = false;
 
 /** Console qualification hook: average GPU presentation cost per frame for both upscalers. */
 (
@@ -137,6 +140,7 @@ async function pumpTrackProcessor(track: MediaStreamTrack, gpu: WebGpuPresenter)
   for (;;) {
     const { value: frame, done } = await reader.read();
     if (done || !frame) return;
+    if (halted) { frame.close(); await reader.cancel(); return; }
     gpu.draw(frame);
     presented(frame.displayWidth, frame.displayHeight);
     lastFrame?.close();
@@ -146,6 +150,7 @@ async function pumpTrackProcessor(track: MediaStreamTrack, gpu: WebGpuPresenter)
 
 function pumpVideoFrames(gpu: WebGpuPresenter): void {
   const onFrame: VideoFrameRequestCallback = (_now, meta) => {
+    if (halted) return;
     gpu.draw(video);
     presented(meta.width, meta.height);
     video.requestVideoFrameCallback(onFrame);
@@ -154,6 +159,10 @@ function pumpVideoFrames(gpu: WebGpuPresenter): void {
 }
 
 function present(track: MediaStreamTrack, stream: MediaStream): void {
+  if (halted) { track.stop(); return; }
+  state.phase = state.source === "test" ? "diagnostic" : "playing";
+  status.textContent = state.source === "test" ? "Diagnostic test pattern · no game session" : "Live remote session";
+  track.addEventListener("ended", () => { if (state.source !== "test") unavailable("The remote video stream has stopped."); }, { once: true });
   if (!presenter) {
     state.path = "video-fallback";
     video.hidden = false;
@@ -164,7 +173,7 @@ function present(track: MediaStreamTrack, stream: MediaStream): void {
   }
   if (typeof MediaStreamTrackProcessor === "function" && query.get("source") !== "video") {
     state.path = "webgpu-trackprocessor";
-    void pumpTrackProcessor(track, presenter).catch(error => fail(`frame pump: ${String(error)}`));
+    void pumpTrackProcessor(track, presenter).catch(error => unavailable(`Remote frame presentation stopped: ${String(error)}`));
   } else {
     state.path = "webgpu-videoframecallback";
     video.srcObject = stream;
@@ -185,11 +194,32 @@ const pc = new RTCPeerConnection({
 let channel: RTCDataChannel | null = null;
 let counters: InputCounters | null = null;
 
+function unavailable(message: string): void {
+  if (state.source === "test" || state.phase === "unavailable") return;
+  halted = true;
+  state.phase = "unavailable";
+  fail(message);
+  channel?.close();
+  pc.close();
+  for (const element of [video, audio]) {
+    const stream = element.srcObject;
+    if (stream instanceof MediaStream) stream.getTracks().forEach(track => track.stop());
+    element.pause();
+    element.srcObject = null;
+  }
+  lastFrame?.close();
+  lastFrame = null;
+  canvas.hidden = true;
+  video.hidden = true;
+}
+status.textContent = "Connecting to the remote streaming host…";
+
 const sendInput = (message: InputMessage) => {
   if (channel?.readyState === "open") channel.send(JSON.stringify(message));
 };
 
 pc.ontrack = event => {
+  if (halted) { event.track.stop(); return; }
   const receiver = event.receiver as RTCRtpReceiver & {
     jitterBufferTarget?: number;
     playoutDelayHint?: number;
@@ -216,7 +246,7 @@ pc.ondatachannel = event => {
   };
 };
 pc.onicecandidate = event => {
-  if (event.candidate?.candidate) {
+  if (event.candidate?.candidate && socket.readyState === WebSocket.OPEN) {
     socket.send(
       JSON.stringify({
         type: "ice",
@@ -228,11 +258,14 @@ pc.onicecandidate = event => {
 };
 pc.oniceconnectionstatechange = () => {
   state.ice = pc.iceConnectionState;
+  if (state.source !== "test" && ["failed", "disconnected"].includes(state.ice)) unavailable("The remote stream connection is unavailable. Reload to reconnect.");
 };
 
 /** Local qualification without a streaming host: same presentation and input paths. */
 function startTestSource(): void {
+  if (query.get("source") !== "test") throw new Error("Diagnostic test source requires explicit ?source=test");
   state.source = "test";
+  state.phase = "diagnostic";
   state.sender = {
     width: 1280,
     height: 720,
@@ -242,7 +275,8 @@ function startTestSource(): void {
     encoderThreads: 0,
   };
   layout();
-  status.textContent = "";
+  status.textContent = "Diagnostic test pattern · no game session";
+  document.title = "Gamestream diagnostics · synthetic test pattern";
   const test = createTestSource();
   present(test.track, test.stream);
   counters = captureInput(stage, pictureElement, message => {
@@ -255,15 +289,15 @@ function startTestSource(): void {
 }
 
 socket.onmessage = async event => {
+  try {
   const message = JSON.parse(String(event.data)) as ServerMessage;
   if (state.source === "test") return;
   switch (message.type) {
     case "hello":
       state.sender = message.sender;
       layout();
-      if (!message.sender || query.get("source") === "test") {
-        if (!message.sender) console.warn("[gamestream] no sender on the server; using the local test source");
-        startTestSource();
+      if (!message.sender) {
+        unavailable("No streaming sender is available. Start the game on the streaming host, then reload to connect.");
         return;
       }
       socket.send(JSON.stringify({ type: "start" }));
@@ -282,7 +316,7 @@ socket.onmessage = async event => {
       });
       break;
     case "state":
-      status.textContent = "";
+      if (["failed", "closed", "disconnected"].includes(message.ice)) unavailable("The streaming host has stopped this session.");
       break;
     case "stats": {
       const { type: _type, ...stats } = message;
@@ -290,13 +324,16 @@ socket.onmessage = async event => {
       break;
     }
     case "error":
-      fail(message.message);
+      unavailable(message.message);
       break;
   }
+  } catch (error) { unavailable(`Streaming negotiation failed: ${String(error)}`); }
 };
 socket.onclose = event => {
-  if (state.source !== "test") fail(`signalling closed (${event.code} ${event.reason})`);
+  if (state.source !== "test" && state.phase !== "unavailable") unavailable(`Streaming signalling closed (${event.code} ${event.reason}). Reload to reconnect.`);
 };
+socket.onerror = () => { if (state.source !== "test") unavailable("The streaming signalling service is unavailable."); };
+if (query.get("source") === "test") startTestSource();
 stage.addEventListener("click", () => void audio.play().catch(() => undefined));
 
 // ---------------------------------------------------------------------------------------------
@@ -320,7 +357,7 @@ setInterval(async () => {
   state.presentFps = state.framesPresented - lastPresented;
   lastPresented = state.framesPresented;
   state.inputSent = counters?.sent ?? 0;
-  const report = await pc.getStats();
+  const report = await pc.getStats().catch(() => new Map());
   report.forEach(entry => {
     if (entry.type === "inbound-rtp" && entry.kind === "video") {
       const current = {
@@ -356,7 +393,7 @@ setInterval(async () => {
   state.receiver.estimatedLatencyMs = Math.round(frameMs / 2 + encode + network + jitter + decode + 8.3);
   hud.hidden = !showHud;
   hud.textContent = [
-    `path      ${state.source} ${state.path} / ${state.upscale}  ${state.frameSize} -> ${state.canvasSize}`,
+    `path      ${state.phase} ${state.source} ${state.path} / ${state.upscale}  ${state.frameSize} -> ${state.canvasSize}`,
     `gpu       ${state.adapter || "-"}`,
     `server    ${state.server?.fps ?? "-"} fps  ${state.server?.kbps ?? "-"} kbps  encode ${state.server?.encodeMs ?? "-"} ms`,
     `client    ${state.receiver.fps ?? "-"} fps recv  ${state.presentFps} fps presented  decode ${state.receiver.decodeMs ?? "-"} ms (${state.receiver.decoder ?? "-"})`,
