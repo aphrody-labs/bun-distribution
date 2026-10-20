@@ -3553,7 +3553,7 @@
       "name": "@aphrody/m3-design",
       "version": "1.4.4",
       "bin": {
-        "m3-design": "intelligence/ui-ux-pro-max/scripts/search.ts",
+        "m3-design": "src/cli.ts",
       },
       "dependencies": {
         "@aphrody/bun": "^3.3.0",

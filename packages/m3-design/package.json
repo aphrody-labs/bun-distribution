@@ -22,7 +22,7 @@
   "type": "module",
   "main": "src/index.ts",
   "bin": {
-    "m3-design": "intelligence/ui-ux-pro-max/scripts/search.ts"
+    "m3-design": "src/cli.ts"
   },
   "publishConfig": {
     "access": "public"

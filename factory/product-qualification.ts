@@ -45,6 +45,26 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   if (!["mcp", "agent-plugin", "wasm", "design", "engine", "re", "rea"]
     .every(name => commands.some(entry => entry.group === "" && entry.name === name)))
     throw new Error("Product CLI is missing a required native or first-party capability route");
+  const designArgs = [
+    "--no-env-file", join(workspace, "packages/m3-design/src/cli.ts"), "compile", "--prompt",
+    "Responsive M3 monitoring dashboard for a desktop operator",
+  ];
+  const designResult = await runProcess([resolve(executable), ...designArgs], workspace, {
+    timeoutMs: 60_000, maxOutputBytes: 16 * 1024 * 1024,
+    env: { ...Bun.env, BUN_BE_BUN: undefined },
+  });
+  if (designResult.code !== 0)
+    throw new Error(`Product M3 design qualification failed: ${designResult.stderr.slice(-3000)}`);
+  const scoreMatch = designResult.stdout.match(/Scores: (\{[^\r\n]+\})/);
+  const scores = scoreMatch ? JSON.parse(scoreMatch[1]!) as Record<string, unknown> : undefined;
+  const designFiles = ["src/theme.css", "src/tokens.json", "src/index.tsx"];
+  if (!scores || !["philosophy", "hierarchy", "detail", "functionalParity", "innovation"]
+      .every(axis => typeof scores[axis] === "number" && Number.isFinite(scores[axis]) && scores[axis] >= 0 && scores[axis] <= 100) ||
+    !designFiles.every(path => designResult.stdout.includes(`- ${path} (`)))
+    throw new Error("Product M3 design compiler omitted generated files or valid self-critique scores");
+  evidence.push({ args: designArgs, exitCode: designResult.code,
+    stdoutSHA256: new Bun.CryptoHasher("sha256").update(designResult.stdout).digest("hex"),
+    generatedFiles: designFiles, critiqueScores: scores });
   const wasmArgs = ["--no-env-file", "-e", [
     'import { loadCliWasm } from "./packages/cli-wasm/src/index.ts";',
     'const wasm = await Bun.file("./packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm").bytes();',

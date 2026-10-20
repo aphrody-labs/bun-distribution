@@ -94,9 +94,9 @@ define(
     group: "",
     name: "design",
     summary: "Search UI/UX guidance and generate M3 design systems",
-    usage: "<query> [--stack m3] [--design-system] [options]",
-    target: "packages/m3-design/intelligence/ui-ux-pro-max/scripts/search.ts",
-    run: (args) => spawn([process.execPath, abs("packages/m3-design/intelligence/ui-ux-pro-max/scripts/search.ts"), ...args]),
+    usage: "<query> [--stack m3] [options] | compile --prompt <brief> [--color <hex>] [--design-system <id>]",
+    target: "packages/m3-design/src/cli.ts",
+    run: (args) => spawn([process.execPath, abs("packages/m3-design/src/cli.ts"), ...args]),
   },
   {
     group: "",

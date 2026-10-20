@@ -4,7 +4,7 @@ The root `bunos` command is the product entry point. It routes to the existing p
 
 ## First-party commands
 
-- `bunos design <query> --stack m3` searches UI/UX Pro Max against the M3 product stack. Add `--design-system` to generate a design-system artifact. The full searchable catalog and references ship inside `@aphrody/m3-design`.
+- `bunos design <query> --stack m3` searches UI/UX Pro Max against the M3 product stack. Add `--design-system` to generate a design-system artifact. `bunos design compile --prompt <brief>` invokes the canonical M3 compiler, HCT theme generator and self-critique. The full searchable catalog and references ship inside `@aphrody/m3-design`.
 - `bunos engine <command>` runs Bun Engine operations such as `probe`, `build`, `run`, `compile`, `web` and `frontend`.
 - `bunos re <arguments>` runs the Bun OS RE facade; `bunos rea <arguments>` runs the canonical REA CLI. Use `bunos rea mcp` to start REA's standalone MCP server.
 - `bunos mcp` starts the native Bun MCP server. It exposes UI/UX Pro Max plus all eleven Replica workflow skills as resources and prompts, alongside Bun's native tools and skills.
