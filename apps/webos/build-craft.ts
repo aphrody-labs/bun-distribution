@@ -199,7 +199,13 @@ if (buildCode !== 0)
 const targetDir = join(root, "target");
 const bindgen = await tool("wasm-bindgen", "wasm-bindgen");
 const wasmOpt = await tool("binaryen", "wasm-opt");
-rmSync(out, { recursive: true, force: true });
+if (wanted.length) {
+  // A package-qualified build replaces only those packages; the other studios stay installable.
+  for (const app of apps)
+    rmSync(join(out, app.id), { recursive: true, force: true });
+} else {
+  rmSync(out, { recursive: true, force: true });
+}
 const index: {
   id: string;
   name: string;
@@ -207,6 +213,20 @@ const index: {
   description: string;
   version: string;
 }[] = [];
+if (wanted.length) {
+  const catalog = Bun.file(join(out, "index.json"));
+  if (await catalog.exists()) {
+    try {
+      const previous = (await catalog.json()) as typeof index;
+      const selected = new Set(apps.map((app) => app.id));
+      index.push(...previous.filter((entry) => !selected.has(entry.id)));
+    } catch {
+      throw new Error(
+        "Existing Craft catalog is invalid; refusing to replace it with a partial catalog.",
+      );
+    }
+  }
+}
 for (const app of apps) {
   const bin = app.crate.replaceAll("-", "_");
   const release = join(targetDir, "wasm32-unknown-unknown/web-craft");
@@ -287,4 +307,9 @@ for (const app of apps) {
   });
   console.log(`${app.id}: ${(Bun.file(bound).size / 1048576).toFixed(1)} MB`);
 }
+index.sort(
+  (a, b) =>
+    ALL.findIndex((app) => app.id === a.id) -
+    ALL.findIndex((app) => app.id === b.id),
+);
 await Bun.write(join(out, "index.json"), JSON.stringify(index));

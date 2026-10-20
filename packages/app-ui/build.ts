@@ -93,9 +93,6 @@ if (import.meta.main) {
   await stageWebOsNotices(dirname(webosWasm));
   // SSR uses the same asset resolver as the browser bundle, with no CSS compiler in this process.
   await import("../identity/scripts/sprite.ts");
-  Bun.plugin(m3Plugin({ root: config.root, configDir: config.dir, tailwind: false, sass: false }));
-  const { ProductSearchHome } =
-    await import("./src/routes/product/ProductSearchHome");
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
@@ -119,11 +116,15 @@ if (import.meta.main) {
     join(result.outdir, "wasm", WEBOS_WASM_NAME),
     Bun.file(webosWasm),
   );
-  await Bun.write(join(result.outdir, "wasm", "LICENSE-APACHE"), Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")));
+  await Bun.write(
+    join(result.outdir, "wasm", "LICENSE-APACHE"),
+    Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")),
+  );
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   // Preserve the bundler's rewritten script, stylesheet and asset references.
-  let shell = (await Bun.file(join(result.outdir, TAURI_LAYOUT.html)).text())
-    .replace('<base href="/"', `<base href="${base}"`);
+  let shell = (
+    await Bun.file(join(result.outdir, TAURI_LAYOUT.html)).text()
+  ).replace('<base href="/"', `<base href="${base}"`);
   await Bun.write(join(result.outdir, "index.html"), shell);
   if (values.out) {
     // Web artifacts keep stable file names: version the entry URLs in the no-cache shell so a
@@ -171,6 +172,18 @@ if (import.meta.main) {
       `public fonts: removed ${trimmed.files} duplicate WOFF2 files, ${trimmed.bytes} B; retained declared local glyph fallback`,
     );
   }
+  // Register the process-wide CSS resolver only after Bun.build has finished. Keeping a global
+  // M3 resolver active while buildM3 installs its composed Tailwind/M3 plugins recurses on app.css.
+  Bun.plugin(
+    m3Plugin({
+      root: config.root,
+      configDir: config.dir,
+      tailwind: false,
+      sass: false,
+    }),
+  );
+  const { ProductSearchHome } =
+    await import("./src/routes/product/ProductSearchHome");
   const home = renderToStaticMarkup(
     createElement(
       MemoryRouter,

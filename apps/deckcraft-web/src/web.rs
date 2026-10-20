@@ -34,6 +34,10 @@ pub fn start() {
         {
             create.instance_descriptor.backends = eframe::wgpu::Backends::GL;
         }
+        let host = (query_param("host").as_deref() == Some("parent"))
+            .then(crate::host::Bridge::new)
+            .flatten();
+        let startup_bridge = host.clone();
         let result = eframe::WebRunner::new()
             .start(
                 canvas,
@@ -47,10 +51,17 @@ pub fn start() {
                         );
                     }
                     let inbox: Inbox = Inbox::default();
-                    let mut app =
-                        SlideApp::new(Session::new(), services(inbox.clone(), cc.egui_ctx.clone()));
                     let q = query();
-                    if !q.contains("blank") {
+                    let mut app = SlideApp::new(
+                        Session::new(),
+                        services(inbox.clone(), cc.egui_ctx.clone(), host.clone()),
+                    );
+                    if host.is_some() {
+                        if let Some(bridge) = &host {
+                            bridge.listen(inbox.clone(), cc.egui_ctx.clone());
+                            bridge.post_ready();
+                        }
+                    } else if !q.contains("blank") {
                         if let Err(e) = deckcraft_engine::sample::open_sample(&mut app.session) {
                             log::error!("sample deck: {e}");
                         }
@@ -64,6 +75,9 @@ pub fn start() {
                 }),
             )
             .await;
+        if let (Err(error), Some(bridge)) = (&result, &startup_bridge) {
+            bridge.post_failed(&format!("{error:?}"));
+        }
         if let Some(el) = document.get_element_by_id(LOADING_ID) {
             match result {
                 Ok(()) => el.remove(),
@@ -77,6 +91,14 @@ fn query() -> String {
     web_sys::window()
         .and_then(|w| w.location().search().ok())
         .unwrap_or_default()
+}
+
+fn query_param(key: &str) -> Option<String> {
+    query()
+        .trim_start_matches('?')
+        .split('&')
+        .filter_map(|part| part.split_once('='))
+        .find_map(|(name, value)| (name == key).then(|| value.to_string()))
 }
 
 /// Wraps the app to read dropped files asynchronously (browsers can't read them synchronously)
@@ -124,8 +146,10 @@ impl eframe::App for WebShell {
 
 /// Web services: no file paths, so `pick_open`/`pick_save`/`read` stay `None` and the UI falls
 /// back to `open_async` (browser picker → inbox) and `download`.
-fn services(inbox: Inbox, ctx: egui::Context) -> Services {
+fn services(inbox: Inbox, ctx: egui::Context, bridge: Option<crate::host::Bridge>) -> Services {
     let open_inbox = inbox.clone();
+    let write_bridge = bridge.clone();
+    let download_bridge = bridge;
     Services {
         open_async: Some(Box::new(move |purpose: &str| {
             let inbox = open_inbox.clone();
@@ -148,9 +172,20 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
                 ctx.request_repaint();
             });
         })),
-        write: Some(Box::new(|name: &str, bytes: &[u8]| download(name, bytes))),
-        download: Some(Box::new(|name: &str, bytes: &[u8]| {
-            if let Err(e) = download(name, bytes) {
+        write: Some(Box::new(move |name: &str, bytes: &[u8]| {
+            if let Some(bridge) = &write_bridge {
+                bridge.save(name, bytes)
+            } else {
+                download(name, bytes)
+            }
+        })),
+        download: Some(Box::new(move |name: &str, bytes: &[u8]| {
+            let result = if let Some(bridge) = &download_bridge {
+                bridge.save(name, bytes)
+            } else {
+                download(name, bytes)
+            };
+            if let Err(e) = result {
                 log::error!("download of {name} failed: {e}");
             }
         })),

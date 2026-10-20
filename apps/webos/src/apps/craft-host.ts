@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Same-origin host for Craft web apps that already implement their parent file bridge.
-export type CraftHostId = "cad" | "grid" | "pdf";
+export type CraftHostId = "cad" | "deck" | "grid" | "pdf";
 
 const PROTOCOL: Record<CraftHostId, string> = {
   cad: "cadcraft",
+  deck: "deckcraft",
   grid: "gridcraft",
   pdf: "pdfcraft",
 };
@@ -13,6 +14,14 @@ const MAX_NAME_CHARS = 240;
 
 export function craftHostForPath(path: string): CraftHostId | undefined {
   const ext = path.split("/").pop()?.split(".").pop()?.toLowerCase();
+  if (
+    ext === "deckcraft" ||
+    ext === "slidecraft" ||
+    ext === "pptx" ||
+    ext === "potx" ||
+    ext === "ppsx"
+  )
+    return "deck";
   if (ext === "pdf") return "pdf";
   if (ext === "xlsx") return "grid";
   if (ext === "dxf" || ext === "dwg") return "cad";

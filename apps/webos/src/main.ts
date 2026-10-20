@@ -49,6 +49,7 @@ const wm = new WindowManager(desk);
 const craftHosts = new Map<string, CraftHost>();
 const CRAFT_HOSTS: Record<string, CraftHostId> = {
   "craft-cad": "cad",
+  "craft-deck": "deck",
   "craft-grid": "grid",
   "craft-pdf": "pdf",
 };
