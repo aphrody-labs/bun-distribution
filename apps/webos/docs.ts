@@ -8,10 +8,17 @@ import { dirname, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../..");
 
-/** The Bun fork checkout: APHRODY_BUN_CHECKOUT, else the checkout that owns the running executable. */
+/** Prefer the declared source owner; packaged runtime executables need not live in a checkout. */
 function bunCheckout(): string | undefined {
   const fromEnv = process.env.APHRODY_BUN_CHECKOUT;
-  if (fromEnv && existsSync(join(fromEnv, "docs/docs.json"))) return fromEnv;
+  if (fromEnv) {
+    const checkout = resolve(root, fromEnv);
+    if (!existsSync(join(checkout, "docs/docs.json")))
+      throw new Error("APHRODY_BUN_CHECKOUT does not contain the Bun documentation catalog.");
+    return checkout;
+  }
+  const pinned = join(root, "toolchains/bun");
+  if (existsSync(join(pinned, "docs/docs.json"))) return pinned;
   let dir = dirname(process.execPath);
   for (let i = 0; i < 6; i++, dir = dirname(dir)) if (existsSync(join(dir, "docs/docs.json"))) return dir;
   return undefined;
@@ -101,7 +108,7 @@ export async function buildDocs(dist: string): Promise<Record<string, number>> {
       id: "bunos",
       label: "Bun OS",
       root: join(root, "docs"),
-      include: ["*.md", "architecture/**/*.md", "agent-goals/**/*.md", "webos/**/*.md", "aphrody/plans/**/*.md", "aphrody/architecture/**/*.md", "aphrody/products/**/*.md"],
+      include: ["*.md", "architecture/**/*.md", "agent-goals/**/*.md", "product/**/*.md", "webos/**/*.md", "aphrody/plans/**/*.md", "aphrody/architecture/**/*.md", "aphrody/products/**/*.md"],
       exclude: /(^|\/)(node_modules|vendor)\//,
     },
   ];
