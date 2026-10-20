@@ -13,6 +13,7 @@
         "@aphrody/m3-design": "workspace:*",
         "@aphrody/replica-skills": "workspace:*",
         "@aphrody/tauri": "catalog:",
+        "@aphrody/webos": "workspace:*",
         "@bun-os/re": "workspace:*",
         "rea-agents": "workspace:*",
       },
@@ -224,6 +225,14 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+      },
+    },
+    "apps/webos": {
+      "name": "@aphrody/webos",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/webos-wasm": "workspace:*",
       },
     },
     "packages/a2a": {
@@ -5984,6 +5993,8 @@
     "@aphrody/web-inspector-bun": ["@aphrody/web-inspector-bun@1.4.3-aphrody.1", "", {}, "sha512-xrtagKt6CSP5Y2cS1C7lj1utcSw15RjUnmF7iE2gnjMBBIv4U+vB0feH9EaZfoj/++SuHBavYu+FW0ZdsyKrWA=="],
 
     "@aphrody/web-to-tauri": ["@aphrody/web-to-tauri@workspace:packages/web-to-tauri"],
+
+    "@aphrody/webos": ["@aphrody/webos@workspace:apps/webos"],
 
     "@aphrody/webos-wasm": ["@aphrody/webos-wasm@workspace:packages/webos-wasm"],
 

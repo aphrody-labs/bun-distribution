@@ -24,6 +24,7 @@
     "apps/m3-next-tauri-example",
     "apps/m3-showcase",
     "apps/play",
+    "apps/webos",
     "packages/a2a",
     "packages/ag-ui",
     "packages/android-pipeline",
@@ -646,7 +647,8 @@
     "@aphrody/tauri": "catalog:",
     "@bun-os/re": "workspace:*",
     "rea-agents": "workspace:*",
-    "@aphrody/replica-skills": "workspace:*"
+    "@aphrody/replica-skills": "workspace:*",
+    "@aphrody/webos": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/bun-types": "catalog:",

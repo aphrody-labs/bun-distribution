@@ -45,6 +45,9 @@ export async function qualifyProductPayload(workspace: string, receiptPath: stri
   if (!["mcp", "agent-plugin", "wasm", "design", "engine", "re", "rea"]
     .every(name => commands.some(entry => entry.group === "" && entry.name === name)))
     throw new Error("Product CLI is missing a required native or first-party capability route");
+  if (!["build", "craft", "serve", "deploy"].every(name =>
+    commands.some(entry => entry.group === "superapp" && entry.name === name)))
+    throw new Error("Product CLI is missing a super-site build, WebAssembly app, serve or deploy route");
   const designArgs = [
     "--no-env-file", join(workspace, "packages/m3-design/src/cli.ts"), "compile", "--prompt",
     "Responsive M3 monitoring dashboard for a desktop operator",

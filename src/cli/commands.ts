@@ -636,6 +636,36 @@ define(
       () => spawn(["wrangler", "deploy"], { cwd: abs("apps/webos") }),
     ),
   },
+  {
+    group: "superapp",
+    name: "build",
+    summary: "Build the unified Aphrody super-site and workspace catalog",
+    ...script("apps/webos/build.ts"),
+  },
+  {
+    group: "superapp",
+    name: "craft",
+    summary: "Compile Craft apps for the super-site WebAssembly app store",
+    usage: "[id ...]",
+    ...script("apps/webos/build-craft.ts"),
+  },
+  {
+    group: "superapp",
+    name: "serve",
+    summary: "Serve the unified Aphrody super-site locally",
+    usage: "[port]",
+    ...script("apps/webos/serve.ts"),
+  },
+  {
+    group: "superapp",
+    name: "deploy",
+    summary: "Build and deploy the unified Aphrody super-site",
+    target: "apps/webos/wrangler.jsonc",
+    ...sequence(
+      () => spawn([process.execPath, abs("apps/webos/build.ts")]),
+      () => spawn(["wrangler", "deploy"], { cwd: abs("apps/webos") }),
+    ),
+  },
 
   // iecode ------------------------------------------------------------------------------------
   {
