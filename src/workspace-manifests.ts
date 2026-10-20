@@ -172,13 +172,84 @@ export async function inspectWorkspaceManifests(root: string) {
       disposition: "retained-pending-consumer-and-provenance-review",
     };
   });
+  const componentInventory = [
+    ...manifests.map(manifest => {
+      const rust = manifest.type === "cargo";
+      const directory = String(manifest.directory);
+      const sourceOwner = String(manifest.sourceOwner);
+      const workspaceOwner = typeof manifest.workspaceOwner === "string" ? manifest.workspaceOwner : null;
+      const owner = workspaceOwner ?? sourceOwner;
+      const directApp = directory.startsWith("apps/") && directory.split("/").length === 2;
+      const parsed = parsedManifests.get(String(manifest.path))!;
+      const targets = rust
+        ? null
+        : {
+          os: (parsed as PackageManifest & { os?: string[] }).os ?? null,
+          cpu: (parsed as PackageManifest & { cpu?: string[] }).cpu ?? null,
+        };
+      return {
+        component: String(manifest.name ?? directory),
+        path: directory,
+        type: rust ? (directApp ? "cargo-app" : "crate") : directApp ? "bun-app" : "package",
+        sourceRepository: manifest.repository ?? (sourceOwner === "." ? "aphrody-labs/bun-distribution" : null),
+        submodule: sourceOwner === "." ? null : sourceOwner,
+        revision: manifest.pinnedRevision,
+        upstream: manifest.repository,
+        cargoOwner: rust ? owner : null,
+        bunOwner: rust ? null : owner,
+        buildOwner: owner,
+        releaseOwner: owner,
+        targets,
+        qualificationState: manifest.qualification,
+        migrationState: manifest.workspaceMembership,
+        ownerEvidence: manifest.workspaceOwnerEvidence,
+      };
+    }),
+    ...submodules.map(submodule => ({
+      component: submodule.name,
+      path: submodule.path,
+      type: "submodule",
+      sourceRepository: submodule.repository,
+      submodule: submodule.path,
+      revision: submodule.revision,
+      upstream: submodule.repository,
+      cargoOwner: null,
+      bunOwner: null,
+      buildOwner: submodule.path,
+      releaseOwner: submodule.path,
+      targets: null,
+      qualificationState: submodule.initialized ? "source-available-unqualified" : "unavailable-unqualified",
+      migrationState: "pinned-source-boundary",
+      ownerEvidence: "gitmodules-and-index-gitlink",
+    })),
+    ...vendorInventory.map(vendor => {
+      const submodule = submodules.find(item => item.path === vendor.path);
+      return {
+        component: String(vendor.path).split("/").at(-1),
+        path: vendor.path,
+        type: "vendor",
+        sourceRepository: submodule?.repository ?? null,
+        submodule: submodule?.path ?? null,
+        revision: submodule?.revision ?? null,
+        upstream: submodule?.repository ?? null,
+        cargoOwner: null,
+        bunOwner: null,
+        buildOwner: submodule?.path ?? "unresolved",
+        releaseOwner: submodule?.path ?? "unresolved",
+        targets: null,
+        qualificationState: "consumer-review-only",
+        migrationState: String(vendor.disposition),
+        ownerEvidence: submodule ? "gitmodules-and-index-gitlink" : "root-index-path",
+      };
+    }),
+  ];
   return {
     schemaVersion: 1,
     coverage: "Current tracked manifests in root and initialized submodules, plus nonignored untracked root manifests. Uninitialized sources are reported without inventing their manifests.",
     counts: { manifests: manifests.length, crates: manifests.filter(item => item.type === "cargo" && item.name).length, packages: manifests.filter(item => item.type === "bun-package").length, rootCargoMembers: manifests.filter(item => item.type === "cargo" && item.rootWorkspaceMember).length, rootBunMembers: manifests.filter(item => item.type === "bun-package" && item.rootWorkspaceMember).length, fixtureManifests: manifests.filter(item => item.sourceRole === "fixture").length, ownershipConflicts: ownershipConflicts.length, submodules: submodules.length, unavailableSubmodules: submodules.filter(item => !item.initialized).length, unpinnedSubmodules: submodules.filter(item => item.revision === null).length, vendorRoots: vendorRoots.length, missingMembers: missingMembers.length, parseFailures: failures.length },
     ownershipCoverage: "Owners follow explicit package.workspace or nearest ancestor workspace within the Git source boundary. Cargo implicit path-dependency membership is unverified without Cargo metadata. Source roles are path-based labels; all parsed manifests remain listed.",
     ownershipConflicts,
-    manifests, submodules, missingMembers, failures,
+    componentInventory, manifests, submodules, missingMembers, failures,
     unpinnedSubmodules: submodules.filter(item => item.revision === null).map(item => ({ path: item.path, repository: item.repository, state: "declaration-without-index-gitlink", disposition: "review-active-source-contracts-before-removal" })),
     undeclaredGitlinks: pins.filter(pin => !submodules.some(item => item.path === pin.path)),
     vendorConsumerCoverage: "Literal forward-slash paths in tracked root text files, excluding vendor, toolchains, docs and lockfiles. References are candidates, not proven runtime consumers; absent references do not prove a vendor removable.",

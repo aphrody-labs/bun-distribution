@@ -26,9 +26,13 @@ logs do not define the current state; use Git history for prior batches.
 
 ## Remaining work
 
-1. Generate and maintain one machine-readable ownership inventory for apps,
-   packages, crates, submodules and external source boundaries. Derive manifest
-   parity from that inventory instead of copying member counts into prose.
+1. Maintain the machine-readable `componentInventory` returned by
+   `inspectWorkspaceManifests` for app/package/crate manifests, pinned
+   submodules and vendor roots. It records source/repository pins, workspace
+   owners, targets when declared, and explicit qualification/migration states.
+   Its present scope follows root-declared submodules and initialized manifest
+   trees; nested submodule declarations and uninitialized source manifests still
+   need coverage. Keep counts derived from this inventory rather than prose.
    Regenerate `docs/aphrody/ecosystem/` only when both owner checkouts are
    available and complete; the available Aphrody checkout is missing, so the
    generator's zero-entry result is not a valid replacement for its current
