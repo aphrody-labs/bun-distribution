@@ -69,17 +69,17 @@ logs do not define the current state; use Git history for prior batches.
 
 ## Pending source and qualification gates
 
-- The pacman-to-APT compatibility converter currently parses Arch-family
-  repository `.db`/`.files` metadata without verifying detached signatures,
-  and validates downloaded package hashes only against that unauthenticated
-  metadata. `PacmanRepository.signingKey` is catalog data and is not consumed.
-  Before this compatibility path is qualified, verify repository metadata and
-  package archives against separate Arch and CachyOS trust roots, record signer
-  evidence, and reject missing, invalid, expired or unexpected signatures. The
-  CachyOS short key ID is not itself a trust anchor; the pinned key fingerprint
-  and its keyring provenance must be reviewed. Do not weaken trust settings or
-  use signature checks from the official-Arch-only resolver as evidence for
-  CachyOS.
+- The pacman-to-APT compatibility converter now verifies detached `.db`/`.files`
+  metadata before parsing and verifies package archive signatures before
+  conversion, including cached and local archives. Arch signatures require
+  full/ultimate trust in the Arch GnuPG home; CachyOS requires the configured
+  complete primary fingerprint. The index records metadata signature evidence,
+  and conversion reports include archive signers. Qualification remains
+  pending: provision and review each trust home, qualify sync and conversion on
+  the VPS for Arch and CachyOS, and bind selected metadata to immutable
+  repository snapshots before install/release use. Missing, invalid, expired
+  or unexpected signatures must continue to fail closed. Do not weaken trust
+  settings or use official-Arch-only resolver results as CachyOS evidence.
 - The root manifest explicitly preserves the independent `vendor/rea` version.
   The workspace inspector requires its declared name, version and Git pin;
   all other product packages retain the shared version contract. This source

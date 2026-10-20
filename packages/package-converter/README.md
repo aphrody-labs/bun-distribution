@@ -161,8 +161,18 @@ repository), updates only that source, simulates `apt-get install --no-remove`
 and refuses plans that remove packages or upgrade glibc, Mesa, systemd or udev,
 then installs. Privileged steps use `sudo -n` when not run as root.
 
-Limits: pacman database signatures (`.sig`) are not verified (package SHA-256
-from the database and `.MTREE` digests are); xz-compressed packages need
-recompression; dependency version constraints are kept only between converted
-packages; Arch and Ubuntu library ABIs with the same soname are assumed
-compatible; kernel modules are shipped without `depmod`.
+Pacman repository metadata is verified before parsing, and package signatures
+are checked before conversion, including cached and local archives. On Linux,
+Arch uses `/etc/pacman.d/gnupg` by default; set `PACMAN2APT_GNUPGHOME` (or
+`GNUPGHOME`) to select a provisioned GnuPG home. Arch requires GnuPG full or
+ultimate trust. Non-Arch repositories require a configured complete primary
+fingerprint; CachyOS is pinned to its catalog fingerprint. Keys are never
+retrieved automatically. Sync and conversion fail closed when signatures are
+missing, invalid, expired or from an unexpected key. The SQLite index and each
+conversion report retain signer evidence. Repository snapshot immutability and
+VPS qualification remain separate gates.
+
+Other limits: xz-compressed packages need recompression; dependency version
+constraints are kept only between converted packages; Arch and Ubuntu library
+ABIs with the same soname are assumed compatible; kernel modules are shipped
+without `depmod`.

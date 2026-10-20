@@ -20,9 +20,11 @@ visible and unresolved. The existing ALPM parser can read tracked metadata
 without evaluating PKGBUILD shell code.
 
 The 183 custom recipes do not represent all binary packages in CachyOS's
-optimized core/extra repositories. The common Pacman owner must separately
-authenticate and pin complete repository databases, signatures, package hashes
-and the selected CPU tier before an install or release.
+optimized core/extra repositories. The common Pacman owner now authenticates
+downloaded repository metadata and package archives against the complete
+CachyOS primary fingerprint in `integration.json`. Immutable repository
+snapshot selection, the provenance of the provisioned keyring and VPS sync and
+conversion qualification remain required before install or release.
 
 The [kernel recipe](https://github.com/CachyOS/linux-cachyos/blob/4a8d2ec8509d0da7d5fd5293f42251ea99d5ea3c/linux-cachyos/PKGBUILD)
 selects the signed `cachyos-7.2.11-1` release, dereferenced to
