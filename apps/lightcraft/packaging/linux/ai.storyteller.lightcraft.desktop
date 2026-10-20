@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=LightCraft
+Name=Aphrody / Bun · Photo Processing
 GenericName=Photo Library and Raw Developer
 Comment=Organise photos and develop raw files, non-destructively
 Exec=lightcraft %F

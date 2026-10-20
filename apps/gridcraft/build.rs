@@ -14,8 +14,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/gridcraft/app-icon/gridcraft.ico")
-        .set("ProductName", "GridCraft")
-        .set("FileDescription", "GridCraft spreadsheet")
+        .set("ProductName", "Aphrody / Bun · Tables")
+        .set("FileDescription", "Aphrody / Bun spreadsheet workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

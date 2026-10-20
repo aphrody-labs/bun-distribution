@@ -13,8 +13,8 @@ fn main() -> Result<(), String> {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/vectorcraft/app-icon/vectorcraft.ico")
-        .set("ProductName", "VectorCraft")
-        .set("FileDescription", "VectorCraft vector illustration editor")
+        .set("ProductName", "Aphrody / Bun · Vectors")
+        .set("FileDescription", "Aphrody / Bun vector design workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

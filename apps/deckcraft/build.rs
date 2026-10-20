@@ -14,8 +14,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/deckcraft/app-icon/deckcraft.ico")
-        .set("ProductName", "DeckCraft")
-        .set("FileDescription", "DeckCraft presentations")
+        .set("ProductName", "Aphrody / Bun · Slides")
+        .set("FileDescription", "Aphrody / Bun presentation workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

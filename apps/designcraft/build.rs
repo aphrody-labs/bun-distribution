@@ -14,8 +14,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/designcraft/app-icon/designcraft.ico")
-        .set("ProductName", "DesignCraft")
-        .set("FileDescription", "DesignCraft page layout")
+        .set("ProductName", "Aphrody / Bun · Layout")
+        .set("FileDescription", "Aphrody / Bun layout workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

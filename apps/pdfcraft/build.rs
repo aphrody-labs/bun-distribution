@@ -22,8 +22,8 @@ fn main() {
     res.set_icon("../../assets/pdfcraft/app-icon/pdfcraft.ico")
         .set_icon_with_id("../../assets/pdfcraft/app-icon/pdfcraft-document.ico", "2")
         .set_manifest(windows_manifest::WINDOWS_MANIFEST)
-        .set("ProductName", "PdfCraft")
-        .set("FileDescription", "PdfCraft PDF workbench")
+        .set("ProductName", "Aphrody / Bun · PDF")
+        .set("FileDescription", "Aphrody / Bun PDF workspace")
         .set(
             "LegalCopyright",
             "Copyright (c) the PdfCraft contributors. MIT OR Apache-2.0.",

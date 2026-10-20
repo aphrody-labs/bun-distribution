@@ -14,8 +14,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/soundcraft/app-icon/soundcraft.ico")
-        .set("ProductName", "SoundCraft")
-        .set("FileDescription", "SoundCraft digital audio workstation")
+        .set("ProductName", "Aphrody / Bun · Audio")
+        .set("FileDescription", "Aphrody / Bun audio workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

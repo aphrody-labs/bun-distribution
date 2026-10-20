@@ -20,8 +20,8 @@ mod windows {
     pub fn embed_resources() {
         let mut res = winresource::WindowsResource::new();
         res.set_icon("../../assets/filmcraft/app-icon/filmcraft.ico")
-            .set("ProductName", "FilmCraft")
-            .set("FileDescription", "FilmCraft video editor")
+            .set("ProductName", "Aphrody / Bun · Video")
+            .set("FileDescription", "Aphrody / Bun video workspace")
             .set(
                 "LegalCopyright",
                 "Copyright (c) the FilmCraft contributors. MIT OR Apache-2.0.",

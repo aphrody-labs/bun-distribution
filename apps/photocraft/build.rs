@@ -13,8 +13,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/photocraft/app-icon/photocraft.ico")
-        .set("ProductName", "PhotoCraft")
-        .set("FileDescription", "PhotoCraft image editor")
+        .set("ProductName", "Aphrody / Bun · Images")
+        .set("FileDescription", "Aphrody / Bun image workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

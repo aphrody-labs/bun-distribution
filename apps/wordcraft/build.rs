@@ -14,8 +14,8 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/wordcraft/app-icon/wordcraft.ico")
-        .set("ProductName", "WordCraft")
-        .set("FileDescription", "WordCraft word processor")
+        .set("ProductName", "Aphrody / Bun · Documents")
+        .set("FileDescription", "Aphrody / Bun document workspace")
         .set("CompanyName", "Learning Machines LLC")
         .set(
             "LegalCopyright",

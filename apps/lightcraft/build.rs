@@ -14,10 +14,10 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/lightcraft/app-icon/lightcraft.ico")
-        .set("ProductName", "LightCraft")
+        .set("ProductName", "Aphrody / Bun · Photo Processing")
         .set(
             "FileDescription",
-            "LightCraft photo library and raw developer",
+            "Aphrody / Bun photo processing workspace",
         )
         .set(
             "LegalCopyright",
