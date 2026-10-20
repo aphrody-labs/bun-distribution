@@ -3,7 +3,7 @@
 Play's public browser gaming entry point belongs to the same WebOS build,
 M3 application store, qualified Bun Engine packages and offline package manager.
 The Worker redirects `play.aphrody.app/` to
-`https://aphrody.com/?app=apps&category=games`. Other Play paths retain their
+`https://aphrody.com/workspace/games`. Other Play paths retain their
 pathname and query on the canonical host. The checked-in Worker route is
 deployment intent; installing it and replacing the existing VPS NGINX route
 require Infra deployment and public HTTPS qualification.
@@ -13,7 +13,9 @@ the qualified product registry. Existing `/emulation/<core>/<file>` URLs read
 the corresponding package's payload. They do not expose the raw build output
 or unpublished core directories. Browser packages and their bundled open-source
 fixtures are public and do not require a session or a private network address.
-Commercial or user-owned ROM uploads remain separate from redistribution.
+Local ROM uploads remain separate from publication. Owner-authorized proprietary
+games use the separate rights catalog, pinned preparation and GPU qualification
+gates before shared R2 publication; they are never described as open-source ROMs.
 
 The native Gamescope owner remains
 `infra/config/host/apps/vps/gaming/stream`. Run its `webos-gamescope.sh --check`

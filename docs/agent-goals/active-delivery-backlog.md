@@ -20,6 +20,7 @@ newer requests extend this scope rather than silently replacing it.
 - [ ] Finish adopting the common M3 design system and UI UX Pro Max across all consumers.
 - [ ] Finish serving, documenting and installing Bun Engine, Bun RE, REA and Replica with the product.
 - [ ] Complete CLI, MCP, plugin, WASM, FFI and Docker coverage; retain an explicit unsupported-capability list until qualified.
+- [ ] Converge Bun Video's newly absorbed FilmCraft 0.9 owner and the distribution's retained FilmCraft 0.7.2/PhotoCraft 0.8.2 consumers without copying or deleting source owners prematurely; coordinate with the active Bun Video session.
 - [ ] Complete import/API repairs, decoder fixes and performance qualification across affected owners.
 - [ ] Verify requested services on their intended hosts; WireGuard was started, other stopped services have not been blanket-enabled.
 
@@ -50,3 +51,7 @@ is being checked separately. Source commits are checkpoints, not release proofs.
 All builds and qualification run on the VPS with existing serialized factory
 owners and at most four compiler jobs per lane. Preserve concurrent source work,
 protected stores and existing licenses throughout.
+
+Cross-session coordination was explicitly authorized by the owner on 2026-10-20.
+Coordinate Bun Video, Shenron recovery and Craft/M3 changes before touching their
+owned paths or factory lanes. Preserve their source checkpoints during sync.
