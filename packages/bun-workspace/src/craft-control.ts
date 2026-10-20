@@ -376,6 +376,22 @@ export async function callCraftControl(
             }
             const newline = responseText.indexOf("\n");
             if (newline < 0) return;
+            // The first complete frame is the end of this exchange. Flush the
+            // streaming decoder before accepting it so a dangling UTF-8 lead
+            // byte after the newline cannot be silently discarded on close.
+            try {
+              decoder.decode();
+            } catch (cause) {
+              finish(
+                new CraftControlError(
+                  "INVALID_RESPONSE",
+                  "Craft control returned malformed UTF-8.",
+                  undefined,
+                  { cause },
+                ),
+              );
+              return;
+            }
             const line = responseText.slice(0, newline).replace(/\r$/, "");
             const trailing = responseText.slice(newline + 1).trim();
             if (trailing) {
