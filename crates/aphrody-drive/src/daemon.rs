@@ -94,8 +94,8 @@ pub fn find_daemon_binary() -> Result<PathBuf, String> {
         .ok_or_else(|| {
             format!(
                 "Daemon binary not found: set ${DAEMON_ENV}, or place one of {names:?} next to {} \
-                 or on PATH (build it with `cargo build --manifest-path apps/aphrody-drive/core/Cargo.toml \
-                 -p sd-core --bin sd-daemon`)",
+                 or on PATH (build it with `bun scripts/aphrody/build/rust/cargo-serial.ts build --manifest-path apps/aphrody-drive/core/Cargo.toml \
+                 -p sd-core --bin sd-daemon --locked`)",
                 exe_dir
                     .as_deref()
                     .map_or_else(|| "the executable".into(), |dir| dir.display().to_string()),
