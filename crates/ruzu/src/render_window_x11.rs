@@ -405,7 +405,7 @@ pub fn attach_render_window(
     let x11_display = display.downcast_ref::<gdk4_x11::X11Display>()?;
     // SAFETY: the display is owned by GDK and outlives the child window we
     // create under it; we only use the pointer while `window` is alive.
-    let xdisplay = unsafe { x11_display.xdisplay() };
+    let xdisplay = unsafe { x11_display.xdisplay() }.cast::<xlib::Display>();
     if xdisplay.is_null() || parent_xid == 0 {
         return None;
     }

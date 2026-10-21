@@ -271,7 +271,7 @@ pub(crate) fn popup_safe_combo(combo: &gtk::ComboBoxText) -> gtk::Widget {
         };
         let mut labels = Vec::new();
         if let Some(model) = combo.model() {
-            if let Some(iter) = model.iter_first() {
+            if let Some(mut iter) = model.iter_first() {
                 loop {
                     labels.push(model.get::<String>(&iter, 0));
                     if !model.iter_next(&iter) {
