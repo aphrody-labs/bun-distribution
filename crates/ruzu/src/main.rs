@@ -285,7 +285,7 @@ fn main() -> glib::ExitCode {
             set_main_window(Rc::clone(&window));
         }
         window.apply_launch_options(game, fullscreen);
-        0
+        glib::ExitCode::SUCCESS
     });
 
     // `startup` fires exactly once, before the first `activate`/`open`. This is

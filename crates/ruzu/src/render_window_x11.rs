@@ -527,7 +527,7 @@ pub fn reparent_render_window(destination: &gtk::Window, display: *mut c_void, c
     let Some(owner) = owner.downcast_ref::<gdk4_x11::X11Display>() else {
         return false;
     };
-    let native_display = unsafe { owner.xdisplay() };
+    let native_display = unsafe { owner.xdisplay() }.cast::<xlib::Display>();
     if native_display.is_null() || native_display.cast::<c_void>() != display || child == 0 {
         return false;
     }
