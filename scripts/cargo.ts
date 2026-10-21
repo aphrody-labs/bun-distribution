@@ -4,7 +4,13 @@ import { inspectCargoWorkspace, loadConfig, runNative } from "@aphrody/bun-works
 const [action = "metadata", ...args] = Bun.argv.slice(2);
 const config = await loadConfig();
 if (action === "metadata") {
-  console.log(JSON.stringify(await inspectCargoWorkspace(config, { runtimePolicy: "development" }), null, 2));
+  console.log(
+    JSON.stringify(
+      await inspectCargoWorkspace(config, { runtimePolicy: "development", cargoContract: "members" }),
+      null,
+      2,
+    ),
+  );
 } else if (action === "fmt") {
   process.exitCode = await runNative(config, ["cargo", "fmt", "--all", "--", "--check"], {
     timeoutMs: 60_000,
