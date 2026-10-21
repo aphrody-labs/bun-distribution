@@ -41,10 +41,12 @@ logs do not define the current state; use Git history for prior batches.
    owners, targets when declared, and explicit qualification/migration states.
    The inventory now follows nested `.gitmodules` declarations through
    initialized owners and records the root commit. Uninitialized owners still
-   have no inspectable nested manifests. The current source inventory lists
-   3,639 manifests (2,052 Cargo and 1,567 Bun), 326 recursive submodule
-   declarations (166 at the root; 104 unavailable at the root and 170 across
-   all visible levels), and 140 vendor roots. It reports 12 ownership
+   have no inspectable nested manifests. The current source inventory (root
+   commit 8bd8125be50c777e55c372e7de9f679cdc667d60, generated 2026-10-21 by
+   `bun run workspace:source`) lists 3,645 manifests (2,054 Cargo and 1,570
+   packages; 682 root Cargo members and 533 root Bun members), 328 recursive
+   submodule declarations (168 at the root; 104 unavailable at the root and
+   170 across all visible levels; 1 unpinned), and 142 vendor roots. It reports 12 ownership
    conflicts and six manifest parse failures, all intentionally invalid Bun
    runtime fixtures. One tracked `vendor/rea` manifest is absent from the
    initialized sparse `unblob` checkout and is recorded separately as an
