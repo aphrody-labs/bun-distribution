@@ -20,7 +20,7 @@ index 3fd5c8a..d231e95 100644
      }
  
 diff --git a/harness/vkwebgpu-plugin.mjs b/harness/vkwebgpu-plugin.mjs
-index 1701816..f78dad2 100644
+index 1701816..d7e829b 100644
 --- a/harness/vkwebgpu-plugin.mjs
 +++ b/harness/vkwebgpu-plugin.mjs
 @@ -23,6 +23,7 @@
@@ -39,11 +39,15 @@ index 1701816..f78dad2 100644
  
      // ── Resource maps (guest handle bigint → host descriptor) ─────────────────
      #renderPasses    = new Map(); // handle → { attachments[] }
-@@ -358,6 +360,13 @@ export class VkWebGPUPlugin {
+@@ -358,6 +360,17 @@ export class VkWebGPUPlugin {
      // ── Host-side handle allocator (only used for pre-resource-creation bootstrap) ─
      #nextHandle      = 0x0001_0000n;
  
-+    constructor({ shaderTranslator } = {}) {
++    #capturePresentedFrames = false;
++    #presentedReadback = null;
++
++    constructor({ shaderTranslator, capturePresentedFrames = false } = {}) {
++        this.#capturePresentedFrames = capturePresentedFrames === true;
 +        if (typeof shaderTranslator !== 'function') {
 +            throw new TypeError('VkWebGPUPlugin requires an injected Naga SPIR-V shaderTranslator');
 +        }
@@ -53,7 +57,16 @@ index 1701816..f78dad2 100644
      // =========================================================================
      async initialize(adapter, device, canvas) {
          this.#adapter      = adapter;
-@@ -409,10 +418,10 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+@@ -365,7 +378,7 @@ export class VkWebGPUPlugin {
+         this.#canvas       = canvas;
+         this.#ctx          = canvas.getContext('webgpu');
+         this.#canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+-        this.#ctx.configure({ device, format: this.#canvasFormat, alphaMode: 'opaque' });
++        this.#ctx.configure({ device, format: this.#canvasFormat, alphaMode: 'opaque', usage: TU_RENDER_ATTACH | TU_COPY_DST | (this.#capturePresentedFrames ? TU_COPY_SRC : 0) });
+ 
+         // Push-constant resources: a 256-byte uniform buffer bound at group=0, binding=0.
+         // Pipelines with push constants prepend this BGL before user descriptor-set BGLs.
+@@ -409,17 +422,42 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
          console.log('[VkWebGPUPlugin] initialized —', adapter.info?.description ?? '(no description)');
      }
  
@@ -66,7 +79,39 @@ index 1701816..f78dad2 100644
          } catch (err) {
              console.error(`[VkWebGPUPlugin] cmd=0x${cmd.toString(16).padStart(4,'0')} threw:`, err);
              return { result: VK_ERROR_DEVICE_LOST, data: new Uint8Array(0) };
-@@ -431,7 +440,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+         }
+     }
+ 
++    async readbackPresentedFrame() {
++        const frame = this.#presentedReadback;
++        if (!frame) throw new Error('No captured presented frame');
++        this.#presentedReadback = null;
++        try {
++            await frame.buffer.mapAsync(1);
++            const source = new Uint8Array(frame.buffer.getMappedRange());
++            const data = new Uint8Array(frame.width * frame.height * 4);
++            for (let y = 0; y < frame.height; y++) {
++                data.set(source.subarray(y * frame.bytesPerRow, y * frame.bytesPerRow + frame.width * 4), y * frame.width * 4);
++            }
++            if (frame.format.startsWith('bgra')) {
++                for (let i = 0; i < data.length; i += 4) {
++                    const red = data[i]; data[i] = data[i + 2]; data[i + 2] = red;
++                }
++            }
++            return { width: frame.width, height: frame.height, data };
++        } finally {
++            frame.buffer.unmap();
++            frame.buffer.destroy();
++        }
++    }
++
+     destroy() {
++        this.#presentedReadback?.buffer.destroy();
++        this.#presentedReadback = null;
+         for (const bi of this.#buffers.values())  bi.gpuBuffer?.destroy();
+         for (const ii of this.#images.values())   if (!ii.isSwapchain) ii.texture?.destroy();
+         for (const t  of this.#swapImages)        t.destroy();
+@@ -431,7 +469,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
      // Top-level command dispatch
      // =========================================================================
  
@@ -75,7 +120,7 @@ index 1701816..f78dad2 100644
          switch (cmd) {
              // Instance
              case 0x0001: return this.#createInstance();
-@@ -472,7 +481,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+@@ -472,7 +510,7 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
              case 0x0048: return this.#createSampler(v);
              case 0x0049: return this.#destroySampler(v);
              // Pipelines
@@ -84,7 +129,24 @@ index 1701816..f78dad2 100644
              case 0x0051: return this.#destroyShaderModule(v);
              case 0x0052: return this.#createPipelineLayout(v, payload);
              case 0x0053: return ok();
-@@ -885,27 +894,31 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+@@ -711,6 +749,16 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+             }
+         }
+ 
++        // Optional qualification capture copies the exact presented texture before
++        // the browser expires it. Normal operation allocates no readback buffer.
++        if (this.#capturePresentedFrames) {
++            if (!['rgba8unorm', 'bgra8unorm'].includes(dst.format)) throw new Error('Unsupported presented readback format');
++            this.#presentedReadback?.buffer.destroy();
++            const bytesPerRow = Math.ceil(dst.width * 4 / 256) * 256;
++            const buffer = this.#device.createBuffer({ size: bytesPerRow * dst.height, usage: 1 | BU_COPY_DST, label: 'vk-present-readback' });
++            enc.copyTextureToBuffer({ texture: dst }, { buffer, bytesPerRow, rowsPerImage: dst.height }, [dst.width, dst.height, 1]);
++            this.#presentedReadback = { buffer, bytesPerRow, width: dst.width, height: dst.height, format: dst.format };
++        }
+         this.#device.queue.submit([enc.finish()]);
+         return ok();
+     }
+@@ -885,27 +933,31 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
      }
  
      // =========================================================================
@@ -130,7 +192,44 @@ index 1701816..f78dad2 100644
          return ok();
      }
  
-@@ -2188,8 +2201,8 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+@@ -1404,7 +1456,35 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+         if (!variant) {
+             const base = this.#pipelineCreateInfos.get(this.#boundPipeH);
+             if (base) {
+-                const desc = structuredClone(base);
++                // GPUDevice, GPUShaderModule, and GPUPipelineLayout objects are
++                // browser host objects and cannot be structured-cloned. Copy the
++                // plain descriptor containers while preserving those references.
++                const desc = {
++                    label: base.label,
++                    layout: base.layout,
++                    vertex: {
++                        ...base.vertex,
++                        module: base.vertex.module,
++                        buffers: base.vertex.buffers.map(buffer => ({
++                            ...buffer,
++                            attributes: buffer.attributes.map(attribute => ({ ...attribute })),
++                        })),
++                    },
++                    primitive: { ...base.primitive },
++                    depthStencil: base.depthStencil ? { ...base.depthStencil } : undefined,
++                    fragment: base.fragment ? {
++                        ...base.fragment,
++                        module: base.fragment.module,
++                        targets: base.fragment.targets.map(target => target ? ({
++                            ...target,
++                            blend: target.blend ? {
++                                color: { ...target.blend.color },
++                                alpha: { ...target.blend.alpha },
++                            } : undefined,
++                        }) : target),
++                    } : undefined,
++                    multisample: base.multisample ? { ...base.multisample } : undefined,
++                };
+                 const s = this.#dynState;
+                 desc.primitive.topology = VK_TOPOLOGY[s.topology] ?? desc.primitive.topology;
+                 desc.primitive.cullMode = VK_CULL_MODE[s.cullMode] ?? desc.primitive.cullMode;
+@@ -2188,8 +2268,8 @@ struct VSOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
  // Plugin loader
  // =============================================================================
  
@@ -141,7 +240,7 @@ index 1701816..f78dad2 100644
  }
  
  // =============================================================================
-@@ -2197,6 +2210,10 @@ export async function loadPlugin() {
+@@ -2197,6 +2277,10 @@ export async function loadPlugin() {
  // =============================================================================
  
  function ok()               { return { result: VK_SUCCESS, data: new Uint8Array(0) }; }

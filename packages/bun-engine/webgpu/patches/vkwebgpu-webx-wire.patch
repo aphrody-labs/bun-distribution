@@ -1,0 +1,959 @@
+diff --git a/vkwebgpu/src/framebuffer.rs b/vkwebgpu/src/framebuffer.rs
+index 303b077..4e9bbaf 100644
+--- a/vkwebgpu/src/framebuffer.rs
++++ b/vkwebgpu/src/framebuffer.rs
+@@ -28,6 +28,13 @@ pub unsafe fn create_framebuffer(
+ ) -> Result<()> {
+     let create_info = &*p_create_info;
+ 
++    #[cfg(feature = "webx")]
++    if create_info.attachment_count != 1 || create_info.layers != 1 {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline framebuffers require one attachment and one layer".into(),
++        ));
++    }
++
+     let attachments = if create_info.attachment_count > 0 {
+         std::slice::from_raw_parts(
+             create_info.p_attachments,
+@@ -62,18 +69,22 @@ pub unsafe fn create_framebuffer(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        // payload: handle(u64) + rpHandle(u64) + width(u32) + height(u32) + viewCount(u32) + imageViews[](u64)
+-        let mut payload = Vec::with_capacity(28 + ipc_views.len() * 8);
++        // WebX host schema: device + handle + renderPass + viewCount + views + width/height/layers.
++        let mut payload = Vec::with_capacity(36 + ipc_views.len() * 8);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
+         payload.extend_from_slice(&framebuffer_handle.to_le_bytes());
+         payload.extend_from_slice(&create_info.render_pass.as_raw().to_le_bytes());
+-        payload.extend_from_slice(&create_info.width.to_le_bytes());
+-        payload.extend_from_slice(&create_info.height.to_le_bytes());
+         payload.extend_from_slice(&(ipc_views.len() as u32).to_le_bytes());
+         for &view in &ipc_views {
+             payload.extend_from_slice(&view.as_raw().to_le_bytes());
+         }
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0059, &payload) {
+-            log::warn!("[webx] create_framebuffer IPC failed: {:?}", e);
++        payload.extend_from_slice(&create_info.width.to_le_bytes());
++        payload.extend_from_slice(&create_info.height.to_le_bytes());
++        payload.extend_from_slice(&create_info.layers.to_le_bytes());
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0059, &payload) {
++            FRAMEBUFFER_ALLOCATOR.remove(framebuffer_handle);
++            *p_framebuffer = vk::Framebuffer::null();
++            return Err(error);
+         }
+     }
+ 
+diff --git a/vkwebgpu/src/image.rs b/vkwebgpu/src/image.rs
+index 23f7f7e..44989ae 100644
+--- a/vkwebgpu/src/image.rs
++++ b/vkwebgpu/src/image.rs
+@@ -86,17 +86,26 @@ pub unsafe fn create_image(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        // payload: handle(u64) + width(u32) + height(u32) + depth(u32) + vkFmt(u32) + vkUsage(u32) + mipLevels(u32)
+-        let mut payload = Vec::with_capacity(32);
++        // WebX host schema: device + handle + imageType + format + extent + mip/layer/sample/tiling/usage/layout/flags.
++        let mut payload = Vec::with_capacity(64);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
+         payload.extend_from_slice(&image_handle.to_le_bytes());
++        payload.extend_from_slice(&(create_info.image_type.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.format.as_raw() as u32).to_le_bytes());
+         payload.extend_from_slice(&create_info.extent.width.to_le_bytes());
+         payload.extend_from_slice(&create_info.extent.height.to_le_bytes());
+         payload.extend_from_slice(&create_info.extent.depth.to_le_bytes());
+-        payload.extend_from_slice(&(create_info.format.as_raw() as u32).to_le_bytes());
+-        payload.extend_from_slice(&create_info.usage.as_raw().to_le_bytes());
+         payload.extend_from_slice(&create_info.mip_levels.to_le_bytes());
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0043, &payload) {
+-            log::warn!("[webx] create_image IPC failed: {:?}", e);
++        payload.extend_from_slice(&create_info.array_layers.to_le_bytes());
++        payload.extend_from_slice(&create_info.samples.as_raw().to_le_bytes());
++        payload.extend_from_slice(&(create_info.tiling.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&create_info.usage.as_raw().to_le_bytes());
++        payload.extend_from_slice(&(create_info.initial_layout.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&create_info.flags.as_raw().to_le_bytes());
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0043, &payload) {
++            IMAGE_ALLOCATOR.remove(image_handle);
++            *p_image = vk::Image::null();
++            return Err(error);
+         }
+     }
+ 
+@@ -215,11 +224,23 @@ pub unsafe fn create_image_view(
+ ) -> Result<()> {
+     let create_info = &*p_create_info;
+ 
++    #[cfg(feature = "webx")]
++    if create_info.view_type != vk::ImageViewType::TYPE_2D
++        || create_info.subresource_range.aspect_mask != vk::ImageAspectFlags::COLOR
++        || (create_info.format != vk::Format::B8G8R8A8_UNORM
++            && create_info.format != vk::Format::R8G8B8A8_UNORM)
++    {
++        return Err(VkError::FeatureNotSupported(
++            "WebX baseline image views support only 2D RGBA/BGRA8 color subresources".to_string(),
++        ));
++    }
++
+     debug!(
+         "Creating image view: image={:?}, type={:?}, format={:?}",
+         create_info.image, create_info.view_type, create_info.format
+     );
+ 
++    #[cfg(not(feature = "webx"))]
+     let image_data = IMAGE_ALLOCATOR
+         .get(create_info.image.as_raw())
+         .ok_or_else(|| VkError::InvalidHandle("Invalid image".to_string()))?;
+@@ -297,18 +318,26 @@ pub unsafe fn create_image_view(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        // payload: handle(u64) + imageHandle(u64) + vkFmt(u32) + aspectMask(u32) + baseMip(u32) + levelCount(u32) + baseLayer(u32) + layerCount(u32)
+-        let mut payload = Vec::with_capacity(40);
++        // WebX host schema: device + view + image + viewType + format + components + subresource range.
++        let mut payload = Vec::with_capacity(64);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
+         payload.extend_from_slice(&view_handle.to_le_bytes());
+         payload.extend_from_slice(&create_info.image.as_raw().to_le_bytes());
++        payload.extend_from_slice(&(create_info.view_type.as_raw() as u32).to_le_bytes());
+         payload.extend_from_slice(&(create_info.format.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.components.r.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.components.g.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.components.b.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.components.a.as_raw() as u32).to_le_bytes());
+         payload.extend_from_slice(&create_info.subresource_range.aspect_mask.as_raw().to_le_bytes());
+         payload.extend_from_slice(&create_info.subresource_range.base_mip_level.to_le_bytes());
+         payload.extend_from_slice(&create_info.subresource_range.level_count.to_le_bytes());
+         payload.extend_from_slice(&create_info.subresource_range.base_array_layer.to_le_bytes());
+         payload.extend_from_slice(&create_info.subresource_range.layer_count.to_le_bytes());
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0046, &payload) {
+-            log::warn!("[webx] create_image_view IPC failed: {:?}", e);
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0046, &payload) {
++            IMAGE_VIEW_ALLOCATOR.remove(view_handle);
++            *p_view = vk::ImageView::null();
++            return Err(error);
+         }
+     }
+ 
+diff --git a/vkwebgpu/src/pipeline.rs b/vkwebgpu/src/pipeline.rs
+index d627fee..6a180ba 100644
+--- a/vkwebgpu/src/pipeline.rs
++++ b/vkwebgpu/src/pipeline.rs
+@@ -52,15 +52,29 @@ pub unsafe fn create_shader_module(
+     _p_allocator: *const vk::AllocationCallbacks,
+     p_shader_module: *mut vk::ShaderModule,
+ ) -> Result<()> {
++    *p_shader_module = vk::ShaderModule::null();
+     let create_info = &*p_create_info;
+ 
++    #[cfg(feature = "webx")]
++    if create_info.code_size > u32::MAX as usize {
++        return Err(VkError::FeatureNotSupported(
++            "WebX shader wire payload is limited to u32::MAX bytes".to_string(),
++        ));
++    }
++    #[cfg(feature = "webx")]
++    if create_info.code_size < 20
++        || create_info.code_size % 4 != 0
++        || create_info.p_code.is_null()
++    {
++        return Err(VkError::FeatureNotSupported(
++            "WebX shader wire payload requires a complete, non-null, word-aligned SPIR-V module".to_string(),
++        ));
++    }
++
+     let spirv = std::slice::from_raw_parts(create_info.p_code, create_info.code_size / 4).to_vec();
+ 
+     debug!("Creating shader module with {} SPIR-V words", spirv.len());
+ 
+-    #[cfg(feature = "webx")]
+-    let spirv_snap = spirv.clone();
+-
+     let module_data = VkShaderModuleData { device, spirv };
+ 
+     let module_handle = SHADER_MODULE_ALLOCATOR.allocate(module_data);
+@@ -68,21 +82,20 @@ pub unsafe fn create_shader_module(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        match crate::shader::ShaderCache::translate_spirv_to_wgsl(&spirv_snap) {
+-            Ok(wgsl) => {
+-                let wgsl_bytes = wgsl.as_bytes();
+-                // payload: handle(u64) + wgslLen(u32) + wgsl[...]
+-                let mut payload = Vec::with_capacity(12 + wgsl_bytes.len());
+-                payload.extend_from_slice(&module_handle.to_le_bytes());
+-                payload.extend_from_slice(&(wgsl_bytes.len() as u32).to_le_bytes());
+-                payload.extend_from_slice(wgsl_bytes);
+-                if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0050, &payload) {
+-                    log::warn!("[webx] create_shader_module IPC failed: {:?}", e);
+-                }
+-            }
+-            Err(e) => {
+-                log::warn!("[webx] SPIRV→WGSL translation failed for module {}: {:?}", module_handle, e);
+-            }
++        // Canonical host schema: device(u64)+handle(u64)+SPIR-V byteSize(u32)+bytes.
++        // Translation and GPUShaderModule validation belong to the injected Naga 30 host.
++        let mut payload = Vec::with_capacity(20 + create_info.code_size);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
++        payload.extend_from_slice(&module_handle.to_le_bytes());
++        payload.extend_from_slice(&(create_info.code_size as u32).to_le_bytes());
++        payload.extend_from_slice(std::slice::from_raw_parts(
++            create_info.p_code.cast::<u8>(),
++            create_info.code_size,
++        ));
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0050, &payload) {
++            SHADER_MODULE_ALLOCATOR.remove(module_handle);
++            *p_shader_module = vk::ShaderModule::null();
++            return Err(error);
+         }
+     }
+ 
+@@ -168,10 +181,9 @@ pub unsafe fn create_pipeline_layout(
+     };
+ 
+     #[cfg(feature = "webx")]
+-    let (ipc_set_layout_handles, ipc_has_push) = {
++    let ipc_set_layout_handles = {
+         let raw: Vec<u64> = set_layouts.iter().map(|sl| sl.as_raw()).collect();
+-        let has_push = !push_constant_ranges.is_empty();
+-        (raw, has_push)
++        raw
+     };
+ 
+     let layout_data = VkPipelineLayoutData {
+@@ -187,16 +199,25 @@ pub unsafe fn create_pipeline_layout(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        // payload: handle(u64) + hasPush(u32) + setCount(u32) + setLayouts[](u64)
+-        let mut payload = Vec::with_capacity(16 + ipc_set_layout_handles.len() * 8);
++        // Host schema: device(u64)+handle(u64)+setCount(u32)+setLayouts(u64[])
++        // +pushRangeCount(u32)+VkPushConstantRange {stageFlags,offset,size} × n.
++        let mut payload = Vec::with_capacity(24 + ipc_set_layout_handles.len() * 8 + push_constant_ranges.len() * 12);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
+         payload.extend_from_slice(&layout_handle.to_le_bytes());
+-        payload.extend_from_slice(&(ipc_has_push as u32).to_le_bytes());
+         payload.extend_from_slice(&(ipc_set_layout_handles.len() as u32).to_le_bytes());
+         for &sl in &ipc_set_layout_handles {
+             payload.extend_from_slice(&sl.to_le_bytes());
+         }
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0052, &payload) {
+-            log::warn!("[webx] create_pipeline_layout IPC failed: {:?}", e);
++        payload.extend_from_slice(&(push_constant_ranges.len() as u32).to_le_bytes());
++        for range in &push_constant_ranges {
++            payload.extend_from_slice(&range.stage_flags.as_raw().to_le_bytes());
++            payload.extend_from_slice(&range.offset.to_le_bytes());
++            payload.extend_from_slice(&range.size.to_le_bytes());
++        }
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0052, &payload) {
++            PIPELINE_LAYOUT_ALLOCATOR.remove(layout_handle);
++            *p_pipeline_layout = vk::PipelineLayout::null();
++            return Err(error);
+         }
+     }
+ 
+@@ -246,8 +267,10 @@ pub unsafe fn create_graphics_pipelines(
+         pipelines[i] = Handle::from_raw(pipeline_handle);
+ 
+         #[cfg(feature = "webx")]
+-        if let Err(e) = serialize_and_send_graphics_pipeline(pipeline_handle, create_info) {
+-            log::warn!("[webx] create_graphics_pipeline IPC failed: {:?}", e);
++        if let Err(error) = serialize_and_send_graphics_pipeline(device, pipeline_handle, create_info) {
++            PIPELINE_ALLOCATOR.remove(pipeline_handle);
++            pipelines[i] = vk::Pipeline::null();
++            return Err(error);
+         }
+     }
+ 
+@@ -851,22 +874,24 @@ fn vk_to_wgpu_primitive_topology(topology: vk::PrimitiveTopology) -> wgpu::Primi
+ 
+ /// Serialize a VkGraphicsPipelineCreateInfo to the webx IPC format and send it.
+ /// cmd 0x0054 payload:
+-///   handle(u64) + layoutHandle(u64) + stageCount(u32) +
+-///   stages[](stageFlags:u32 + moduleHandle:u64 + entryLen:u32 + entry bytes) +
+-///   colorFmtCount(u32) + colorFmts[](u32) + depthFmt(u32) +
+-///   vtxBindCount(u32) + vtxBindings[](binding:u32+stride:u32+rate:u32+attrCount:u32+attrs[](loc+bind+fmt+off)) +
+-///   topology(u32) + polygonMode(u32) + cullMode(u32) + frontFace(u32) +
+-///   depthTestEnable(u32) + depthWriteEnable(u32) + depthCompareOp(u32) +
+-///   blendCount(u32) + blends[](enable+srcCol+dstCol+colOp+srcAlpha+dstAlpha+alphaOp+writeMask × u32)
++/// Host parser schema: device(u64)+handle(u64)+type(0:u32)+layout(u64)+renderPass(u64)+subpass(u32),
++/// stages, vertex binding count/descriptors, vertex attribute count/descriptors,
++/// topology+restart, raw VkPipelineRasterizationStateCreateInfo (64B), raw
++/// VkPipelineDepthStencilStateCreateInfo (104B), blend count and raw blend records (32B).
+ #[cfg(feature = "webx")]
+ unsafe fn serialize_and_send_graphics_pipeline(
++    device: vk::Device,
+     pipeline_handle: u64,
+     create_info: &vk::GraphicsPipelineCreateInfo,
+ ) -> crate::error::Result<()> {
+     let mut payload: Vec<u8> = Vec::new();
+ 
++    payload.extend_from_slice(&device.as_raw().to_le_bytes());
+     payload.extend_from_slice(&pipeline_handle.to_le_bytes());
++    payload.extend_from_slice(&0u32.to_le_bytes()); // graphics pipeline type
+     payload.extend_from_slice(&create_info.layout.as_raw().to_le_bytes());
++    payload.extend_from_slice(&create_info.render_pass.as_raw().to_le_bytes());
++    payload.extend_from_slice(&create_info.subpass.to_le_bytes());
+ 
+     // Shader stages
+     let stages = if create_info.stage_count > 0 && !create_info.p_stages.is_null() {
+@@ -874,130 +899,247 @@ unsafe fn serialize_and_send_graphics_pipeline(
+     } else {
+         &[]
+     };
++    for stage in stages {
++        if stage.stage.as_raw() != vk::ShaderStageFlags::VERTEX.as_raw()
++            && stage.stage.as_raw() != vk::ShaderStageFlags::FRAGMENT.as_raw()
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(format!(
++                "WebX baseline graphics pipeline supports only vertex and fragment stages (got {:?})",
++                stage.stage
++            )));
++        }
++    }
++    if stages.len() != 2
++        || stages
++            .iter()
++            .filter(|stage| stage.stage == vk::ShaderStageFlags::VERTEX)
++            .count()
++            != 1
++        || stages
++            .iter()
++            .filter(|stage| stage.stage == vk::ShaderStageFlags::FRAGMENT)
++            .count()
++            != 1
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline requires exactly one vertex and one fragment stage".into(),
++        ));
++    }
+     payload.extend_from_slice(&(stages.len() as u32).to_le_bytes());
+     for stage in stages {
+         payload.extend_from_slice(&stage.stage.as_raw().to_le_bytes());
+         payload.extend_from_slice(&stage.module.as_raw().to_le_bytes());
+-        let entry = if !stage.p_name.is_null() {
+-            CStr::from_ptr(stage.p_name).to_str().unwrap_or("main").as_bytes().to_vec()
+-        } else {
+-            b"main".to_vec()
+-        };
++        if stage.p_name.is_null() {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX baseline requires an explicit shader entry point".into(),
++            ));
++        }
++        let entry = CStr::from_ptr(stage.p_name)
++            .to_str()
++            .map_err(|_| crate::error::VkError::FeatureNotSupported(
++                "WebX shader entry points must be valid UTF-8".into(),
++            ))?;
++        if entry.is_empty() {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX shader entry point must not be empty".into(),
++            ));
++        }
+         payload.extend_from_slice(&(entry.len() as u32).to_le_bytes());
+-        payload.extend_from_slice(&entry);
++        payload.extend_from_slice(entry.as_bytes());
+     }
+ 
+-    // Color/depth formats from pNext chain (VkPipelineRenderingCreateInfo)
+-    let mut color_vk_formats: Vec<vk::Format> = Vec::new();
+-    let mut depth_vk_format = vk::Format::UNDEFINED;
+-    let mut p_next = create_info.p_next as *const vk::BaseInStructure;
+-    while !p_next.is_null() {
+-        let base = &*p_next;
+-        if base.s_type == vk::StructureType::PIPELINE_RENDERING_CREATE_INFO {
+-            let pri = &*(p_next as *const vk::PipelineRenderingCreateInfo);
+-            if pri.color_attachment_count > 0 && !pri.p_color_attachment_formats.is_null() {
+-                color_vk_formats = std::slice::from_raw_parts(
+-                    pri.p_color_attachment_formats,
+-                    pri.color_attachment_count as usize,
+-                ).to_vec();
+-            }
+-            depth_vk_format = pri.depth_attachment_format;
+-            break;
+-        }
+-        p_next = base.p_next;
+-    }
+-    payload.extend_from_slice(&(color_vk_formats.len() as u32).to_le_bytes());
+-    for fmt in &color_vk_formats {
+-        payload.extend_from_slice(&(fmt.as_raw() as u32).to_le_bytes());
+-    }
+-    payload.extend_from_slice(&(depth_vk_format.as_raw() as u32).to_le_bytes());
+-
+-    // Vertex input state
+-    if !create_info.p_vertex_input_state.is_null() {
+-        let vis = &*create_info.p_vertex_input_state;
+-        let bindings = if vis.vertex_binding_description_count > 0 && !vis.p_vertex_binding_descriptions.is_null() {
+-            std::slice::from_raw_parts(vis.p_vertex_binding_descriptions, vis.vertex_binding_description_count as usize)
+-        } else {
+-            &[]
+-        };
+-        let attrs = if vis.vertex_attribute_description_count > 0 && !vis.p_vertex_attribute_descriptions.is_null() {
+-            std::slice::from_raw_parts(vis.p_vertex_attribute_descriptions, vis.vertex_attribute_description_count as usize)
+-        } else {
+-            &[]
+-        };
+-        payload.extend_from_slice(&(bindings.len() as u32).to_le_bytes());
+-        for b in bindings {
+-            payload.extend_from_slice(&b.binding.to_le_bytes());
+-            payload.extend_from_slice(&b.stride.to_le_bytes());
+-            payload.extend_from_slice(&(b.input_rate.as_raw() as u32).to_le_bytes());
+-            let b_attrs: Vec<_> = attrs.iter().filter(|a| a.binding == b.binding).collect();
+-            payload.extend_from_slice(&(b_attrs.len() as u32).to_le_bytes());
+-            for a in b_attrs {
+-                payload.extend_from_slice(&a.location.to_le_bytes());
+-                payload.extend_from_slice(&a.binding.to_le_bytes());
+-                payload.extend_from_slice(&(a.format.as_raw() as u32).to_le_bytes());
+-                payload.extend_from_slice(&a.offset.to_le_bytes());
+-            }
+-        }
++    // Vertex bindings are serialized separately from vertex attributes, matching
++    // the host parser's descriptor-count fields.
++    let vis = if create_info.p_vertex_input_state.is_null() {
++        None
+     } else {
+-        payload.extend_from_slice(&0u32.to_le_bytes());
+-    }
+-
+-    // Input assembly topology
+-    let topology: u32 = if !create_info.p_input_assembly_state.is_null() {
+-        (*create_info.p_input_assembly_state).topology.as_raw() as u32
+-    } else {
+-        3 // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
++        Some(&*create_info.p_vertex_input_state)
+     };
++    let bindings = vis.map_or(&[][..], |state| {
++        if state.vertex_binding_description_count > 0 && !state.p_vertex_binding_descriptions.is_null() {
++            std::slice::from_raw_parts(state.p_vertex_binding_descriptions, state.vertex_binding_description_count as usize)
++        } else { &[] }
++    });
++    let attrs = vis.map_or(&[][..], |state| {
++        if state.vertex_attribute_description_count > 0 && !state.p_vertex_attribute_descriptions.is_null() {
++            std::slice::from_raw_parts(state.p_vertex_attribute_descriptions, state.vertex_attribute_description_count as usize)
++        } else { &[] }
++    });
++    payload.extend_from_slice(&(bindings.len() as u32).to_le_bytes());
++    for binding in bindings {
++        payload.extend_from_slice(&binding.binding.to_le_bytes());
++        payload.extend_from_slice(&binding.stride.to_le_bytes());
++        payload.extend_from_slice(&(binding.input_rate.as_raw() as u32).to_le_bytes());
++    }
++    payload.extend_from_slice(&(attrs.len() as u32).to_le_bytes());
++    for attr in attrs {
++        payload.extend_from_slice(&attr.location.to_le_bytes());
++        payload.extend_from_slice(&attr.binding.to_le_bytes());
++        payload.extend_from_slice(&(attr.format.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&attr.offset.to_le_bytes());
++    }
++    if create_info.render_pass == vk::RenderPass::null() || create_info.subpass != 0 {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline graphics pipelines require subpass zero of a concrete render pass".into(),
++        ));
++    }
++    if !create_info.p_next.is_null() {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline does not encode graphics pipeline pNext state".into(),
++        ));
++    }
++    let render_pass = crate::render_pass::get_render_pass_data(create_info.render_pass)
++        .ok_or_else(|| crate::error::VkError::InvalidHandle("Invalid WebX render pass".into()))?;
++    if render_pass.attachments.len() != 1
++        || !matches!(
++            render_pass.attachments[0].format,
++            vk::Format::B8G8R8A8_UNORM | vk::Format::R8G8B8A8_UNORM
++        )
++        || render_pass.subpasses.len() != 1
++        || render_pass.subpasses[0].color_attachment_indices.as_slice() != [0]
++        || render_pass.subpasses[0].depth_stencil_attachment_index.is_some()
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline requires one B8G8R8A8_UNORM or R8G8B8A8_UNORM color attachment".into(),
++        ));
++    }
++    let dynamic_states = if create_info.p_dynamic_state.is_null() {
++        &[][..]
++    } else if (*create_info.p_dynamic_state).dynamic_state_count > 0
++        && !(*create_info.p_dynamic_state).p_dynamic_states.is_null()
++    {
++        std::slice::from_raw_parts(
++            (*create_info.p_dynamic_state).p_dynamic_states,
++            (*create_info.p_dynamic_state).dynamic_state_count as usize,
++        )
++    } else {
++        &[][..]
++    };
++    if !dynamic_states.contains(&vk::DynamicState::VIEWPORT)
++        || !dynamic_states.contains(&vk::DynamicState::SCISSOR)
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline graphics pipelines require dynamic viewport and scissor commands".into(),
++        ));
++    }
++    if create_info.p_viewport_state.is_null()
++        || (*create_info.p_viewport_state).viewport_count != 1
++        || (*create_info.p_viewport_state).scissor_count != 1
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline requires a single dynamic viewport and scissor".into(),
++        ));
++    }
++    if create_info.p_input_assembly_state.is_null()
++        || create_info.p_rasterization_state.is_null()
++        || create_info.p_color_blend_state.is_null()
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline requires explicit input assembly, rasterization, and color blend state".into(),
++        ));
++    }
++
++    // Input assembly: topology and primitive-restart flag.
++    let (topology, primitive_restart) = if create_info.p_input_assembly_state.is_null() {
++        (vk::PrimitiveTopology::TRIANGLE_LIST.as_raw() as u32, 0)
++    } else {
++        let state = &*create_info.p_input_assembly_state;
++        (state.topology.as_raw() as u32, state.primitive_restart_enable as u32)
++    };
++    if primitive_restart != 0 {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline graphics pipelines do not support primitive restart".into(),
++        ));
++    }
+     payload.extend_from_slice(&topology.to_le_bytes());
++    payload.extend_from_slice(&primitive_restart.to_le_bytes());
+ 
+-    // Rasterization state
++    // The host parser consumes the original x86-64 Vk struct byte positions.
++    // Zero-filled records avoid transmitting process pointers while preserving
++    // the fields that the WebGPU host implements.
++    let mut raster = [0u8; 64];
+     if !create_info.p_rasterization_state.is_null() {
+-        let rs = &*create_info.p_rasterization_state;
+-        payload.extend_from_slice(&(rs.polygon_mode.as_raw() as u32).to_le_bytes());
+-        payload.extend_from_slice(&rs.cull_mode.as_raw().to_le_bytes());
+-        payload.extend_from_slice(&(rs.front_face.as_raw() as u32).to_le_bytes());
+-    } else {
+-        payload.extend_from_slice(&0u32.to_le_bytes()); // FILL
+-        payload.extend_from_slice(&0u32.to_le_bytes()); // NONE
+-        payload.extend_from_slice(&0u32.to_le_bytes()); // CCW
+-    }
+-
+-    // Depth/stencil state
+-    if !create_info.p_depth_stencil_state.is_null() {
+-        let dss = &*create_info.p_depth_stencil_state;
+-        payload.extend_from_slice(&(dss.depth_test_enable as u32).to_le_bytes());
+-        payload.extend_from_slice(&(dss.depth_write_enable as u32).to_le_bytes());
+-        payload.extend_from_slice(&(dss.depth_compare_op.as_raw() as u32).to_le_bytes());
+-    } else {
+-        payload.extend_from_slice(&0u32.to_le_bytes()); // test disabled
+-        payload.extend_from_slice(&0u32.to_le_bytes()); // write disabled
+-        payload.extend_from_slice(&1u32.to_le_bytes()); // LESS
+-    }
+-
+-    // Color blend attachments
+-    if !create_info.p_color_blend_state.is_null() {
+-        let cbs = &*create_info.p_color_blend_state;
+-        let att_slice = if cbs.attachment_count > 0 && !cbs.p_attachments.is_null() {
+-            std::slice::from_raw_parts(cbs.p_attachments, cbs.attachment_count as usize)
+-        } else {
+-            &[]
+-        };
+-        payload.extend_from_slice(&(att_slice.len() as u32).to_le_bytes());
+-        for a in att_slice {
+-            payload.extend_from_slice(&(a.blend_enable as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.src_color_blend_factor.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.dst_color_blend_factor.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.color_blend_op.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.src_alpha_blend_factor.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.dst_alpha_blend_factor.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(a.alpha_blend_op.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&a.color_write_mask.as_raw().to_le_bytes());
++        let state = &*create_info.p_rasterization_state;
++        if state.polygon_mode != vk::PolygonMode::FILL
++            || state.rasterizer_discard_enable == vk::TRUE
++            || state.depth_clamp_enable == vk::TRUE
++            || state.depth_bias_enable == vk::TRUE
++            || state.line_width != 1.0
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX baseline supports fill rasterization, no depth clamp/bias/discard, and line width 1".into(),
++            ));
+         }
+-    } else {
+-        payload.extend_from_slice(&0u32.to_le_bytes());
++        raster[28..32].copy_from_slice(&(state.polygon_mode.as_raw() as u32).to_le_bytes());
++        raster[32..36].copy_from_slice(&state.cull_mode.as_raw().to_le_bytes());
++        raster[36..40].copy_from_slice(&(state.front_face.as_raw() as u32).to_le_bytes());
++    }
++    payload.extend_from_slice(&raster);
++
++    let mut depth = [0u8; 104];
++    if !create_info.p_depth_stencil_state.is_null() {
++        let state = &*create_info.p_depth_stencil_state;
++        if state.depth_bounds_test_enable == vk::TRUE
++            || state.stencil_test_enable == vk::TRUE
++            || state.depth_test_enable == vk::TRUE
++            || state.depth_write_enable == vk::TRUE
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX color-only baseline does not support depth or stencil tests/writes".into(),
++            ));
++        }
++        depth[20..24].copy_from_slice(&(state.depth_test_enable as u32).to_le_bytes());
++        depth[24..28].copy_from_slice(&(state.depth_write_enable as u32).to_le_bytes());
++        depth[28..32].copy_from_slice(&(state.depth_compare_op.as_raw() as u32).to_le_bytes());
++    }
++    payload.extend_from_slice(&depth);
++
++    if !create_info.p_multisample_state.is_null()
++        && ((*create_info.p_multisample_state).rasterization_samples != vk::SampleCountFlags::TYPE_1
++            || (*create_info.p_multisample_state).sample_shading_enable == vk::TRUE
++            || (*create_info.p_multisample_state).alpha_to_coverage_enable == vk::TRUE
++            || (*create_info.p_multisample_state).alpha_to_one_enable == vk::TRUE)
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline supports single-sample pipelines without sample shading or alpha-to-coverage".into(),
++        ));
+     }
+ 
++    if !create_info.p_color_blend_state.is_null()
++        && (*create_info.p_color_blend_state).logic_op_enable == vk::TRUE
++    {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline does not encode Vulkan logic operations".into(),
++        ));
++    }
++
++    let attachments = if create_info.p_color_blend_state.is_null()
++        || (*create_info.p_color_blend_state).attachment_count == 0
++        || (*create_info.p_color_blend_state).p_attachments.is_null()
++    {
++        &[][..]
++    } else {
++        std::slice::from_raw_parts(
++            (*create_info.p_color_blend_state).p_attachments,
++            (*create_info.p_color_blend_state).attachment_count as usize,
++        )
++    };
++    if attachments.len() != 1 {
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline graphics pipeline requires exactly one color blend attachment".into(),
++        ));
++    }
++    payload.extend_from_slice(&(attachments.len() as u32).to_le_bytes());
++    for attachment in attachments {
++        payload.extend_from_slice(&(attachment.blend_enable as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.src_color_blend_factor.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.dst_color_blend_factor.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.color_blend_op.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.src_alpha_blend_factor.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.dst_alpha_blend_factor.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(attachment.alpha_blend_op.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&attachment.color_write_mask.as_raw().to_le_bytes());
++    }
+     crate::webx_ipc::WebXIpc::global().send_cmd(0x0054, &payload).map(|_| ())
+ }
+ 
+diff --git a/vkwebgpu/src/render_pass.rs b/vkwebgpu/src/render_pass.rs
+index 009fc4b..bb82a4b 100644
+--- a/vkwebgpu/src/render_pass.rs
++++ b/vkwebgpu/src/render_pass.rs
+@@ -94,11 +94,46 @@ pub unsafe fn create_render_pass(
+     );
+ 
+     #[cfg(feature = "webx")]
+-    let ipc_depth_indices: Vec<u32> = subpasses.iter()
+-        .filter_map(|sp| sp.depth_stencil_attachment_index)
+-        .collect();
++    {
++        if attachments.len() != 1 || subpasses.len() != 1
++            || create_info.dependency_count != 0
++            || !create_info.p_next.is_null()
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX baseline render passes require one attachment, one subpass, no dependencies, and no pNext state".into(),
++            ));
++        }
++        let attachment = &attachments[0];
++        if attachment.samples != vk::SampleCountFlags::TYPE_1
++            || (attachment.format != vk::Format::B8G8R8A8_UNORM
++                && attachment.format != vk::Format::R8G8B8A8_UNORM)
++            || (attachment.load_op != vk::AttachmentLoadOp::LOAD
++                && attachment.load_op != vk::AttachmentLoadOp::CLEAR)
++            || (attachment.store_op != vk::AttachmentStoreOp::STORE
++                && attachment.store_op != vk::AttachmentStoreOp::DONT_CARE)
++            || attachment.initial_layout != vk::ImageLayout::UNDEFINED
++            || attachment.final_layout != vk::ImageLayout::PRESENT_SRC_KHR
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX baseline requires a single-sample RGBA/BGRA8 color attachment with supported load/store and undefined-to-present layout".into(),
++            ));
++        }
++        let subpass = &*create_info.p_subpasses;
++        if subpass.pipeline_bind_point != vk::PipelineBindPoint::GRAPHICS
++            || subpass.input_attachment_count != 0
++            || subpass.color_attachment_count != 1
++            || subpass.p_color_attachments.is_null()
++            || (*subpass.p_color_attachments).attachment != 0
++            || !subpass.p_depth_stencil_attachment.is_null()
++        {
++            return Err(crate::error::VkError::FeatureNotSupported(
++                "WebX baseline supports a graphics subpass with one color attachment and no input/depth attachments".into(),
++            ));
++        }
++    }
++
+     #[cfg(feature = "webx")]
+-    let ipc_attachments: Vec<vk::AttachmentDescription> = attachments.clone();
++    let ipc_attachments = attachments.clone();
+ 
+     let render_pass_data = VkRenderPassData {
+         device,
+@@ -112,19 +147,71 @@ pub unsafe fn create_render_pass(
+ 
+     #[cfg(feature = "webx")]
+     {
+-        // payload: handle(u64) + attachCount(u32) + per-att: fmt(u32)+loadOp(u32)+storeOp(u32)+isDepth(u32)
+-        let mut payload = Vec::with_capacity(12 + ipc_attachments.len() * 16);
++        // Host schema mirrors the parser: dev+handle, raw 36-byte attachment
++        // descriptions, subpass attachment references, then dependencies.
++        let mut payload = Vec::new();
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
+         payload.extend_from_slice(&render_pass_handle.to_le_bytes());
+         payload.extend_from_slice(&(ipc_attachments.len() as u32).to_le_bytes());
+-        for (i, att) in ipc_attachments.iter().enumerate() {
+-            let is_depth: u32 = if ipc_depth_indices.contains(&(i as u32)) { 1 } else { 0 };
++        for att in &ipc_attachments {
++            payload.extend_from_slice(&att.flags.as_raw().to_le_bytes());
+             payload.extend_from_slice(&(att.format.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&att.samples.as_raw().to_le_bytes());
+             payload.extend_from_slice(&(att.load_op.as_raw() as u32).to_le_bytes());
+             payload.extend_from_slice(&(att.store_op.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&is_depth.to_le_bytes());
++            payload.extend_from_slice(&(att.stencil_load_op.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(att.stencil_store_op.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(att.initial_layout.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(att.final_layout.as_raw() as u32).to_le_bytes());
+         }
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0057, &payload) {
+-            log::warn!("[webx] create_render_pass IPC failed: {:?}", e);
++        let subpasses = if create_info.subpass_count > 0 && !create_info.p_subpasses.is_null() {
++            std::slice::from_raw_parts(create_info.p_subpasses, create_info.subpass_count as usize)
++        } else { &[] };
++        payload.extend_from_slice(&(subpasses.len() as u32).to_le_bytes());
++        for subpass in subpasses {
++            payload.extend_from_slice(&(subpass.pipeline_bind_point.as_raw() as u32).to_le_bytes());
++            let inputs = if subpass.input_attachment_count > 0 && !subpass.p_input_attachments.is_null() {
++                std::slice::from_raw_parts(subpass.p_input_attachments, subpass.input_attachment_count as usize)
++            } else { &[] };
++            payload.extend_from_slice(&(inputs.len() as u32).to_le_bytes());
++            for reference in inputs {
++                payload.extend_from_slice(&reference.attachment.to_le_bytes());
++                payload.extend_from_slice(&(reference.layout.as_raw() as u32).to_le_bytes());
++            }
++            let colors = if subpass.color_attachment_count > 0 && !subpass.p_color_attachments.is_null() {
++                std::slice::from_raw_parts(subpass.p_color_attachments, subpass.color_attachment_count as usize)
++            } else { &[] };
++            payload.extend_from_slice(&(colors.len() as u32).to_le_bytes());
++            for reference in colors {
++                payload.extend_from_slice(&reference.attachment.to_le_bytes());
++                payload.extend_from_slice(&(reference.layout.as_raw() as u32).to_le_bytes());
++            }
++            if subpass.p_depth_stencil_attachment.is_null() {
++                payload.extend_from_slice(&0u32.to_le_bytes());
++            } else {
++                payload.extend_from_slice(&1u32.to_le_bytes());
++                let reference = &*subpass.p_depth_stencil_attachment;
++                payload.extend_from_slice(&reference.attachment.to_le_bytes());
++                payload.extend_from_slice(&(reference.layout.as_raw() as u32).to_le_bytes());
++            }
++        }
++        let dependencies = if create_info.dependency_count > 0 && !create_info.p_dependencies.is_null() {
++            std::slice::from_raw_parts(create_info.p_dependencies, create_info.dependency_count as usize)
++        } else { &[] };
++        payload.extend_from_slice(&(dependencies.len() as u32).to_le_bytes());
++        for dependency in dependencies {
++            payload.extend_from_slice(&dependency.src_subpass.to_le_bytes());
++            payload.extend_from_slice(&dependency.dst_subpass.to_le_bytes());
++            payload.extend_from_slice(&(dependency.src_stage_mask.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(dependency.dst_stage_mask.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(dependency.src_access_mask.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(dependency.dst_access_mask.as_raw() as u32).to_le_bytes());
++            payload.extend_from_slice(&(dependency.dependency_flags.as_raw() as u32).to_le_bytes());
++        }
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0057, &payload) {
++            RENDER_PASS_ALLOCATOR.remove(render_pass_handle);
++            *p_render_pass = vk::RenderPass::null();
++            return Err(error);
+         }
+     }
+ 
+@@ -154,6 +241,14 @@ pub unsafe fn create_render_pass2(
+     _p_allocator: *const vk::AllocationCallbacks,
+     p_render_pass: *mut vk::RenderPass,
+ ) -> Result<()> {
++    #[cfg(feature = "webx")]
++    {
++        let _ = (device, p_create_info, _p_allocator, p_render_pass);
++        return Err(crate::error::VkError::FeatureNotSupported(
++            "WebX baseline wire contract supports VkRenderPass, not VkRenderPass2".to_string(),
++        ));
++    }
++
+     let create_info = &*p_create_info;
+ 
+     // Convert RenderPassCreateInfo2 attachments to AttachmentDescription
+@@ -226,13 +321,6 @@ pub unsafe fn create_render_pass2(
+         subpasses.len()
+     );
+ 
+-    #[cfg(feature = "webx")]
+-    let ipc_depth_indices2: Vec<u32> = subpasses.iter()
+-        .filter_map(|sp| sp.depth_stencil_attachment_index)
+-        .collect();
+-    #[cfg(feature = "webx")]
+-    let ipc_attachments2: Vec<vk::AttachmentDescription> = attachments.clone();
+-
+     let render_pass_data = VkRenderPassData {
+         device,
+         attachments,
+@@ -243,22 +331,5 @@ pub unsafe fn create_render_pass2(
+     let render_pass_handle = RENDER_PASS_ALLOCATOR.allocate(render_pass_data);
+     *p_render_pass = Handle::from_raw(render_pass_handle);
+ 
+-    #[cfg(feature = "webx")]
+-    {
+-        let mut payload = Vec::with_capacity(12 + ipc_attachments2.len() * 16);
+-        payload.extend_from_slice(&render_pass_handle.to_le_bytes());
+-        payload.extend_from_slice(&(ipc_attachments2.len() as u32).to_le_bytes());
+-        for (i, att) in ipc_attachments2.iter().enumerate() {
+-            let is_depth: u32 = if ipc_depth_indices2.contains(&(i as u32)) { 1 } else { 0 };
+-            payload.extend_from_slice(&(att.format.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(att.load_op.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&(att.store_op.as_raw() as u32).to_le_bytes());
+-            payload.extend_from_slice(&is_depth.to_le_bytes());
+-        }
+-        if let Err(e) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0057, &payload) {
+-            log::warn!("[webx] create_render_pass2 IPC failed: {:?}", e);
+-        }
+-    }
+-
+     Ok(())
+ }
+diff --git a/vkwebgpu/src/swapchain.rs b/vkwebgpu/src/swapchain.rs
+index be51d4c..458fba4 100644
+--- a/vkwebgpu/src/swapchain.rs
++++ b/vkwebgpu/src/swapchain.rs
+@@ -292,6 +292,32 @@ pub unsafe fn create_swapchain_khr(
+     let swapchain_handle = SWAPCHAIN_ALLOCATOR.allocate(swapchain_data);
+     *p_swapchain = Handle::from_raw(swapchain_handle);
+ 
++    #[cfg(feature = "webx")]
++    {
++        // WebX host schema: dev, handle, surface, image count, format, colorspace, extent.
++        let mut payload = Vec::with_capacity(48);
++        payload.extend_from_slice(&device.as_raw().to_le_bytes());
++        payload.extend_from_slice(&swapchain_handle.to_le_bytes());
++        payload.extend_from_slice(&create_info.surface.as_raw().to_le_bytes());
++        payload.extend_from_slice(&image_count.to_le_bytes());
++        payload.extend_from_slice(&(create_info.image_format.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&(create_info.image_color_space.as_raw() as u32).to_le_bytes());
++        payload.extend_from_slice(&create_info.image_extent.width.to_le_bytes());
++        payload.extend_from_slice(&create_info.image_extent.height.to_le_bytes());
++        payload.extend_from_slice(&create_info.image_array_layers.to_le_bytes());
++        payload.extend_from_slice(&create_info.image_usage.as_raw().to_le_bytes());
++        if let Err(error) = crate::webx_ipc::WebXIpc::global().send_cmd(0x0020, &payload) {
++            if let Some(data) = SWAPCHAIN_ALLOCATOR.get(swapchain_handle) {
++                for &img in &data.images {
++                    image::destroy_swapchain_image(img);
++                }
++            }
++            SWAPCHAIN_ALLOCATOR.remove(swapchain_handle);
++            *p_swapchain = vk::SwapchainKHR::null();
++            return Err(error);
++        }
++    }
++
+     debug!("Created swapchain with {} wgpu-backed images", image_count);
+     Ok(())
+ }
+@@ -550,6 +576,35 @@ pub unsafe fn get_swapchain_images_khr(
+ ) -> Result<()> {
+     let swapchain_data = get_swapchain_data(swapchain)?;
+ 
++    #[cfg(feature = "webx")]
++    {
++        let response = crate::webx_ipc::WebXIpc::global().send_cmd(0x0022, &[])?;
++        if response.len() < 4 {
++            return Err(VkError::DeviceCreationFailed(
++                "WebX returned a truncated swapchain image list".to_string(),
++            ));
++        }
++        let count = u32::from_le_bytes(response[0..4].try_into().unwrap()) as usize;
++        if response.len() < 4 + count * 8 {
++            return Err(VkError::DeviceCreationFailed(
++                "WebX returned an incomplete swapchain image list".to_string(),
++            ));
++        }
++        if p_swapchain_images.is_null() {
++            *p_swapchain_image_count = count as u32;
++        } else {
++            let requested = (*p_swapchain_image_count).min(count as u32) as usize;
++            let images = std::slice::from_raw_parts_mut(p_swapchain_images, requested);
++            for (index, image) in images.iter_mut().enumerate() {
++                let offset = 4 + index * 8;
++                *image = Handle::from_raw(u64::from_le_bytes(
++                    response[offset..offset + 8].try_into().unwrap(),
++                ));
++            }
++            *p_swapchain_image_count = requested as u32;
++        }
++    }
++    #[cfg(not(feature = "webx"))]
+     if p_swapchain_images.is_null() {
+         *p_swapchain_image_count = swapchain_data.image_count;
+         debug!(
+@@ -580,6 +635,26 @@ pub unsafe fn acquire_next_image_khr(
+ ) -> Result<()> {
+     let swapchain_data = get_swapchain_data(swapchain)?;
+ 
++    #[cfg(feature = "webx")]
++    {
++        let response = crate::webx_ipc::WebXIpc::global().send_cmd(0x0023, &[])?;
++        if response.len() < 4 {
++            return Err(VkError::DeviceCreationFailed(
++                "WebX returned a truncated acquired image index".to_string(),
++            ));
++        }
++        let index = u32::from_le_bytes(response[0..4].try_into().unwrap());
++        if index >= swapchain_data.image_count {
++            return Err(VkError::InvalidHandle(format!(
++                "WebX acquired image index {} outside swapchain image count {}",
++                index, swapchain_data.image_count
++            )));
++        }
++        swapchain_data.current_image_index.store(index, Ordering::Relaxed);
++        *p_image_index = index;
++        return Ok(());
++    }
++
+     // Cycle through the available images in round-robin order.
+     let current = swapchain_data.current_image_index.load(Ordering::Relaxed);
+     let next = (current + 1) % swapchain_data.image_count;
+@@ -643,6 +718,14 @@ pub unsafe fn queue_present_khr(
+             )));
+         }
+ 
++        #[cfg(feature = "webx")]
++        {
++            let mut payload = Vec::with_capacity(12);
++            payload.extend_from_slice(&swapchain.as_raw().to_le_bytes());
++            payload.extend_from_slice(&image_index.to_le_bytes());
++            crate::webx_ipc::WebXIpc::global().send_cmd(0x0024, &payload)?;
++        }
++
+         // --- Real Win32 presentation ---
+         #[cfg(all(not(target_arch = "wasm32"), not(feature = "webx")))]
+         present_to_wgpu_surface(&swapchain_data, image_index as usize)?;
