@@ -587,28 +587,32 @@ async function launch(check: boolean, route?: string): Promise<void> {
 }
 
 // A game RetroArch runs in process plays in this window, so one kiosk window (gamescope) holds both.
-let player: { frame: HTMLIFrameElement; pid?: number } | undefined;
+let player: { frame: HTMLIFrameElement; pid?: number; returnTo: HTMLElement | null } | undefined;
 
 async function openPlayer(url: string, pid?: number): Promise<void> {
   for (let attempt = 0; attempt < 50; attempt++) {
     if (await fetch(url, { mode: "no-cors" }).then(() => true, () => false)) break;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
+  const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const frame = document.createElement("iframe");
   frame.src = url;
   frame.allow = "autoplay; gamepad";
   frame.className = "player";
   frame.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;border:0;background:#000;z-index:100";
   document.body.append(frame);
-  player = { frame, pid };
+  player = { frame, pid, returnTo };
   frame.addEventListener("load", () => frame.focus());
 }
 
 async function closePlayer(): Promise<void> {
   if (!player) return;
-  const { frame, pid } = player;
+  const { frame, pid, returnTo } = player;
   player = undefined;
   frame.remove();
+  // the focused iframe took the focus with it: give it back so A / Enter work without a direction first
+  if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
+  else focusFirst(".system, .game, [data-nav]");
   if (pid !== undefined) await api(`/api/running/${pid}`, { method: "DELETE" }).catch(() => undefined);
   await pollRunning();
 }
