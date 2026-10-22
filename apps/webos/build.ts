@@ -160,6 +160,8 @@ const result = await Bun.build({
   outdir: dist,
   target: "browser",
   minify: true,
+  // Lit and other packages ship a dev build unless NODE_ENV is production at bundle time
+  define: { "process.env.NODE_ENV": '"production"' },
   sourcemap: "none",
   naming: "[name].js",
   splitting: false,
