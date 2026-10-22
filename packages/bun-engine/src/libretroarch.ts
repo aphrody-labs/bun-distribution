@@ -107,6 +107,8 @@ export function libretroarchLibrary(): string | undefined {
     process.env.LIBRETROARCH,
     join(usrRoot(), "lib", name),
     join(repoRoot, "vendor", "retroarch", name),
+    // the bun-engine package installs it system-wide
+    ...(process.platform === "win32" ? [] : [join("/usr/lib", name)]),
   ].find((path) => path && existsSync(path));
 }
 

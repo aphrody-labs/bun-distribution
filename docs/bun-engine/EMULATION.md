@@ -56,7 +56,13 @@ The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--wit
 `--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11, and an emdawnwebgpu canvas path.
 It does not run slang shader presets yet.
 
-`bun-engine retroarch --core <core> [content]` runs it behind `Bun.serve` and opens a WebGPU page:
+The launch router (`frontend/launch.ts`) lists it as `embedded:<core>` after the external
+`libretro:<core>` route, so a host without a RetroArch executable still launches libretro games:
+it needs only `libretroarch` and the core from `bep add libretro <core>`, and shares the BIOS
+linking (`linkCoreBios`) with the external route. The `bun-engine` package builds and installs
+`/usr/lib/libretroarch.so`.
+
+`bun-engine retroarch --core <id|file> [content]` (`--frames N` runs headless and prints a summary) runs it behind `Bun.serve` and opens a WebGPU page:
 one WebSocket carries frames (only when their serial changes, deflated, and dropped for a client
 that falls behind), audio chunks for an AudioWorklet,
 and the standard gamepad or keyboard as RetroPad bits. `RetroArchPresenter`

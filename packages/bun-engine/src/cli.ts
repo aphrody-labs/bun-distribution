@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { basename, join } from "node:path";
 import { policyFor } from "./catalog";
 import { loadConsoleReferences, validateConsoleReferences } from "./console/references";
 import { runFormats } from "./formats/cli";
@@ -14,12 +15,37 @@ async function serveRetroArchCli(args: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
     args,
     allowPositionals: true,
-    options: { core: { type: "string" }, port: { type: "string" }, host: { type: "string" } },
+    options: {
+      core: { type: "string" },
+      port: { type: "string" },
+      host: { type: "string" },
+      frames: { type: "string" },
+    },
   });
+  // a bare id is a bep core: its file and BIOS directory come from usr/lib/libretro
+  let core = values.core;
+  let config: Record<string, string> | undefined;
+  if (core && core === basename(core)) {
+    const { coreSettings, libretroDir } = await import("./libretro");
+    config = await coreSettings(core);
+    const ext = process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
+    core = join(libretroDir(), `${core}_libretro.${ext}`);
+  }
+  if (values.frames) {
+    const { RetroArch } = await import("./libretroarch");
+    using ra = RetroArch.open({ core, content: positionals[0], config });
+    let frames = 0;
+    for (; frames < Number(values.frames) && ra.iterate(); frames++);
+    const frame = ra.frame();
+    console.log(JSON.stringify({ frames, status: ra.status(), frame: frame && { ...frame, data: undefined, serial: String(frame.serial) } }));
+    process.exitCode = frames ? 0 : 1;
+    return;
+  }
   const { serveRetroArch } = await import("./libretroarch-serve");
   const { url, stop } = serveRetroArch({
-    core: values.core,
+    core,
     content: positionals[0],
+    config,
     port: values.port ? Number(values.port) : 0,
     hostname: values.host,
   });
@@ -78,7 +104,7 @@ async function main(): Promise<void> {
   else if (command === "retroarch") await serveRetroArchCli(process.argv.slice(3));
   else {
     throw new Error(
-      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | 3ds patches <list|apply> | 3ds addons <list|install> | 3ds homebrew <build|install|run> (Azahar user-dir tooling) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | retroarch [--core CORE] [--port N] [content] (libretroarch over WebGPU in the browser) | qualify <appid> | launch <appid> | trace <appid>",
+      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | 3ds patches <list|apply> | 3ds addons <list|install> | 3ds homebrew <build|install|run> (Azahar user-dir tooling) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | retroarch [--core ID|FILE] [--port N] [--frames N] [content] (libretroarch over WebGPU in the browser) | qualify <appid> | launch <appid> | trace <appid>",
     );
   }
 }

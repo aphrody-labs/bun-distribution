@@ -1,17 +1,17 @@
 // Launch routing: the native Bun Engine machine first, then the bep-installed release emulator
 // (usr/lib/<id>), then RetroArch with a libretro core (usr/lib/libretro). Per-system defaults and
 // per-game overrides live in library.db.
-import { existsSync, mkdirSync } from "node:fs";
-import { link } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { nativeEngine } from "../formats/tools";
 import { defaultFirmwareStore, listFirmware } from "../firmware/import";
-import { libretroCatalog, libretroDir } from "../libretro";
+import { coreSettings, libretroDir } from "../libretro";
+import { libretroarchLibrary } from "../libretroarch";
 import { listInstalled, usrRoot } from "../usr";
 import { defaultRoute, type Game, recordPlay } from "./library";
 import { extensionOf, loadSystems, type SystemDefinition, systemById } from "./systems";
 
-export type RouteKind = "native" | "bin" | "libretro";
+export type RouteKind = "native" | "bin" | "libretro" | "embedded";
 
 export interface Route {
   id: string;
@@ -104,6 +104,21 @@ export async function routesFor(systemId: string): Promise<Route[]> {
           : `core missing: bep add libretro ${core}`,
     });
   }
+  const library = libretroarchLibrary();
+  for (const core of system.libretro) {
+    const file = coreFile(core);
+    routes.push({
+      id: `embedded:${core}`,
+      kind: "embedded",
+      label: `RetroArch ${core} in process`,
+      available: Boolean(library && file),
+      reason: !library
+        ? "libretroarch is not built: ./configure --enable-libretroarch && make in vendor/retroarch"
+        : file
+          ? undefined
+          : `core missing: bep add libretro ${core}`,
+    });
+  }
   return routes;
 }
 
@@ -138,34 +153,12 @@ function substitute(args: string[], values: Record<string, string>): string[] {
   return args.map(arg => arg.replaceAll(/\{(\w+)\}/g, (_, key: string) => values[key] ?? ""));
 }
 
-/**
- * RetroArch reads BIOS from its system directory: link every firmware-store image whose MD5
- * matches a core-info requirement under the file name the core expects.
- */
 async function retroarchConfig(core: string): Promise<string> {
-  const system = join(usrRoot(), "share", "bun-engine", "system");
-  mkdirSync(system, { recursive: true });
-  const info = (await libretroCatalog()).find(item => item.id === core);
-  const wanted = new Map((info?.firmware ?? []).filter(fw => fw.md5).map(fw => [fw.md5!, fw.path]));
-  if (wanted.size) {
-    const store = defaultFirmwareStore();
-    for await (const path of new Bun.Glob("*/*").scan({
-      cwd: store,
-      absolute: true,
-      onlyFiles: true,
-    })) {
-      if (path.endsWith(".json")) continue;
-      const md5 = new Bun.CryptoHasher("md5").update(await Bun.file(path).bytes()).digest("hex");
-      const target = wanted.get(md5);
-      if (!target || existsSync(join(system, target))) continue;
-      mkdirSync(dirname(join(system, target)), { recursive: true });
-      await link(path, join(system, target)).catch(() => Bun.write(join(system, target), Bun.file(path)));
-    }
-  }
+  const { system_directory, libretro_directory } = await coreSettings(core);
   const config = join(usrRoot(), "var", "lib", "bep", "retroarch-frontend.cfg");
   await Bun.write(
     config,
-    `system_directory = "${system.replaceAll("\\", "/")}"\nlibretro_directory = "${libretroDir().replaceAll("\\", "/")}"\n`,
+    `system_directory = "${system_directory.replaceAll("\\", "/")}"\nlibretro_directory = "${libretro_directory.replaceAll("\\", "/")}"\n`,
   );
   return config;
 }
@@ -188,6 +181,17 @@ export async function commandFor(route: Route, game: Game, check: boolean, frame
       game.path,
       ...(bios ? ["--bios", bios] : []),
       ...(check ? ["--headless", "--frames", String(frames)] : []),
+    ];
+  }
+  if (kind === "embedded") {
+    return [
+      process.execPath,
+      join(import.meta.dir, "..", "cli.ts"),
+      "retroarch",
+      "--core",
+      id,
+      ...(check ? ["--frames", String(frames)] : ["--port", "8920"]),
+      game.path,
     ];
   }
   const installed = await installedExecutables();
