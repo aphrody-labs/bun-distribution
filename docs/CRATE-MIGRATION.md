@@ -383,3 +383,10 @@ The protocol test build ended before a test result was produced; tests and
 the full root build remain unqualified. The updated vendor verifies 543 remote
 sources, 671768402 bytes and 28572 checksum-listed files. Active Cargo source
 replacement remains disabled.
+
+## Nested workspace and lockfile exceptions
+
+Nested `[workspace]` manifests and `Cargo.lock` files are classified in
+[`cargo-exceptions.json`](cargo-exceptions.json) (see
+[`cargo-exceptions.md`](cargo-exceptions.md)); `bun src/cli.ts workspace check`
+enforces it. Entries classed `migrate` are the remaining migration batches.

@@ -8,6 +8,7 @@ import {
   script,
   sequence,
   spawn,
+  root,
   type Command,
 } from "./registry.ts";
 
@@ -356,8 +357,19 @@ define(
     group: "workspace",
     name: "inventory",
     summary: "Source workspace inventory",
-    usage: "[--config FILE]",
+    usage: "[--config FILE] [--out FILE]",
     ...viaFactory("workspace"),
+  },
+  {
+    group: "workspace",
+    name: "check",
+    summary: "Root invariants: nested Bun/Cargo locks and Cargo workspaces need a docs/cargo-exceptions.json entry",
+    target: "src/workspace-check.ts",
+    run: async () => {
+      const result = await (await import("../workspace-check.ts")).checkWorkspaceInvariants(root);
+      console.log(JSON.stringify(result, null, 2));
+      return result.ok ? 0 : 1;
+    },
   },
   {
     group: "workspace",

@@ -37,6 +37,7 @@ import {
   type Target,
 } from "../distribution.ts";
 import { inspectSourceWorkspace } from "../source-workspace.ts";
+import { stableJson } from "../workspace-check.ts";
 
 const OPTIONS = {
   help: { type: "boolean", short: "h" },
@@ -279,6 +280,17 @@ export async function runFactoryCli(argv: string[]): Promise<number> {
       const workspace = await inspectSourceWorkspace(config);
       if (!workspace.allSelectedSourceOwnersCovered) exitCode = 1;
       result = workspace;
+      if (values.out) {
+        // Deterministic projection: no revision, timestamp or absolute path, so regenerated diffs are meaningful.
+        const { schemaVersion, coverage, counts, componentInventory } = workspace.manifestInventory;
+        const order = (a: { path: string; type: string; component?: string }, b: typeof a) =>
+          a.path.localeCompare(b.path, "en") || a.type.localeCompare(b.type, "en") || (a.component ?? "").localeCompare(b.component ?? "", "en");
+        await Bun.write(
+          resolve(values.out),
+          stableJson({ schemaVersion, coverage, counts, componentInventory: [...componentInventory].sort(order) }),
+        );
+        result = { written: resolve(values.out), components: componentInventory.length };
+      }
       break;
     }
     case "plan":

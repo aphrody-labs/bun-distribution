@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "scope": "Tracked nested [workspace] manifests and Cargo.lock files outside the root, vendor/ and toolchains/. Checked by `bun src/cli.ts workspace check`.",
+  "classes": {
+    "fixture": "Test fixture that must build separately from the product graph.",
+    "fuzz": "cargo-fuzz target with its own workspace and lock.",
+    "example": "Standalone sample or template that must build against published APIs.",
+    "vendored": "Lock shipped inside a vendored third-party copy.",
+    "migrate": "Product member that must join the root Cargo workspace and lock; the exception is temporary."
+  },
+  "workspaces": [
+    {
+      "path": "apps/aphrody-drive/Cargo.toml",
+      "class": "migrate",
+      "reason": "Product app with its own SDK/core workspace; fold members into the root workspace."
+    },
+    {
+      "path": "apps/aphrody-examples/runtime-rust-extension/Cargo.toml",
+      "class": "example",
+      "reason": "Standalone sample of an external Rust runtime extension; builds outside the product graph."
+    },
+    {
+      "path": "apps/desktop/src-tauri/Cargo.toml",
+      "class": "migrate",
+      "reason": "Product Tauri shell with its own workspace and lock; belongs in the root workspace."
+    },
+    {
+      "path": "apps/effectcraft/examples/plugins/posterize-bands/Cargo.toml",
+      "class": "example",
+      "reason": "Sample plugin that must build standalone against the published plugin SDK."
+    },
+    {
+      "path": "apps/figcraft/plugins/Cargo.toml",
+      "class": "migrate",
+      "reason": "Product plugin workspace; fold members into the root workspace."
+    },
+    {
+      "path": "apps/m3-published-consumer/Cargo.toml",
+      "class": "migrate",
+      "reason": "Consumer app with its own workspace and lock; move to the root workspace (keep published-crate check as a gate)."
+    },
+    {
+      "path": "apps/photocraft/examples/plugins/invert-rs/Cargo.toml",
+      "class": "example",
+      "reason": "Sample plugin that must build standalone against the published plugin SDK."
+    },
+    {
+      "path": "crates/aphrody-nds-sdk/devkit/templates/3ds-rust/Cargo.toml",
+      "class": "example",
+      "reason": "Project template copied out for homebrew developers; not built in the product graph."
+    },
+    {
+      "path": "crates/aphrody-nds-sdk/devkit/templates/nds-rust/Cargo.toml",
+      "class": "example",
+      "reason": "Project template copied out for homebrew developers; not built in the product graph."
+    },
+    {
+      "path": "crates/bevy_color/crates/gen_tests/Cargo.toml",
+      "class": "fixture",
+      "reason": "Upstream Bevy test generator kept as an isolated workspace for upstream parity."
+    },
+    {
+      "path": "crates/ghidra-decompiler/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/pdfcraft-filters/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/photocraft-affinity/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/photocraft-codecs/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/photocraft-format/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/photocraft-psd/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/photocraft-raw/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/soundcraft-clap-host/tests/fixture/Cargo.toml",
+      "class": "fixture",
+      "reason": "Test plugin built as a cdylib by the host test; must stay out of the root graph."
+    },
+    {
+      "path": "crates/soundcraft-vst3-host/tests/fixture/Cargo.toml",
+      "class": "fixture",
+      "reason": "Test plugin built as a cdylib by the host test; must stay out of the root graph."
+    },
+    {
+      "path": "crates/vectorcraft-affinity/fuzz/Cargo.toml",
+      "class": "fuzz",
+      "reason": "cargo-fuzz target requiring its own workspace and nightly sanitizers."
+    },
+    {
+      "path": "crates/vectorcraft-plugins/example/Cargo.toml",
+      "class": "example",
+      "reason": "Sample plugin that must build standalone against the plugin SDK."
+    },
+    {
+      "path": "packages/bun-tauri/Cargo.toml",
+      "class": "migrate",
+      "reason": "Tauri fork workspace nested under packages/; migrate members into the root workspace."
+    }
+  ],
+  "lockfiles": [
+    {
+      "path": "apps/aphrody-drive/Cargo.lock",
+      "class": "migrate",
+      "reason": "Lock of the aphrody-drive workspace; retire when it joins the root lock."
+    },
+    {
+      "path": "apps/aphrody-drive/core/Cargo.lock",
+      "class": "migrate",
+      "reason": "Stray nested lock under aphrody-drive; retire with the workspace migration."
+    },
+    {
+      "path": "apps/aphrody-drive/crates/sdk-macros/Cargo.lock",
+      "class": "migrate",
+      "reason": "Stray nested lock under aphrody-drive; retire with the workspace migration."
+    },
+    {
+      "path": "apps/aphrody-drive/crates/sdk/Cargo.lock",
+      "class": "migrate",
+      "reason": "Stray nested lock under aphrody-drive; retire with the workspace migration."
+    },
+    {
+      "path": "apps/aphrody-examples/runtime-rust-extension/Cargo.lock",
+      "class": "example",
+      "reason": "Pins the standalone extension sample."
+    },
+    {
+      "path": "apps/desktop/src-tauri/Cargo.lock",
+      "class": "migrate",
+      "reason": "Lock of the desktop Tauri shell; retire when it joins the root lock."
+    },
+    {
+      "path": "apps/effectcraft/examples/plugins/posterize-bands/Cargo.lock",
+      "class": "example",
+      "reason": "Pins the standalone plugin sample."
+    },
+    {
+      "path": "apps/figcraft/plugins/Cargo.lock",
+      "class": "migrate",
+      "reason": "Lock of the figcraft plugin workspace; retire when it joins the root lock."
+    },
+    {
+      "path": "apps/m3-published-consumer/Cargo.lock",
+      "class": "migrate",
+      "reason": "Lock of the published-crate consumer; retire when it joins the root lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/egui-wgpu/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored egui-wgpu copy; not a product lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/hayro-interpret/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored hayro-interpret copy; not a product lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/hayro-jbig2/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored hayro-jbig2 copy; not a product lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/hayro-syntax/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored hayro-syntax copy; not a product lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/hayro/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored hayro copy; not a product lock."
+    },
+    {
+      "path": "apps/pdfcraft/vendor/winit/Cargo.lock",
+      "class": "vendored",
+      "reason": "Upstream lock shipped inside the vendored winit copy; not a product lock."
+    },
+    {
+      "path": "apps/photocraft/examples/plugins/invert-rs/Cargo.lock",
+      "class": "example",
+      "reason": "Pins the standalone plugin sample."
+    },
+    {
+      "path": "crates/ghidra-decompiler/fuzz/Cargo.lock",
+      "class": "fuzz",
+      "reason": "Pins the fuzz target for reproducible findings."
+    },
+    {
+      "path": "crates/soundcraft-clap-host/tests/fixture/Cargo.lock",
+      "class": "fixture",
+      "reason": "Pins the test plugin fixture."
+    },
+    {
+      "path": "crates/soundcraft-vst3-host/tests/fixture/Cargo.lock",
+      "class": "fixture",
+      "reason": "Pins the test plugin fixture."
+    },
+    {
+      "path": "crates/vectorcraft-plugins/example/Cargo.lock",
+      "class": "example",
+      "reason": "Pins the standalone plugin sample."
+    },
+    {
+      "path": "packages/bun-tauri/Cargo.lock",
+      "class": "migrate",
+      "reason": "Lock of the bun-tauri workspace; retire when it joins the root lock."
+    }
+  ]
+}
