@@ -339,6 +339,83 @@ pub fn extract_install(
     Ok(manifest)
 }
 
+/// Merge the per-archive folders written by [`extract_install`] into one tree that follows the
+/// DBXV2 mount precedence, so a consumer that only knows loose files sees the game as it runs.
+///
+/// Archives are visited in the `dbxv2` profile order — `(rank, name)` ascending, the order in
+/// which [`crate::game::assets::vfs::GameVfs`] mounts them — and the first archive that provides
+/// a path wins, compared case-insensitively: patch and DLC packs shadow the base. Files are
+/// hard-linked, so the merged view costs no space; `cpk_dir` and `out` must share a filesystem.
+///
+/// # Errors
+/// `out` already exists, or an I/O error while walking or linking.
+pub fn merge_extracted(cpk_dir: &Path, out: &Path) -> Result<serde_json::Value> {
+    let profile = crate::game::assets::profile::by_id("dbxv2").expect("built-in dbxv2 profile");
+    if out.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!("output already exists: {}", out.display()),
+        )
+        .into());
+    }
+    let mut archives: Vec<(usize, String, PathBuf)> = fs::read_dir(cpk_dir)?
+        .flatten()
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
+        .map(|entry| {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            (profile.rank(&format!("cpk/{name}.cpk")), name, entry.path())
+        })
+        .collect();
+    archives.sort();
+
+    let mut taken: HashSet<String> = HashSet::new();
+    let mut order = Vec::with_capacity(archives.len());
+    let (mut linked, mut shadowed) = (0_usize, 0_usize);
+    for (rank, name, root) in &archives {
+        let (mut provided, mut lost) = (0_usize, 0_usize);
+        let mut stack = vec![root.clone()];
+        while let Some(dir) = stack.pop() {
+            for entry in fs::read_dir(&dir)?.flatten() {
+                let path = entry.path();
+                let kind = entry.file_type()?;
+                if kind.is_dir() {
+                    stack.push(path);
+                    continue;
+                }
+                let Ok(relative) = path.strip_prefix(root) else {
+                    continue;
+                };
+                let relative = relative.to_string_lossy().replace('\\', "/");
+                if !kind.is_file() || relative == "cpk_manifest.json" {
+                    continue;
+                }
+                if !taken.insert(relative.to_ascii_lowercase()) {
+                    lost += 1;
+                    continue;
+                }
+                let target = out.join(&relative);
+                if let Some(parent) = target.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::hard_link(&path, &target)?;
+                provided += 1;
+            }
+        }
+        linked += provided;
+        shadowed += lost;
+        order.push(serde_json::json!({
+            "archive": name, "rank": rank, "provided": provided, "shadowed": lost,
+        }));
+    }
+    Ok(serde_json::json!({
+        "profile": profile.id,
+        "out": out.display().to_string(),
+        "linked": linked,
+        "shadowed": shadowed,
+        "order": order,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use aphrody_nie_formats::cpk::CpkEntry;

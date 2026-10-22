@@ -1244,6 +1244,68 @@ impl Vfs {
         added
     }
 
+    /// Monte récursivement un arbre de fichiers libres sous le préfixe logique `prefix`
+    /// (`<prefix>/<chemin relatif>`), en overlays : [`Vfs::read`] les sert avant les packs.
+    ///
+    /// Générique, sans politique de jeu : un chemin déjà monté est remplacé par le dernier
+    /// montage. C'est à l'appelant de fournir un arbre dont la préséance est déjà résolue
+    /// (p. ex. la vue fusionnée DBXV2 de `bunre dbxv2 merge`). Rend le nombre de fichiers montés.
+    pub fn mount_overlay_dir(&mut self, dir: &Path, prefix: &str) -> usize {
+        let prefix = prefix.trim_matches('/');
+        let mut added = 0;
+        let mut stack = vec![dir.to_path_buf()];
+        while let Some(current) = stack.pop() {
+            let Ok(entries) = std::fs::read_dir(&current) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let Ok(file_type) = entry.file_type() else {
+                    continue;
+                };
+                if file_type.is_dir() {
+                    stack.push(path);
+                } else if file_type.is_file() {
+                    let Ok(rel) = path.strip_prefix(dir) else {
+                        continue;
+                    };
+                    let rel = rel.to_string_lossy().replace('\\', "/");
+                    let logical_path = if prefix.is_empty() {
+                        rel
+                    } else {
+                        format!("{prefix}/{rel}")
+                    };
+                    let file_size = entry
+                        .metadata()
+                        .map_or(0, |m| u32::try_from(m.len()).unwrap_or(u32::MAX));
+                    self.add_overlay_file(logical_path, path, file_size);
+                    added += 1;
+                }
+            }
+        }
+        added
+    }
+
+    /// Monte les jeux supplémentaires déclarés par `NIE_EXTRA_GAMES`, sous leur identifiant :
+    /// `NIE_EXTRA_GAMES="dbxv2=/home/ubuntu/re/dbxv2-merged;autre=/chemin"`. Chaque arbre est
+    /// monté par [`Vfs::mount_overlay_dir`], si bien que tout consommateur du VFS (CLI `nie`,
+    /// MCP, Bevy `nie://`, rendu) lit `dbxv2/<chemin>` comme un asset du jeu principal.
+    ///
+    /// Variable absente ou vide : rien n'est monté, le comportement par défaut est inchangé.
+    /// Les entrées mal formées ou les dossiers absents sont ignorés. Sans effet en mode distant,
+    /// où [`Vfs::read`] ne consulte pas les overlays. Rend le nombre total de fichiers montés.
+    pub fn mount_extra_games_from_env(&mut self) -> usize {
+        let Ok(spec) = std::env::var("NIE_EXTRA_GAMES") else {
+            return 0;
+        };
+        spec.split(';')
+            .filter_map(|item| item.split_once('='))
+            .map(|(id, dir)| (id.trim(), PathBuf::from(dir.trim())))
+            .filter(|(id, dir)| !id.is_empty() && dir.is_dir())
+            .map(|(id, dir)| self.mount_overlay_dir(&dir, id))
+            .sum()
+    }
+
     /// Monte les artefacts compilés sous `var/ocgen` (icônes G4TX, tables, dialogues)
     /// sur leurs chemins de jeu VFS respectifs.
     pub fn mount_ocgen_artifacts(&mut self, ocgen_dir: &Path) -> usize {
@@ -1475,6 +1537,13 @@ pub fn resolve_dump_dir() -> Option<PathBuf> {
 /// Rend l'erreur d'[`Vfs::init`] quand une installation est détectée mais illisible, et
 /// `Corrupt` quand ni installation ni dump ne sont visibles.
 pub fn open_game() -> Result<Vfs, FormatError> {
+    let mut vfs = open_primary_game()?;
+    vfs.mount_extra_games_from_env();
+    Ok(vfs)
+}
+
+/// Le montage du jeu principal seul, sans les jeux de `NIE_EXTRA_GAMES` (cf. [`open_game`]).
+fn open_primary_game() -> Result<Vfs, FormatError> {
     let mut vfs = Vfs::new();
     let dump_force = std::env::var("NIE_DUMP_DIR").is_ok_and(|d| !d.trim().is_empty());
     if dump_force && let Some(dump) = resolve_dump_dir() {
@@ -1515,6 +1584,7 @@ pub fn open_source(hint: Option<&str>) -> Result<Vfs, FormatError> {
     let mut vfs = Vfs::new();
     vfs.init_source(&source)?;
     let _ = crate::game_source::remember(&vfs.game_data_dir().to_string_lossy());
+    vfs.mount_extra_games_from_env();
     Ok(vfs)
 }
 

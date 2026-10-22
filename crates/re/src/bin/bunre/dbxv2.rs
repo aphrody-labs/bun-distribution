@@ -32,6 +32,10 @@ Usage: bunre dbxv2 <command> ...
   extract <game> --out <dir> [--cpk <name>...] [--all-cpk] [--include-movies]
           [--max-gb <n>] [--no-skip-existing] [--threads <n>]
   cpk <file.cpk> --output-dir <new-dir>       extract one archive + cpk_manifest.json
+  merge <out>/cpk --out <new-dir>             hard-link the extracted archives into one tree
+                                              in DBXV2 mount precedence (patch/DLC over base)
+  unified <root>... [--search <q> [--limit <n>] | --read <game/path> | --describe <game/path>]
+          [--out <file>]                      mount several games under one <game>/<path> view
   emb <file.emb> --output-dir <new-dir>       unpack one EMB container
   tex <root> | audio <root> | models <root> | parse <root>
   text <file.msg> [--output <new-file>] | text <dir> [--output-dir <new-dir>]
@@ -544,7 +548,7 @@ mod media {
             audio_in_place, global_report, models_manifest, parse_in_place, tex_in_place,
             text_in_place,
         },
-        fs::cpk_stream::{ExtractOptions, extract_cpk, extract_install},
+        fs::cpk_stream::{ExtractOptions, extract_cpk, extract_install, merge_extracted},
         index::{build_index, reclassify, search, stats},
         inventory::inventory_install,
         reverse::reverse_install,
@@ -645,6 +649,12 @@ mod media {
     pub fn main(command: &str, args: &Args) -> ExitCode {
         let single = args.positional.len() == 1;
         match command {
+            "merge" if single && args.only(&["--out"]) => {
+                let Some(out) = args.get("--out") else {
+                    return usage();
+                };
+                report_result(merge_extracted(Path::new(&args.positional[0]), Path::new(out)))
+            }
             "unified"
                 if !args.positional.is_empty()
                     && args.only(&["--read", "--search", "--limit", "--describe", "--out"]) =>
