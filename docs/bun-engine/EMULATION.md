@@ -67,12 +67,17 @@ No commercial title was tried. DS needs no BIOS (FreeBIOS), and
 libretro buildbot).
 
 The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--with-webgpu_libs` and
-`--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11 and Wayland (checked under headless
-sway), and an emdawnwebgpu canvas path. Slang presets run on the native path only.
+`--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11 and Wayland, and an emdawnwebgpu canvas path.
+Under headless sway the Wayland path renders, toggles fullscreen, takes keyboard and pointer input and
+quits on SIGTERM or a close request; without a Wayland display it falls back to X11, and a build with
+`--disable-x11 --enable-wayland` works (libdecor was not checked). The emdawnwebgpu build (`HAVE_WEBGPU=1`)
+presented live frames on a canvas in headless Chrome under SwiftShader. Slang presets run on the native
+path only.
 
 The Emscripten page can pull audio into an AudioWorklet, present through WebGPU (2D canvas as
 fallback) and build threaded under COOP/COEP (`pkg/emscripten/libretroarch/serve.ts`); on a heavy
-core `OPTIMIZE=1` gains at most about 15%, within the noise of a shared host.
+core `OPTIMIZE=1` gains at most about 15%, within the noise of a shared host. emcc 6.0.13 and `JSPI=1` build
+and run it too, with no measurable speed difference from 6.0.5.
 
 The launch router (`frontend/launch.ts`) lists it as `embedded:<core>` after the external
 `libretro:<core>` route, so a host without a RetroArch executable still launches libretro games:
