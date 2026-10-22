@@ -17,6 +17,8 @@ interface SystemRow {
   year: number;
   extensions: string[];
   games: number;
+  /** The id of a game whose cover the card shows. */
+  cover: number | null;
   routes: Route[];
   defaultRoute: string | null;
 }
@@ -38,6 +40,7 @@ interface Game {
   region: string | null;
   dat: string | null;
   route: string | null;
+  cover: string | null;
   favorite: number;
   playCount: number;
   lastPlayed: string | null;
@@ -157,7 +160,8 @@ async function showSystems(): Promise<void> {
       ${state.systems
         .map(system => {
           const available = system.routes.filter(route => route.available);
-          return `<button data-nav class="system ${system.games ? "" : "dim"}" data-system="${h(system.id)}" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
+          return `<button data-nav class="system ${system.games ? "" : "dim"} ${system.cover ? "has-cover" : ""}" data-system="${h(system.id)}" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
+            ${system.cover ? `<img class="cover" src="/api/games/${system.cover}/cover" alt="" loading="lazy" />` : ""}
             <span class="maker">${h(system.manufacturer)} · ${system.year}</span>
             <span class="name">${h(system.name)}</span>
             <span class="count">${system.games} ${system.games === 1 ? "game" : "games"}</span>
@@ -201,7 +205,7 @@ async function showGames(systemId: string): Promise<void> {
                 .map(
                   game => `<button data-nav class="game" data-game="${game.id}">
                     <span class="fav">${game.favorite ? "★" : ""}</span>
-                    <span class="title">${h(game.title ?? game.name)}</span>
+                    <span class="title">${game.cover ? `<img class="thumb" src="/api/games/${game.id}/cover" alt="" loading="lazy" />` : ""}${h(game.title ?? game.name)}</span>
                     <span class="meta">${game.dat ? "DB" : ""}${game.playCount ? ` · ${game.playCount}×` : ""}</span>
                   </button>`,
                 )
@@ -244,6 +248,7 @@ function renderDetail(game: Game | undefined): void {
   const running = state.running.find(item => item.game === game.id);
   detail.innerHTML = `
     <h2>${h(game.title ?? game.name)}</h2>
+    ${game.cover ? `<img class="cover-large" src="/api/games/${game.id}/cover" alt="Cover of ${h(game.title ?? game.name)}" />` : ""}
     <dl>
       ${game.title && game.title !== game.name ? `<dt>File name</dt><dd>${h(game.name)}</dd>` : ""}
       ${game.developer ? `<dt>Developer</dt><dd>${h(game.developer)}</dd>` : ""}

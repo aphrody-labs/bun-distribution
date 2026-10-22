@@ -22,6 +22,7 @@ import {
   setFavorite,
   setGameRoute,
   systemCounts,
+  systemCovers,
 } from "./library";
 import { loadSystems, systemById } from "./systems";
 
@@ -67,6 +68,7 @@ export function startJob(title: string, work: () => Promise<unknown>): Job {
 
 export async function systemsOverview(): Promise<unknown[]> {
   const counts = systemCounts();
+  const covers = systemCovers();
   const { systems } = await loadSystems();
   return Promise.all(
     systems.map(async system => {
@@ -78,6 +80,7 @@ export async function systemsOverview(): Promise<unknown[]> {
         year: system.year,
         extensions: system.extensions,
         games: counts[system.id] ?? 0,
+        cover: covers[system.id] ?? null,
         routes,
         defaultRoute: defaultRoute(system.id),
       };
@@ -239,6 +242,14 @@ export function frontendRoutes() {
           routes: await routesFor(game.system),
           defaultRoute: defaultRoute(game.system),
         });
+      }),
+    },
+    "/api/games/:id/cover": {
+      GET: guard(async request => {
+        const cover = gameById(Number((request.params as { id: string }).id)).cover;
+        const file = cover ? Bun.file(cover) : undefined;
+        if (!file || !(await file.exists())) return new Response("no cover", { status: 404 });
+        return new Response(file, { headers: { "cache-control": "max-age=3600" } });
       }),
     },
     "/api/games/:id/launch": {

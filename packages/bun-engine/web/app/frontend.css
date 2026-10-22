@@ -190,6 +190,19 @@ h3 {
   transform: translateY(-3px) scale(1.02);
   border-color: var(--accent);
 }
+.system.has-cover {
+  padding-top: 6.6rem;
+}
+.system .cover {
+  position: absolute;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: 5.6rem;
+  object-fit: cover;
+  object-position: top;
+  background: var(--panel-2);
+  mask-image: linear-gradient(#000 70%, transparent);
+}
 .system.dim {
   opacity: 0.55;
 }
@@ -319,6 +332,16 @@ td button,
 .game:focus .fav {
   color: #b45309;
 }
+.game .thumb {
+  width: 2.6rem;
+  height: 1.8rem;
+  margin-right: 0.6rem;
+  vertical-align: middle;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
 .game .title {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -342,6 +365,15 @@ td button,
   margin: 0 0 1rem;
   font-size: 1.6rem;
   letter-spacing: -0.02em;
+}
+.detail .cover-large {
+  display: block;
+  max-width: min(100%, 22rem);
+  max-height: 14rem;
+  margin: 0 0 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
 }
 .detail dl {
   display: grid;

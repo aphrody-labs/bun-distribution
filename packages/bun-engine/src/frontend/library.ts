@@ -38,6 +38,8 @@ export interface Game {
   serial: string | null;
   dat: string | null;
   route: string | null;
+  /** A `<stem>.png|webp|jpg` next to the game file, shown as its cover. */
+  cover: string | null;
   favorite: number;
   playCount: number;
   lastPlayed: string | null;
@@ -94,6 +96,8 @@ export function db(): Database {
     source TEXT NOT NULL, size INTEGER NOT NULL, mtime INTEGER NOT NULL, crc TEXT, md5 TEXT, title TEXT, description TEXT,
     developer TEXT, year TEXT, region TEXT, serial TEXT, dat TEXT, route TEXT, favorite INTEGER NOT NULL DEFAULT 0,
     playCount INTEGER NOT NULL DEFAULT 0, lastPlayed TEXT, scan INTEGER NOT NULL DEFAULT 0)`);
+  if (!database.query<{ name: string }, []>("PRAGMA table_info(games)").all().some(column => column.name === "cover"))
+    database.run("ALTER TABLE games ADD COLUMN cover TEXT");
   database.run("CREATE INDEX IF NOT EXISTS games_system ON games (system)");
   database.run(
     "CREATE TABLE IF NOT EXISTS dat_files (path TEXT PRIMARY KEY, mtime INTEGER NOT NULL, entries INTEGER NOT NULL)",
@@ -335,6 +339,12 @@ async function sidecarNote(path: string): Promise<string | null> {
   return (await note.text()).trim().slice(0, 600) || null;
 }
 
+/** The cover of a game: an image named like the game file, next to it. */
+function coverFor(path: string): string | null {
+  const stem = path.replace(/\.[^.\\/]+$/, "");
+  return ["png", "webp", "jpg", "jpeg"].map(ext => `${stem}.${ext}`).find(file => existsSync(file)) ?? null;
+}
+
 interface Candidate {
   path: string;
   system: SystemDefinition;
@@ -453,12 +463,12 @@ export async function scanLibrary(): Promise<ScanSummary> {
   const existing = db().query<Game, [string]>("SELECT * FROM games WHERE path = ?");
   const upsert = db()
     .query(`INSERT INTO games (system, path, file, name, source, size, mtime, crc, md5, title, description,
-      developer, year, region, serial, dat, scan)
+      developer, year, region, serial, dat, cover, scan)
     VALUES ($system, $path, $file, $name, $source, $size, $mtime, $crc, $md5, $title, $description, $developer, $year,
-      $region, $serial, $dat, $scan)
+      $region, $serial, $dat, $cover, $scan)
     ON CONFLICT (path) DO UPDATE SET system = $system, file = $file, name = $name, source = $source, size = $size,
       mtime = $mtime, crc = $crc, md5 = $md5, title = $title, description = $description, developer = $developer,
-      year = $year, region = $region, serial = $serial, dat = $dat, scan = $scan`);
+      year = $year, region = $region, serial = $serial, dat = $dat, cover = $cover, scan = $scan`);
   for await (const candidate of candidates()) {
     const path = resolve(candidate.path);
     const stat = statSync(path);
@@ -493,6 +503,7 @@ export async function scanLibrary(): Promise<ScanSummary> {
       region: dat?.region ?? null,
       serial: dat?.serial ?? null,
       dat: dat?.dat ?? null,
+      cover: coverFor(path),
       scan,
     });
     summary.games++;
@@ -549,6 +560,16 @@ export function systemCounts(): Record<string, number> {
     .query<{ system: string; n: number }, []>("SELECT system, count(*) AS n FROM games GROUP BY system")
     .all();
   return Object.fromEntries(rows.map(row => [row.system, row.n]));
+}
+
+/** Per system, the id of the first game that has a cover (the system card shows it). */
+export function systemCovers(): Record<string, number> {
+  const rows = db()
+    .query<{ system: string; id: number }, []>(
+      "SELECT system, min(id) AS id FROM games WHERE cover IS NOT NULL GROUP BY system",
+    )
+    .all();
+  return Object.fromEntries(rows.map(row => [row.system, row.id]));
 }
 
 export function setFavorite(id: number, favorite: boolean): void {

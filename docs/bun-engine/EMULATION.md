@@ -102,6 +102,14 @@ back. Bun has no `navigator.gpu`, so the presenter runs in a browser or `Bun.Web
 Chrome on a GPU-less Linux host needs `--enable-unsafe-webgpu --enable-features=Vulkan
 --use-vulkan=swiftshader --use-angle=swiftshader`.
 
+## Showcase
+
+[`HOMEBREW.md`](HOMEBREW.md) lists the open homebrew used per system with its licence and source,
+and [`screens/README.md`](screens/README.md) records every capture (command, core, frame count,
+sha256): console screens from the binding, plus the frontend flow (library, system, game playing
+in the `embedded:<core>` player, Escape back to the library) in headless Chrome. Library entries
+take a `<stem>.png` next to the game as their cover.
+
 ## Arch Linux image
 
 `factory/images/bunos-gaming` has an `emulation` target: the gaming image plus every emulator

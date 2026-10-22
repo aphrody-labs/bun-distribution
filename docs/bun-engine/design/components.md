@@ -65,8 +65,18 @@ Player (iframe)
 - A "recent" row of large tiles at the top of the library.
 - A secondary row for system actions (settings, quit).
 - Confirm dialogs for stop and remove, with the safe choice focused first.
-- Reference captures for a pixel comparison: none are tracked; capture the library on the VPS
-  (sway headless and Chrome kiosk) before comparing.
+- Reference captures for a pixel comparison: the library is now captured on the VPS with
+  headless Chrome (`screens/flow-*.png`, see `screens/README.md`), but only as showcase evidence
+  at 1280x720: no pixel diff exists and the pad and keyboard hint bar was not captured per input.
+
+## Built since
+
+- Covers: a `<stem>.png|webp|jpg` next to a game file is stored in `games.cover` at scan time and
+  served from `/api/games/:id/cover`. System cards show the first cover of their games as a banner,
+  game rows a 2.6 x 1.8 rem thumbnail and the detail pane the picture. Surfaces use `--line` and
+  `--panel-2`; the focus ring (`--focus` box shadow) is unchanged.
+- Showcase library of open homebrew per system (`HOMEBREW.md`) and the library to game to
+  `embedded:<core>` player to Escape flow, with focus restored to the launching row.
 
 ## Reference reviewed, nothing reused
 
