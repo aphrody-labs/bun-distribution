@@ -1,6 +1,7 @@
 // Shared pieces of the Bun Engine frontend: types, state, the API client, toasts, footer hints
 // (with the glyphs of the connected pad) and focus helpers.
 import { glyph, type PadKind, type Token } from "./glyphs";
+import { play } from "./sounds";
 
 export interface Route {
   id: string;
@@ -68,7 +69,18 @@ export interface LaunchResult {
   player?: string;
 }
 
-export type Tab = "home" | "systems" | "games" | "search" | "settings" | "bios" | "installer" | "sources";
+export type Tab = "home" | "systems" | "games" | "game" | "search" | "settings" | "bios" | "installer" | "sources";
+
+/** A declared non-game app (home page tile), as /api/apps reports it. */
+export interface AppRow {
+  id: string;
+  title: string;
+  icon: string;
+  command: string[];
+  available: boolean;
+  reason?: string;
+  pid?: number;
+}
 
 export const view = document.querySelector<HTMLElement>("#view")!;
 export const hints = document.querySelector<HTMLElement>("#hints")!;
@@ -141,6 +153,7 @@ function setOffline(offline: boolean): void {
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 export function toast(message: string, kind: "info" | "ok" | "error" = "info"): void {
+  if (kind === "error") play("error");
   toastBox.textContent = message;
   toastBox.className = `toast show ${kind}`;
   clearTimeout(toastTimer);
@@ -190,7 +203,9 @@ export function ago(iso: string | null): string {
 // ---- tabs and focus -------------------------------------------------------------------------------
 
 export function markTab(active: Tab = state.tab): void {
-  const group: Tab = active === "games" ? "systems" : ["bios", "installer", "sources"].includes(active) ? "settings" : active;
+  // a game page belongs to the page it was opened from
+  const base: Tab = active === "game" ? (state.from === "game" ? "home" : state.from) : active;
+  const group: Tab = base === "games" ? "systems" : ["bios", "installer", "sources"].includes(base) ? "settings" : base;
   for (const button of document.querySelectorAll<HTMLElement>("[data-tab]")) {
     const on = button.dataset.tab === group;
     button.classList.toggle("active", on);

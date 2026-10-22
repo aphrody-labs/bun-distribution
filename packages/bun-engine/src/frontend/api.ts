@@ -1,7 +1,7 @@
 // HTTP API of the Bun Engine frontend: library, launch routing, BIOS status and the bep installer.
 // Long bep operations (installs, scans, mirror probes) run as jobs the UI polls.
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { listFirmware } from "../firmware/import";
 import { biosReport, libretroCatalog } from "../libretro";
 import { indexMirrors, listMirrors, probeMirrors } from "../mirrors";
@@ -10,7 +10,10 @@ import { listInstalled, releaseCatalog } from "../usr";
 import { launchGame, routesFor, runningGames, stopGame } from "./launch";
 import { libretroarchLibrary } from "../libretroarch";
 import { readShellSettings, shellDatabasePath, writeShellSetting } from "./profiles";
+import { displayAsleep, hostState, sleepDisplay, sleepSupport, wakeDisplay } from "./host";
 import { sessionAction, sessionHooks, underGamescope } from "./session";
+import { launchApp, listApps } from "./apps";
+import { saveSummary } from "./saves";
 import {
   addFolder,
   addPlayer,
@@ -19,6 +22,8 @@ import {
   gameById,
   gamesFor,
   inProject,
+  relatedGames,
+  profileGame,
   listPlayers,
   listSources,
   projectDir,
@@ -307,6 +312,23 @@ export function frontendRoutes() {
         });
       }),
     },
+    "/api/games/:id/page": {
+      GET: guard(async request => {
+        const url = new URL(request.url);
+        const profile = url.searchParams.get("profile") ?? "default";
+        const game = profileGame(Number((request.params as { id: string }).id), profile);
+        const stem = basename(game.file || game.path).replace(/.[^.]+$/, "");
+        return json({
+          game,
+          routes: await routesFor(game.system),
+          defaultRoute: defaultRoute(game.system),
+          sameSystem: relatedGames(game),
+          recent: recentGames(profile, 13).filter(item => item.id !== game.id).slice(0, 12),
+          saves: saveSummary(profile, stem),
+          running: runningGames().find(item => item.game === game.id) ?? null,
+        });
+      }),
+    },
     "/api/games/:id/cover": {
       GET: guard(async request => {
         const cover = gameById(Number((request.params as { id: string }).id)).cover;
@@ -361,15 +383,22 @@ export function frontendRoutes() {
       POST: guard(async request => json(addPlayer((await body<{ name: string }>(request)).name ?? ""))),
     },
     "/api/session": {
-      GET: guard(() => {
+      GET: guard(async () => {
         const hooks = sessionHooks();
         return json({
           gamescope: underGamescope(),
           window: hooks?.window ?? false,
           power: Boolean(hooks),
+          sleep: await sleepSupport(),
+          asleep: displayAsleep(),
           config: readShellSettings(),
         });
       }),
+    },
+    "/api/host": { GET: guard(async () => json(await hostState())) },
+    "/api/apps": { GET: guard(() => json(listApps(runningGames()))) },
+    "/api/apps/:id/launch": {
+      POST: guard(request => json(launchApp((request.params as { id: string }).id, runningGames()))),
     },
     "/api/settings": { GET: guard(async () => json(await settingsOverview())) },
     "/api/settings/:key": {
@@ -380,9 +409,15 @@ export function frontendRoutes() {
       }),
     },
     "/api/session/:action": {
-      POST: guard(request => {
+      POST: guard(async request => {
         const { action } = request.params as { action: string };
+        if (action === "sleep" || action === "wake") {
+          // display power only: the answer says what the host tool reported, never an assumed success
+          const result = await (action === "sleep" ? sleepDisplay() : wakeDisplay());
+          return json({ action, ...result }, result.ok ? 200 : 409);
+        }
         if (action !== "exit" && action !== "restart") throw new Error(`unknown session action ${action}`);
+        if (displayAsleep()) await wakeDisplay();
         return json(sessionAction(action));
       }),
     },

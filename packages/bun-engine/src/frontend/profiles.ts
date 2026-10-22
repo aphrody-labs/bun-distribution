@@ -93,6 +93,8 @@ export function parseAssignments(args: string[]): Partial<Omit<Profile, "key" | 
 export const shellSettings = {
   hud: { values: ["0", "1"], fallback: "0" },
   motion: { values: ["system", "reduced", "full"], fallback: "system" },
+  /** Interface sounds: "auto" plays them unless motion is reduced, "on" always, "off" never. */
+  sounds: { values: ["auto", "on", "off"], fallback: "auto" },
 } as const;
 
 export type ShellSetting = keyof typeof shellSettings;
@@ -105,6 +107,7 @@ export function readShellSettings(): Record<ShellSetting, string> {
     return {
       hud: stored.get("hud") ?? shellSettings.hud.fallback,
       motion: stored.get("motion") ?? shellSettings.motion.fallback,
+      sounds: stored.get("sounds") ?? shellSettings.sounds.fallback,
     };
   } finally {
     db.close();

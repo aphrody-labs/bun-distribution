@@ -20,6 +20,7 @@ async function serveRetroArchCli(args: string[]): Promise<void> {
       port: { type: "string" },
       host: { type: "string" },
       frames: { type: "string" },
+      profile: { type: "string" },
     },
   });
   // a bare id is a bep core: its file and BIOS directory come from usr/lib/libretro
@@ -48,6 +49,7 @@ async function serveRetroArchCli(args: string[]): Promise<void> {
     config,
     port: values.port ? Number(values.port) : 0,
     hostname: values.host,
+    profile: values.profile,
   });
   console.log(`RetroArch at ${url}`);
   process.on("SIGINT", () => {

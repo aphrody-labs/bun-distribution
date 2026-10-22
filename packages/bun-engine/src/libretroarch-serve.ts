@@ -6,11 +6,14 @@ import { AUDIO_HEADER, FRAME_HEADER, Message } from "./libretroarch-gpu";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { RetroArch, type OpenOptions } from "./libretroarch";
+import { prepareProfileSaves } from "./frontend/saves";
 import { usrRoot } from "./usr";
 
 export interface ServeOptions extends OpenOptions {
   port?: number;
   hostname?: string;
+  /** The frontend profile playing: states and screenshots go to its own folders (see frontend/saves.ts). */
+  profile?: string;
 }
 
 type ClientMessage =
@@ -19,16 +22,23 @@ type ClientMessage =
   | { type: "pause"; paused: boolean };
 
 export function serveRetroArch(options: ServeOptions = {}) {
-  const ra = RetroArch.open(options);
+  const home = options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
+  // a profile plays into its own states/screenshots folders; without one the shared folders stay in use
+  const saves = options.profile ? prepareProfileSaves(home, options.profile) : undefined;
+  const ra = RetroArch.open(
+    saves
+      ? { ...options, config: { ...options.config, savestate_directory: saves.states, screenshot_directory: saves.screenshots } }
+      : options,
+  );
   const clients = new Set<ServerWebSocket<unknown>>();
   const samples = new Float32Array(16384);
   let lastSerial = -1n;
   let running = true;
-  const home = options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
-  // The newest file RetroArch wrote under home/<sub> since `since` (states, screenshots): the proof
+  const folders = { states: saves?.states ?? join(home, "states"), screenshots: saves?.screenshots ?? join(home, "screenshots") };
+  // The newest file RetroArch wrote under the states/screenshots folder since `since`: the proof
   // a quick-menu action did something, since SAVE_STATE and SCREENSHOT answer nothing themselves.
-  function written(sub: string, since: number): string | undefined {
-    const dir = join(home, sub);
+  function written(sub: "states" | "screenshots", since: number): string | undefined {
+    const dir = folders[sub];
     let best: { file: string; time: number } | undefined;
     for (const file of new Bun.Glob("**/*").scanSync({ cwd: dir, onlyFiles: true })) {
       if (sub === "states" && file.endsWith(".png")) continue;
@@ -65,7 +75,7 @@ export function serveRetroArch(options: ServeOptions = {}) {
           const line = message.line.trim().toUpperCase();
           const since = Date.now() - 50;
           const sub = line === "SAVE_STATE" ? "states" : line === "SCREENSHOT" ? "screenshots" : undefined;
-          if (line === "LOAD_STATE" && !new Bun.Glob("**/*").scanSync({ cwd: join(home, "states") }).next().value) {
+          if (line === "LOAD_STATE" && !new Bun.Glob("**/*").scanSync({ cwd: folders.states }).next().value) {
             _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: false, text: "no saved state yet" }));
             return;
           }

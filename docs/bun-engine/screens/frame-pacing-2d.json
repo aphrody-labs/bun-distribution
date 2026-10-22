@@ -1,0 +1,53 @@
+{
+  "when": "2026-10-22T22:59:26.446Z",
+  "host": {
+    "cores": 12,
+    "loadavgAtStart": 53,
+    "note": "shared build host: other jobs were running, so tails include scheduling noise"
+  },
+  "browser": "headless Chrome, software rendering (SwiftShader), 1280x720",
+  "seconds": 20,
+  "playerNote": "2742 game frames presented in total, 2d presenter",
+  "rows": [
+    {
+      "label": "home page, idle (launcher rAF)",
+      "samples": 1200,
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 16.8,
+      "mean": 16.67,
+      "late": 0
+    },
+    {
+      "label": "launcher page while \"LAN Master (World) (v1.1)\" plays (rAF)",
+      "samples": 1200,
+      "p50": 16.7,
+      "p95": 16.7,
+      "p99": 16.8,
+      "max": 16.8,
+      "mean": 16.67,
+      "late": 0
+    },
+    {
+      "label": "player page, 2d presenter (rAF)",
+      "samples": 1199,
+      "p50": 16.7,
+      "p95": 16.7,
+      "p99": 16.8,
+      "max": 33.3,
+      "mean": 16.68,
+      "late": 1
+    },
+    {
+      "label": "game frames reaching the screen (ms per core frame)",
+      "samples": 1138,
+      "p50": 16.7,
+      "p95": 33.3,
+      "p99": 33.4,
+      "max": 33.5,
+      "mean": 17.57,
+      "late": 62
+    }
+  ]
+}

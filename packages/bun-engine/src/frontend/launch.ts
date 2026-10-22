@@ -8,7 +8,7 @@ import { defaultFirmwareStore, listFirmware } from "../firmware/import";
 import { coreSettings, libretroDir } from "../libretro";
 import { libretroarchLibrary } from "../libretroarch";
 import { listInstalled, usrRoot } from "../usr";
-import { defaultRoute, type Game, recordPlay } from "./library";
+import { defaultRoute, type Game, listPlayers, recordPlay } from "./library";
 import { extensionOf, loadSystems, type SystemDefinition, systemById } from "./systems";
 
 export type RouteKind = "native" | "bin" | "libretro" | "embedded";
@@ -172,6 +172,7 @@ export async function commandFor(
   check: boolean,
   frames: number,
   port = 8920,
+  profile?: string,
 ): Promise<string[]> {
   const [kind, id] = route.id.split(":") as [RouteKind, string];
   const values = {
@@ -198,7 +199,7 @@ export async function commandFor(
       "retroarch",
       "--core",
       id,
-      ...(check ? ["--frames", String(frames)] : ["--port", String(port)]),
+      ...(check ? ["--frames", String(frames)] : ["--port", String(port), ...(profile ? ["--profile", profile] : [])]),
       game.path,
     ];
   }
@@ -220,7 +221,10 @@ export async function commandFor(
 
 export interface RunningGame {
   pid: number;
+  /** Library id of the game; 0 for a declared app (see `app`). */
   game: number;
+  /** The id of the declared app this process runs (frontend/apps.ts). */
+  app?: string;
   route: string;
   startedAt: string;
 }
@@ -229,6 +233,14 @@ const running = new Map<number, RunningGame & { process: Bun.Subprocess }>();
 
 export function runningGames(): RunningGame[] {
   return [...running.values()].map(({ process: _process, ...rest }) => rest);
+}
+
+/** Starts a long-running process and tracks it with the running games (the "N running" pill, Stop). */
+export function spawnTracked(command: string[], cwd: string, entry: { game: number; app?: string; route: string }): number {
+  const child = Bun.spawn(command, { cwd, stdin: "ignore", stdout: "ignore", stderr: "ignore" });
+  running.set(child.pid, { pid: child.pid, startedAt: new Date().toISOString(), ...entry, process: child });
+  void child.exited.then(() => running.delete(child.pid));
+  return child.pid;
 }
 
 export function stopGame(pid: number): boolean {
@@ -283,24 +295,12 @@ export async function launchGame(
     probe.stop(true);
     player = `http://127.0.0.1:${port}/`;
   }
-  const command = await commandFor(route, game, Boolean(options.check), options.frames ?? 120, port);
+  // the profile that plays keeps its own save states and screenshots (saves.ts); an unknown name plays as default
+  const profile = options.profile && listPlayers().some(player => player.name === options.profile) ? options.profile : undefined;
+  const command = await commandFor(route, game, Boolean(options.check), options.frames ?? 120, port, profile);
   const cwd = dirname(command[0]!);
   if (!options.check) {
-    const child = Bun.spawn(command, {
-      cwd,
-      stdin: "ignore",
-      stdout: "ignore",
-      stderr: "ignore",
-    });
-    const entry = {
-      pid: child.pid,
-      game: game.id,
-      route: route.id,
-      startedAt: new Date().toISOString(),
-      process: child,
-    };
-    running.set(child.pid, entry);
-    void child.exited.then(() => running.delete(child.pid));
+    const pid = spawnTracked(command, cwd, { game: game.id, route: route.id });
     recordPlay(game.id, options.profile);
     return {
       ok: true,
@@ -308,7 +308,7 @@ export async function launchGame(
       route: route.id,
       command,
       mode,
-      pid: child.pid,
+      pid,
       ms: Math.round(performance.now() - started),
       player,
     };

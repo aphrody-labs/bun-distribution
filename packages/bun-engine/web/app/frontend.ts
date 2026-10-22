@@ -4,6 +4,7 @@
 // focus, A/B/X/Y, LB/RB, Start or Guide for the quick menu).
 import { jobsHtml, showBios, showInstaller, showSources } from "./admin";
 import {
+  type AppRow,
   ago,
   api,
   currentHints,
@@ -31,7 +32,8 @@ import {
   view,
 } from "./core";
 import { padKindOf } from "./glyphs";
-import { icon } from "./icons";
+import { icon, isIcon } from "./icons";
+import { configureSounds, play as sound, soundsOn } from "./sounds";
 
 const enc = encodeURIComponent;
 const tintOf = (id: string) => [...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 360, 17);
@@ -62,8 +64,13 @@ function routeChips(routes: Route[], defaultRoute: string | null): string {
 let navigation = 0;
 let retry: (() => Promise<void>) | undefined;
 
+/** How to get back to the screens a game page was opened from (newest last). */
+let trail: Array<() => void> = [];
+let lastQuery = "";
+
 function enter(tab: Tab): number {
   if (tab !== state.tab) state.from = state.tab === "games" ? "systems" : state.tab;
+  if (tab !== "game") trail = [];
   state.tab = tab;
   markTab();
   return ++navigation;
@@ -112,6 +119,21 @@ function systemTile(system: SystemRow, detail = false): string {
 }
 
 let recent: Game[] = [];
+let apps: AppRow[] = [];
+
+function appTile(app: AppRow): string {
+  const label = app.pid ? "Running" : app.available ? "App" : "Not installed";
+  return `<button data-nav role="listitem" class="tile app ${app.available ? "" : "off"} ${app.pid ? "live" : ""}" data-app="${h(app.id)}" style="--tint:${tintOf(app.id)}" ${app.available ? "" : `aria-disabled="true" title="${h(app.reason ?? "")}"`}>
+    <span class="art"><span class="app-icon" aria-hidden="true">${icon(isIcon(app.icon) ? app.icon : "app-window", "icon big")}</span></span>
+    <span class="t">${h(app.title)}</span>
+    <span class="s">${label}</span>
+  </button>`;
+}
+
+const appsShelf = () =>
+  apps.length
+    ? `<h2>Apps</h2><div class="shelf" id="apps" role="list" aria-label="Apps">${apps.map(appTile).join("")}</div>`
+    : "";
 
 async function showHome(): Promise<void> {
   const mine = enter("home");
@@ -119,9 +141,10 @@ async function showHome(): Promise<void> {
   setHints(homeHints);
   let systems: SystemRow[];
   try {
-    [recent, systems] = await Promise.all([
+    [recent, systems, apps] = await Promise.all([
       api<Game[]>(`/api/recent?profile=${enc(state.profile)}&limit=12`),
       api<SystemRow[]>("/api/systems"),
+      api<AppRow[]>("/api/apps").catch(() => []),
     ]);
   } catch (error) {
     if (mine === navigation) showError(error, showHome);
@@ -141,7 +164,7 @@ async function showHome(): Promise<void> {
           <p class="meta">Last played ${ago(last.lastPlayed)} · ${last.playCount} ${last.playCount === 1 ? "play" : "plays"}${state.profile === "default" ? "" : ` · ${h(profileLabel(state.profile))}`}</p>
           <div class="hero-actions">
             <button data-nav class="primary big" data-play="${last.id}">${icon("play", "icon fill")} Play</button>
-            <button data-nav class="ghost big" data-details="${last.id}">Details</button>
+            <button data-nav class="ghost big" data-details="${last.id}">Game page</button>
           </div>
         </div>
         <div class="hero-cover">${art(last)}</div>
@@ -173,6 +196,7 @@ async function showHome(): Promise<void> {
   const ordered = [...systems].sort((a, b) => Number(b.games > 0) - Number(a.games > 0));
   view.innerHTML = `${hero}
     <h2>Recent</h2>${shelf}
+    ${appsShelf()}
     <h2>Systems</h2>
     <div class="shelf" role="list" aria-label="Systems">${ordered.map(system => systemTile(system).replace("<button", '<button role="listitem"')).join("")}</div>`;
   setHints(homeHints);
@@ -312,6 +336,7 @@ function renderDetail(game: Game | undefined): void {
     ${game.description ? `<p class="desc">${h(game.description)}</p>` : ""}
     <div class="actions">
       <button data-nav data-action="launch" class="primary">${icon("play", "icon fill")} Launch</button>
+      <button data-nav data-details="${game.id}">Game page</button>
       <button data-nav data-action="check">Check route</button>
       <button data-nav data-action="favorite">${icon("star", game.favorite ? "icon fill" : "icon")} ${game.favorite ? "Unfavorite" : "Favorite"}</button>
       ${running ? `<button data-nav data-action="stop" data-pid="${running.pid}" class="danger">${icon("square", "icon fill")} Stop</button>` : ""}
@@ -336,6 +361,128 @@ function routeButton(route: Route, defaultRoute: string | null, game: Game | und
     <span class="why">${h(reason ?? "")}</span>
   </button>`;
 }
+
+// ---- game page ------------------------------------------------------------------------------------
+
+interface GamePage {
+  game: Game;
+  routes: Route[];
+  defaultRoute: string | null;
+  sameSystem: Game[];
+  recent: Game[];
+  saves: { profile: string; states: number; screenshots: number; newest: string | null; shared: boolean };
+  running: { pid: number } | null;
+}
+
+let pageGames: Game[] = [];
+let pageData: GamePage | undefined;
+
+function backToTrail(): void {
+  const previous = trail.pop();
+  if (previous) previous();
+  else void showHome();
+}
+
+/** A function that reopens the screen the user is on, for the Back trail of a game page. */
+function currentRestore(): () => void {
+  if (state.tab === "games" && state.lastSystem) {
+    const [system, game] = [state.lastSystem, state.lastGame];
+    return () => void showGames(system, game);
+  }
+  if (state.tab === "search") return () => showSearch();
+  if (state.tab === "game" && pageData) {
+    const id = pageData.game.id;
+    return () => void showGamePage(id, false);
+  }
+  return () => void showHome();
+}
+
+function relatedTile(game: Game, sub: string): string {
+  return `<button data-nav role="listitem" class="tile" data-details="${game.id}">
+    ${art(game)}
+    <span class="t">${h(nameOf(game))}</span>
+    <span class="s">${h(sub)}</span>
+  </button>`;
+}
+
+const favoriteButton = (game: Game) =>
+  `<button data-nav class="ghost big" data-action="fav-page" aria-pressed="${Boolean(game.favorite)}">${icon("star", game.favorite ? "icon fill" : "icon")}<span>${game.favorite ? "Favorite" : "Add to favorites"}</span></button>`;
+
+/** The page of one game: cover hero, one Play, favourite, facts, then games from the same system and recent plays. */
+async function showGamePage(id: number, push = true): Promise<void> {
+  const restore = push ? currentRestore() : undefined;
+  const mine = enter("game");
+  if (restore) trail.push(restore);
+  view.innerHTML = `<div class="skeleton-page" aria-busy="true" aria-label="Loading the game">
+    <div class="hero sk"><div class="hero-body"><span class="sk-line w30"></span><span class="sk-line w60 tall"></span><span class="sk-line w40"></span><span class="sk-line w20 btn"></span></div></div></div>`;
+  setHints([["back", "Back"]]);
+  let data: GamePage;
+  try {
+    data = await api<GamePage>(`/api/games/${id}/page?profile=${enc(state.profile)}`);
+  } catch (error) {
+    if (mine === navigation) showError(error, () => showGamePage(id, false));
+    return;
+  }
+  if (mine !== navigation) return;
+  pageData = data;
+  pageGames = [data.game, ...data.sameSystem, ...data.recent];
+  state.game = data.game;
+  const game = data.game;
+  const system = state.systems.find(item => item.id === game.system);
+  const systemName = system?.name ?? game.system;
+  const plays = game.playCount;
+  const route = data.routes.find(item => item.id === (game.route ?? data.defaultRoute)) ?? data.routes.find(item => item.available);
+  const saves = data.saves;
+  const saveText = saves.states || saves.screenshots
+    ? `${saves.states} ${saves.states === 1 ? "save state" : "save states"} · ${saves.screenshots} ${saves.screenshots === 1 ? "screenshot" : "screenshots"}${saves.shared ? " (shared saves, copied in when this profile first plays)" : ""}`
+    : "No save states or screenshots yet";
+  view.innerHTML = `<section class="game-page" aria-label="${h(nameOf(game))}">
+    <div class="page-head"><button data-nav data-action="back" class="ghost">${icon("arrow-left")} Back</button></div>
+    <section class="hero game-hero" style="--tint:${tintOf(game.system)}">
+      <div class="hero-art" aria-hidden="true">${game.cover ? `<img src="/api/games/${game.id}/cover" alt="" decoding="async" />` : ""}</div>
+      <div class="hero-body">
+        <p class="eyebrow">${h(systemName)}${game.year ? ` · ${h(game.year)}` : ""}${game.developer ? ` · ${h(game.developer)}` : ""}</p>
+        <h1>${h(nameOf(game))}</h1>
+        <p class="meta" id="plays">${plays ? `${plays} ${plays === 1 ? "play" : "plays"} · last played ${ago(game.lastPlayed)}` : "Not played yet"} · ${h(profileLabel(state.profile))}</p>
+        <div class="hero-actions">
+          <button data-nav class="primary big" data-play="${game.id}">${icon("play", "icon fill")} Play</button>
+          ${favoriteButton(game)}
+          <button data-nav class="ghost big" data-games="${game.id}">Routes and details</button>
+          ${data.running ? `<button data-nav class="ghost big danger" data-action="stop" data-pid="${data.running.pid}">${icon("square", "icon fill")} Stop</button>` : ""}
+        </div>
+      </div>
+      <div class="hero-cover">${art(game)}</div>
+    </section>
+    <dl class="facts">
+      <div><dt>Runs with</dt><dd>${route ? `<span class="chip ${route.kind} ${route.available ? "on" : "off"}">${route.available ? "" : "Off · "}${h(route.label)}</span>` : "No route defined"}${route && !route.available ? ` <span class="muted">${h(route.reason ?? "")}</span>` : ""}</dd></div>
+      <div><dt>Saves · ${h(profileLabel(state.profile))}</dt><dd>${h(saveText)}</dd></div>
+      <div><dt>File</dt><dd>${formatSize(game.size)} · ${h(game.source)}</dd></div>
+      ${game.region ? `<div><dt>Region</dt><dd>${h(game.region)}</dd></div>` : ""}
+    </dl>
+    ${game.description ? `<p class="desc">${h(game.description)}</p>` : ""}
+    <h2>More on ${h(systemName)}</h2>
+    ${
+      data.sameSystem.length
+        ? `<div class="shelf" role="list" aria-label="More on ${h(systemName)}">${data.sameSystem.map(other => relatedTile(other, other.developer ?? (other.favorite ? "Favorite" : systemName))).join("")}</div>`
+        : `<p class="shelf-empty">No other ${h(systemName)} games in the library yet.</p>`
+    }
+    <h2>Recently played</h2>
+    ${
+      data.recent.length
+        ? `<div class="shelf" role="list" aria-label="Recently played">${data.recent.map(other => relatedTile(other, `${systemLabel(other.system)} · ${ago(other.lastPlayed)}`)).join("")}</div>`
+        : `<p class="shelf-empty">Other games ${h(profileLabel(state.profile))} plays will line up here.</p>`
+    }
+  </section>`;
+  setHints([
+    ["move", "Move"],
+    ["select", "Select"],
+    ["x", "Favorite", "F"],
+    ["back", "Back"],
+  ]);
+  focusFirst("[data-play]");
+}
+
+const systemLabel = (id: string) => state.systems.find(item => item.id === id)?.name ?? id;
 
 // ---- search ---------------------------------------------------------------------------------------
 
@@ -382,6 +529,11 @@ function showSearch(): void {
   ]);
   renderResults("");
   focusFirst('.key[data-key="g"]');
+  const field = document.querySelector<HTMLInputElement>("#q");
+  if (field && lastQuery) {
+    field.value = lastQuery;
+    runSearch();
+  }
 }
 
 function renderResults(query: string, games: Game[] = [], failed?: string): void {
@@ -410,6 +562,7 @@ function runSearch(): void {
   const input = document.querySelector<HTMLInputElement>("#q");
   if (!input) return;
   const query = input.value;
+  lastQuery = query;
   clearTimeout(searchTimer);
   if (!query.trim()) return renderResults("");
   const mine = ++searchSeq;
@@ -449,18 +602,166 @@ function typeKey(value: string, selector: string, button?: HTMLElement): void {
 
 // ---- settings: real host state only ---------------------------------------------------------------
 
+type HostSection<T> = ({ available: true; source: string } & T) | { available: false; reason: string };
+
+interface HostData {
+  display: HostSection<{ outputs: Array<{ name: string; model: string | null; width: number; height: number; refresh: number | null; scale: number | null; on: boolean | null }> }>;
+  audio: HostSection<{ sinks: Array<{ id: string; name: string; default: boolean; volume: number | null; muted: boolean | null }> }>;
+  network: HostSection<{
+    interfaces: Array<{ name: string; state: string; kind: string | null; connection: string | null; addresses: string[]; gateway: boolean; virtual: boolean }>;
+    gateway: string | null;
+  }>;
+  storage: HostSection<{
+    volumes: Array<{ labels: string[]; paths: string[]; totalBytes: number; freeBytes: number }>;
+    saves: { path: string; bytes: number; files: number; profiles: Array<{ profile: string; bytes: number }> };
+  }>;
+  sleep: { available: boolean; mechanism?: string; reason?: string };
+}
+
+type Config = { hud: string; motion: string; sounds: string };
+
+const notAvailable = (reason: string, title = "Not available") =>
+  `<div class="na" role="note">${icon("ban", "icon")}<div><strong>${h(title)}</strong><p>${h(reason)}</p></div></div>`;
+
+const infoCard = (title: string, body: string) =>
+  `<div class="card info" data-nav data-info tabindex="0" role="group" aria-label="${h(title)}"><h2>${h(title)}</h2>${body}</div>`;
+
+const unreadable = "The service could not read this from the host.";
+
+function displayCard(host: HostData | undefined): string {
+  const browser = `<dl><dt>This window</dt><dd>${innerWidth} × ${innerHeight} px at ${devicePixelRatio}× scale</dd>
+    <dt>Screen</dt><dd>${screen.width} × ${screen.height} px, ${screen.colorDepth}-bit</dd>
+    <dt>Refresh rate</dt><dd id="refresh-rate">measuring…</dd></dl>`;
+  const section = host?.display;
+  const outputs = section?.available
+    ? `<h3>Host outputs</h3><dl>${section.outputs
+        .map(
+          output =>
+            `<dt>${h(output.name)}</dt><dd>${h(output.model ?? "")} ${output.width} × ${output.height}${output.refresh ? ` at ${output.refresh} Hz` : ""}${output.scale ? ` · scale ${output.scale}` : ""}${output.on === false ? " · off" : ""}</dd>`,
+        )
+        .join("")}</dl><p class="note">From ${h(section.source)}.</p>`
+    : notAvailable(section?.reason ?? unreadable);
+  return infoCard("Display", browser + outputs);
+}
+
+function audioCard(host: HostData | undefined): string {
+  const section = host?.audio;
+  const level = Math.round(volume() * 100);
+  const body = section?.available
+    ? section.sinks.length
+      ? `<dl>${section.sinks
+          .map(
+            sink =>
+              `<dt>${h(sink.name)}</dt><dd>${sink.default ? '<span class="badge present">default</span> ' : ""}${sink.volume === null ? "volume unknown" : `${Math.round(sink.volume * 100)}%`}${sink.muted ? ' <span class="badge missing">muted</span>' : ""}</dd>`,
+          )
+          .join("")}</dl><p class="note">Output devices from ${h(section.source)}.</p>`
+      : notAvailable("The sound server reports no output device.")
+    : notAvailable(section?.reason ?? unreadable);
+  return infoCard("Audio", `${body}<dl><dt>Game volume</dt><dd>${level}% (the quick menu changes it)</dd></dl>`);
+}
+
+function networkCard(host: HostData | undefined): string {
+  const section = host?.network;
+  let body: string;
+  if (section?.available) {
+    const real = section.interfaces.filter(item => !item.virtual);
+    const hidden = section.interfaces.length - real.length;
+    body = `<dl>${real
+      .map(
+        item =>
+          `<dt>${h(item.name)}${item.kind ? ` (${h(item.kind)})` : ""}</dt><dd><span class="badge ${item.state === "up" ? "present" : "missing"}">${h(item.state)}</span>${item.connection ? ` ${h(item.connection)}` : ""}${item.gateway ? " · default route" : ""}${item.addresses.length ? `<br/><span class="mono small">${item.addresses.map(h).join("<br/>")}</span>` : ""}</dd>`,
+      )
+      .join("")}</dl>${real.length ? "" : '<p class="note">No hardware network interface.</p>'}<p class="note">${hidden ? `${hidden} virtual ${hidden === 1 ? "interface is" : "interfaces are"} hidden. ` : ""}From ${h(section.source)}.</p>`;
+  } else body = notAvailable(section?.reason ?? unreadable);
+  return infoCard("Network", `${body}<dl><dt>This page</dt><dd>${navigator.onLine ? "online" : "offline"} according to the browser</dd></dl>`);
+}
+
+function storageCard(host: HostData | undefined): string {
+  const section = host?.storage;
+  let body: string;
+  if (section?.available) {
+    body = section.volumes
+      .map(volume => {
+        const used = volume.totalBytes - volume.freeBytes;
+        const percent = volume.totalBytes ? Math.round((used / volume.totalBytes) * 100) : 0;
+        const name = volume.labels.join(" · ");
+        return `<div class="vol-row"><div class="vol-line"><strong>${h(name)}</strong><span>${formatSize(volume.freeBytes)} free of ${formatSize(volume.totalBytes)}</span></div>
+          <div class="mono small muted path">${volume.paths.slice(0, 2).map(h).join("<br/>")}</div>
+          <div class="meter" role="meter" aria-label="${h(name)} used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}" aria-valuetext="${percent} percent used"><span style="--v:${percent / 100}"></span></div></div>`;
+      })
+      .join("");
+    const saves = section.saves;
+    body += `<dl><dt>Saves</dt><dd>${formatSize(saves.bytes)} in ${saves.files} ${saves.files === 1 ? "file" : "files"}</dd>${saves.profiles
+      .map(profile => `<dt>${h(profile.profile)}</dt><dd>${formatSize(profile.bytes)}</dd>`)
+      .join("")}</dl><p class="note">Measured with statfs on the library, game and save folders.</p>`;
+  } else body = notAvailable(section?.reason ?? unreadable);
+  return infoCard("Storage", body);
+}
+
+/** The pads the browser reports right now (Chrome lists one only after a button was pressed on it). */
+function controllersCard(): string {
+  const pads = [...(navigator.getGamepads?.() ?? [])].filter((pad): pad is Gamepad => Boolean(pad));
+  return infoCard(
+    "Controllers",
+    pads.length
+      ? `<dl>${pads
+          .map(
+            pad =>
+              `<dt>Port ${pad.index + 1}</dt><dd>${h(pad.id)}<br/><span class="note">${pad.mapping ? `${h(pad.mapping)} mapping` : "no standard mapping"} · ${pad.buttons.length} buttons · ${pad.axes.length} axes</span></dd>`,
+          )
+          .join("")}</dl>`
+      : notAvailable("The browser lists a controller only after a button is pressed on it. Press any button.", "No controller reported"),
+  );
+}
+
+function appsCard(list: AppRow[]): string {
+  return infoCard(
+    "Apps",
+    list.length
+      ? `<dl>${list.map(app => `<dt>${h(app.title)}</dt><dd><span class="badge ${app.available ? "present" : "missing"}">${app.available ? "ready" : "not installed"}</span> <span class="mono small">${h(app.command.join(" "))}</span></dd>`).join("")}</dl>`
+      : `<p class="note">No app is declared. Add one on the device with <code>bun-engine library apps add &lt;id&gt; &lt;title&gt; -- &lt;command&gt;</code>; it appears on the home page.</p>`,
+  );
+}
+
+/** The browser's own refresh rate, measured with requestAnimationFrame for 40 frames. */
+function measureRefresh(): void {
+  const deltas: number[] = [];
+  let last = 0;
+  const step = (time: number) => {
+    if (last) deltas.push(time - last);
+    last = time;
+    if (deltas.length < 40) return void requestAnimationFrame(step);
+    deltas.sort((a, b) => a - b);
+    const median = deltas[deltas.length >> 1]!;
+    const cell = document.querySelector("#refresh-rate");
+    if (cell) cell.textContent = `${Math.round(1000 / median)} Hz (median of ${deltas.length} frames, measured by this page)`;
+  };
+  requestAnimationFrame(step);
+}
+
+
 interface SettingsData {
   session: { gamescope: boolean; display: string | null; desktop: string | null; window: boolean; power: boolean };
   library: { project: string; database: string; games: number; sources: Array<{ id: number; kind: string; path: string; system: string | null }> };
   systems: Array<{ id: string; name: string; games: number; defaultRoute: string | null; routes: Array<{ id: string; kind: string; available: boolean; reason?: string }> }>;
   cores: Array<{ id: string; installed: boolean; systems: string[]; bios: Array<{ file: string; status: string; optional: boolean }> }>;
   native: Array<{ system: string; machine: string; status: string; required: boolean }>;
-  config: { store: string; values: { hud: string; motion: string } };
+  config: { store: string; values: Config };
   versions: { engine: string | null; bun: string; platform: string; libretroarch: string | null };
 }
 
 const motionLabel: Record<string, string> = { system: "Follow the system", reduced: "Reduced", full: "Full" };
 const nextMotion = (value: string) => (value === "system" ? "reduced" : value === "reduced" ? "full" : "system");
+const soundLabel: Record<string, string> = { auto: "Automatic", on: "On", off: "Off" };
+const nextSound = (value: string) => (value === "auto" ? "on" : value === "on" ? "off" : "auto");
+const soundWhy = (value: string) =>
+  value === "off"
+    ? "Silent. Short blips on move, select and back are off."
+    : value === "on"
+      ? "Short blips on move, select and back, even with reduced motion."
+      : soundsOn()
+        ? "Short blips on move, select and back; silent when motion is reduced."
+        : "Silent now because motion is reduced; turn it On to hear them.";
 
 async function showSettings(): Promise<void> {
   const mine = enter("settings");
@@ -472,8 +773,14 @@ async function showSettings(): Promise<void> {
     ["menu", "Quick menu"],
   ]);
   let data: SettingsData;
+  let host: HostData | undefined;
+  let declared: AppRow[] = [];
   try {
-    data = await api<SettingsData>("/api/settings");
+    [data, host, declared] = await Promise.all([
+      api<SettingsData>("/api/settings"),
+      api<HostData>("/api/host").catch(() => undefined),
+      api<AppRow[]>("/api/apps").catch(() => []),
+    ]);
   } catch (error) {
     if (mine === navigation) showError(error, showSettings);
     return;
@@ -492,8 +799,17 @@ async function showSettings(): Promise<void> {
         <button data-nav class="setting" data-setting="motion" data-value="${nextMotion(data.config.values.motion)}">
           <span><strong>Motion</strong><span class="why">Animations and smooth scrolling</span></span><span class="value">${motionLabel[data.config.values.motion] ?? data.config.values.motion}</span>
         </button>
-        <p class="note">Both are stored in <code>${h(data.config.store)}</code>, the file the console shell reads too.</p>
+        <button data-nav class="setting" data-setting="sounds" data-value="${nextSound(data.config.values.sounds)}">
+          <span><strong>Interface sounds</strong><span class="why" id="sounds-why">${soundWhy(data.config.values.sounds)}</span></span><span class="value">${soundLabel[data.config.values.sounds] ?? data.config.values.sounds}</span>
+        </button>
+        <p class="note">All three are stored in <code>${h(data.config.store)}</code>, the file the console shell reads too.</p>
       </div>
+      ${displayCard(host)}
+      ${audioCard(host)}
+      ${networkCard(host)}
+      ${storageCard(host)}
+      ${controllersCard()}
+      ${appsCard(declared)}
       <div class="card"><h2>Session</h2>
         <dl><dt>Gamescope session</dt><dd>${data.session.gamescope ? "Yes" : "No"}</dd>
         <dt>Display</dt><dd>${h(data.session.display ?? "none reported")}</dd>
@@ -531,6 +847,7 @@ async function showSettings(): Promise<void> {
     </div>
   </section>`;
   focusFirst("[data-setting]");
+  measureRefresh();
 }
 
 // ---- overlays -------------------------------------------------------------------------------------
@@ -614,6 +931,7 @@ function toggleQuick(): void {
 
 function cancelTop(): void {
   const top = overlayStack.at(-1);
+  if (top) sound("back");
   if (top) cancels.get(top)?.();
 }
 
@@ -642,17 +960,97 @@ const confirms = new WeakMap<HTMLElement, (answer: boolean) => void>();
 // -- power -----------------------------------------------------------------------------------------
 
 async function openPower(): Promise<void> {
-  const session = await api<{ window: boolean; power: boolean }>("/api/session").catch(() => ({ window: false, power: false }));
+  const session = await api<{ window: boolean; power: boolean; sleep?: { available: boolean; mechanism?: string; reason?: string } }>("/api/session").catch(
+    () => ({ window: false, power: false, sleep: { available: false, mechanism: undefined, reason: "The service did not answer." } }),
+  );
+  const sleepable = session.sleep?.available === true;
   const root = openOverlay({
     kind: "power",
     label: "Power",
     html: `<h2>Power</h2>
+      <button data-nav class="qitem" data-power="sleep" aria-disabled="${!sleepable}">${icon("moon")}<span>Sleep display<small>${sleepable ? `Turns the screen off (${h(session.sleep?.mechanism ?? "")}); any button wakes it` : `Not available: ${h(session.sleep?.reason ?? "unknown reason")}`}</small></span></button>
       <button data-nav class="qitem danger" data-power="exit" aria-disabled="${!session.power}">${icon("log-out")}<span>Exit to desktop<small>${session.power ? "Stops running games and ends this session" : "Not available: no session window to close"}</small></span></button>
       <button data-nav class="qitem" data-power="restart">${icon("rotate-cw")}<span>Restart frontend<small>${session.window ? "Stops running games and reopens the window" : "Stops running games and reloads this page"}</small></span></button>
       <button data-nav class="qitem" data-power="close">${icon("x")}<span>Close</span></button>`,
-    initial: "[data-power=restart]",
+    initial: sleepable ? "[data-power=sleep]" : "[data-power=close]",
   });
   void root;
+}
+
+// -- sleep: the display goes off through the host (Sway output power or X11 DPMS), the page keeps a black cover
+//    and wakes on the first key, click or pad button. If the host cannot do it the menu says why: no fake sleep.
+
+let sleeping: { returnTo: HTMLElement | null; watch: ReturnType<typeof setInterval>; held: boolean; waking: boolean } | undefined;
+
+const anyPadPressed = () => [...(navigator.getGamepads?.() ?? [])].some(pad => pad?.buttons.some(button => button.pressed));
+
+async function sleepNow(unavailable: boolean, reason: string): Promise<void> {
+  if (unavailable) {
+    toast(`Sleep is not available: ${reason}`, "error");
+    return;
+  }
+  let result: { ok: boolean; mechanism?: string };
+  try {
+    result = await api("/api/session/sleep", { method: "POST" });
+  } catch (error) {
+    toast(`Sleep failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+    return;
+  }
+  const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  closeAllOverlays();
+  const cover = document.createElement("div");
+  cover.id = "sleep-cover";
+  cover.className = "sleep-cover";
+  cover.setAttribute("role", "alertdialog");
+  cover.setAttribute("aria-label", "Display is off");
+  cover.tabIndex = -1;
+  cover.innerHTML = `<p>Display off (${h(result.mechanism ?? "host")}). Press any button to wake it.</p>`;
+  document.body.append(cover);
+  cover.focus();
+  if (player) sendToGame({ action: "open" });
+  // requestAnimationFrame stops with the display, so the pad is watched on a timer while asleep
+  const watch = setInterval(() => {
+    const pressed = anyPadPressed();
+    if (pressed && sleeping && !sleeping.held) void wakeNow();
+    if (sleeping) sleeping.held = pressed;
+  }, 150);
+  sleeping = { returnTo, watch, held: anyPadPressed(), waking: false };
+}
+
+async function wakeNow(): Promise<void> {
+  const current = sleeping;
+  if (!current || current.waking) return;
+  current.waking = true;
+  try {
+    await api("/api/session/wake", { method: "POST" });
+  } catch (error) {
+    // still dark: stay asleep so the next key tries again
+    current.waking = false;
+    toast(`Wake failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+    return;
+  }
+  clearInterval(current.watch);
+  sleeping = undefined;
+  document.querySelector("#sleep-cover")?.remove();
+  if (player) {
+    sendToGame({ action: "close" });
+    player.frame.focus();
+  } else if (current.returnTo?.isConnected) current.returnTo.focus({ preventScroll: true });
+  else focusFirst(".hero [data-nav], .system, .game, [data-nav]");
+}
+
+// the first input while asleep only wakes: it must not also press a button on the page behind
+for (const type of ["keydown", "mousedown", "pointerdown", "touchstart", "wheel"]) {
+  document.addEventListener(
+    type,
+    event => {
+      if (!sleeping) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void wakeNow();
+    },
+    { capture: true, passive: false },
+  );
 }
 
 async function powerAction(action: "exit" | "restart", unavailable: boolean): Promise<void> {
@@ -692,7 +1090,7 @@ async function openProfiles(): Promise<void> {
     kind: "profiles",
     label: "Profiles",
     html: `<h2>Who is playing?</h2>
-      <p class="sub">Recent games and play counts follow the profile. Saves stay shared between profiles.</p>
+      <p class="sub">Recent games, play counts, save states and screenshots follow the profile. Earlier shared saves are copied in the first time a profile plays.</p>
       <div class="plist">${players
         .map(
           player => `<button data-nav class="qitem" data-profile="${h(player.name)}" aria-pressed="${player.name === state.profile}">
@@ -783,7 +1181,7 @@ async function launch(game: Game, check = false, route?: string): Promise<void> 
 
 /** The game with this id from what the page already holds (recents, lists, search results). */
 function knownGame(id: number): Game | undefined {
-  return [...recent, ...state.games, ...(state.game ? [state.game] : [])].find(game => game.id === id);
+  return [...recent, ...state.games, ...pageGames, ...(state.game ? [state.game] : [])].find(game => game.id === id);
 }
 
 // A game RetroArch runs in process plays in this window, so one kiosk window (gamescope) holds both.
@@ -821,6 +1219,7 @@ async function closePlayer(): Promise<void> {
   await pollRunning();
   // the recents moved on while we played
   if (state.tab === "home") void showHome();
+  else if (state.tab === "game" && pageData) void showGamePage(pageData.game.id, false);
 }
 
 function sendToGame(message: Record<string, unknown>): void {
@@ -974,10 +1373,15 @@ async function scan(): Promise<void> {
 
 async function activate(element: HTMLElement): Promise<void> {
   const data = element.dataset;
+  // a card that only shows information takes focus so the pad can scroll to it; activating it does nothing
+  if (data.info !== undefined) return;
+  sound(data.confirm === "no" || data.action === "back" || data.power === "close" ? "back" : "select");
   if (data.confirm) return void confirms.get(element.closest<HTMLElement>(".overlay")!)?.(data.confirm === "yes");
   if (data.q) return quickAction(data.q);
   if (data.power) {
     if (data.power === "close") return closeOverlay();
+    if (data.power === "sleep")
+      return sleepNow(element.getAttribute("aria-disabled") === "true", element.querySelector("small")?.textContent?.replace(/^Not available: /, "") ?? "unknown reason");
     return powerAction(data.power as "exit" | "restart", element.getAttribute("aria-disabled") === "true");
   }
   if (data.profile) {
@@ -987,18 +1391,29 @@ async function activate(element: HTMLElement): Promise<void> {
   }
   if (data.key) return pressKey(element);
   if (data.setting) {
-    const config = await api<{ hud: string; motion: string }>(`/api/settings/${data.setting}`, {
+    const config = await api<Config>(`/api/settings/${data.setting}`, {
       method: "PUT",
       json: { value: data.value },
     });
     applyConfig(config);
     // update the row in place: no reload, so focus and scroll stay where they are
-    const on = config.hud === "1";
-    element.setAttribute("aria-checked", String(on));
-    if (data.setting === "hud") element.dataset.value = on ? "0" : "1";
-    else element.dataset.value = nextMotion(config.motion);
     const label = element.querySelector(".value");
-    if (label) label.textContent = data.setting === "hud" ? (on ? "On" : "Off") : (motionLabel[config.motion] ?? config.motion);
+    if (data.setting === "hud") {
+      const on = config.hud === "1";
+      element.setAttribute("aria-checked", String(on));
+      element.dataset.value = on ? "0" : "1";
+      if (label) label.textContent = on ? "On" : "Off";
+    } else if (data.setting === "motion") {
+      element.dataset.value = nextMotion(config.motion);
+      if (label) label.textContent = motionLabel[config.motion] ?? config.motion;
+    } else if (data.setting === "sounds") {
+      element.dataset.value = nextSound(config.sounds);
+      if (label) label.textContent = soundLabel[config.sounds] ?? config.sounds;
+      sound("select");
+    }
+    // sounds in Automatic follow the motion setting: keep its explanation current
+    const why = document.querySelector("#sounds-why");
+    if (why) why.textContent = soundWhy(config.sounds);
     return;
   }
   if (data.play) {
@@ -1006,11 +1421,14 @@ async function activate(element: HTMLElement): Promise<void> {
     if (game) return launch(game);
     return;
   }
-  if (data.details) {
-    const game = knownGame(Number(data.details));
+  if (data.app) return launchAppTile(data.app);
+  if (data.details) return showGamePage(Number(data.details));
+  if (data.games) {
+    const game = knownGame(Number(data.games));
     if (game) return showGames(game.system, game.id);
     return;
   }
+  if (data.action === "fav-page") return toggleFavorite();
   if (data.tab) return void show(data.tab as Tab);
   if (data.system) return showGames(data.system);
   if (data.action === "back") return back();
@@ -1064,6 +1482,14 @@ async function toggleFavorite(): Promise<void> {
   game.favorite = game.favorite ? 0 : 1;
   const row = document.querySelector(`[data-game="${game.id}"] .fav`);
   if (row) row.innerHTML = game.favorite ? `${icon("star", "icon fill")}<span class="sr">Favorite</span>` : "";
+  if (state.tab === "game") {
+    // update the button in place so focus and scroll stay put
+    const button = document.querySelector<HTMLElement>("[data-action=fav-page]");
+    if (button) button.outerHTML = favoriteButton(game);
+    focusFirst("[data-action=fav-page]");
+    toast(game.favorite ? `${nameOf(game)} added to favorites` : `${nameOf(game)} removed from favorites`, "ok");
+    return;
+  }
   renderDetail(game);
   focusFirst("[data-action=favorite]");
 }
@@ -1085,10 +1511,11 @@ async function setDefault(): Promise<void> {
 }
 
 /** Applies the shared shell settings: motion on the page, the performance counter in the corner. */
-function applyConfig(config: { hud: string; motion: string }): void {
+function applyConfig(config: Config): void {
   const root = document.documentElement;
   if (config.motion === "system") delete root.dataset.motion;
   else root.dataset.motion = config.motion;
+  configureSounds({ mode: config.sounds, reducedMotion: motionReduced });
   if (config.hud === "1" && !hudOn) {
     hudSince = performance.now();
     hudFrames = 0;
@@ -1128,6 +1555,42 @@ async function pollJobs(): Promise<void> {
 async function pollRunning(): Promise<void> {
   state.running = await api<typeof state.running>("/api/running").catch(() => state.running);
   renderStatus();
+  if (apps.length && state.tab === "home") await refreshApps();
+}
+
+/** Re-reads the app tiles; the shelf is redrawn only when an app started or stopped, keeping focus and scroll. */
+async function refreshApps(): Promise<void> {
+  const next = await api<AppRow[]>("/api/apps").catch(() => apps);
+  const changed = JSON.stringify(next.map(app => app.pid)) !== JSON.stringify(apps.map(app => app.pid));
+  apps = next;
+  const shelf = document.querySelector<HTMLElement>("#apps");
+  if (!changed || !shelf || state.tab !== "home") return;
+  const focused = document.activeElement instanceof HTMLElement ? document.activeElement.dataset.app : undefined;
+  const scroll = shelf.scrollLeft;
+  shelf.innerHTML = apps.map(appTile).join("");
+  shelf.scrollLeft = scroll;
+  if (focused) shelf.querySelector<HTMLElement>(`[data-app="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
+}
+
+async function launchAppTile(id: string): Promise<void> {
+  const app = apps.find(item => item.id === id);
+  if (!app) return;
+  if (!app.available) {
+    toast(app.reason ?? "This app is not installed", "error");
+    return;
+  }
+  if (app.pid) {
+    const yes = await confirmDialog({ title: `Stop ${app.title}?`, body: "The app closes. Anything unsaved in it is lost.", confirm: "Stop", danger: true });
+    if (yes) {
+      await api(`/api/running/${app.pid}`, { method: "DELETE" });
+      await pollRunning();
+      toast(`${app.title} stopped`, "ok");
+    }
+    return;
+  }
+  const result = await api<{ pid: number }>(`/api/apps/${enc(id)}/launch`, { method: "POST" });
+  toast(`${app.title} started (pid ${result.pid})`, "ok");
+  await pollRunning();
 }
 
 function renderStatus(): void {
@@ -1191,18 +1654,25 @@ function move(direction: Direction): void {
   if (!best) return;
   best.focus({ preventScroll: true });
   reveal(best);
+  sound("focus");
 }
 
 function back(): void {
   if (overlayStack.length) return cancelTop();
   if (state.tab === "home") return;
+  if (state.tab === "game") {
+    sound("back");
+    return backToTrail();
+  }
+  sound("back");
   void show(state.from === state.tab ? "home" : state.from);
 }
 
 const pages: Tab[] = ["home", "systems", "search", "settings"];
 function cyclePage(step: number): void {
   if (overlayStack.length) return;
-  const current = state.tab === "games" ? "systems" : ["bios", "installer", "sources"].includes(state.tab) ? "settings" : state.tab;
+  const base = state.tab === "game" ? state.from : state.tab;
+  const current = base === "games" ? "systems" : ["bios", "installer", "sources"].includes(base) ? "settings" : base;
   const index = Math.max(0, pages.indexOf(current));
   void show(pages[(index + step + pages.length) % pages.length]!);
 }
@@ -1301,7 +1771,7 @@ document.addEventListener("keydown", event => {
     PageDown: () => cyclePage(1),
     c: () =>
       !typing && state.tab === "games" && state.game && guarded(() => launch(state.game!, true, (document.activeElement as HTMLElement)?.dataset.route)),
-    f: () => !typing && state.tab === "games" && guarded(toggleFavorite),
+    f: () => !typing && (state.tab === "games" || state.tab === "game") && guarded(toggleFavorite),
     d: () => !typing && state.tab === "games" && guarded(setDefault),
     r: () => !typing && guarded(scan),
   };
@@ -1338,6 +1808,10 @@ function pollGamepad(time: number): void {
     if (kind !== "none") hidePointer(true);
     renderHints();
     renderStatus();
+  }
+  if (sleeping) {
+    requestAnimationFrame(pollGamepad);
+    return;
   }
   if (hudOn) {
     hudFrames++;
@@ -1387,7 +1861,7 @@ function pollGamepad(time: number): void {
       press(1, back);
       if (!overlayStack.length) {
         press(2, () =>
-          state.tab === "games"
+          state.tab === "games" || state.tab === "game"
             ? guarded(toggleFavorite)
             : state.tab === "search"
               ? typeKey("back", "#q")
@@ -1430,8 +1904,10 @@ async function boot(): Promise<void> {
   renderStatus();
   renderHints();
   try {
-    const session = await api<{ config: { hud: string; motion: string } }>("/api/session");
+    const session = await api<{ config: Config; asleep: boolean }>("/api/session");
     applyConfig(session.config);
+    // a display left off by an earlier page (it crashed or was reloaded while asleep) must not stay dark
+    if (session.asleep) await api("/api/session/wake", { method: "POST" }).catch(() => undefined);
     state.jobs = await api<Job[]>("/api/jobs");
     await pollRunning();
     const systems = await api<SystemRow[]>("/api/systems");

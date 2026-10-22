@@ -60,6 +60,8 @@ Field (.add input, .add select)
 Player (iframe)
   entry     embedded:<core> route, own port per game
   exit      Escape or Select+Start; focus returns to the launching element
+  picture   2D canvas on a software adapter or without WebGPU, WebGPU canvas on a hardware adapter
+            (`?renderer=2d|webgpu` forces one): a WebGPU canvas is invisible under software compositing
 ```
 
 ## Built in phase 1 (console-grade home)
@@ -96,16 +98,52 @@ States                loading skeletons, error card with Try again, offline bann
 Measured on the VPS in headless Chrome (software rendering, 1280 x 720; `screens/ui-flow.ts`): keydown to
 `focusin` 0.6 to 7 ms (limit 100 ms), layout shift 0 after load and after navigation, `requestAnimationFrame`
 median 16.7 ms and p95 16.8 ms while idle, no control without an accessible name on the home page, and 0 s
-transitions under `prefers-reduced-motion: reduce`. Frame pacing while a game plays was not measured.
+transitions under `prefers-reduced-motion: reduce`. Phase 2 added frame pacing while a game plays (60 Hz kept by the
+browser, p99 16.8 ms for the launcher and the player page with the 2D presenter; 5 % of game frames late from the host's
+core loop under a load average of 53) and a pad run with a real kernel gamepad device; see
+[`screens/README.md`](../screens/README.md).
+
+## Built in phase 2
+
+```
+Game page (.game-page)  one game: blurred cover hero, one primary Play, a favourite toggle (aria-pressed, filled
+                      star plus the words "Favorite" / "Add to favorites"), Routes and details, Stop while it runs;
+                      a facts row (route it runs with, saves of the current profile, file); the shelves "More on
+                      <system>" (same developer first, then favourites) and "Recently played" (the profile's recents);
+                      the profile's play count and last play; Back returns to the screen it was opened from
+                      (home, a system list, search, or the previous game page) through a trail, not a fixed parent;
+                      X or F toggles the favourite. Opened from the hero's "Game page" button, the game list's
+                      detail pane and any tile on another game page.
+App tile (.tile.app)    a declared non-game app: icon on the tint, title, "App" / "Running" / "Not installed" (text,
+                      never colour alone). Declared in shell.db (`bun-engine library apps add <id> <title> -- <cmd>`),
+                      launched through the same tracked spawn as games; Enter on a running app asks before stopping it.
+                      A page cannot declare a command: HTTP only lists and launches by id.
+Interface sounds      focus, select, back and error blips synthesised with WebAudio (sine glides, 40 to 160 ms, peak
+                      under 0.09): no audio file. shell.db key `sounds`: auto (on unless motion is reduced), on, off.
+                      Never required; toggled in Settings, Preferences.
+Power menu, Sleep     "Sleep display": Sway output power (or X11 DPMS) off through the host, checked with the same tool;
+                      a black cover holds the page and the first key, click or pad button wakes it. Where the host has
+                      neither, the entry is disabled and shows why ("Not available: ...").
+Settings panels       Display (browser size, scale, measured refresh; host outputs from Sway, xrandr or DRM), Audio
+                      (sinks from pactl or wpctl), Network (interfaces from ip, plus NetworkManager names when
+                      nmcli runs), Storage (statfs per volume of the library, game and save folders, save sizes per
+                      profile), Apps. No panel has a control. A missing source shows a dashed "Not available" block
+                      with the reason from the host.
+Per-profile saves     states and screenshots in `<home>/profiles/<profile>/{states,screenshots}`; a profile's first
+                      play copies the shared folders in (reflink where possible) and leaves them untouched.
+```
+
+Verification of every item above is in [`screens/README.md`](../screens/README.md) (`ui-flow2.ts`, `pad-real.ts`,
+`frame-pacing.ts`); contrast was re-run after adding the new text pairs (28 pairs, 0 failing AA).
 
 ## Gaps (not built)
 
-- A per-game page with a hero and a related shelf (the game view still has its list and detail pane).
-- Media-app tiles, notifications beyond the toast (controller battery, downloads), focus and select sounds.
 - A quick menu for games that run in their own window (release emulators, RetroArch outside the page): only the
   in-process `embedded:<core>` player has the host actions.
-- Settings panels for display, audio, network and storage: only the state the host really reports is shown.
-- Per-profile saves (states are shared; profiles split recents and play history).
+- Notifications beyond the toast (controller battery, downloads).
+- Battery saves (SRAM, memory cards) are still shared between profiles: only states and screenshots are split.
+- Sleep suspends the display, not the machine, and only where Sway or X11 DPMS is reachable (not real gamescope).
+- Real gamescope on a GPU (the session and the pad were verified with headless Sway and a uinput pad).
 - Reference captures for a pixel comparison: only showcase evidence at 1280x720 exists, no pixel diff.
 
 ## Built earlier

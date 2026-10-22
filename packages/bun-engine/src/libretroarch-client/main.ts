@@ -11,12 +11,69 @@ import {
 
 const canvas = document.querySelector<HTMLCanvasElement>("#screen")!;
 const adapter = await navigator.gpu?.requestAdapter();
-if (!adapter) throw new Error("WebGPU unavailable");
-const device = await adapter.requestDevice();
-const context = canvas.getContext("webgpu")!;
-const format = navigator.gpu.getPreferredCanvasFormat();
-context.configure({ device, format, alphaMode: "opaque" });
-const presenter = new RetroArchPresenter(device, format);
+// Which presenter draws the game. A WebGPU canvas is only shown by a GPU compositor. A browser that
+// composites in software (a kiosk window on a GPU-less host: Chrome reports gpu_compositing
+// "disabled_software") draws a WebGPU canvas as nothing, so the game picture is black although the core runs
+// and the frames arrive. A software adapter (SwiftShader, llvmpipe, WARP) or no WebGPU at all therefore gets
+// a 2D canvas, whose pixels every compositor can show; a hardware adapter keeps WebGPU. `?renderer=webgpu`
+// or `?renderer=2d` forces one.
+const wanted = new URLSearchParams(location.search).get("renderer");
+const software = !adapter || (adapter.info as { isFallbackAdapter?: boolean }).isFallbackAdapter === true;
+const renderer: "webgpu" | "2d" = wanted === "webgpu" || wanted === "2d" ? wanted : software ? "2d" : "webgpu";
+if (renderer === "webgpu" && !adapter) throw new Error("WebGPU unavailable");
+let presenter: RetroArchPresenter | undefined;
+let context: GPUCanvasContext | undefined;
+let context2d: CanvasRenderingContext2D | undefined;
+if (renderer === "webgpu") {
+  const device = await adapter!.requestDevice();
+  context = canvas.getContext("webgpu")!;
+  const format = navigator.gpu.getPreferredCanvasFormat();
+  context.configure({ device, format, alphaMode: "opaque" });
+  presenter = new RetroArchPresenter(device, format);
+} else context2d = canvas.getContext("2d", { alpha: false })!;
+
+// 2D presenter: the frame converted to RGBA in an offscreen canvas, stretched with nearest-neighbour.
+let surface: HTMLCanvasElement | undefined;
+let surfaceImage: ImageData | undefined;
+function upload2d(frame: PresentableFrame): void {
+  const { width, height, pitch } = frame;
+  if (!surface || surface.width !== width || surface.height !== height) {
+    surface = document.createElement("canvas");
+    surface.width = width;
+    surface.height = height;
+    surfaceImage = new ImageData(width, height);
+  }
+  const out = new Uint32Array(surfaceImage!.data.buffer);
+  const bytes = frame.data;
+  if (frame.format === 0) {
+    // XRGB8888, little-endian words 0xXXRRGGBB -> ImageData words 0xAABBGGRR
+    const source = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 2);
+    const stride = pitch >> 2;
+    for (let y = 0; y < height; y++)
+      for (let x = 0, s = y * stride, d = y * width; x < width; x++, s++, d++) {
+        const value = source[s]!;
+        out[d] = 0xff000000 | ((value & 0xff) << 16) | (value & 0xff00) | ((value >> 16) & 0xff);
+      }
+  } else {
+    // RGB565
+    const source = new Uint16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1);
+    const stride = pitch >> 1;
+    for (let y = 0; y < height; y++)
+      for (let x = 0, s = y * stride, d = y * width; x < width; x++, s++, d++) {
+        const value = source[s]!;
+        const r = (value >> 11) & 31;
+        const g = (value >> 5) & 63;
+        const b = value & 31;
+        out[d] = 0xff000000 | (((b << 3) | (b >> 2)) << 16) | (((g << 2) | (g >> 4)) << 8) | ((r << 3) | (r >> 2));
+      }
+  }
+  surface.getContext("2d")!.putImageData(surfaceImage!, 0, 0);
+}
+function present2d(): void {
+  if (!surface) return;
+  context2d!.imageSmoothingEnabled = false;
+  context2d!.drawImage(surface, 0, 0, canvas.width, canvas.height);
+}
 
 let pending: PresentableFrame | undefined;
 let frames = 0;
@@ -182,11 +239,13 @@ function render() {
   }
   pollInput();
   if (pending) {
-    presenter.upload(pending);
+    if (presenter) presenter.upload(pending);
+    else upload2d(pending);
     pending = undefined;
     frames++;
   }
-  presenter.present(context);
+  if (presenter) presenter.present(context!);
+  else present2d();
   requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
@@ -225,11 +284,23 @@ window.addEventListener("message", ({ source, data }) => {
 /** For automation: frames presented, a command sender and an offscreen readback summary. */
 Object.assign(globalThis, {
   retroarch: {
-    adapter: adapter.info.description || adapter.info.vendor,
+    adapter: adapter ? adapter.info.description || adapter.info.vendor : "none",
+    renderer,
     frames: () => frames,
     command: (line: string) =>
       ws.send(JSON.stringify({ type: "command", line })),
-    async capture(width = presenter.width, height = presenter.height) {
+    async capture(width = presenter?.width ?? surface?.width ?? 0, height = presenter?.height ?? surface?.height ?? 0) {
+      if (!presenter) {
+        // the 2D path keeps the converted frame: count its lit pixels and distinct colours
+        const words = new Uint32Array(surfaceImage?.data.buffer ?? new ArrayBuffer(0));
+        const distinct = new Set<number>();
+        let litPixels = 0;
+        for (const word of words) {
+          if (word & 0xffffff) litPixels++;
+          distinct.add(word);
+        }
+        return { width: surface?.width ?? 0, height: surface?.height ?? 0, lit: litPixels, colors: distinct.size };
+      }
       const rgba = await presenter.capture(width, height);
       const colors = new Set<number>();
       let lit = 0;

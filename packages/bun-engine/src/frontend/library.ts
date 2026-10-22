@@ -646,6 +646,25 @@ export function recentGames(profile = "default", limit = 12): Game[] {
   return rows.map(({ profileLast, profileCount, ...game }) => ({ ...game, lastPlayed: profileLast, playCount: profileCount }));
 }
 
+/** A game with the play count and last play of one profile (the games columns count every profile). */
+export function profileGame(id: number, profile = "default"): Game {
+  const game = gameById(id);
+  const own = db()
+    .query<{ n: number; last: string | null }, [number, string]>("SELECT count(*) AS n, max(at) AS last FROM plays WHERE game = ?1 AND profile = ?2")
+    .get(id, profile)!;
+  return { ...game, playCount: own.n, lastPlayed: own.last };
+}
+
+/** Other games of the same system for the game page: the same developer first, then favourites, then by title. */
+export function relatedGames(game: Game, limit = 12): Game[] {
+  return db()
+    .query<Game, [string, number, string, number]>(
+      `SELECT * FROM games WHERE system = ?1 AND id != ?2
+       ORDER BY (developer IS NOT NULL AND developer = ?3) DESC, favorite DESC, coalesce(title, name) COLLATE NOCASE LIMIT ?4`,
+    )
+    .all(game.system, game.id, game.developer ?? "", Math.trunc(limit));
+}
+
 /** Games whose title, file name, developer or system matches every word of `query`. */
 export function searchGames(query: string, limit = 60): Game[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);

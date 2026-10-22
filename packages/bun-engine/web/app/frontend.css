@@ -342,7 +342,7 @@ button.primary {
   padding: 0.5rem 1rem;
   font-weight: 700;
 }
-.big {
+button.big {
   padding: 0.85rem 1.8rem !important;
   font-size: 1.15rem;
   border-radius: 999px !important;
@@ -1268,4 +1268,127 @@ kbd {
     opacity: 0;
     transform: translateY(0.6rem);
   }
+}
+
+/* ---- game page ---------------------------------------------------------------------------------- */
+.game-page {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 2rem;
+}
+.page-head {
+  display: flex;
+  padding: 0.5rem;
+  margin-left: -0.5rem;
+}
+.game-hero {
+  min-height: clamp(13rem, 32vh, 20rem);
+}
+.hero-actions .ghost[aria-pressed="true"] {
+  border-color: var(--focus);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.8rem 1.5rem;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+}
+.facts > div {
+  display: grid;
+  gap: 0.2rem;
+  align-content: start;
+}
+.facts dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+}
+.game-page > h2 {
+  margin: 0.8rem 0 0;
+}
+
+/* ---- app tiles ---------------------------------------------------------------------------------- */
+.tile.app .art {
+  display: grid;
+  place-items: center;
+}
+.tile.app .app-icon .icon {
+  color: hsl(var(--tint, 220) 70% 82%);
+}
+.tile.app.live .s {
+  color: var(--ok);
+  font-weight: 700;
+}
+.tile.app.off .t {
+  color: var(--muted);
+}
+
+/* ---- settings panels: information cards and the designed "not available" state ------------------ */
+.card h3 {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--soft);
+}
+.na {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.8rem 1rem;
+  border: 1px dashed var(--field);
+  border-radius: 0.8rem;
+  color: var(--soft);
+}
+.na strong {
+  display: block;
+  color: var(--text);
+}
+.na p {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+}
+.vol-row {
+  display: grid;
+  gap: 0.3rem;
+}
+.vol-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+.meter {
+  height: 0.6rem;
+  overflow: hidden;
+  border: 1px solid var(--field);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+.meter > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--focus);
+  transform: scaleX(var(--v, 0));
+  transform-origin: left;
+}
+
+/* ---- sleep: a black cover while the host display is off ------------------------------------------ */
+.sleep-cover {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: var(--soft);
+  outline: none;
 }

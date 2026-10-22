@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { usrRoot } from "../usr";
 import { createWorkspaceServer } from "../workspace";
 import { biosOverview } from "./api";
+import { addApp, listAppEntries, removeApp } from "./apps";
 import { chooseRoute, commandFor, launchGame, routesFor } from "./launch";
 import {
   addFolder,
@@ -160,6 +161,7 @@ const usage = `usage: bun-engine library scan | systems | games [system] | route
   | launch <id|file> [--system s] [--route r] [--check] [--frames N]
   | command <id|file> [--system s] [--route r]   (route command line for the console shell)
   | profile [key [field=value...]]               (console shell per-game profiles)
+  | apps [list | add <id> <title> [--icon name] -- <command...> | remove <id>]   (non-game app tiles on the home page)
   | check [system...] [--frames N]   (one bounded run per available route)`;
 
 function placeholder(system: string): Game {
@@ -264,6 +266,16 @@ export async function runLibrary(args: string[]): Promise<number> {
         print({ error: (error as Error).message });
         return 1;
       }
+    }
+    case "apps": {
+      // non-game apps shown as tiles on the home page: declared here, never over HTTP
+      const [action, id, title] = rest;
+      if (!action || action === "list") return print(listAppEntries());
+      if (action === "remove" && id) return print({ removed: removeApp(id) });
+      const split = rest.indexOf("--");
+      if (action === "add" && id && title && split > 0 && rest[split + 1])
+        return print(addApp(id, title, rest.slice(split + 1), option(rest.slice(0, split), "--icon")));
+      break;
     }
     case "profile":
       if (!rest[0]) return print(listProfiles());

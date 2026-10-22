@@ -3,20 +3,20 @@ Recent-games shelf on home,home,must,yes,yes,"scroll-snapped tiles, focus ring, 
 Hero with one primary action,home,should,yes,yes,"""Play"" on the last played game of the profile; states: loading, nothing played, empty library"
 "Top navigation bar (Library, Systems, Search, Settings)",navigation,must,yes,yes,"D-pad reachable, shown in every state; profile and power buttons next to it"
 Game library grid,library,must,yes,yes,exists as the system and game views
-Per-game page with hero and related shelf,library,could,yes,partial,Details opens the game view with cover and routes; no hero and no related shelf yet
+Per-game page with hero and related shelf,library,could,yes,yes,"cover hero, one Play, favourite toggle, play count, facts, shelves More on <system> and Recently played, Back trail; ui-flow2.ts"
 Profile overlay that restores focus,overlay,could,yes,yes,"""Who is playing?"" overlay, focus returns to the profile button"
-Media-app tiles,apps,could,yes,no,only if bun-engine launches non-game apps
+Media-app tiles,apps,could,yes,yes,"declared apps in shell.db shown one tile each, started and stopped through the tracked spawn used for games; no media library behind them; ui-flow2.ts"
 Store front and prices,store,skip,yes,skip,owned catalogue and commerce
 Trophies parties messages,social,skip,yes,skip,network and accounts
 Game and promo art,content,skip,yes,skip,licensed material; use our own homebrew captures
-"Quick menu overlay in game (resume, stop, save state, screenshot, volume)",gamescope session,must,yes,partial,"F1, Guide or Select+R3; real RetroArch commands, pause verified; only for in-process embedded games"
+"Quick menu overlay in game (resume, stop, save state, screenshot, volume)",gamescope session,must,yes,partial,"F1, Guide or Select+R3; real RetroArch commands, pause verified, opened with a real (uinput) pad and seen in the kiosk compositor; only for in-process embedded games"
 "Performance overlay toggle (fps, frame time)",gamescope session,should,yes,partial,"real shell.db key hud; counts the page frames, not the running game"
 Suspend and resume the running game,gamescope session,should,yes,partial,verified pause and resume of the embedded core from the quick menu; no SIGSTOP of external emulators
 "Notifications toast (download done, controller low battery)",gamescope session,could,yes,partial,"aria-live toast for jobs and pad connection; no battery or download events"
-"Controller glyph hints in the footer (A select, B back)",home,must,yes,yes,"glyphs follow the Gamepad API id (Xbox, PlayStation-style, Nintendo, generic); seen with fake pad ids, no real pad"
-"Power and session menu (sleep, restart, exit to desktop)",gamescope session,must,yes,partial,"restart and exit with a confirm dialog (Cancel first); no sleep; real gamescope not run"
-Multi-profile with per-profile saves and recents,home,should,yes,partial,recents and play history per profile (additive plays table); saves are shared
-"Settings (display, audio, controllers, network, storage)",settings,must,yes,partial,"session, library, cores and BIOS, routes, versions and two real shell.db keys; no display, audio, network or storage panels"
+"Controller glyph hints in the footer (A select, B back)",home,must,yes,yes,"glyphs follow the Gamepad API id (Xbox, PlayStation-style, Nintendo, generic); Xbox glyphs seen with Chrome's real Gamepad stack (uinput pad), the other kinds only with fake ids"
+"Power and session menu (sleep, restart, exit to desktop)",gamescope session,must,yes,partial,"restart and exit with a confirm dialog (Cancel first); Sleep display through Sway output power or X11 DPMS, verified on Sway, disabled with a reason elsewhere (gamescope has no display power control); no machine suspend; real gamescope not run"
+Multi-profile with per-profile saves and recents,home,should,yes,partial,"recents, play history, save states and screenshots per profile (first play copies the shared ones in); battery saves (SRAM) still shared"
+"Settings (display, audio, controllers, network, storage)",settings,must,yes,yes,"all five panels read real host state (Sway or DRM, wpctl, ip, statfs checked against df, Gamepad API) and show a designed Not available state when a source is missing; pactl, nmcli and xrandr paths written but not run (tools absent); three real shell.db keys"
 Search with on-screen keyboard for the pad,search,should,yes,yes,"pad keyboard plus real keyboard, result rows reuse the game row"
 Cover art and hero from homebrew captures,home,must,yes,yes,covers and hero come from our homebrew capture files; placeholder tiles otherwise
-Sounds for focus and select,audio,could,yes,no,our own short sounds; mutable; never required
+Sounds for focus and select,audio,could,yes,yes,"own WebAudio blips (focus, select, back, error), mutable (auto, on, off), off under reduced motion by default, shell.db key; rendered offline and play log checked, not listened to"
