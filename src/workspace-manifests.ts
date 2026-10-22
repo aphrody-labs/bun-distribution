@@ -48,7 +48,7 @@ export async function inspectGitSourceOwners(root: string, preloaded: { staged?:
         ? preloaded.staged
         : inventoryGit(root, ["-C", repositoryRoot, "ls-files", "--stage", "-z"]),
     ]);
-    const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^\[]*)/g)].map(match => ({
+    const declarations = [...modules.matchAll(/\[submodule "([^"]+)"\]([^[]*)/g)].map(match => ({
       name: match[1]!,
       path: /^\s*path\s*=\s*(.+)$/m.exec(match[2]!)?.[1].trim() ?? "",
       repository: /^\s*url\s*=\s*(.+)$/m.exec(match[2]!)?.[1].trim() ?? null,

@@ -38,23 +38,6 @@ export function canonicalBunInputs(checkout: string, revision: string) {
   };
   if (git("rev-parse", "HEAD").toString().trim() !== revision)
     throw new Error("Canonical Bun checkout revision mismatch");
-  const tracked = (path: string) => {
-    const file = ownedFile(path);
-    const object = `${revision}:${path}`;
-    const size = Number(git("cat-file", "-s", object).toString().trim());
-    if (!Number.isSafeInteger(size) || size < 0 || size > 4 * 1024 * 1024)
-      throw new Error("Canonical Bun source exceeds the build input bound");
-    const bytes = readFileSync(file);
-    const sha256 = sha(git("cat-file", "blob", object));
-    if (bytes.length !== size || sha(bytes) !== sha256)
-      throw new Error("Canonical Bun build input differs from its pinned Git blob");
-    return {
-      file,
-      path,
-      sha256,
-      gitBlob: git("rev-parse", object).toString().trim(),
-    };
-  };
   // The fork receipt is not present in this checkout: the documentation and search inputs are hashed from the
   // files that exist here, so the build is reproducible from this workspace.
   const hashed = (path: string) => {

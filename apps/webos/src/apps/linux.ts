@@ -274,7 +274,8 @@ export async function linuxApp(root: HTMLElement) {
    */
   const onSerialText = () => {
     const tail = serialText.slice(-60);
-    if (!/login: $/.test(tail.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").replace(/\r/g, ""))) return;
+    // oxlint-disable-next-line no-control-regex -- strip terminal escape sequences from the serial log
+    if (!tail.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").replace(/\r/g, "").endsWith("login: ")) return;
     if (!loggedIn && autologin$.checked) {
       loggedIn = true;
       void typeLine("root").then(() => say("Logged in as root on the console automatically."));
@@ -332,6 +333,7 @@ export async function linuxApp(root: HTMLElement) {
             serialTimer = undefined;
             if (serialText.length > SERIAL_KEEP) serialText = serialText.slice(-SERIAL_KEEP);
             // Drop terminal escape sequences and carriage returns; this is a log view, not a terminal emulator.
+            // oxlint-disable-next-line no-control-regex -- terminal escape sequences are intentionally matched
             serialOut.textContent = serialText.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").replace(/\r/g, "");
             serialOut.scrollTop = serialOut.scrollHeight;
             onSerialText();

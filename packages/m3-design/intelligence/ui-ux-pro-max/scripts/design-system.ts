@@ -622,6 +622,7 @@ function hexToAnsi(hexColor: string): string {
 
 /** ljust that ignores zero-width ANSI escape sequences. */
 function ansiLjust(text: string, width: number): string {
+  // oxlint-disable-next-line no-control-regex -- ANSI SGR sequences are intentionally matched
   const visible = pyLen(text.replace(/\x1b\[[0-9;]*m/g, ""));
   return text + " ".repeat(Math.max(0, width - visible));
 }

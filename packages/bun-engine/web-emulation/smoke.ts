@@ -99,6 +99,8 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
   const profileRoot = resolve(root, "build/web-emulation");
   const profile = join(profileRoot, `chrome-profile-${crypto.randomUUID()}`);
   const browserStderrPath = join(profileRoot, "browser-logs", `${crypto.randomUUID()}.stderr.log`);
+  const profileName = profile.slice(profileRoot.length + 1);
+  if (!/^chrome-profile-[a-f0-9-]+$/.test(profileName) || resolve(profile) !== join(profileRoot, profileName)) throw new Error("Unsafe browser profile cleanup path");
   mkdirSync(join(profileRoot, "browser-logs"), { recursive: true });
   console.log(`Browser stderr: ${browserStderrPath}`);
   // Browser process diagnostics include Dawn/GPU-process crashes which CDP page errors do
@@ -313,8 +315,6 @@ export async function smoke(cores: string[], threads: boolean, timeoutMs = 90_00
     await stderrDrain;
     await saveStderr();
     server.stop(true);
-    const profileName = profile.slice(profileRoot.length + 1);
-    if (!/^chrome-profile-[a-f0-9-]+$/.test(profileName) || resolve(profile) !== join(profileRoot, profileName)) throw new Error("Unsafe browser profile cleanup path");
     rmSync(profile, { recursive: true, force: true });
   }
 }

@@ -869,10 +869,16 @@ export async function videoApp(root: HTMLElement, opts: VideoOptions = {}) {
   root.addEventListener("keydown", e => {
     const tg = e.target as HTMLElement;
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(tg.tagName)) return;
-    if (e.key === " ") (e.preventDefault(), playing ? stop() : play());
-    else if (e.key === "s" && !e.ctrlKey) split();
+    if (e.key === " ") {
+      e.preventDefault();
+      if (playing) stop();
+      else play();
+    } else if (e.key === "s" && !e.ctrlKey) split();
     else if (e.key === "Delete" || e.key === "Backspace") remove();
-    else if (e.key === "z" && e.ctrlKey) (e.preventDefault(), undo());
+    else if (e.key === "z" && e.ctrlKey) {
+      e.preventDefault();
+      undo();
+    }
     else if (e.key === "ArrowLeft") void seek(t - 1 / p.fps);
     else if (e.key === "ArrowRight") void seek(t + 1 / p.fps);
   });

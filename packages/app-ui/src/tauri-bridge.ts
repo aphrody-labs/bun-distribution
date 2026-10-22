@@ -49,7 +49,7 @@ export interface LocalAiAnswer {
 }
 
 /** Ask the local chat model served by the managed `llama-server` (`studio_native_chat`). */
-export async function askLocalAi(prompt: string): Promise<LocalAiAnswer> {
+export async function askLocalAi(_prompt: string): Promise<LocalAiAnswer> {
   throw new Error("L’assistant local est disponible dans l’application de bureau.");
 }
 
@@ -256,7 +256,7 @@ export interface PullProgress {
 export const MODEL_PULL_EVENT = "aphrody://model-pull";
 
 /** Desktop-only command: unavailable on the web. */
-async function desktopInvoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
+async function desktopInvoke<T>(command: string, _args: Record<string, unknown> = {}): Promise<T> {
   throw new Error(`Aphrody desktop backend unavailable on the web (${command})`);
 }
 
@@ -324,11 +324,6 @@ export interface UpdateMetadata {
   date?: string;
   body?: string;
 }
-
-type UpdaterEvent =
-  | { event: "Started"; data: { contentLength?: number } }
-  | { event: "Progress"; data: { chunkLength: number } }
-  | { event: "Finished" };
 
 /** Ask the configured release feed for a newer signed build. Errors (no endpoint, bad signature, network) propagate. */
 export function checkForAppUpdate(): Promise<UpdateMetadata | null> {
