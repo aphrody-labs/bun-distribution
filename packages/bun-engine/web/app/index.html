@@ -3,22 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
     <title>Bun Engine</title>
     <link rel="stylesheet" href="./frontend.css" />
   </head>
   <body>
-    <header class="bar">
-      <div class="brand"><span class="mark">◆</span> Bun Engine</div>
-      <nav class="tabs" id="tabs">
-        <button data-nav data-tab="systems">Library</button>
-        <button data-nav data-tab="bios">BIOS</button>
-        <button data-nav data-tab="installer">Installer</button>
-        <button data-nav data-tab="sources">Sources</button>
+    <header class="top" id="top">
+      <div class="brand">Bun Engine</div>
+      <nav class="tabs" id="tabs" aria-label="Main">
+        <button data-nav data-tab="home"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Library</button>
+        <button data-nav data-tab="systems"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Systems</button>
+        <button data-nav data-tab="search"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>Search</button>
+        <button data-nav data-tab="settings"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>Settings</button>
       </nav>
       <div class="status" id="status"></div>
+      <button data-nav id="profile-btn" class="profile" data-action="profiles" aria-label="Profile menu"><span class="avatar" aria-hidden="true">D</span></button>
+      <button data-nav class="power-btn" data-action="power" aria-label="Power menu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg></button>
     </header>
-    <main id="view"><p class="empty">Loading library…</p></main>
-    <footer class="hints" id="hints"></footer>
+    <div class="banner-offline" id="offline" role="alert" hidden>The Bun Engine service does not answer. Retrying; select to reload the page.</div>
+    <main id="view"><div class="skeleton-page" aria-busy="true" aria-label="Loading"></div></main>
+    <footer class="hints" id="hints" aria-label="Controls"></footer>
+    <div class="hud" id="hud" hidden aria-hidden="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script type="module" src="./frontend.ts"></script>
   </body>

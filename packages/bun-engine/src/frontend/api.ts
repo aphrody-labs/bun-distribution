@@ -1,5 +1,6 @@
 // HTTP API of the Bun Engine frontend: library, launch routing, BIOS status and the bep installer.
 // Long bep operations (installs, scans, mirror probes) run as jobs the UI polls.
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { listFirmware } from "../firmware/import";
 import { biosReport, libretroCatalog } from "../libretro";
@@ -7,22 +8,30 @@ import { indexMirrors, listMirrors, probeMirrors } from "../mirrors";
 import * as pm from "../pm";
 import { listInstalled, releaseCatalog } from "../usr";
 import { launchGame, routesFor, runningGames, stopGame } from "./launch";
+import { libretroarchLibrary } from "../libretroarch";
+import { readShellSettings, shellDatabasePath, writeShellSetting } from "./profiles";
+import { sessionAction, sessionHooks, underGamescope } from "./session";
 import {
   addFolder,
+  addPlayer,
   defaultRoute,
   findGame,
   gameById,
   gamesFor,
   inProject,
+  listPlayers,
   listSources,
   projectDir,
+  recentGames,
   removeSource,
   scanLibrary,
+  searchGames,
   setDefaultRoute,
   setFavorite,
   setGameRoute,
   systemCounts,
   systemCovers,
+  totalGames,
 } from "./library";
 import { loadSystems, systemById } from "./systems";
 
@@ -88,6 +97,12 @@ export async function systemsOverview(): Promise<unknown[]> {
   );
 }
 
+/** The cores of `wanted` present in usr/lib/libretro (a symlinked core counts; a glob would skip it). */
+function installedCoreIds(wanted: string[]): Set<string> {
+  const dir = join(pm.cacheDirectories().usr, "lib", "libretro");
+  return new Set(wanted.filter(id => ["dll", "so", "dylib"].some(ext => existsSync(join(dir, `${id}_libretro.${ext}`)))));
+}
+
 /** Native machine BIOS plus the libretro core BIOS report (Recalbox-style). */
 export async function biosOverview(): Promise<unknown> {
   const { systems } = await loadSystems();
@@ -116,15 +131,7 @@ export async function biosOverview(): Promise<unknown> {
       status: images.length ? "present" : bios.required ? "missing" : "optional",
     });
   }
-  const installedCores = new Set(
-    (
-      await Array.fromAsync(
-        new Bun.Glob("*_libretro.*").scan({
-          cwd: join(pm.cacheDirectories().usr, "lib", "libretro"),
-        }),
-      )
-    ).map(file => file.replace(/_libretro\..+$/, "")),
-  );
+  const installedCores = installedCoreIds(systems.flatMap(system => system.libretro));
   const wanted = new Set(systems.flatMap(system => system.libretro));
   const ids = [...wanted].filter(id => installedCores.has(id));
   const libretro = ids.length ? await biosReport(ids) : [];
@@ -133,6 +140,62 @@ export async function biosOverview(): Promise<unknown> {
     libretro,
     freeFirmware: Object.entries(free).map(([id, entry]) => ({ id, ...entry })),
     store: await listFirmware().catch(() => []),
+  };
+}
+
+/** Everything the Settings page shows: real host state only, read when the page opens. */
+export async function settingsOverview(): Promise<unknown> {
+  const [systems, bios, { systems: definitions }] = await Promise.all([
+    systemsOverview() as Promise<
+      Array<{ id: string; name: string; games: number; routes: Array<{ id: string; kind: string; available: boolean; reason?: string }>; defaultRoute: string | null }>
+    >,
+    biosOverview() as Promise<{
+      native: Array<{ system: string; machine: string; status: string; required: boolean }>;
+      libretro: Array<{ core: string; file: string; status: string; optional: boolean }>;
+    }>,
+    loadSystems(),
+  ]);
+  const installedCores = installedCoreIds(definitions.flatMap(system => system.libretro));
+  const cores = [...new Set(definitions.flatMap(system => system.libretro))].sort().map(id => ({
+    id,
+    installed: installedCores.has(id),
+    systems: definitions.filter(system => system.libretro.includes(id)).map(system => system.id),
+    bios: bios.libretro.filter(row => row.core === id).map(row => ({ file: row.file, status: row.status, optional: row.optional })),
+  }));
+  const hooks = sessionHooks();
+  const packageJson = (await Bun.file(join(import.meta.dir, "..", "..", "package.json")).json().catch(() => ({}))) as {
+    version?: string;
+  };
+  return {
+    session: {
+      gamescope: underGamescope(),
+      display: Bun.env.GAMESCOPE_WAYLAND_DISPLAY ?? Bun.env.WAYLAND_DISPLAY ?? Bun.env.DISPLAY ?? null,
+      desktop: Bun.env.XDG_CURRENT_DESKTOP ?? null,
+      window: hooks?.window ?? false,
+      power: Boolean(hooks),
+    },
+    library: {
+      project: projectDir(),
+      database: join(pm.cacheDirectories().usr, "var", "lib", "bep", "library.db"),
+      games: totalGames(),
+      sources: listSources(),
+    },
+    systems: systems.map(system => ({
+      id: system.id,
+      name: system.name,
+      games: system.games,
+      defaultRoute: system.defaultRoute,
+      routes: system.routes.map(route => ({ id: route.id, kind: route.kind, available: route.available, reason: route.reason })),
+    })),
+    cores,
+    native: bios.native,
+    config: { store: shellDatabasePath(), values: readShellSettings() },
+    versions: {
+      engine: packageJson.version ?? null,
+      bun: Bun.version,
+      platform: `${process.platform} ${process.arch}`,
+      libretroarch: libretroarchLibrary() ?? null,
+    },
   };
 }
 
@@ -260,6 +323,7 @@ export function frontendRoutes() {
           route?: string;
           check?: boolean;
           frames?: number;
+          profile?: string;
         }>(request);
         return json(await launchGame(game, options));
       }),
@@ -278,6 +342,48 @@ export function frontendRoutes() {
         const { route } = await body<{ route: string | null }>(request);
         setGameRoute(Number(id), route);
         return json({ id: Number(id), route });
+      }),
+    },
+    "/api/recent": {
+      GET: guard(request => {
+        const url = new URL(request.url);
+        return json(recentGames(url.searchParams.get("profile") ?? "default", Number(url.searchParams.get("limit") ?? 12)));
+      }),
+    },
+    "/api/search": {
+      GET: guard(request => {
+        const url = new URL(request.url);
+        return json(searchGames(url.searchParams.get("q") ?? ""));
+      }),
+    },
+    "/api/profiles": {
+      GET: guard(() => json(listPlayers())),
+      POST: guard(async request => json(addPlayer((await body<{ name: string }>(request)).name ?? ""))),
+    },
+    "/api/session": {
+      GET: guard(() => {
+        const hooks = sessionHooks();
+        return json({
+          gamescope: underGamescope(),
+          window: hooks?.window ?? false,
+          power: Boolean(hooks),
+          config: readShellSettings(),
+        });
+      }),
+    },
+    "/api/settings": { GET: guard(async () => json(await settingsOverview())) },
+    "/api/settings/:key": {
+      PUT: guard(async request => {
+        const { key } = request.params as { key: string };
+        const { value } = await body<{ value: string }>(request);
+        return json(writeShellSetting(key, String(value)));
+      }),
+    },
+    "/api/session/:action": {
+      POST: guard(request => {
+        const { action } = request.params as { action: string };
+        if (action !== "exit" && action !== "restart") throw new Error(`unknown session action ${action}`);
+        return json(sessionAction(action));
       }),
     },
     "/api/running": { GET: () => json(runningGames()) },

@@ -254,6 +254,8 @@ export async function launchGame(
     check?: boolean;
     frames?: number;
     timeoutMs?: number;
+    /** The profile whose recents and play counts this launch belongs to. */
+    profile?: string;
   } = {},
 ): Promise<LaunchResult> {
   const started = performance.now();
@@ -299,7 +301,7 @@ export async function launchGame(
     };
     running.set(child.pid, entry);
     void child.exited.then(() => running.delete(child.pid));
-    recordPlay(game.id);
+    recordPlay(game.id, options.profile);
     return {
       ok: true,
       game: game.id,

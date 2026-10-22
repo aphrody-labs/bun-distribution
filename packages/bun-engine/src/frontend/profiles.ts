@@ -88,3 +88,40 @@ export function parseAssignments(args: string[]): Partial<Omit<Profile, "key" | 
   }
   return values;
 }
+
+/** Shell settings the web frontend shares with `crates/bun-os-shell` (same keys, same values). */
+export const shellSettings = {
+  hud: { values: ["0", "1"], fallback: "0" },
+  motion: { values: ["system", "reduced", "full"], fallback: "system" },
+} as const;
+
+export type ShellSetting = keyof typeof shellSettings;
+
+export function readShellSettings(): Record<ShellSetting, string> {
+  const db = openProfiles();
+  try {
+    const rows = db.query("SELECT name, value FROM settings").all() as Array<{ name: string; value: string }>;
+    const stored = new Map(rows.map(row => [row.name, row.value]));
+    return {
+      hud: stored.get("hud") ?? shellSettings.hud.fallback,
+      motion: stored.get("motion") ?? shellSettings.motion.fallback,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+export function writeShellSetting(name: string, value: string): Record<ShellSetting, string> {
+  const spec = shellSettings[name as ShellSetting];
+  if (!spec) throw new Error(`unknown setting ${name}`);
+  if (!(spec.values as readonly string[]).includes(value)) throw new Error(`${name} is one of ${spec.values.join(", ")}`);
+  const db = openProfiles();
+  try {
+    db.query(
+      "INSERT INTO settings (name, value) VALUES (?1, ?2) ON CONFLICT(name) DO UPDATE SET value = excluded.value",
+    ).run(name, value);
+  } finally {
+    db.close();
+  }
+  return readShellSettings();
+}

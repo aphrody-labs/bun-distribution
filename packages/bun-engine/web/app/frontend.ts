@@ -1,238 +1,276 @@
-// Bun Engine frontend: systems -> games, launch routing, BIOS and installer screens. Navigable
-// with the keyboard and any standard-mapping gamepad (spatial focus, A/B/X/Y, LB/RB, Start).
+// Bun Engine frontend: a console-style home (last played hero, recents, systems), systems -> games,
+// search with a pad keyboard, settings that read real host state, a quick menu over the running game,
+// profiles and a power menu. Navigable with the keyboard and any standard-mapping gamepad (spatial
+// focus, A/B/X/Y, LB/RB, Start or Guide for the quick menu).
+import { jobsHtml, showBios, showInstaller, showSources } from "./admin";
+import {
+  ago,
+  api,
+  currentHints,
+  focusable,
+  focusFirst,
+  formatSize,
+  type Game,
+  h,
+  type Hint,
+  type Job,
+  type LaunchResult,
+  markTab,
+  motionReduced,
+  OfflineError,
+  overlayStack,
+  renderHints,
+  reveal,
+  type Route,
+  setHints,
+  state,
+  status,
+  type SystemRow,
+  type Tab,
+  toast,
+  view,
+} from "./core";
+import { padKindOf } from "./glyphs";
+import { icon } from "./icons";
 
-interface Route {
-  id: string;
-  kind: "native" | "bin" | "libretro";
-  label: string;
-  available: boolean;
-  reason?: string;
-  extensions?: string[];
+const enc = encodeURIComponent;
+const tintOf = (id: string) => [...id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 360, 17);
+const nameOf = (game: Game) => game.title ?? game.name;
+const profileLabel = (name: string) => (name === "default" ? "Default" : name);
+
+/** Cover art of a game from our own captures, else a typographic placeholder in the system's tint. */
+function art(game: Game): string {
+  return `<span class="art" style="--tint:${tintOf(game.system)}">${
+    game.cover
+      ? `<img src="/api/games/${game.id}/cover" alt="" loading="lazy" decoding="async" />`
+      : `<span class="ph" aria-hidden="true">${h(nameOf(game).slice(0, 1).toUpperCase())}</span>`
+  }</span>`;
 }
-
-interface SystemRow {
-  id: string;
-  name: string;
-  manufacturer: string;
-  year: number;
-  extensions: string[];
-  games: number;
-  /** The id of a game whose cover the card shows. */
-  cover: number | null;
-  routes: Route[];
-  defaultRoute: string | null;
-}
-
-interface Game {
-  id: number;
-  system: string;
-  path: string;
-  file: string;
-  name: string;
-  source: string;
-  size: number;
-  crc: string | null;
-  md5: string | null;
-  title: string | null;
-  description: string | null;
-  developer: string | null;
-  year: string | null;
-  region: string | null;
-  dat: string | null;
-  route: string | null;
-  cover: string | null;
-  favorite: number;
-  playCount: number;
-  lastPlayed: string | null;
-}
-
-interface Job {
-  id: number;
-  title: string;
-  status: "running" | "done" | "failed";
-  result?: unknown;
-  error?: string;
-}
-
-interface LaunchResult {
-  ok: boolean;
-  route: string;
-  mode: string;
-  pid?: number;
-  exitCode?: number | null;
-  alive?: boolean;
-  ms: number;
-  output?: string;
-  error?: string;
-  player?: string;
-}
-
-type Tab = "systems" | "games" | "bios" | "installer" | "sources";
-
-const view = document.querySelector<HTMLElement>("#view")!;
-const hints = document.querySelector<HTMLElement>("#hints")!;
-const status = document.querySelector<HTMLElement>("#status")!;
-const toastBox = document.querySelector<HTMLElement>("#toast")!;
-
-const state: {
-  tab: Tab;
-  systems: SystemRow[];
-  system?: SystemRow;
-  games: Game[];
-  game?: Game;
-  lastSystem?: string;
-  lastGame?: number;
-  jobs: Job[];
-  running: Array<{ pid: number; game: number; route: string }>;
-} = { tab: "systems", systems: [], games: [], jobs: [], running: [] };
-
-const h = (value: unknown) =>
-  String(value ?? "").replace(
-    /[&<>"']/g,
-    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-
-async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    headers: init?.json === undefined ? undefined : { "content-type": "application/json" },
-    body: init?.json === undefined ? init?.body : JSON.stringify(init.json),
-  });
-  const value = (await response.json()) as T & { error?: string };
-  if (!response.ok) throw new Error(value.error ?? response.statusText);
-  return value;
-}
-
-let toastTimer: ReturnType<typeof setTimeout> | undefined;
-function toast(message: string, kind: "info" | "ok" | "error" = "info"): void {
-  toastBox.textContent = message;
-  toastBox.className = `toast show ${kind}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (toastBox.className = "toast"), kind === "error" ? 7000 : 3500);
-}
-
-function setHints(items: Array<[string, string]>): void {
-  hints.innerHTML = items.map(([key, label]) => `<span><kbd>${h(key)}</kbd>${h(label)}</span>`).join("");
-}
-
-const accents: Record<string, string> = {
-  Nintendo: "#e4002b",
-  Sony: "#3b6ef5",
-  Sega: "#1c8cf0",
-  Microsoft: "#16a34a",
-  Various: "#a855f7",
-  "Bun Engine": "#f5b300",
-};
 
 function routeChips(routes: Route[], defaultRoute: string | null): string {
   return routes
     .map(
       route =>
-        `<span class="chip ${route.kind} ${route.available ? "on" : "off"}" title="${h(route.reason ?? "")}">${route.id === defaultRoute ? "★ " : ""}${h(route.label)}</span>`,
+        `<span class="chip ${route.kind} ${route.available ? "on" : "off"}" title="${h(route.reason ?? "")}">${route.id === defaultRoute ? "Default · " : ""}${route.available ? "" : "Off · "}${h(route.label)}</span>`,
     )
     .join("");
 }
 
-function formatSize(bytes: number): string {
-  const units = ["B", "KiB", "MiB", "GiB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return `${value.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+// ---- navigation state -----------------------------------------------------------------------------
+
+/** The newest navigation wins: a screen that finishes loading after the user left stays unrendered. */
+let navigation = 0;
+let retry: (() => Promise<void>) | undefined;
+
+function enter(tab: Tab): number {
+  if (tab !== state.tab) state.from = state.tab === "games" ? "systems" : state.tab;
+  state.tab = tab;
+  markTab();
+  return ++navigation;
 }
 
-// ---- screens ------------------------------------------------------------------------------------
+const homeHints: Hint[] = [
+  ["move", "Move"],
+  ["select", "Select"],
+  ["menu", "Quick menu"],
+  ["tabs", "Pages"],
+];
+
+function showError(error: unknown, again: () => Promise<void>): void {
+  const offline = error instanceof OfflineError;
+  retry = again;
+  view.innerHTML = `<section class="state" role="alert">
+    ${icon(offline ? "wifi-off" : "triangle-alert", "icon big")}
+    <h1>${offline ? "Service unreachable" : "Something went wrong"}</h1>
+    <p>${offline ? "The Bun Engine service on this device does not answer. Check that it is running; this page keeps trying." : h(error instanceof Error ? error.message : String(error))}</p>
+    <button data-nav class="primary" data-action="retry">${icon("rotate-cw")} Try again</button>
+  </section>`;
+  setHints([
+    ["select", "Try again"],
+    ["menu", "Quick menu"],
+  ]);
+  focusFirst("[data-action=retry]");
+}
+
+// ---- home -----------------------------------------------------------------------------------------
+
+const skeletonHome = () => `<div class="skeleton-page" aria-busy="true" aria-label="Loading your library">
+  <div class="hero sk"><div class="hero-body"><span class="sk-line w30"></span><span class="sk-line w60 tall"></span><span class="sk-line w40"></span><span class="sk-line w20 btn"></span></div></div>
+  <h2 class="sk-line w10"></h2>
+  <div class="shelf">${'<span class="tile sk"><span class="art"></span><span class="sk-line w80"></span><span class="sk-line w50"></span></span>'.repeat(6)}</div>
+</div>`;
+
+function systemTile(system: SystemRow, detail = false): string {
+  const ready = system.routes.some(route => route.available);
+  return `<button data-nav class="system ${system.games ? "" : "dim"}" data-system="${h(system.id)}" style="--tint:${tintOf(system.id)}">
+    <span class="banner">${system.cover ? `<img src="/api/games/${system.cover}/cover" alt="" loading="lazy" decoding="async" />` : ""}</span>
+    <span class="maker">${h(system.manufacturer)} · ${system.year}</span>
+    <span class="name">${h(system.name)}</span>
+    <span class="count">${system.games} ${system.games === 1 ? "game" : "games"}${detail ? "" : ` · ${ready ? "Ready" : "No emulator"}`}</span>
+    ${detail ? `<span class="routes">${ready ? routeChips(system.routes.filter(route => route.available).slice(0, 3), system.defaultRoute) : '<span class="chip off">No emulator installed</span>'}</span>` : ""}
+  </button>`;
+}
+
+let recent: Game[] = [];
+
+async function showHome(): Promise<void> {
+  const mine = enter("home");
+  view.innerHTML = skeletonHome();
+  setHints(homeHints);
+  let systems: SystemRow[];
+  try {
+    [recent, systems] = await Promise.all([
+      api<Game[]>(`/api/recent?profile=${enc(state.profile)}&limit=12`),
+      api<SystemRow[]>("/api/systems"),
+    ]);
+  } catch (error) {
+    if (mine === navigation) showError(error, showHome);
+    return;
+  }
+  if (mine !== navigation) return;
+  state.systems = systems;
+  const total = systems.reduce((sum, system) => sum + system.games, 0);
+  const scanning = state.jobs.some(job => job.status === "running" && job.title === "Scan library");
+  const [last, ...earlier] = recent;
+  const hero = last
+    ? `<section class="hero" aria-label="Continue playing" style="--tint:${tintOf(last.system)}">
+        <div class="hero-art" aria-hidden="true">${last.cover ? `<img src="/api/games/${last.id}/cover" alt="" decoding="async" />` : ""}</div>
+        <div class="hero-body">
+          <p class="eyebrow">Continue playing · ${h(systems.find(system => system.id === last.system)?.name ?? last.system)}</p>
+          <h1>${h(nameOf(last))}</h1>
+          <p class="meta">Last played ${ago(last.lastPlayed)} · ${last.playCount} ${last.playCount === 1 ? "play" : "plays"}${state.profile === "default" ? "" : ` · ${h(profileLabel(state.profile))}`}</p>
+          <div class="hero-actions">
+            <button data-nav class="primary big" data-play="${last.id}">${icon("play", "icon fill")} Play</button>
+            <button data-nav class="ghost big" data-details="${last.id}">Details</button>
+          </div>
+        </div>
+        <div class="hero-cover">${art(last)}</div>
+      </section>`
+    : total
+      ? `<section class="hero empty"><div class="hero-body">
+          <p class="eyebrow">${h(profileLabel(state.profile))}</p>
+          <h1>Nothing played yet</h1>
+          <p class="meta">${total} ${total === 1 ? "game is" : "games are"} ready. Pick a system and press play: your last game will wait for you here.</p>
+          <div class="hero-actions"><button data-nav class="primary big" data-tab="systems">${icon("layout-grid")} Choose a system</button></div>
+        </div></section>`
+      : `<section class="hero empty"><div class="hero-body">
+          <p class="eyebrow">${scanning ? "Scanning" : "Empty library"}</p>
+          <h1>${scanning ? "Looking for games…" : "No games yet"}</h1>
+          <p class="meta">${scanning ? "This takes a moment on a large folder." : "Add a folder that holds your games, or install free homebrew with bep."}</p>
+          <div class="hero-actions"><button data-nav class="primary big" data-tab="sources">${icon("folder-down")} Add a folder</button><button data-nav class="ghost big" data-action="scan">${icon("refresh-cw")} Rescan</button></div>
+        </div></section>`;
+  const shelf = earlier.length
+    ? `<div class="shelf" role="list" aria-label="Recent games">${earlier
+        .map(
+          game => `<button data-nav role="listitem" class="tile" data-play="${game.id}">
+            ${art(game)}
+            <span class="t">${h(nameOf(game))}</span>
+            <span class="s">${h(systems.find(system => system.id === game.system)?.name ?? game.system)} · ${ago(game.lastPlayed)}</span>
+          </button>`,
+        )
+        .join("")}</div>`
+    : `<p class="shelf-empty">${last ? "Earlier games you play will line up here." : "Games you play will line up here."}</p>`;
+  const ordered = [...systems].sort((a, b) => Number(b.games > 0) - Number(a.games > 0));
+  view.innerHTML = `${hero}
+    <h2>Recent</h2>${shelf}
+    <h2>Systems</h2>
+    <div class="shelf" role="list" aria-label="Systems">${ordered.map(system => systemTile(system).replace("<button", '<button role="listitem"')).join("")}</div>`;
+  setHints(homeHints);
+  focusFirst("[data-play], .hero [data-nav], .system");
+}
+
+// ---- systems and games ----------------------------------------------------------------------------
 
 async function showSystems(): Promise<void> {
-  state.tab = "systems";
-  state.systems = await api<SystemRow[]>("/api/systems");
-  const total = state.systems.reduce((sum, system) => sum + system.games, 0);
+  const mine = enter("systems");
+  view.innerHTML = '<div class="skeleton-page" aria-busy="true"><span class="sk-line w20 tall"></span></div>';
+  let systems: SystemRow[];
+  try {
+    systems = await api<SystemRow[]>("/api/systems");
+  } catch (error) {
+    if (mine === navigation) showError(error, showSystems);
+    return;
+  }
+  if (mine !== navigation) return;
+  state.systems = systems;
+  const total = systems.reduce((sum, system) => sum + system.games, 0);
   view.innerHTML = `
     <section class="systems-head">
       <h1>Systems</h1>
-      <p>${total} games across ${state.systems.filter(s => s.games).length} systems · ${state.systems.length} systems defined</p>
-      <button data-nav data-action="scan" class="ghost">Rescan library</button>
+      <p>${total} games across ${systems.filter(s => s.games).length} systems · ${systems.length} systems defined</p>
+      <button data-nav data-action="scan" class="ghost">${icon("refresh-cw")} Rescan library</button>
     </section>
-    <section class="systems">
-      ${state.systems
-        .map(system => {
-          const available = system.routes.filter(route => route.available);
-          return `<button data-nav class="system ${system.games ? "" : "dim"} ${system.cover ? "has-cover" : ""}" data-system="${h(system.id)}" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
-            ${system.cover ? `<img class="cover" src="/api/games/${system.cover}/cover" alt="" loading="lazy" />` : ""}
-            <span class="maker">${h(system.manufacturer)} · ${system.year}</span>
-            <span class="name">${h(system.name)}</span>
-            <span class="count">${system.games} ${system.games === 1 ? "game" : "games"}</span>
-            <span class="routes">${available.length ? routeChips(available.slice(0, 3), system.defaultRoute) : '<span class="chip off">no emulator installed</span>'}</span>
-          </button>`;
-        })
-        .join("")}
-    </section>`;
+    <section class="systems">${systems.map(system => systemTile(system, true)).join("")}</section>`;
   setHints([
-    ["←↑→↓", "Move"],
-    ["A / Enter", "Open"],
-    ["LB RB / Q E", "Tabs"],
-    ["Y / R", "Rescan"],
+    ["move", "Move"],
+    ["select", "Open"],
+    ["y", "Rescan", "R"],
+    ["menu", "Quick menu"],
+    ["tabs", "Pages"],
   ]);
-  markTab();
   focusFirst(state.lastSystem ? `[data-system="${CSS.escape(state.lastSystem)}"]` : ".system");
 }
 
-async function showGames(systemId: string): Promise<void> {
-  state.tab = "games";
+async function showGames(systemId: string, focusGame?: number): Promise<void> {
+  const mine = enter("games");
   state.lastSystem = systemId;
-  const [systems, games] = await Promise.all([
-    api<SystemRow[]>("/api/systems"),
-    api<Game[]>(`/api/systems/${systemId}/games`),
-  ]);
+  if (focusGame) state.lastGame = focusGame;
+  let systems: SystemRow[];
+  let games: Game[];
+  try {
+    [systems, games] = await Promise.all([
+      api<SystemRow[]>("/api/systems"),
+      api<Game[]>(`/api/systems/${systemId}/games`),
+    ]);
+  } catch (error) {
+    if (mine === navigation) showError(error, () => showGames(systemId, focusGame));
+    return;
+  }
+  if (mine !== navigation) return;
   state.systems = systems;
   state.system = systems.find(system => system.id === systemId)!;
   state.games = games;
   const system = state.system;
   view.innerHTML = `
-    <section class="games-head" style="--accent:${accents[system.manufacturer] ?? "#64748b"}">
-      <button data-nav data-action="back" class="ghost">‹ Systems</button>
+    <section class="games-head" style="--tint:${tintOf(system.id)}">
+      <button data-nav data-action="back" class="ghost">${icon("arrow-left")} Back</button>
       <h1>${h(system.name)}</h1>
       <span class="sub">${games.length} games · ${h(system.extensions.map(ext => `.${ext}`).join(" "))}</span>
     </section>
     <section class="games">
-      <div class="list" id="list">
+      <div class="list" id="list" role="list" aria-label="${h(system.name)} games">
         ${
           games.length
-            ? games
-                .map(
-                  game => `<button data-nav class="game" data-game="${game.id}">
-                    <span class="fav">${game.favorite ? "★" : ""}</span>
-                    <span class="title">${game.cover ? `<img class="thumb" src="/api/games/${game.id}/cover" alt="" loading="lazy" />` : ""}${h(game.title ?? game.name)}</span>
-                    <span class="meta">${game.dat ? "DB" : ""}${game.playCount ? ` · ${game.playCount}×` : ""}</span>
-                  </button>`,
-                )
-                .join("")
-            : `<div class="empty">No games yet. Add a folder under Sources, or install free ROMs with <code>bep roms</code>.</div>`
+            ? games.map(game => gameRow(game)).join("")
+            : `<div class="empty">${icon("folder-down", "icon big")}<h2>No games for this system</h2><p>Add a folder under Sources, or install free ROMs with <code>bep roms</code>.</p></div>`
         }
       </div>
-      <aside class="detail" id="detail"></aside>
+      <aside class="detail" id="detail" aria-label="Game details"></aside>
     </section>`;
   setHints([
-    ["↑↓", "Games"],
-    ["→", "Routes"],
-    ["A / Enter", "Launch"],
-    ["Y / C", "Check"],
-    ["X / F", "Favorite"],
-    ["Start / D", "Set default"],
-    ["B / Esc", "Back"],
+    ["move", "Move"],
+    ["select", "Launch"],
+    ["x", "Favorite"],
+    ["y", "Check route", "C"],
+    ["view", "Set default"],
+    ["back", "Back"],
   ]);
-  markTab("systems");
   if (!games.length) {
     renderDetail(undefined);
     focusFirst("[data-action=back]");
     return;
   }
-  const target =
-    state.lastGame && games.some(game => game.id === state.lastGame) ? `[data-game="${state.lastGame}"]` : ".game";
-  focusFirst(target);
+  focusFirst(
+    state.lastGame && games.some(game => game.id === state.lastGame) ? `[data-game="${state.lastGame}"]` : ".game",
+  );
+}
+
+function gameRow(game: Game, meta?: string): string {
+  return `<button data-nav role="listitem" class="game" data-game="${game.id}">
+    <span class="fav">${game.favorite ? `${icon("star", "icon fill")}<span class="sr">Favorite</span>` : ""}</span>
+    <span class="title">${game.cover ? `<img class="thumb" src="/api/games/${game.id}/cover" alt="" loading="lazy" decoding="async" />` : '<span class="thumb ph" aria-hidden="true"></span>'}${h(nameOf(game))}</span>
+    <span class="meta">${meta === undefined ? `${game.dat ? "DB" : ""}${game.playCount ? ` · ${game.playCount}×` : ""}` : h(meta)}</span>
+  </button>`;
 }
 
 function renderDetail(game: Game | undefined): void {
@@ -247,8 +285,8 @@ function renderDetail(game: Game | undefined): void {
   }
   const running = state.running.find(item => item.game === game.id);
   detail.innerHTML = `
-    <h2>${h(game.title ?? game.name)}</h2>
-    ${game.cover ? `<img class="cover-large" src="/api/games/${game.id}/cover" alt="Cover of ${h(game.title ?? game.name)}" />` : ""}
+    <h2>${h(nameOf(game))}</h2>
+    ${game.cover ? `<img class="cover-large" src="/api/games/${game.id}/cover" alt="Cover of ${h(nameOf(game))}" />` : ""}
     <dl>
       ${game.title && game.title !== game.name ? `<dt>File name</dt><dd>${h(game.name)}</dd>` : ""}
       ${game.developer ? `<dt>Developer</dt><dd>${h(game.developer)}</dd>` : ""}
@@ -273,10 +311,10 @@ function renderDetail(game: Game | undefined): void {
     </dl>
     ${game.description ? `<p class="desc">${h(game.description)}</p>` : ""}
     <div class="actions">
-      <button data-nav data-action="launch" class="primary">▶ Launch</button>
+      <button data-nav data-action="launch" class="primary">${icon("play", "icon fill")} Launch</button>
       <button data-nav data-action="check">Check route</button>
-      <button data-nav data-action="favorite">${game.favorite ? "★ Unfavorite" : "☆ Favorite"}</button>
-      ${running ? `<button data-nav data-action="stop" data-pid="${running.pid}" class="danger">■ Stop</button>` : ""}
+      <button data-nav data-action="favorite">${icon("star", game.favorite ? "icon fill" : "icon")} ${game.favorite ? "Unfavorite" : "Favorite"}</button>
+      ${running ? `<button data-nav data-action="stop" data-pid="${running.pid}" class="danger">${icon("square", "icon fill")} Stop</button>` : ""}
     </div>
     <h3>Launch routes</h3>
     <div class="route-list">${routes.map(route => routeButton(route, system.defaultRoute, game)).join("")}</div>
@@ -294,277 +332,429 @@ function routeButton(route: Route, defaultRoute: string | null, game: Game | und
       : `loads ${route.extensions!.map(e => `.${e}`).join(" ")} only`;
   return `<button data-nav class="route ${route.kind} ${usable ? "on" : "off"}" data-route="${h(route.id)}" aria-disabled="${!usable}">
     <span class="kind">${route.kind}</span>
-    <span class="label">${route.id === defaultRoute ? "★ " : ""}${h(route.label)}${game?.route === route.id ? " (game)" : ""}</span>
+    <span class="label">${route.id === defaultRoute ? "Default · " : ""}${h(route.label)}${game?.route === route.id ? " (game)" : ""}</span>
     <span class="why">${h(reason ?? "")}</span>
   </button>`;
 }
 
-async function showBios(): Promise<void> {
-  state.tab = "bios";
-  const bios = await api<{
-    native: Array<{
-      system: string;
-      machine: string;
-      console: string;
-      required: boolean;
-      freeFirmware: string;
-      license?: string;
-      status: string;
-      images: Array<{ sha256: string; bytes: number }>;
-    }>;
-    libretro: Array<{
-      core: string;
-      file: string;
-      desc: string;
-      optional: boolean;
-      md5?: string;
-      status: string;
-    }>;
-    freeFirmware: Array<{
-      id: string;
-      console: string;
-      file: string;
-      license: string;
-    }>;
-    store: Array<{
-      console: string;
-      sha256: string;
-      bytes: number;
-      file: string;
-    }>;
-  }>("/api/bios");
-  const cores = new Map<string, typeof bios.libretro>();
-  for (const row of bios.libretro) cores.set(row.core, [...(cores.get(row.core) ?? []), row]);
-  view.innerHTML = `
-    <section class="page">
-      <h1>BIOS</h1>
-      <p class="lead">Native machines boot open-source firmware from the bep store; RetroArch cores are checked by MD5 like Recalbox does. Proprietary dumps stay user-supplied (<code>bep add firmware &lt;console&gt; &lt;dump&gt;</code>).</p>
-      <h2>Native machines</h2>
-      <div class="cards">
-        ${bios.native
-          .map(
-            row => `<div class="card">
-              <div class="row"><strong>${h(row.system.toUpperCase())}</strong><span class="badge ${row.status}">${h(row.status)}</span></div>
-              <div class="muted">${h(row.console)} · ${row.required ? "required" : "optional"}</div>
-              ${row.images.map(image => `<div class="mono small">${image.sha256.slice(0, 16)}… ${formatSize(image.bytes)}</div>`).join("")}
-              <button data-nav data-install="free-firmware" data-id="${h(row.freeFirmware)}">${row.images.length ? "Reinstall" : "Install"} ${h(row.freeFirmware)}</button>
-              <div class="muted small">${h(row.license ?? "")}</div>
-            </div>`,
-          )
-          .join("")}
+// ---- search ---------------------------------------------------------------------------------------
+
+const keyboardRows = ["1234567890", "qwertyuiop", "asdfghjkl-", "zxcvbnm'."];
+
+/** A pad-first on-screen keyboard that types into `target` (a CSS selector for an input). */
+function keyboardHtml(target: string, shift = false): string {
+  const key = (value: string, label = value, extra = "") =>
+    `<button type="button" data-nav class="key ${extra}" data-key="${h(value)}" data-target="${h(target)}"${extra.includes("wide") ? ` aria-label="${h(label)}"` : ""}>${h(label)}</button>`;
+  return `<div class="osk" role="group" aria-label="On-screen keyboard">
+    ${keyboardRows.map(row => `<div class="osk-row">${[...row].map(char => key(char)).join("")}</div>`).join("")}
+    <div class="osk-row">
+      ${shift ? key("shift", "Shift", "wide") : ""}${key(" ", "Space", "wide space")}
+      <button type="button" data-nav class="key wide" data-key="back" data-target="${h(target)}" aria-label="Delete the last character">${icon("delete")}</button>
+      ${key("clear", "Clear", "wide")}
+    </div>
+  </div>`;
+}
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+let searchSeq = 0;
+
+function showSearch(): void {
+  enter("search");
+  view.innerHTML = `<section class="search">
+    <div class="search-pane">
+      <h1>Search</h1>
+      <label class="field" for="q"><span class="label">Game title, developer or system</span>
+        <input id="q" data-nav type="search" autocomplete="off" spellcheck="false" placeholder="Start typing" aria-describedby="q-status" />
+      </label>
+      ${keyboardHtml("#q")}
+    </div>
+    <div class="search-results">
+      <p id="q-status" class="muted" role="status" aria-live="polite"></p>
+      <div class="list" id="results" role="list" aria-label="Search results"></div>
+    </div>
+  </section>`;
+  setHints([
+    ["move", "Move"],
+    ["select", "Type"],
+    ["x", "Delete", "Backspace"],
+    ["y", "Space", "Space"],
+    ["back", "Back"],
+  ]);
+  renderResults("");
+  focusFirst('.key[data-key="g"]');
+}
+
+function renderResults(query: string, games: Game[] = [], failed?: string): void {
+  const list = document.querySelector<HTMLElement>("#results");
+  const note = document.querySelector<HTMLElement>("#q-status");
+  if (!list || !note) return;
+  if (failed) {
+    note.textContent = "";
+    list.innerHTML = `<div class="empty" role="alert">${icon("triangle-alert", "icon big")}<h2>Search failed</h2><p>${h(failed)}</p><button data-nav class="primary" data-action="search-again">Try again</button></div>`;
+    return;
+  }
+  if (!query.trim()) {
+    const total = state.systems.reduce((sum, system) => sum + system.games, 0);
+    note.textContent = "";
+    list.innerHTML = `<div class="empty">${icon("search", "icon big")}<h2>Find a game</h2><p>${total ? `Search ${total} ${total === 1 ? "game" : "games"} by title, developer or system.` : "Your library is empty: add a folder first."}</p></div>`;
+    return;
+  }
+  state.games = games;
+  note.textContent = `${games.length} ${games.length === 1 ? "result" : "results"} for “${query.trim()}”`;
+  list.innerHTML = games.length
+    ? games.map(game => gameRow(game, state.systems.find(system => system.id === game.system)?.name ?? game.system)).join("")
+    : `<div class="empty">${icon("search", "icon big")}<h2>No games match</h2><p>Nothing in the library matches “${h(query.trim())}”. Check the spelling or try fewer words.</p></div>`;
+}
+
+function runSearch(): void {
+  const input = document.querySelector<HTMLInputElement>("#q");
+  if (!input) return;
+  const query = input.value;
+  clearTimeout(searchTimer);
+  if (!query.trim()) return renderResults("");
+  const mine = ++searchSeq;
+  const note = document.querySelector<HTMLElement>("#q-status");
+  if (note) note.textContent = "Searching…";
+  searchTimer = setTimeout(async () => {
+    try {
+      const games = await api<Game[]>(`/api/search?q=${enc(query)}`);
+      if (mine === searchSeq && state.tab === "search") renderResults(query, games);
+    } catch (error) {
+      if (mine === searchSeq && state.tab === "search")
+        renderResults(query, [], error instanceof Error ? error.message : String(error));
+    }
+  }, 120);
+}
+
+function pressKey(button: HTMLElement): void {
+  typeKey(button.dataset.key!, button.dataset.target ?? "#q", button);
+}
+
+function typeKey(value: string, selector: string, button?: HTMLElement): void {
+  const input = document.querySelector<HTMLInputElement>(selector);
+  if (!input) return;
+  if (value === "back") input.value = input.value.slice(0, -1);
+  else if (value === "clear") input.value = "";
+  else if (value === "shift" && button) {
+    const on = button.getAttribute("aria-pressed") !== "true";
+    button.setAttribute("aria-pressed", String(on));
+    for (const key of button.closest(".osk")!.querySelectorAll<HTMLElement>(".key:not(.wide)")) {
+      key.dataset.key = on ? key.dataset.key!.toUpperCase() : key.dataset.key!.toLowerCase();
+      key.textContent = key.dataset.key;
+    }
+    return;
+  } else input.value += value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+// ---- settings: real host state only ---------------------------------------------------------------
+
+interface SettingsData {
+  session: { gamescope: boolean; display: string | null; desktop: string | null; window: boolean; power: boolean };
+  library: { project: string; database: string; games: number; sources: Array<{ id: number; kind: string; path: string; system: string | null }> };
+  systems: Array<{ id: string; name: string; games: number; defaultRoute: string | null; routes: Array<{ id: string; kind: string; available: boolean; reason?: string }> }>;
+  cores: Array<{ id: string; installed: boolean; systems: string[]; bios: Array<{ file: string; status: string; optional: boolean }> }>;
+  native: Array<{ system: string; machine: string; status: string; required: boolean }>;
+  config: { store: string; values: { hud: string; motion: string } };
+  versions: { engine: string | null; bun: string; platform: string; libretroarch: string | null };
+}
+
+const motionLabel: Record<string, string> = { system: "Follow the system", reduced: "Reduced", full: "Full" };
+const nextMotion = (value: string) => (value === "system" ? "reduced" : value === "reduced" ? "full" : "system");
+
+async function showSettings(): Promise<void> {
+  const mine = enter("settings");
+  view.innerHTML = '<div class="skeleton-page" aria-busy="true"><span class="sk-line w20 tall"></span><span class="sk-line w60"></span><span class="sk-line w60"></span></div>';
+  setHints([
+    ["move", "Move"],
+    ["select", "Change"],
+    ["back", "Back"],
+    ["menu", "Quick menu"],
+  ]);
+  let data: SettingsData;
+  try {
+    data = await api<SettingsData>("/api/settings");
+  } catch (error) {
+    if (mine === navigation) showError(error, showSettings);
+    return;
+  }
+  if (mine !== navigation) return;
+  const hud = data.config.values.hud === "1";
+  const biosMissing = data.cores.flatMap(core => core.bios.filter(bios => bios.status === "missing" && !bios.optional)).length;
+  view.innerHTML = `<section class="page settings">
+    <h1>Settings</h1>
+    <p class="lead">Everything here is read from this device when the page opens. Nothing is a placeholder.</p>
+    <div class="cards">
+      <div class="card"><h2>Preferences</h2>
+        <button data-nav class="setting" role="switch" aria-checked="${hud}" data-setting="hud" data-value="${hud ? "0" : "1"}">
+          <span><strong>Performance counter</strong><span class="why">Frames per second and frame time in the corner</span></span><span class="value">${hud ? "On" : "Off"}</span><span class="switch" aria-hidden="true"></span>
+        </button>
+        <button data-nav class="setting" data-setting="motion" data-value="${nextMotion(data.config.values.motion)}">
+          <span><strong>Motion</strong><span class="why">Animations and smooth scrolling</span></span><span class="value">${motionLabel[data.config.values.motion] ?? data.config.values.motion}</span>
+        </button>
+        <p class="note">Both are stored in <code>${h(data.config.store)}</code>, the file the console shell reads too.</p>
       </div>
-      <h2>Free firmware</h2>
-      <table><tbody>
-        ${bios.freeFirmware
-          .map(
-            fw => `<tr><td><strong>${h(fw.id)}</strong></td><td>${h(fw.console)}</td><td class="muted">${h(fw.license)}</td>
-              <td><button data-nav data-install="free-firmware" data-id="${h(fw.id)}">Install</button></td></tr>`,
-          )
-          .join("")}
-      </tbody></table>
-      <h2>RetroArch cores</h2>
-      ${
-        cores.size
-          ? [...cores]
-              .map(
-                ([core, rows]) =>
-                  `<h3>${h(core)}</h3><table><tbody>${rows
-                    .map(
-                      row => `<tr><td class="mono">${h(row.file)}</td><td>${h(row.desc)}</td><td class="mono small">${h(row.md5 ?? "")}</td>
-                      <td><span class="badge ${row.status}${row.optional ? " optional" : ""}">${h(row.status)}${row.optional ? " (optional)" : ""}</span></td></tr>`,
-                    )
-                    .join("")}</tbody></table>`,
-              )
-              .join("")
-          : '<p class="muted">No installed core declares BIOS files.</p>'
-      }
-      <h2>Firmware store</h2>
-      <table><tbody>${bios.store.map(image => `<tr><td>${h(image.console)}</td><td class="mono">${h(image.file)}</td><td>${formatSize(image.bytes)}</td></tr>`).join("")}</tbody></table>
-    </section>`;
-  setHints([
-    ["←↑→↓", "Move"],
-    ["A / Enter", "Install"],
-    ["LB RB / Q E", "Tabs"],
-  ]);
-  markTab();
-  focusFirst("[data-nav]:not(.tabs *)");
-}
-
-async function showInstaller(): Promise<void> {
-  state.tab = "installer";
-  const data = await api<{
-    project: string;
-    binaries: Array<{
-      id: string;
-      console: string;
-      repo: string;
-      systems: string[];
-      installed: { version: string } | null;
-    }>;
-    libretro: Array<{
-      id: string;
-      name: string;
-      systems: string[];
-      license: string;
-      installed: boolean;
-    }>;
-    mirrors: Array<{
-      service: string;
-      endpoints: number;
-      healthy: number;
-      best?: string;
-      latencyMs?: number | null;
-    }>;
-  }>("/api/installer");
-  view.innerHTML = `
-    <section class="page">
-      <h1>Installer</h1>
-      <p class="lead">bep project <code>${h(data.project)}</code>. Release emulators install into <code>usr/lib</code> with launchers in <code>usr/bin</code>; libretro cores into <code>usr/lib/libretro</code>.</p>
-      <div class="toolbar">
-        <button data-nav data-install="install">bep install</button>
-        <button data-nav data-install="update">bep update</button>
-        <button data-nav data-install="mirrors-index">Index mirrors</button>
-        <button data-nav data-install="mirrors-probe">Probe mirrors</button>
+      <div class="card"><h2>Session</h2>
+        <dl><dt>Gamescope session</dt><dd>${data.session.gamescope ? "Yes" : "No"}</dd>
+        <dt>Display</dt><dd>${h(data.session.display ?? "none reported")}</dd>
+        <dt>Desktop</dt><dd>${h(data.session.desktop ?? "none reported")}</dd>
+        <dt>App window</dt><dd>${data.session.window ? "Managed by this service" : "Not managed (open the page in any browser)"}</dd></dl>
+        <button data-nav data-action="power">${icon("power")} Power menu</button>
       </div>
-      <h2>Release emulators</h2>
-      <table><tbody>
-        ${data.binaries
-          .map(
-            bin => `<tr><td><strong>${h(bin.id)}</strong><div class="muted small">${h(bin.repo)}</div></td>
-              <td>${bin.systems.map(id => `<span class="chip">${h(id)}</span>`).join("")}</td>
-              <td>${bin.installed ? `<span class="badge present">${h(bin.installed.version)}</span>` : '<span class="badge missing">not installed</span>'}</td>
-              <td class="buttons"><button data-nav data-install="bin" data-id="${h(bin.id)}">${bin.installed ? "Reinstall" : "Install"}</button>
-              <button data-nav data-install="update" data-id="${h(bin.id)}">Update</button>
-              <button data-nav data-install="remove" data-id="${h(bin.id)}" class="danger">Remove</button></td></tr>`,
-          )
-          .join("")}
-      </tbody></table>
-      <h2>libretro cores</h2>
-      <table><tbody>
-        ${data.libretro
-          .map(
-            core => `<tr><td><strong>${h(core.id)}</strong><div class="muted small">${h(core.name)} · ${h(core.license)}</div></td>
-              <td>${core.systems.map(id => `<span class="chip">${h(id)}</span>`).join("")}</td>
-              <td>${core.installed ? '<span class="badge present">installed</span>' : '<span class="badge missing">not installed</span>'}</td>
-              <td class="buttons"><button data-nav data-install="libretro" data-id="${h(core.id)}">${core.installed ? "Reinstall" : "Install"}</button>
-              <button data-nav data-install="remove" data-id="${h(core.id)}" class="danger">Remove</button></td></tr>`,
-          )
-          .join("")}
-      </tbody></table>
-      <h2>Mirrors</h2>
-      ${
-        data.mirrors.length
-          ? `<table><tbody>${data.mirrors
-              .map(
-                row => `<tr><td><strong>${h(row.service)}</strong></td><td>${row.healthy}/${row.endpoints} healthy</td>
-                  <td class="mono small">${h(row.best ?? "")}</td><td>${row.latencyMs == null ? "" : `${row.latencyMs} ms`}</td></tr>`,
-              )
-              .join("")}</tbody></table>`
-          : '<p class="muted">No mirror index yet: run Index mirrors.</p>'
-      }
-      <h2>Jobs</h2>
-      <div id="jobs">${jobsHtml()}</div>
-    </section>`;
+      <div class="card"><h2>Library</h2>
+        <dl><dt>Games</dt><dd>${data.library.games}</dd>
+        <dt>Project</dt><dd class="path">${h(data.library.project)}</dd>
+        <dt>Database</dt><dd class="path">${h(data.library.database)}</dd>
+        <dt>Scan folders</dt><dd>${data.library.sources.map(source => `<span class="chip">${h(source.kind)}</span> ${h(source.kind === "folder" ? source.path : source.kind === "bep" ? "bep project" : source.kind === "store" ? "ROM store" : "free ROM packs")}`).join("<br/>") || "none"}</dd></dl>
+        <div class="row"><button data-nav data-tab="sources">Manage sources</button><button data-nav data-action="scan">${icon("refresh-cw")} Rescan</button></div>
+      </div>
+      <div class="card"><h2>Cores and BIOS</h2>
+        <dl>${data.cores.map(core => `<dt>${h(core.id)}</dt><dd><span class="badge ${core.installed ? "present" : "missing"}">${core.installed ? "installed" : "not installed"}</span>${core.bios.length ? ` ${core.bios.filter(bios => bios.status === "present").length}/${core.bios.length} BIOS files` : ""}</dd>`).join("")}
+        ${data.native.map(row => `<dt>${h(row.system.toUpperCase())} native</dt><dd><span class="badge ${row.status}">${h(row.status)}</span> ${h(row.machine)} BIOS</dd>`).join("")}</dl>
+        <p class="note">${biosMissing ? `${biosMissing} required BIOS ${biosMissing === 1 ? "file is" : "files are"} missing.` : "No required BIOS file is missing."}</p>
+        <div class="row"><button data-nav data-tab="bios">BIOS</button><button data-nav data-tab="installer">Installer</button></div>
+      </div>
+      <div class="card wide"><h2>Systems and routes</h2>
+        <div class="route-table">${data.systems
+          .map(system => {
+            const ready = system.routes.filter(route => route.available);
+            return `<button data-nav class="srow" data-system="${h(system.id)}"><span class="n">${h(system.name)}</span><span class="g">${system.games} ${system.games === 1 ? "game" : "games"}</span><span class="r">${ready.length ? `${ready.length} of ${system.routes.length} routes ready` : `No route ready: ${h(system.routes.find(route => route.reason)?.reason ?? "nothing installed")}`}</span><span class="d">${system.defaultRoute ? `Default ${h(system.defaultRoute)}` : "Automatic"}</span></button>`;
+          })
+          .join("")}</div>
+      </div>
+      <div class="card"><h2>About</h2>
+        <dl><dt>Bun Engine</dt><dd>${h(data.versions.engine ?? "unknown")}</dd>
+        <dt>Bun</dt><dd>${h(data.versions.bun)}</dd>
+        <dt>Platform</dt><dd>${h(data.versions.platform)}</dd>
+        <dt>In-process RetroArch</dt><dd class="path">${h(data.versions.libretroarch ?? "not built")}</dd></dl>
+      </div>
+    </div>
+  </section>`;
+  focusFirst("[data-setting]");
+}
+
+// ---- overlays -------------------------------------------------------------------------------------
+
+interface OverlayOptions {
+  kind: string;
+  label: string;
+  html: string;
+  initial?: string;
+  /** Escape, B and the Menu key call this; it must close the overlay itself. */
+  cancel?: () => void;
+  /** Where focus goes when the overlay closes (defaults to the control that opened it). */
+  returnTo?: HTMLElement | null;
+}
+
+const cancels = new WeakMap<HTMLElement, () => void>();
+const returns = new WeakMap<HTMLElement, { to: HTMLElement | null; hints: Hint[] }>();
+let pendingReturn: HTMLElement | null = null;
+
+function backdrop(inert: boolean): void {
+  for (const element of document.querySelectorAll<HTMLElement>("#top, #view, #hints")) element.inert = inert;
+  if (player) player.frame.inert = inert;
+}
+
+function openOverlay(options: OverlayOptions): HTMLElement {
+  const root = document.createElement("div");
+  root.className = `overlay ${options.kind}`;
+  root.dataset.kind = options.kind;
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-label", options.label);
+  root.innerHTML = `<div class="sheet">${options.html}</div>`;
+  const active = document.activeElement;
+  const opener =
+    options.returnTo ?? pendingReturn ?? (active instanceof HTMLElement && active !== document.body ? active : null);
+  pendingReturn = null;
+  const previous = overlayStack.at(-1);
+  if (previous) {
+    // the sheet underneath stays in the DOM (state and focus target) but is neither reachable nor shown
+    previous.inert = true;
+    previous.style.visibility = "hidden";
+  } else backdrop(true);
+  returns.set(root, { to: opener, hints: [...currentHints()] });
+  cancels.set(root, options.cancel ?? (() => closeOverlay(root)));
+  overlayStack.push(root);
+  document.body.append(root);
   setHints([
-    ["←↑→↓", "Move"],
-    ["A / Enter", "Run"],
-    ["LB RB / Q E", "Tabs"],
+    ["move", "Move"],
+    ["select", "Choose"],
+    ["back", "Close"],
   ]);
-  markTab();
-  focusFirst(".toolbar [data-nav]");
+  focusFirst(options.initial ?? "[data-nav]");
+  return root;
 }
 
-function jobsHtml(): string {
-  if (!state.jobs.length) return '<p class="muted">No jobs yet.</p>';
-  return `<table><tbody>${state.jobs
-    .map(
-      job => `<tr><td>#${job.id}</td><td>${h(job.title)}</td><td><span class="badge ${job.status === "done" ? "present" : job.status === "failed" ? "missing" : "running"}">${job.status}</span></td>
-        <td class="mono small">${h(job.error ?? (job.result === undefined ? "" : JSON.stringify(job.result).slice(0, 160)))}</td></tr>`,
-    )
-    .join("")}</tbody></table>`;
+function closeOverlay(root: HTMLElement | undefined = overlayStack.at(-1), restoreFocus = true): void {
+  if (!root) return;
+  const at = overlayStack.indexOf(root);
+  if (at < 0) return;
+  overlayStack.splice(at, 1);
+  root.remove();
+  const info = returns.get(root);
+  const below = overlayStack.at(-1);
+  if (below) {
+    below.inert = false;
+    below.style.visibility = "";
+  } else backdrop(false);
+  if (info) setHints(info.hints);
+  if (!restoreFocus) return;
+  const to = info?.to;
+  if (to?.isConnected) {
+    to.focus({ preventScroll: true });
+    if (to instanceof HTMLIFrameElement) to.contentWindow?.focus();
+  } else if (!below) focusFirst(".hero [data-nav], .game, .system, main [data-nav]");
 }
 
-async function showSources(): Promise<void> {
-  state.tab = "sources";
-  const sources =
-    await api<Array<{ id: number; kind: string; path: string; system: string | null }>>("/api/library/sources");
-  if (!state.systems.length) state.systems = await api<SystemRow[]>("/api/systems");
-  const describe = (source: { kind: string; path: string }) =>
-    source.kind === "bep"
-      ? "bep project (package.json bunEngine + bep.lock)"
-      : source.kind === "store"
-        ? "content-addressed ROM store"
-        : source.kind === "free"
-          ? "free ROM packs (bep roms)"
-          : source.path;
-  view.innerHTML = `
-    <section class="page">
-      <h1>Sources</h1>
-      <p class="lead">Folders are scanned recursively. Without a system, files are assigned by a <code>&lt;system&gt;/</code> directory (Recalbox layout) or an unambiguous extension.</p>
-      <table><tbody>
-        ${sources
-          .map(
-            source => `<tr><td><span class="chip">${h(source.kind)}</span></td><td>${h(describe(source))}</td><td>${h(source.system ?? "")}</td>
-              <td><button data-nav data-remove-source="${source.id}" class="danger">Remove</button></td></tr>`,
-          )
-          .join("")}
-      </tbody></table>
-      <h2>Add folder</h2>
-      <form class="add" id="add">
-        <input data-nav name="path" placeholder="C:\\Games\\roms" autocomplete="off" />
-        <select data-nav name="system"><option value="">auto-detect</option>${state.systems.map(s => `<option value="${h(s.id)}">${h(s.name)}</option>`).join("")}</select>
-        <button data-nav type="submit">Add</button>
-      </form>
-      <div class="toolbar"><button data-nav data-action="scan" class="primary">Rescan library</button></div>
-    </section>`;
-  setHints([
-    ["↑↓", "Move"],
-    ["A / Enter", "Select"],
-    ["LB RB / Q E", "Tabs"],
-  ]);
-  markTab();
-  focusFirst("[data-action=scan]");
+function toggleQuick(): void {
+  if (overlayStack.at(-1)?.dataset.kind === "quick") cancelTop();
+  else openQuick();
 }
 
-// ---- actions ------------------------------------------------------------------------------------
-
-function show(tab: Tab): Promise<void> {
-  const screens: Record<Exclude<Tab, "games">, () => Promise<void>> = {
-    systems: showSystems,
-    bios: showBios,
-    installer: showInstaller,
-    sources: showSources,
-  };
-  return tab === "games" ? showGames(state.lastSystem ?? "nes") : screens[tab]();
+function cancelTop(): void {
+  const top = overlayStack.at(-1);
+  if (top) cancels.get(top)?.();
 }
 
-function markTab(active: Tab = state.tab): void {
-  for (const button of document.querySelectorAll<HTMLElement>("[data-tab]"))
-    button.classList.toggle("active", button.dataset.tab === (active === "games" ? "systems" : active));
-}
-
-async function runJob(action: string, id?: string): Promise<void> {
-  const job = await api<Job>(`/api/installer/${action}`, {
-    method: "POST",
-    json: { id },
+function confirmDialog(options: { title: string; body: string; confirm: string; danger?: boolean }): Promise<boolean> {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = (answer: boolean) => {
+      if (settled) return;
+      settled = true;
+      closeOverlay(root);
+      resolve(answer);
+    };
+    const root = openOverlay({
+      kind: "confirm",
+      label: options.title,
+      html: `<h2>${h(options.title)}</h2><p>${h(options.body)}</p>
+        <div class="row"><button data-nav class="ghost" data-confirm="no">Cancel</button><button data-nav class="${options.danger ? "danger solid" : "primary"}" data-confirm="yes">${h(options.confirm)}</button></div>`,
+      initial: '[data-confirm="no"]',
+      cancel: () => finish(false),
+    });
+    confirms.set(root, finish);
   });
-  toast(`Started: ${job.title}`);
-  await pollJobs();
+}
+const confirms = new WeakMap<HTMLElement, (answer: boolean) => void>();
+
+// -- power -----------------------------------------------------------------------------------------
+
+async function openPower(): Promise<void> {
+  const session = await api<{ window: boolean; power: boolean }>("/api/session").catch(() => ({ window: false, power: false }));
+  const root = openOverlay({
+    kind: "power",
+    label: "Power",
+    html: `<h2>Power</h2>
+      <button data-nav class="qitem danger" data-power="exit" aria-disabled="${!session.power}">${icon("log-out")}<span>Exit to desktop<small>${session.power ? "Stops running games and ends this session" : "Not available: no session window to close"}</small></span></button>
+      <button data-nav class="qitem" data-power="restart">${icon("rotate-cw")}<span>Restart frontend<small>${session.window ? "Stops running games and reopens the window" : "Stops running games and reloads this page"}</small></span></button>
+      <button data-nav class="qitem" data-power="close">${icon("x")}<span>Close</span></button>`,
+    initial: "[data-power=restart]",
+  });
+  void root;
 }
 
-async function scan(): Promise<void> {
-  await api<Job>("/api/library/scan", { method: "POST" });
-  toast("Scanning library…");
-  await pollJobs();
+async function powerAction(action: "exit" | "restart", unavailable: boolean): Promise<void> {
+  if (unavailable) {
+    toast("Exit to desktop needs the app window of the session", "error");
+    return;
+  }
+  const exit = action === "exit";
+  const yes = await confirmDialog({
+    title: exit ? "Exit to desktop?" : "Restart the frontend?",
+    body: exit
+      ? "Running games stop and this session ends. Unsaved game progress is lost."
+      : "Running games stop and the window reopens. Unsaved game progress is lost.",
+    confirm: exit ? "Exit to desktop" : "Restart",
+    danger: true,
+  });
+  if (!yes) return;
+  const result = await api<{ reload: boolean }>(`/api/session/${action}`, { method: "POST" });
+  closeAllOverlays();
+  if (result.reload) {
+    location.reload();
+    return;
+  }
+  view.innerHTML = `<section class="state" role="status">${icon(exit ? "log-out" : "rotate-cw", "icon big")}<h1>${exit ? "Session ended" : "Restarting"}</h1><p>${exit ? "You can close this window." : "The window reopens in a moment."}</p></section>`;
+  setHints([]);
 }
 
-async function launch(check: boolean, route?: string): Promise<void> {
-  const game = state.game;
-  if (!game) return;
-  toast(check ? `Checking ${route ?? "default route"}…` : `Launching ${game.title ?? game.name}…`);
+function closeAllOverlays(): void {
+  while (overlayStack.length) closeOverlay(overlayStack.at(-1), false);
+}
+
+// -- profiles --------------------------------------------------------------------------------------
+
+async function openProfiles(): Promise<void> {
+  const players = await api<Array<{ name: string; plays: number }>>("/api/profiles");
+  openOverlay({
+    kind: "profiles",
+    label: "Profiles",
+    html: `<h2>Who is playing?</h2>
+      <p class="sub">Recent games and play counts follow the profile. Saves stay shared between profiles.</p>
+      <div class="plist">${players
+        .map(
+          player => `<button data-nav class="qitem" data-profile="${h(player.name)}" aria-pressed="${player.name === state.profile}">
+            <span class="avatar" aria-hidden="true">${h(profileLabel(player.name).slice(0, 1).toUpperCase())}</span>
+            <span>${h(profileLabel(player.name))}<small>${player.plays} ${player.plays === 1 ? "play" : "plays"}${player.name === state.profile ? " · current" : ""}</small></span></button>`,
+        )
+        .join("")}</div>
+      <div class="row"><button data-nav data-action="profile-add">${icon("plus")} Add a profile</button><button data-nav class="ghost" data-action="close-overlay">Close</button></div>`,
+    initial: `[data-profile="${CSS.escape(state.profile)}"]`,
+  });
+}
+
+function openAddProfile(): void {
+  const root = openOverlay({
+    kind: "profile-add",
+    label: "Add a profile",
+    html: `<h2>Add a profile</h2>
+      <label class="field" for="pname"><span class="label">Name (up to 24 characters)</span><input id="pname" data-nav maxlength="24" autocomplete="off" spellcheck="false" /></label>
+      ${keyboardHtml("#pname", true)}
+      <div class="row"><button data-nav class="ghost" data-action="close-overlay">Cancel</button><button data-nav class="primary" data-action="profile-create">Create</button></div>
+      <p id="pname-error" class="error" role="alert"></p>`,
+    initial: '.key[data-key="a"]',
+  });
+  void root;
+}
+
+async function createProfile(): Promise<void> {
+  const input = document.querySelector<HTMLInputElement>("#pname");
+  const error = document.querySelector<HTMLElement>("#pname-error");
+  try {
+    const player = await api<{ name: string }>("/api/profiles", { method: "POST", json: { name: input?.value ?? "" } });
+    closeAllOverlays();
+    selectProfile(player.name);
+  } catch (failure) {
+    if (error) error.textContent = failure instanceof Error ? failure.message : String(failure);
+    input?.focus();
+  }
+}
+
+function selectProfile(name: string): void {
+  state.profile = name;
+  localStorage.setItem("bunos.profile", name);
+  renderProfileButton();
+  toast(`Profile: ${profileLabel(name)}`, "ok");
+  if (state.tab === "home") void showHome();
+}
+
+function renderProfileButton(): void {
+  const button = document.querySelector<HTMLElement>("#profile-btn");
+  if (!button) return;
+  button.setAttribute("aria-label", `Profile: ${profileLabel(state.profile)}. Open the profile menu`);
+  button.querySelector(".avatar")!.textContent = profileLabel(state.profile).slice(0, 1).toUpperCase();
+}
+
+// ---- running a game -------------------------------------------------------------------------------
+
+async function launch(game: Game, check = false, route?: string): Promise<void> {
+  state.game = game;
+  toast(check ? `Checking ${route ?? "default route"}…` : `Launching ${nameOf(game)}…`);
   const result = await api<LaunchResult>(`/api/games/${game.id}/launch`, {
     method: "POST",
-    json: { route, check },
+    json: { route, check, profile: state.profile },
   });
   const log = document.querySelector<HTMLElement>("#log");
   if (log) {
@@ -588,13 +778,18 @@ async function launch(check: boolean, route?: string): Promise<void> {
     result.ok ? "ok" : "error",
   );
   if (!check) await pollRunning();
-  if (!check && result.ok && result.player) await openPlayer(result.player, result.pid);
+  if (!check && result.ok && result.player) await openPlayer(result.player, game, result.pid);
+}
+
+/** The game with this id from what the page already holds (recents, lists, search results). */
+function knownGame(id: number): Game | undefined {
+  return [...recent, ...state.games, ...(state.game ? [state.game] : [])].find(game => game.id === id);
 }
 
 // A game RetroArch runs in process plays in this window, so one kiosk window (gamescope) holds both.
-let player: { frame: HTMLIFrameElement; pid?: number; returnTo: HTMLElement | null } | undefined;
+let player: { frame: HTMLIFrameElement; pid?: number; returnTo: HTMLElement | null; game: Game } | undefined;
 
-async function openPlayer(url: string, pid?: number): Promise<void> {
+async function openPlayer(url: string, game: Game, pid?: number): Promise<void> {
   for (let attempt = 0; attempt < 50; attempt++) {
     if (await fetch(url, { mode: "no-cors" }).then(() => true, () => false)) break;
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -604,37 +799,231 @@ async function openPlayer(url: string, pid?: number): Promise<void> {
   frame.src = url;
   frame.allow = "autoplay; gamepad";
   frame.className = "player";
-  frame.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;border:0;background:#000;z-index:100";
+  frame.title = `${nameOf(game)} (playing)`;
   document.body.append(frame);
-  player = { frame, pid, returnTo };
-  frame.addEventListener("load", () => frame.focus());
+  player = { frame, pid, returnTo, game };
+  frame.addEventListener("load", () => {
+    frame.focus();
+    sendToGame({ action: "volume", value: volume() });
+  });
 }
 
 async function closePlayer(): Promise<void> {
   if (!player) return;
+  closeAllOverlays();
   const { frame, pid, returnTo } = player;
   player = undefined;
   frame.remove();
   // the focused iframe took the focus with it: give it back so A / Enter work without a direction first
   if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
-  else focusFirst(".system, .game, [data-nav]");
+  else focusFirst(".hero [data-nav], .system, .game, [data-nav]");
   if (pid !== undefined) await api(`/api/running/${pid}`, { method: "DELETE" }).catch(() => undefined);
   await pollRunning();
+  // the recents moved on while we played
+  if (state.tab === "home") void showHome();
 }
 
-// Escape in the player, or the pad chord Select+Start, comes back to the library.
+function sendToGame(message: Record<string, unknown>): void {
+  player?.frame.contentWindow?.postMessage({ bunos: true, ...message }, "*");
+}
+
+const volume = () => Number(localStorage.getItem("bunos.volume") ?? 100) / 100;
+
+// -- quick menu --------------------------------------------------------------------------------------
+
+function quickLog(text: string): void {
+  const log = document.querySelector<HTMLElement>("#quick-log");
+  if (log) log.textContent = text;
+}
+
+function openQuick(): void {
+  if (overlayStack.length) return;
+  if (!player) {
+    openOverlay({
+      kind: "quick",
+      label: "Quick menu",
+      html: `<h2>Quick menu</h2>
+        <button data-nav class="qitem" data-q="profile"><span class="avatar" aria-hidden="true">${h(profileLabel(state.profile).slice(0, 1).toUpperCase())}</span><span>Profile<small>${h(profileLabel(state.profile))}</small></span></button>
+        <button data-nav class="qitem" data-q="settings">${icon("settings")}<span>Settings</span></button>
+        <button data-nav class="qitem" data-q="power">${icon("power")}<span>Power</span></button>
+        <button data-nav class="qitem" data-q="close">${icon("x")}<span>Close</span></button>`,
+      initial: "[data-q=profile]",
+    });
+    return;
+  }
+  const level = Math.round(volume() * 100);
+  sendToGame({ action: "open" });
+  openOverlay({
+    kind: "quick",
+    label: "Quick menu",
+    returnTo: player.frame,
+    cancel: resumeGame,
+    html: `<h2>Quick menu</h2>
+      <p class="sub">${h(nameOf(player.game))} · <span id="quick-state" role="status" aria-live="polite">Pausing…</span></p>
+      <button data-nav class="qitem primary" data-q="resume">${icon("play", "icon fill")}<span>Resume</span></button>
+      <button data-nav class="qitem" data-q="save">${icon("save")}<span>Save state</span></button>
+      <button data-nav class="qitem" data-q="load">${icon("folder-down")}<span>Load state</span></button>
+      <button data-nav class="qitem" data-q="screenshot">${icon("camera")}<span>Screenshot</span></button>
+      <div data-nav class="qitem vol" tabindex="0" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${level}" aria-valuetext="${level} percent" data-adjust="volume">${icon("volume-2")}<span>Volume</span><span class="bar" aria-hidden="true"><span style="--v:${level / 100}"></span></span><span class="val">${level}%</span></div>
+      <button data-nav class="qitem danger" data-q="stop">${icon("square", "icon fill")}<span>Stop game</span></button>
+      <p id="quick-log" class="qlog" role="status" aria-live="polite"></p>`,
+    initial: "[data-q=resume]",
+  });
+  setTimeout(() => {
+    const label = document.querySelector("#quick-state");
+    if (label && label.textContent === "Pausing…") label.textContent = "Could not confirm the pause";
+  }, 1500);
+}
+
+function resumeGame(): void {
+  sendToGame({ action: "close" });
+  closeOverlay();
+}
+
+let quickRequest = 0;
+async function quickAction(name: string): Promise<void> {
+  if (name === "close") return closeOverlay();
+  if (name === "profile" || name === "settings" || name === "power") {
+    // hand over to the next screen: focus will return to what opened the quick menu
+    const top = overlayStack.at(-1);
+    const opener = top ? (returns.get(top)?.to ?? null) : null;
+    closeOverlay(undefined, false);
+    pendingReturn = opener;
+    if (name === "profile") return openProfiles();
+    if (name === "power") return openPower();
+    pendingReturn = null;
+    return void showSettings();
+  }
+  if (!player) return;
+  if (name === "resume") return resumeGame();
+  if (name === "stop") {
+    const yes = await confirmDialog({
+      title: "Stop this game?",
+      body: "The game closes and progress since your last save state is lost.",
+      confirm: "Stop game",
+      danger: true,
+    });
+    if (yes) await closePlayer();
+    return;
+  }
+  quickLog({ save: "Saving…", load: "Loading…", screenshot: "Taking a screenshot…" }[name] ?? "");
+  sendToGame({ action: name, id: ++quickRequest });
+}
+
+/** Messages from the game page: menu requests, verified pause state, and what each action wrote. */
+function onPlayerMessage(data: { type: string; paused?: boolean; ok?: boolean; text?: string; line?: string; value?: number }): void {
+  if (data.type === "menu") {
+    if (!overlayStack.length) openQuick();
+  } else if (data.type === "paused") {
+    const label = document.querySelector("#quick-state");
+    if (label) label.textContent = data.paused ? "Paused" : "Running";
+  } else if (data.type === "result") {
+    const what = { SAVE_STATE: "Save state", LOAD_STATE: "Load state", SCREENSHOT: "Screenshot" }[data.line ?? ""] ?? "Action";
+    const text = data.ok ? `${what}: ${data.line === "SAVE_STATE" ? "saved" : data.line === "LOAD_STATE" ? "loaded" : "saved as"} ${data.line === "SCREENSHOT" || data.line === "SAVE_STATE" ? (data.text ?? "") : ""}`.trim() : `${what} failed: ${data.text ?? "no answer"}`;
+    quickLog(text);
+    if (!overlayStack.length) toast(text, data.ok ? "ok" : "error");
+  }
+}
+
 window.addEventListener("message", event => {
-  if (event.data === "retroarch-exit") void closePlayer();
+  if (event.data === "retroarch-exit") {
+    if (player && event.source === player.frame.contentWindow) void closePlayer();
+  } else if (event.data?.bunos && player && event.source === player.frame.contentWindow) onPlayerMessage(event.data);
 });
+
+// ---- actions --------------------------------------------------------------------------------------
+
+function show(tab: Tab): Promise<void> | void {
+  switch (tab) {
+    case "home":
+      return showHome();
+    case "systems":
+      return showSystems();
+    case "search":
+      return showSearch();
+    case "settings":
+      return showSettings();
+    case "bios":
+      enter("bios");
+      return showBios();
+    case "installer":
+      enter("installer");
+      return showInstaller();
+    case "sources":
+      enter("sources");
+      return showSources();
+    case "games":
+      return showGames(state.lastSystem ?? "nes");
+  }
+}
+
+async function runJob(action: string, id?: string): Promise<void> {
+  const job = await api<Job>(`/api/installer/${action}`, {
+    method: "POST",
+    json: { id },
+  });
+  toast(`Started: ${job.title}`);
+  await pollJobs();
+}
+
+async function scan(): Promise<void> {
+  await api<Job>("/api/library/scan", { method: "POST" });
+  toast("Scanning library…");
+  await pollJobs();
+}
 
 async function activate(element: HTMLElement): Promise<void> {
   const data = element.dataset;
-  if (data.tab) return show(data.tab as Tab);
+  if (data.confirm) return void confirms.get(element.closest<HTMLElement>(".overlay")!)?.(data.confirm === "yes");
+  if (data.q) return quickAction(data.q);
+  if (data.power) {
+    if (data.power === "close") return closeOverlay();
+    return powerAction(data.power as "exit" | "restart", element.getAttribute("aria-disabled") === "true");
+  }
+  if (data.profile) {
+    closeOverlay();
+    if (data.profile !== state.profile) selectProfile(data.profile);
+    return;
+  }
+  if (data.key) return pressKey(element);
+  if (data.setting) {
+    const config = await api<{ hud: string; motion: string }>(`/api/settings/${data.setting}`, {
+      method: "PUT",
+      json: { value: data.value },
+    });
+    applyConfig(config);
+    // update the row in place: no reload, so focus and scroll stay where they are
+    const on = config.hud === "1";
+    element.setAttribute("aria-checked", String(on));
+    if (data.setting === "hud") element.dataset.value = on ? "0" : "1";
+    else element.dataset.value = nextMotion(config.motion);
+    const label = element.querySelector(".value");
+    if (label) label.textContent = data.setting === "hud" ? (on ? "On" : "Off") : (motionLabel[config.motion] ?? config.motion);
+    return;
+  }
+  if (data.play) {
+    const game = knownGame(Number(data.play));
+    if (game) return launch(game);
+    return;
+  }
+  if (data.details) {
+    const game = knownGame(Number(data.details));
+    if (game) return showGames(game.system, game.id);
+    return;
+  }
+  if (data.tab) return void show(data.tab as Tab);
   if (data.system) return showGames(data.system);
-  if (data.action === "back") return showSystems();
+  if (data.action === "back") return back();
   if (data.action === "scan") return scan();
-  if (data.action === "launch") return launch(false);
-  if (data.action === "check") return launch(true);
+  if (data.action === "retry") return retry?.();
+  if (data.action === "search-again") return runSearch();
+  if (data.action === "power") return openPower();
+  if (data.action === "profiles") return openProfiles();
+  if (data.action === "profile-add") return openAddProfile();
+  if (data.action === "profile-create") return createProfile();
+  if (data.action === "close-overlay") return closeOverlay();
+  if (data.action === "launch" && state.game) return launch(state.game);
+  if (data.action === "check" && state.game) return launch(state.game, true);
   if (data.action === "favorite") return toggleFavorite();
   if (data.action === "stop") {
     await api(`/api/running/${data.pid}`, { method: "DELETE" });
@@ -645,18 +1034,22 @@ async function activate(element: HTMLElement): Promise<void> {
       toast(element.querySelector(".why")?.textContent || "route unavailable", "error");
       return;
     }
-    return launch(false, data.route);
+    if (state.game) return launch(state.game, false, data.route);
+    return;
   }
   if (data.game) {
-    renderDetail(state.games.find(game => game.id === Number(data.game)));
-    return launch(false);
+    const game = knownGame(Number(data.game));
+    if (!game) return;
+    state.game = game;
+    if (state.tab === "games") renderDetail(game);
+    return launch(game);
   }
   if (data.install) return runJob(data.install, data.id);
   if (data.removeSource) {
     await api(`/api/library/sources/${data.removeSource}`, {
       method: "DELETE",
     });
-    return showSources();
+    return void showSources();
   }
   element.click();
 }
@@ -670,7 +1063,7 @@ async function toggleFavorite(): Promise<void> {
   });
   game.favorite = game.favorite ? 0 : 1;
   const row = document.querySelector(`[data-game="${game.id}"] .fav`);
-  if (row) row.textContent = game.favorite ? "★" : "";
+  if (row) row.innerHTML = game.favorite ? `${icon("star", "icon fill")}<span class="sr">Favorite</span>` : "";
   renderDetail(game);
   focusFirst("[data-action=favorite]");
 }
@@ -691,7 +1084,23 @@ async function setDefault(): Promise<void> {
   focusFirst(`[data-route="${CSS.escape(route)}"]`);
 }
 
-// ---- polling ------------------------------------------------------------------------------------
+/** Applies the shared shell settings: motion on the page, the performance counter in the corner. */
+function applyConfig(config: { hud: string; motion: string }): void {
+  const root = document.documentElement;
+  if (config.motion === "system") delete root.dataset.motion;
+  else root.dataset.motion = config.motion;
+  if (config.hud === "1" && !hudOn) {
+    hudSince = performance.now();
+    hudFrames = 0;
+    hudWorst = 0;
+    hudLast = 0;
+    hudBox.textContent = "measuring…";
+  }
+  hudOn = config.hud === "1";
+  hudBox.hidden = !hudOn;
+}
+
+// ---- polling --------------------------------------------------------------------------------------
 
 let jobTimer: ReturnType<typeof setTimeout> | undefined;
 async function pollJobs(): Promise<void> {
@@ -705,7 +1114,8 @@ async function pollJobs(): Promise<void> {
         job.status === "done" ? `Done: ${job.title}` : `Failed: ${job.title}: ${job.error}`,
         job.status === "done" ? "ok" : "error",
       );
-      if (job.title === "Scan library" && (state.tab === "systems" || state.tab === "sources")) void show(state.tab);
+      if (job.title === "Scan library" && ["home", "systems", "sources", "settings"].includes(state.tab) && !overlayStack.length)
+        void show(state.tab);
       if (state.tab === "bios" && job.status === "done") void showBios();
     }
   }
@@ -723,31 +1133,36 @@ async function pollRunning(): Promise<void> {
 function renderStatus(): void {
   const running = state.jobs.filter(job => job.status === "running").length;
   status.innerHTML = [
-    state.running.length ? `<span class="pill play">▶ ${state.running.length} running</span>` : "",
-    running ? `<span class="pill busy">⟳ ${running} job${running > 1 ? "s" : ""}</span>` : "",
-    `<span class="pill" id="pad">${navigator.getGamepads?.().some(Boolean) ? "🎮 gamepad" : "⌨ keyboard"}</span>`,
+    state.running.length ? `<span class="pill play">${icon("play", "icon fill")} ${state.running.length} running</span>` : "",
+    running ? `<span class="pill busy">${icon("refresh-cw")} ${running} job${running > 1 ? "s" : ""}</span>` : "",
+    `<span class="pill" id="pad" title="${state.pad === "none" ? "Keyboard" : "Controller connected"}">${icon(state.pad === "none" ? "keyboard" : "gamepad-2")} ${state.pad === "none" ? "Keyboard" : "Controller"}</span>`,
   ].join("");
 }
 
 // ---- spatial navigation ---------------------------------------------------------------------------
 
-function focusable(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>("[data-nav]")].filter(element => element.offsetParent !== null);
-}
-
-function focusFirst(selector: string): void {
-  const element = document.querySelector<HTMLElement>(selector) ?? focusable().find(item => !item.closest(".tabs"));
-  element?.focus({ preventScroll: true });
-  element?.scrollIntoView({ block: "nearest", inline: "nearest" });
-}
-
 type Direction = "up" | "down" | "left" | "right";
+
+function adjust(element: HTMLElement, step: number): void {
+  if (element.dataset.adjust !== "volume") return;
+  const next = Math.min(100, Math.max(0, Math.round(Number(element.getAttribute("aria-valuenow")) + step * 10)));
+  localStorage.setItem("bunos.volume", String(next));
+  element.setAttribute("aria-valuenow", String(next));
+  element.setAttribute("aria-valuetext", `${next} percent`);
+  element.querySelector<HTMLElement>(".bar span")!.style.setProperty("--v", String(next / 100));
+  element.querySelector(".val")!.textContent = `${next}%`;
+  sendToGame({ action: "volume", value: next / 100 });
+}
 
 function move(direction: Direction): void {
   const items = focusable();
   const current = document.activeElement as HTMLElement | null;
   if (!current || !items.includes(current)) {
-    focusFirst(".system, .game, [data-nav]");
+    focusFirst(".hero [data-nav], .system, .game, [data-nav]");
+    return;
+  }
+  if (current.dataset.adjust && (direction === "left" || direction === "right")) {
+    adjust(current, direction === "left" ? -1 : 1);
     return;
   }
   const from = current.getBoundingClientRect();
@@ -775,18 +1190,21 @@ function move(direction: Direction): void {
   }
   if (!best) return;
   best.focus({ preventScroll: true });
-  best.scrollIntoView({ block: "nearest", inline: "nearest" });
+  reveal(best);
 }
 
 function back(): void {
-  if (state.tab === "games") void showSystems();
-  else if (state.tab !== "systems") void showSystems();
+  if (overlayStack.length) return cancelTop();
+  if (state.tab === "home") return;
+  void show(state.from === state.tab ? "home" : state.from);
 }
 
-function cycleTab(step: number): void {
-  const order: Tab[] = ["systems", "bios", "installer", "sources"];
-  const index = order.indexOf(state.tab === "games" ? "systems" : state.tab);
-  void show(order[(index + step + order.length) % order.length]!);
+const pages: Tab[] = ["home", "systems", "search", "settings"];
+function cyclePage(step: number): void {
+  if (overlayStack.length) return;
+  const current = state.tab === "games" ? "systems" : ["bios", "installer", "sources"].includes(state.tab) ? "settings" : state.tab;
+  const index = Math.max(0, pages.indexOf(current));
+  void show(pages[(index + step + pages.length) % pages.length]!);
 }
 
 function guarded(action: () => Promise<void> | void): void {
@@ -797,7 +1215,7 @@ function guarded(action: () => Promise<void> | void): void {
 
 document.addEventListener("focusin", event => {
   const target = event.target as HTMLElement;
-  if (target.dataset.game) {
+  if (target.dataset.game && state.tab === "games") {
     state.lastGame = Number(target.dataset.game);
     renderDetail(state.games.find(game => game.id === state.lastGame));
   }
@@ -808,6 +1226,15 @@ document.addEventListener("click", event => {
   if (!target || target.matches("input, select, button[type=submit]")) return;
   event.preventDefault();
   guarded(() => activate(target));
+});
+
+// pad and keyboard use hide the pointer (a TV has none); moving the mouse brings it back
+const hidePointer = (hide: boolean) => document.body.classList.toggle("no-pointer", hide);
+document.addEventListener("keydown", () => hidePointer(true), true);
+document.addEventListener("mousemove", () => hidePointer(false));
+
+document.addEventListener("input", event => {
+  if ((event.target as HTMLElement).id === "q") runSearch();
 });
 
 document.addEventListener("submit", event => {
@@ -826,12 +1253,41 @@ document.addEventListener("submit", event => {
 });
 
 document.addEventListener("keydown", event => {
+  const target = event.target as HTMLElement;
+  const typing = target.matches("input, select, textarea");
+  if (event.key === "F1") {
+    event.preventDefault();
+    toggleQuick();
+    return;
+  }
+  if (overlayStack.length) {
+    const keys: Record<string, () => void> = {
+      ArrowUp: () => move("up"),
+      ArrowDown: () => move("down"),
+      ArrowLeft: () => !typing && move("left"),
+      ArrowRight: () => !typing && move("right"),
+      Escape: cancelTop,
+    };
+    const handler = keys[event.key];
+    if (handler) {
+      event.preventDefault();
+      handler();
+    } else if (event.key === "Enter" && !typing && target.dataset.nav !== undefined) {
+      event.preventDefault();
+      guarded(() => activate(target));
+    }
+    return;
+  }
   if (player) {
     if (event.key === "Escape") void closePlayer();
     return;
   }
-  const target = event.target as HTMLElement;
-  const typing = target.matches("input, select");
+  const onSearch = state.tab === "search";
+  // on the search page a printable key goes to the field wherever the focus is
+  if (onSearch && !typing && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    document.querySelector<HTMLInputElement>("#q")?.focus();
+    return;
+  }
   const keys: Record<string, () => void> = {
     ArrowUp: () => move("up"),
     ArrowDown: () => move("down"),
@@ -839,14 +1295,12 @@ document.addEventListener("keydown", event => {
     ArrowRight: () => !typing && move("right"),
     Escape: back,
     Backspace: () => !typing && back(),
-    q: () => !typing && cycleTab(-1),
-    e: () => !typing && cycleTab(1),
-    PageUp: () => cycleTab(-1),
-    PageDown: () => cycleTab(1),
+    q: () => !typing && cyclePage(-1),
+    e: () => !typing && cyclePage(1),
+    PageUp: () => cyclePage(-1),
+    PageDown: () => cyclePage(1),
     c: () =>
-      !typing &&
-      state.tab === "games" &&
-      guarded(() => launch(true, (document.activeElement as HTMLElement)?.dataset.route)),
+      !typing && state.tab === "games" && state.game && guarded(() => launch(state.game!, true, (document.activeElement as HTMLElement)?.dataset.route)),
     f: () => !typing && state.tab === "games" && guarded(toggleFavorite),
     d: () => !typing && state.tab === "games" && guarded(setDefault),
     r: () => !typing && guarded(scan),
@@ -858,53 +1312,104 @@ document.addEventListener("keydown", event => {
   } else if (event.key === "Enter" && !typing && target.dataset.nav !== undefined) {
     event.preventDefault();
     guarded(() => activate(target));
+  } else if (event.key === "Enter" && target.id === "q") {
+    event.preventDefault();
+    focusFirst("#results .game");
   }
 });
 
-// ---- gamepad (standard mapping) ---------------------------------------------------------------
+// ---- gamepad (standard mapping) -------------------------------------------------------------------
 
 const held = new Map<number, number>();
 let axisAt = 0;
+let hudOn = false;
+let guideHeld = false;
+let hudFrames = 0;
+let hudSince = 0;
+let hudWorst = 0;
+let hudLast = 0;
+const hudBox = document.querySelector<HTMLElement>("#hud")!;
+
 function pollGamepad(time: number): void {
   const pad = navigator.getGamepads?.().find(Boolean);
-  if (player) {
-    // the game owns the pad; only the exit chord is ours
-    if (pad?.buttons[8]?.pressed && pad.buttons[9]?.pressed) void closePlayer();
-  } else if (pad) {
-    const press = (index: number, action: () => void) => {
-      const pressed = pad.buttons[index]?.pressed ?? false;
-      const since = held.get(index);
-      if (!pressed) held.delete(index);
-      else if (since === undefined) {
-        held.set(index, time);
-        action();
-      } else if (index >= 12 && time - since > 350) {
-        held.set(index, time - 260);
-        action();
+  const kind = padKindOf(pad?.id);
+  if (kind !== state.pad) {
+    state.pad = kind;
+    if (kind !== "none") hidePointer(true);
+    renderHints();
+    renderStatus();
+  }
+  if (hudOn) {
+    hudFrames++;
+    hudWorst = Math.max(hudWorst, hudLast ? time - hudLast : 0);
+    hudLast = time;
+    if (time - hudSince >= 500) {
+      hudBox.textContent = `${Math.round((hudFrames * 1000) / (time - hudSince || 1))} fps · worst frame ${hudWorst.toFixed(1)} ms`;
+      hudFrames = 0;
+      hudSince = time;
+      hudWorst = 0;
+    }
+  }
+  const press = (index: number, action: () => void) => {
+    const pressed = pad?.buttons[index]?.pressed ?? false;
+    const since = held.get(index);
+    if (!pressed) held.delete(index);
+    else if (since === undefined) {
+      held.set(index, time);
+      action();
+    } else if (index >= 12 && time - since > 350) {
+      held.set(index, time - 260);
+      action();
+    }
+  };
+  if (pad) {
+    // Guide or Select + R3 opens the quick menu and closes it again (the game page asks too; the first one wins)
+    const guide = Boolean(pad.buttons[16]?.pressed || (pad.buttons[8]?.pressed && pad.buttons[11]?.pressed));
+    if (guide && !guideHeld) toggleQuick();
+    guideHeld = guide;
+    if (player && !overlayStack.length) {
+      // the game owns the pad; only the exit chord and the quick menu are ours
+      if (pad.buttons[8]?.pressed && pad.buttons[9]?.pressed) {
+        // the chord is consumed: Start still being held must not open the menu on the page behind
+        held.set(8, time);
+        held.set(9, time);
+        void closePlayer();
       }
-    };
-    press(12, () => move("up"));
-    press(13, () => move("down"));
-    press(14, () => move("left"));
-    press(15, () => move("right"));
-    press(0, () => {
-      const active = document.activeElement as HTMLElement | null;
-      if (active?.dataset.nav !== undefined) guarded(() => activate(active));
-    });
-    press(1, back);
-    press(2, () => state.tab === "games" && guarded(toggleFavorite));
-    press(3, () =>
-      state.tab === "games"
-        ? guarded(() => launch(true, (document.activeElement as HTMLElement)?.dataset.route))
-        : guarded(scan),
-    );
-    press(4, () => cycleTab(-1));
-    press(5, () => cycleTab(1));
-    press(9, () => state.tab === "games" && guarded(setDefault));
-    const [x = 0, y = 0] = pad.axes;
-    if (time - axisAt > 180 && Math.max(Math.abs(x), Math.abs(y)) > 0.6) {
-      axisAt = time;
-      move(Math.abs(x) > Math.abs(y) ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up");
+    } else {
+      press(12, () => move("up"));
+      press(13, () => move("down"));
+      press(14, () => move("left"));
+      press(15, () => move("right"));
+      press(0, () => {
+        const active = document.activeElement as HTMLElement | null;
+        if (active?.dataset.nav !== undefined) guarded(() => activate(active));
+      });
+      press(1, back);
+      if (!overlayStack.length) {
+        press(2, () =>
+          state.tab === "games"
+            ? guarded(toggleFavorite)
+            : state.tab === "search"
+              ? typeKey("back", "#q")
+              : undefined,
+        );
+        press(3, () =>
+          state.tab === "games" && state.game
+            ? guarded(() => launch(state.game!, true, (document.activeElement as HTMLElement)?.dataset.route))
+            : state.tab === "search"
+              ? typeKey(" ", "#q")
+              : guarded(scan),
+        );
+        press(4, () => cyclePage(-1));
+        press(5, () => cyclePage(1));
+        press(8, () => state.tab === "games" && guarded(setDefault));
+        press(9, openQuick);
+      }
+      const [x = 0, y = 0] = pad.axes;
+      if (time - axisAt > 180 && Math.max(Math.abs(x), Math.abs(y)) > 0.6) {
+        axisAt = time;
+        move(Math.abs(x) > Math.abs(y) ? (x > 0 ? "right" : "left") : y > 0 ? "down" : "up");
+      }
     }
   }
   requestAnimationFrame(pollGamepad);
@@ -912,21 +1417,35 @@ function pollGamepad(time: number): void {
 
 window.addEventListener("gamepadconnected", () => {
   renderStatus();
-  toast("Gamepad connected", "ok");
+  toast("Controller connected", "ok");
 });
 window.addEventListener("gamepaddisconnected", renderStatus);
 requestAnimationFrame(pollGamepad);
 
-// ---- boot -------------------------------------------------------------------------------------
+// ---- boot -----------------------------------------------------------------------------------------
 
 async function boot(): Promise<void> {
-  state.jobs = await api<Job[]>("/api/jobs");
-  await pollRunning();
-  const systems = await api<SystemRow[]>("/api/systems");
-  if (!systems.some(system => system.games)) await scan();
-  await showSystems();
+  document.querySelector("#offline")?.addEventListener("click", () => location.reload());
+  renderProfileButton();
+  renderStatus();
+  renderHints();
+  try {
+    const session = await api<{ config: { hud: string; motion: string } }>("/api/session");
+    applyConfig(session.config);
+    state.jobs = await api<Job[]>("/api/jobs");
+    await pollRunning();
+    const systems = await api<SystemRow[]>("/api/systems");
+    state.systems = systems;
+    if (!systems.some(system => system.games)) await scan();
+  } catch (error) {
+    showError(error, async () => location.reload());
+    document.body.dataset.ready = "1";
+    return;
+  }
+  await showHome();
   document.body.dataset.ready = "1";
   setInterval(() => void pollRunning(), 4000);
 }
 
 guarded(boot);
+void motionReduced;

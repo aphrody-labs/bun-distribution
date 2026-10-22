@@ -108,6 +108,23 @@ export function db(): Database {
   database.run("CREATE INDEX IF NOT EXISTS dat_roms_crc ON dat_roms (crc)");
   database.run("CREATE INDEX IF NOT EXISTS dat_roms_md5 ON dat_roms (md5)");
   database.run("CREATE TABLE IF NOT EXISTS defaults (system TEXT PRIMARY KEY, route TEXT NOT NULL)");
+  // Profiles (additive, nothing existing is altered): one row per launch with the profile that played,
+  // seeded once from the legacy games.lastPlayed so the default profile keeps its history.
+  const hadPlays = database
+    .query<{ n: number }, []>("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'plays'")
+    .get()!.n;
+  database.run(
+    "CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, created TEXT NOT NULL DEFAULT (datetime('now')))",
+  );
+  database.run("INSERT OR IGNORE INTO players (name) VALUES ('default')");
+  database.run(
+    "CREATE TABLE IF NOT EXISTS plays (id INTEGER PRIMARY KEY, game INTEGER NOT NULL, profile TEXT NOT NULL DEFAULT 'default', at TEXT NOT NULL)",
+  );
+  database.run("CREATE INDEX IF NOT EXISTS plays_profile ON plays (profile, at)");
+  if (!hadPlays)
+    database.run(
+      "INSERT INTO plays (game, profile, at) SELECT id, 'default', lastPlayed FROM games WHERE lastPlayed IS NOT NULL",
+    );
   const seeded = database.query<{ n: number }, []>("SELECT count(*) AS n FROM sources").get()!.n;
   if (!seeded) {
     database.query("INSERT INTO sources (kind, path) VALUES ('bep', ''), ('store', ''), ('free', '*')").run();
@@ -555,6 +572,10 @@ export async function findGame(idOrPath: string, system?: string): Promise<Game>
   return db().query<Game, [string]>("SELECT * FROM games WHERE path = ?").get(path)!;
 }
 
+export function totalGames(): number {
+  return db().query<{ n: number }, []>("SELECT count(*) AS n FROM games").get()!.n;
+}
+
 export function systemCounts(): Record<string, number> {
   const rows = db()
     .query<{ system: string; n: number }, []>("SELECT system, count(*) AS n FROM games GROUP BY system")
@@ -582,10 +603,63 @@ export function setGameRoute(id: number, route: string | null): void {
   db().query("UPDATE games SET route = ? WHERE id = ?").run(route, id);
 }
 
-export function recordPlay(id: number): void {
-  db()
-    .query("UPDATE games SET playCount = playCount + 1, lastPlayed = ? WHERE id = ?")
-    .run(new Date().toISOString(), id);
+export function recordPlay(id: number, profile = "default"): void {
+  const now = new Date().toISOString();
+  const known = db().query<{ name: string }, [string]>("SELECT name FROM players WHERE name = ?").get(profile);
+  db().transaction(() => {
+    db().query("UPDATE games SET playCount = playCount + 1, lastPlayed = ? WHERE id = ?").run(now, id);
+    db()
+      .query("INSERT INTO plays (game, profile, at) VALUES (?1, ?2, ?3)")
+      .run(id, known ? profile : "default", now);
+  })();
+}
+
+export interface Player {
+  name: string;
+  plays: number;
+}
+
+export function listPlayers(): Player[] {
+  return db()
+    .query<Player, []>(
+      "SELECT p.name AS name, (SELECT count(*) FROM plays WHERE profile = p.name) AS plays FROM players p ORDER BY p.name = 'default' DESC, p.name COLLATE NOCASE",
+    )
+    .all();
+}
+
+export function addPlayer(name: string): Player {
+  const clean = name.trim().replace(/\s+/g, " ");
+  if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,23}$/u.test(clean)) throw new Error("a profile name has 1 to 24 letters or digits");
+  db().query("INSERT OR IGNORE INTO players (name) VALUES (?)").run(clean);
+  return listPlayers().find(player => player.name === clean)!;
+}
+
+/** The games a profile played last, newest first, with that profile's own play count and date. */
+export function recentGames(profile = "default", limit = 12): Game[] {
+  const rows = db()
+    .query<Game & { profileLast: string; profileCount: number }, [string, number]>(
+      `SELECT g.*, p.last AS profileLast, p.n AS profileCount FROM games g
+       JOIN (SELECT game, max(at) AS last, count(*) AS n FROM plays WHERE profile = ?1 GROUP BY game) p ON p.game = g.id
+       ORDER BY p.last DESC LIMIT ?2`,
+    )
+    .all(profile, limit);
+  return rows.map(({ profileLast, profileCount, ...game }) => ({ ...game, lastPlayed: profileLast, playCount: profileCount }));
+}
+
+/** Games whose title, file name, developer or system matches every word of `query`. */
+export function searchGames(query: string, limit = 60): Game[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
+  if (!words.length) return [];
+  const clauses = words.map(
+    (_, i) =>
+      `(lower(coalesce(title, name)) LIKE ?${i + 1} ESCAPE '!' OR lower(name) LIKE ?${i + 1} ESCAPE '!' OR lower(coalesce(developer, '')) LIKE ?${i + 1} ESCAPE '!' OR system LIKE ?${i + 1} ESCAPE '!')`,
+  );
+  const patterns = words.map(word => `%${word.replace(/[!%_]/g, "!$&")}%`);
+  return db()
+    .query<Game, string[]>(
+      `SELECT * FROM games WHERE ${clauses.join(" AND ")} ORDER BY favorite DESC, coalesce(title, name) COLLATE NOCASE LIMIT ${Math.trunc(limit)}`,
+    )
+    .all(...patterns);
 }
 
 export function defaultRoute(system: string): string | null {

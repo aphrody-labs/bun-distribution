@@ -19,6 +19,7 @@ import {
   systemCounts,
 } from "./library";
 import { listProfiles, parseAssignments, setProfile } from "./profiles";
+import { setSessionHooks, underGamescope } from "./session";
 import { loadSystems } from "./systems";
 
 function print(value: unknown): number {
@@ -50,10 +51,7 @@ function appBrowser(): string | undefined {
   return candidates.find(path => path && existsSync(path));
 }
 
-/** Running as a gamescope session: its Wayland/X11 display, or the session variables it sets. */
-export function underGamescope(): boolean {
-  return Boolean(Bun.env.GAMESCOPE_WAYLAND_DISPLAY) || Bun.env.XDG_CURRENT_DESKTOP === "gamescope";
-}
+export { underGamescope };
 
 /**
  * Serves the frontend and opens it as an app window; the server stops when the window closes.
@@ -82,40 +80,79 @@ export async function runFrontend(args: string[]): Promise<number> {
     return 0;
   }
   const browser = args.includes("--no-window") ? undefined : appBrowser();
+  // `exit` (power menu) ends the session: the window closes, the server stops, gamescope follows.
+  let leave: (() => void) | undefined;
+  const left = new Promise<void>(resolve => (leave = resolve));
   if (!browser) {
     if (!args.includes("--no-window")) console.log("no Chromium-family browser found; open the URL above");
-    await new Promise(() => {});
+    setSessionHooks({ window: false, exit: () => leave?.(), restart() {} });
+    await left;
+    setSessionHooks(undefined);
+    server.stop(true);
+    return 0;
   }
   const profile = join(usrRoot(), "var", "lib", "bep", "frontend-profile");
   // --session (and gamescope itself): one borderless full-screen window, audio without a click,
   // the pad as the only input; gamescope scales and paces the frames
   const session = args.includes("--session") || underGamescope();
-  const window = Bun.spawn(
-    [
-      browser!,
-      session ? `--kiosk` : `--app=${url}`,
-      ...(session
-        ? [
-            url,
-            "--ozone-platform-hint=auto",
-            "--autoplay-policy=no-user-gesture-required",
-            "--enable-unsafe-webgpu",
-            "--enable-features=Vulkan,UseOzonePlatform",
-            "--overscroll-history-navigation=0",
-            "--disable-pinch",
-            "--noerrdialogs",
-            "--disable-session-crashed-bubble",
-          ]
-        : ["--window-size=1600,900"]),
-      `--user-data-dir=${profile}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-    ],
-    { stdout: "ignore", stderr: "ignore" },
-  );
-  const code = await window.exited;
+  const spawnWindow = () =>
+    Bun.spawn(
+      [
+        browser,
+        session ? `--kiosk` : `--app=${url}`,
+        ...(session
+          ? [
+              url,
+              "--ozone-platform-hint=auto",
+              "--autoplay-policy=no-user-gesture-required",
+              "--enable-unsafe-webgpu",
+              "--enable-features=Vulkan,UseOzonePlatform",
+              "--overscroll-history-navigation=0",
+              "--disable-pinch",
+              "--noerrdialogs",
+              "--disable-session-crashed-bubble",
+              ...(Bun.env.BUN_ENGINE_CHROME_ARGS ?? "").split(/\s+/).filter(Boolean),
+            ]
+          : ["--window-size=1600,900"]),
+        `--user-data-dir=${profile}`,
+        "--no-first-run",
+        "--no-default-browser-check",
+      ],
+      { stdout: "ignore", stderr: "ignore" },
+    );
+  let window = spawnWindow();
+  let restarting = false;
+  let exiting = false;
+  setSessionHooks({
+    window: true,
+    exit() {
+      exiting = true;
+      window.kill();
+    },
+    restart() {
+      restarting = true;
+      window.kill();
+    },
+  });
+  // A restart (power menu) reopens the window on the same server. A kiosk window that dies on its own
+  // is reopened too, up to 3 times a minute, so a browser crash does not end the whole gamescope session.
+  const crashes: number[] = [];
+  let code = 0;
+  for (;;) {
+    code = await window.exited;
+    const crashed = session && !exiting && !restarting && code !== 0;
+    if (crashed) {
+      const now = Date.now();
+      crashes.push(now);
+      while (crashes[0]! < now - 60_000) crashes.shift();
+    }
+    if (!restarting && !(crashed && crashes.length <= 3)) break;
+    restarting = false;
+    window = spawnWindow();
+  }
+  setSessionHooks(undefined);
   server.stop(true);
-  return code;
+  return exiting ? 0 : code;
 }
 
 const usage = `usage: bun-engine library scan | systems | games [system] | routes <system> | sources
@@ -145,6 +182,7 @@ function placeholder(system: string): Game {
     serial: null,
     dat: null,
     route: null,
+    cover: null,
     favorite: 0,
     playCount: 0,
     lastPlayed: null,
