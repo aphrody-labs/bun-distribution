@@ -9,6 +9,27 @@ import { probeHost } from "./probe";
 import { runShell } from "./shell";
 import { buildWorkspace, compileWorkspace, isCompileTarget, serveWorkspace, testWorkspace } from "./workspace";
 
+async function serveRetroArchCli(args: string[]): Promise<void> {
+  const { parseArgs } = await import("node:util");
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { core: { type: "string" }, port: { type: "string" }, host: { type: "string" } },
+  });
+  const { serveRetroArch } = await import("./libretroarch-serve");
+  const { url, stop } = serveRetroArch({
+    core: values.core,
+    content: positionals[0],
+    port: values.port ? Number(values.port) : 0,
+    hostname: values.host,
+  });
+  console.log(`RetroArch at ${url}`);
+  process.on("SIGINT", () => {
+    stop();
+    process.exit(0);
+  });
+}
+
 async function main(): Promise<void> {
   const [command = "probe", appId, target, sources] = process.argv.slice(2);
   if (command === "probe") console.log(JSON.stringify(await probeHost(), null, 2));
@@ -54,9 +75,10 @@ async function main(): Promise<void> {
   else if (command === "qualify" && appId) console.log(JSON.stringify(policyFor(appId), null, 2));
   else if (command === "launch" && appId) process.exitCode = await launch(appId);
   else if (command === "trace" && appId) process.exitCode = await trace(appId);
+  else if (command === "retroarch") await serveRetroArchCli(process.argv.slice(3));
   else {
     throw new Error(
-      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | 3ds patches <list|apply> | 3ds addons <list|install> | 3ds homebrew <build|install|run> (Azahar user-dir tooling) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | qualify <appid> | launch <appid> | trace <appid>",
+      "reverse engineering (Replica, Ghidra, Magika, pipeline) lives in `re`.\nusage: bun-engine build [--release] | compile [bun-<os>-<arch>] [outfile] [bytecode-order] | test | web | shell [--session|status|install-session] | frontend [--port N] [--no-window] [--screenshot PNG] | library <scan|systems|games|routes|sources|add|default|bios|launch|check> | probe | references | formats <identify|header|sections|files|disasm|stream|compile> ... | 3ds cia <status|info|verify|decrypt|install> ... (CIA management over our Azahar fork) | 3ds patches <list|apply> | 3ds addons <list|install> | 3ds homebrew <build|install|run> (Azahar user-dir tooling) | ds <build|plugins|identify|list|extract|extract-all|png|h3d|exefs> ... (managed DS/3DS formats over bun:dotnet) | nds:info <rom.nds> [--json] | run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] | recompile <image> --target <exe|wasm> [--out DIR] (same as `re recompile`) | retroarch [--core CORE] [--port N] [content] (libretroarch over WebGPU in the browser) | qualify <appid> | launch <appid> | trace <appid>",
     );
   }
 }

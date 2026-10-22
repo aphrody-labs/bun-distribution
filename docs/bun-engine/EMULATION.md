@@ -44,8 +44,27 @@ cd vendor/retroarch && ./configure --enable-libretroarch && make -j"$(nproc)"
 zero-copy views (XRGB8888 is already `bgra8unorm` for WebGPU, and RGB565 and the menu's RGBA4444
 are converted through lookup tables), interleaved float stereo for an AudioWorklet, and RetroPad
 bits per port. `command()` carries RetroArch's network command protocol (`PAUSE_TOGGLE`,
-`SAVE_STATE`, `READ_CORE_MEMORY`, ...). Hardware-rendered (OpenGL/Vulkan) cores need a GPU
-video driver and are not served by `host` yet.
+`SAVE_STATE`, `READ_CORE_MEMORY`, ...). Fast-forward runs extra core frames inside one
+`iterate()`, up to 3/4 of a frame period. Every directory RetroArch writes to (saves, states,
+core options, system, playlists) stays under `home`.
+
+Configured with `--enable-egl`, `host` also serves OpenGL and GLES cores: it renders them in a
+headless EGL context (Mesa surfaceless or pbuffer) and reads frames back through alternating
+PBOs, one frame behind. Vulkan cores are not served by `host` yet.
+
+The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--with-webgpu_libs` and
+`--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11, and an emdawnwebgpu canvas path.
+It does not run slang shader presets yet.
+
+`bun-engine retroarch --core <core> [content]` runs it behind `Bun.serve` and opens a WebGPU page:
+one WebSocket carries frames (only when their serial changes, deflated, and dropped for a client
+that falls behind), audio chunks for an AudioWorklet,
+and the standard gamepad or keyboard as RetroPad bits. `RetroArchPresenter`
+(`src/libretroarch-gpu.ts`) uploads XRGB8888 as `bgra8unorm` with `bytesPerRow = pitch`, RGB565
+and RGBA4444 as `r16uint` unpacked in WGSL, and draws letterboxed; `capture()` reads the result
+back. Bun has no `navigator.gpu`, so the presenter runs in a browser or `Bun.WebView`; headless
+Chrome on a GPU-less Linux host needs `--enable-unsafe-webgpu --enable-features=Vulkan
+--use-vulkan=swiftshader --use-angle=swiftshader`.
 
 ## Arch Linux image
 

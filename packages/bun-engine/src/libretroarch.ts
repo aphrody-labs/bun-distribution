@@ -222,7 +222,24 @@ export class RetroArch implements Disposable {
       options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
     mkdirSync(home, { recursive: true });
     const cfg = join(home, "retroarch.cfg");
+    // every directory RetroArch writes to stays under home
+    const dirs: Record<string, string> = {
+      rgui_config_directory: "config",
+      savefile_directory: "saves",
+      savestate_directory: "states",
+      system_directory: "system",
+      screenshot_directory: "screenshots",
+      cache_directory: "cache",
+      playlist_directory: "playlists",
+      thumbnails_directory: "thumbnails",
+      log_dir: "logs",
+    };
+    for (const [key, dir] of Object.entries(dirs)) {
+      dirs[key] = join(home, dir);
+      mkdirSync(dirs[key], { recursive: true });
+    }
     const settings: Record<string, string | number | boolean> = {
+      ...dirs,
       video_driver: "host",
       audio_driver: "host",
       input_driver: "null",
