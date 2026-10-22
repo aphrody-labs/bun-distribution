@@ -390,3 +390,36 @@ Nested `[workspace]` manifests and `Cargo.lock` files are classified in
 [`cargo-exceptions.json`](cargo-exceptions.json) (see
 [`cargo-exceptions.md`](cargo-exceptions.md)); `bun src/cli.ts workspace check`
 enforces it. Entries classed `migrate` are the remaining migration batches.
+
+## Consolidation state — 2026-10-22
+
+Measured on `origin/os` at `15d3c89088` (`bun src/cli.ts workspace check`, `cargo metadata
+--no-deps --locked` on the VPS); the totals and open decisions are collected in
+[MONOREPO](MONOREPO.md). The recent root commits changed these facts:
+
+- **Flat Bevy tools.** `tools/bevy/build-easefunction-graphs`, `build-templated-pages`,
+  `build-wasm-example`, `compile_fail_utils`, `example-showcase` and `export-content` now live at
+  `crates/<name>` (`c93236a800`), as root members with updated path references and in the component
+  inventory. The six `tools/bevy/*` entries left the inventory. `tools/bevy/ci` stays the only member
+  outside `apps/`, `packages/` and `crates/`.
+- **Nested members.** Twelve members are still nested below a crate directory: the three
+  `compile_fail` suites of `bevy_derive`, `bevy_ecs` and `bevy_reflect`, and nine under `crates/bevy/`
+  (`benches`, `errors`, `examples/mobile`, `examples/no_std/library`,
+  `examples/reflection/auto_register_static` and four `examples/large_scenes/*`). No rule in the owner
+  documents names their flat form; see the open decisions in [MONOREPO](MONOREPO.md#open-decisions).
+- **Excluded standalone workspaces.** Fuzz, fixture, example-plugin and bevy test/mobile workspaces
+  were added to the root `exclude` list (`9250e43294`), so the root now excludes 36 paths. They keep
+  their own lock where the [exceptions ledger](cargo-exceptions.md) lists one.
+- **Invariants are checked.** `workspace check` fails on a nested Bun lockfile, an unlisted nested
+  `[workspace]` or `Cargo.lock`, and a stale ledger entry; the inventory is persisted at
+  `docs/generated/component-inventory.json` (`867501bc0e`).
+- **Cargo members contract.** `bun scripts/cargo.ts metadata` runs Cargo under the members contract
+  (`60d0480174`) and prints the workspace report (package names, target directory), not Cargo's JSON.
+- **`crates/sqlite_tasks`** stays excluded: it uses SQLx 0.7, whose `libsqlite3-sys 0.27` clashes with the
+  `links = "sqlite3"` of the root's `libsqlite3-sys 0.38`. Decision pending (rusqlite rewrite onto
+  `aphrody-sql`, or a shared SQLx).
+- **Pending `migrate` entries.** `apps/aphrody-drive`, `apps/desktop/src-tauri`, `apps/figcraft/plugins`,
+  `apps/m3-published-consumer` and `packages/bun-tauri` still own nested workspaces and locks.
+
+The earlier batch sections above stay the record of each split; "batches 1 to 5" are not numbered in this
+repository, so the facts above are listed by commit instead.

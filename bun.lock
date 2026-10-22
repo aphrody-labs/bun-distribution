@@ -30,6 +30,8 @@
       "name": "artcraft",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/identity": "workspace:*",
+        "@aphrody/m3": "workspace:*",
         "@mediapipe/tasks-vision": "^0.10.20",
         "@preact/signals-react": "catalog:",
         "@radix-ui/react-tooltip": "catalog:",
@@ -360,6 +362,8 @@
       "name": "@frontend/source",
       "version": "1.4.4",
       "dependencies": {
+        "@aphrody/identity": "workspace:*",
+        "@aphrody/m3": "workspace:*",
         "@dnd-kit/core": "catalog:",
         "@dnd-kit/sortable": "catalog:",
         "@dnd-kit/utilities": "catalog:",
