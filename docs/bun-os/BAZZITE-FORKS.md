@@ -31,8 +31,9 @@ and upstream licenses and histories stay intact. The forks track the default bra
   repositories (`sentry/kernel-fsync`, `ublue-os/bazzite`, `ublue-os/staging`, ...): third-party
   projects that the image downloads, not sources it builds. Fork one only when patching it.
 
-## Next
+## Done and next
 
-The forks still point at upstream: `.gitmodules` of the `bazzite` fork and the `ghcr.io/ublue-os/*`
-image references in its Containerfile have not been rewritten, and no image was built (builds run
-on the VPS only). Rewriting them is a separate, deliberate change.
+- The `.gitmodules` of the `bazzite` fork points at the `aphrody-labs` forks (15 entries, commit `9becf92`).
+  The pinned submodule commits are the upstream ones and were not re-checked against each fork.
+- Still upstream: the `ghcr.io/ublue-os/*` image references in the Containerfile (published upstream images; no
+  Bun OS image exists yet) and the COPR repositories. No image was built (builds run on the VPS only).
