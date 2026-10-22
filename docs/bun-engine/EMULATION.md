@@ -57,8 +57,9 @@ Checked on a GPU-less host (Mesa llvmpipe and lavapipe) with homebrew only, driv
 binding with pad input: Nintendo DS runs with `desmume` (software, 2.9 ms per frame),
 `melondsds` (software 2.4 ms, OpenGL Core 4.6 about 33 ms) and `melonds` (2.4 ms; its binary
 needs `patchelf --clear-execstack` on current glibc); 3DS runs with `azahar` (Vulkan, about 39 ms,
-FBI shows and reacts); GameCube and Wii with `dolphin` do not run yet: the core boots Swiss, then
-`retro_run` waits for a frame its CPU thread never presents. DS needs no BIOS (FreeBIOS), and
+FBI shows and reacts); GameCube and Wii run with `dolphin` (Snes9xGX homebrew: GameCube about
+14 ms per frame, Wii about 16 ms, OpenGL Core 4.6 on llvmpipe), while the Swiss loader stalls
+at its frame 72 inside the guest, with the same driver. No commercial title was tried. DS needs no BIOS (FreeBIOS), and
 `dolphin` needs its `Sys` folder under `system/dolphin-emu` (`assets/system/Dolphin.zip` on the
 libretro buildbot).
 
