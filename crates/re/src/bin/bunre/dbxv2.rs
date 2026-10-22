@@ -613,6 +613,16 @@ mod media {
         emit(args.get("--out"), &vfs.index())
     }
 
+    /// Decode the sibling `<base>.emb` of an `.emd` into a PNG for [`emd_to_glb_textured`], or
+    /// `None` when there is no readable texture package next to the model.
+    fn texture_png_for_emd(emd_path: &Path) -> Option<Vec<u8>> {
+        let emb_path = emd_path.with_extension("emb");
+        let bytes = std::fs::read(&emb_path).ok()?;
+        let emb = bun_re::game::EmbFile::parse(&bytes).ok()?;
+        let texture = emb.decode_rgba(0).ok()?;
+        bun_re::game::emd_gltf::encode_png_rgba(texture.width, texture.height, &texture.rgba)
+    }
+
     fn threads(args: &Args) -> usize {
         args.get("--threads")
             .and_then(|value| value.parse().ok())
@@ -663,7 +673,9 @@ mod media {
                     Ok(emd) => emd,
                     Err(error) => return fail(format!("{}: {error}", input.display())),
                 };
-                let glb = bun_re::game::emd_gltf::emd_to_glb(&emd);
+                // Resolve and decode the sibling `<base>.emb` texture package, when present.
+                let texture = texture_png_for_emd(input);
+                let glb = bun_re::game::emd_gltf::emd_to_glb_textured(&emd, texture.as_deref());
                 let parts: usize = emd.parts.iter().map(|part| part.meshes.len()).sum();
                 match std::fs::write(out, &glb) {
                     Ok(()) => print_json(&json!({
@@ -672,6 +684,7 @@ mod media {
                         "bytes": glb.len(),
                         "parts": emd.parts.len(),
                         "meshes": parts,
+                        "textured": texture.is_some(),
                     })),
                     Err(error) => fail(format!("could not write {out}: {error}")),
                 }
