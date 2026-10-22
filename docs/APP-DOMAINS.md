@@ -21,8 +21,7 @@ preserving the sub-path and query string. The declarative source is
 path to WebOS package map). The WebOS Worker (`apps/webos/worker/index.ts`)
 derives `redirectFor` from it, the WebOS shell opens the package of a catalog
 path, and the legacy `/?app=<package>` link redirects to the package path.
-`bun.aphrody.com` now redirects straight to the apex (no hop through
-aphrody.app).
+`bun.aphrody.com` and `bun.aphrody.app` are the Bun site (Worker `aphrody-app`, owned by the bun repo) and are not routed by this catalog.
 
 Hosts that stay separate (`keep: true`): `git.aphrody.app`, `source.aphrody.app`, `deploy.aphrody.app`, `downloads.aphrody.com`, `cdn.aphrody.com`, `assets.aphrody.app`, `dist.aphrody.app`, `nie.aphrody.com`.
 
@@ -62,7 +61,6 @@ Hosts that stay separate (`keep: true`): `git.aphrody.app`, `source.aphrody.app`
 | desktop.aphrody.app | product | https://aphrody.com/apps |
 | os.aphrody.com | product | https://aphrody.com/os |
 | creator.aphrody.com | product | https://aphrody.com/creator |
-| bun.aphrody.com | product | https://aphrody.com/ |
 | aphrody.app | legacy-apex | https://aphrody.com/ |
 | www.aphrody.app | legacy-apex | https://aphrody.com/ |
 | www.aphrody.com | www | https://aphrody.com/ (sub-paths kept) |
@@ -128,10 +126,9 @@ left out of the landing page and reported by the script.
 
 ## Applied on Cloudflare (2026-10-22)
 
-- Zone `aphrody.com`: one single-redirect rule (ruleset `cd58ff671fd54a29bdf6526a6de886a1`, rule
-  `67571e644c2a414ead0871fd225d6488`, phase `http_request_dynamic_redirect`): `bun.aphrody.com` answers a 301 to
-  the same path on `https://aphrody.com`, query kept. The host answered 526 before, because the nginx vhost of
-  `infra/config/host/nginx/aphrody/bun.aphrody.com.conf` is not installed on the VPS. To undo, delete the rule.
+- Zone `aphrody.com`: the `bun.aphrody.com` redirect rule created earlier the same day was deleted again
+  (the Bun site lives on `bun.aphrody.com` and `bun.aphrody.app`, attached to the `aphrody-app` Worker by the bun
+  repo). No redirect rule remains in that zone from this catalog.
 - Not applied: the Worker `aphrody-webos` is deployed only by `apps/webos/deploy.ts` from a pushed commit in the
   protected environment. Craft hosts already answer `301 https://aphrody.com/?app=<id>` from the deployed Worker;
   the path form (`/light`) arrives with the next deployment.

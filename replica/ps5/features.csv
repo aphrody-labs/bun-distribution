@@ -1,0 +1,11 @@
+feature,area,priority,original,clone,notes
+Recent-games shelf on home,home,must,yes,no,tiles with the focus ring; fed by library.db play history
+Hero with one primary action,home,should,yes,no,"Play" on the last game; one primary CTA per screen
+Top navigation bar (Library, Systems, Search, Settings),navigation,must,yes,no,D-pad reachable; shown in every state
+Game library grid,library,must,yes,yes,exists as the system and game views
+Per-game page with hero and related shelf,library,could,yes,no,needs cover art from the homebrew showcase
+Profile overlay that restores focus,overlay,could,yes,partial,closePlayer already restores focus for the player
+Media-app tiles,apps,could,yes,no,only if bun-engine launches non-game apps
+Store front and prices,store,skip,yes,skip,owned catalogue and commerce
+Trophies parties messages,social,skip,yes,skip,network and accounts
+Game and promo art,content,skip,yes,skip,licensed material; use our own homebrew captures

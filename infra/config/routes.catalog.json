@@ -173,11 +173,6 @@
       "path": "/creator",
       "keep": false
     },
-    "bun.aphrody.com": {
-      "kind": "product",
-      "path": "/",
-      "keep": false
-    },
     "aphrody.app": {
       "kind": "legacy-apex",
       "path": "/",
