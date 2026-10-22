@@ -31,6 +31,22 @@ TetaNES device models through small runner hooks (`GameBoyAdvance::set_cpu_runne
 Verification compares frame buffers and console output with `bun-engine run`. See
 [`docs/re-pipeline.md`](../re-pipeline.md).
 
+## RetroArch in process
+
+The `vendor/retroarch` fork builds RetroArch as a shared library that its host paces:
+
+```sh
+cd vendor/retroarch && ./configure --enable-libretroarch && make -j"$(nproc)"
+```
+
+`packages/bun-engine/src/libretroarch.ts` loads `libretroarch.so` (`.dll`, `.dylib`) through
+`bun:ffi` and drives it one `iterate()` per frame. Its `host` drivers hand over frames as
+zero-copy views (XRGB8888 is already `bgra8unorm` for WebGPU, and RGB565 and the menu's RGBA4444
+are converted through lookup tables), interleaved float stereo for an AudioWorklet, and RetroPad
+bits per port. `command()` carries RetroArch's network command protocol (`PAUSE_TOGGLE`,
+`SAVE_STATE`, `READ_CORE_MEMORY`, ...). Hardware-rendered (OpenGL/Vulkan) cores need a GPU
+video driver and are not served by `host` yet.
+
 ## Arch Linux image
 
 `factory/images/bunos-gaming` has an `emulation` target: the gaming image plus every emulator
