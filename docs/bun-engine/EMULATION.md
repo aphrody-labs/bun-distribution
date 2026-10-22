@@ -59,13 +59,17 @@ binding with pad input: Nintendo DS runs with `desmume` (software, 2.9 ms per fr
 needs `patchelf --clear-execstack` on current glibc); 3DS runs with `azahar` (Vulkan, about 39 ms,
 FBI shows and reacts); GameCube and Wii run with `dolphin` (Snes9xGX homebrew: GameCube about
 14 ms per frame, Wii about 16 ms, OpenGL Core 4.6 on llvmpipe), while the Swiss loader stalls
-at its frame 72 inside the guest, with the same driver. No commercial title was tried. DS needs no BIOS (FreeBIOS), and
+at its frame 72 inside the guest (the video interface stops; not our driver, a core-side stall). No commercial title was tried. DS needs no BIOS (FreeBIOS), and
 `dolphin` needs its `Sys` folder under `system/dolphin-emu` (`assets/system/Dolphin.zip` on the
 libretro buildbot).
 
 The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--with-webgpu_libs` and
-`--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11, and an emdawnwebgpu canvas path.
-It does not run slang shader presets yet.
+`--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11 and Wayland (checked under headless
+sway), and an emdawnwebgpu canvas path. Slang presets run on the native path only.
+
+The Emscripten page can pull audio into an AudioWorklet, present through WebGPU (2D canvas as
+fallback) and build threaded under COOP/COEP (`pkg/emscripten/libretroarch/serve.ts`); on a heavy
+core `OPTIMIZE=1` gains at most about 15%, within the noise of a shared host.
 
 The launch router (`frontend/launch.ts`) lists it as `embedded:<core>` after the external
 `libretro:<core>` route, so a host without a RetroArch executable still launches libretro games:

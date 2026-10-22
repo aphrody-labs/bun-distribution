@@ -3,7 +3,7 @@
 pkgname=bun-engine
 pkgver=0.1.0
 pkgrel=1
-_commit=1256e074b83645afb430b737e94773f15c6405e7
+_commit=866650a40194ebf255af5ae29fae15946e571abe
 pkgdesc='Bun Engine emulator kernel, CLI and multi-console package manager'
 arch=('x86_64')
 url='https://github.com/aphrody-labs/bun-distribution'
