@@ -37,6 +37,7 @@ Usage: bunre dbxv2 <command> ...
   unified <root>... [--search <q> [--limit <n>] | --read <game/path> | --describe <game/path>]
           [--out <file>]                      mount several games under one <game>/<path> view
   emb <file.emb> --output-dir <new-dir>       unpack one EMB container
+  emd-glb <file.emd> --out <file.glb>         export a DBXV2 model to GLB (renders via nie render)
   tex <root> | audio <root> | models <root> | parse <root>
   text <file.msg> [--output <new-file>] | text <dir> [--output-dir <new-dir>]
   report <out> [--game <game>]                aggregate manifests -> reports/GLOBAL_REPORT.json
@@ -649,6 +650,32 @@ mod media {
     pub fn main(command: &str, args: &Args) -> ExitCode {
         let single = args.positional.len() == 1;
         match command {
+            "emd-glb" if single && args.only(&["--out"]) => {
+                let Some(out) = args.get("--out") else {
+                    return usage();
+                };
+                let input = Path::new(&args.positional[0]);
+                let bytes = match std::fs::read(input) {
+                    Ok(bytes) => bytes,
+                    Err(error) => return fail(format!("could not read {}: {error}", input.display())),
+                };
+                let emd = match bun_re::game::EmdFile::parse(&bytes) {
+                    Ok(emd) => emd,
+                    Err(error) => return fail(format!("{}: {error}", input.display())),
+                };
+                let glb = bun_re::game::emd_gltf::emd_to_glb(&emd);
+                let parts: usize = emd.parts.iter().map(|part| part.meshes.len()).sum();
+                match std::fs::write(out, &glb) {
+                    Ok(()) => print_json(&json!({
+                        "emd": input.display().to_string(),
+                        "glb": out,
+                        "bytes": glb.len(),
+                        "parts": emd.parts.len(),
+                        "meshes": parts,
+                    })),
+                    Err(error) => fail(format!("could not write {out}: {error}")),
+                }
+            }
             "merge" if single && args.only(&["--out"]) => {
                 let Some(out) = args.get("--out") else {
                     return usage();
