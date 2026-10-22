@@ -45,3 +45,29 @@ Current blockers are JDK 25 plus Ghidra/NTRGhidra version alignment, the absent
 devkitPro toolchain, and the still-unmigrated modern Dust execution/rendering
 core. Input metadata and Tinke FFI are already qualified without embedding ROM
 content.
+
+## Library frontend and RetroArch routes
+
+The library (`packages/bun-engine/web/app`) is the one user surface for every console. It lists
+games per system and launches each through a route chosen by `frontend/launch.ts`:
+
+| Route | Runs | Needs |
+| --- | --- | --- |
+| `native:<machine>` | the Bun Engine machine (headless or window) | built `bun-engine`, BIOS when required |
+| `bin:<id>` | a bep-installed emulator | `bep add bin <id>` |
+| `libretro:<core>` | external RetroArch with a core | RetroArch and `bep add libretro <core>` |
+| `embedded:<core>` | `libretroarch` (RetroArch as a shared library) driven by `bun:ffi` | the built library and the core |
+
+An `embedded` game runs as `bun cli.ts retroarch --core <id> --port <free>` and plays in an iframe
+of the library, one process and one port per game. Escape or Select+Start stops it and gives the
+focus back to the launching element. Under gamescope the library is the whole session
+(`bunos-gamescope-session`, one kiosk window).
+
+Video leaves the core three ways: a host driver that hands frames to the WebSocket and WebGPU
+presenter, the native `webgpu` driver (X11, Wayland) and the Emscripten page (WebGPU, 2D fallback).
+Visual rules are in [`../design/components.md`](../design/components.md); colours bind to Material 3
+role tokens.
+
+Riskiest parts: the Swiss loader stall inside the dolphin core, no GPU on the build host (so no real
+gamescope run and no on-screen WebGPU), and the embedded route's one process per game under memory
+pressure.
