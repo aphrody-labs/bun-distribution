@@ -125,3 +125,13 @@ Let's Encrypt ECDSA certificate issued like `play.aphrody.app`, and the vhost is
 content-addresses the bundles, replaces `~/apps/craft-web/current` in place and
 installs the vhost (`nginx -t` before reload). An app whose wasm build fails is
 left out of the landing page and reported by the script.
+
+## Applied on Cloudflare (2026-10-22)
+
+- Zone `aphrody.com`: one single-redirect rule (ruleset `cd58ff671fd54a29bdf6526a6de886a1`, rule
+  `67571e644c2a414ead0871fd225d6488`, phase `http_request_dynamic_redirect`): `bun.aphrody.com` answers a 301 to
+  the same path on `https://aphrody.com`, query kept. The host answered 526 before, because the nginx vhost of
+  `infra/config/host/nginx/aphrody/bun.aphrody.com.conf` is not installed on the VPS. To undo, delete the rule.
+- Not applied: the Worker `aphrody-webos` is deployed only by `apps/webos/deploy.ts` from a pushed commit in the
+  protected environment. Craft hosts already answer `301 https://aphrody.com/?app=<id>` from the deployed Worker;
+  the path form (`/light`) arrives with the next deployment.
