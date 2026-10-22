@@ -67,3 +67,14 @@ Player (iframe)
 - Confirm dialogs for stop and remove, with the safe choice focused first.
 - Reference captures for a pixel comparison: none are tracked; capture the library on the VPS
   (sway headless and Chrome kiosk) before comparing.
+
+## Reference reviewed, nothing reused
+
+The community Figma file "Nintendo DS Design System V1.3.3" was read for structure only: pages
+Screens, Color & Themes, Grid & Background, Date & Time, BIOS Selections, Navigation & Calibration,
+Buttons, Keyboard, Symbols, Pictochat, Cartridges, plus Guide pages for colour, typeface and tokens.
+Its License page limits use to mock-ups of interfaces for software that runs only on DS operating
+system software, and its CC BY 4.0 text excludes commercial adaptation. The Bun Engine library is
+neither, so no asset, token value, typeface or layout from that file is copied here.
+What carries over is the idea, not the material: 16 selectable theme colours, a gradient title bar,
+and one visible focus treatment per screen.
