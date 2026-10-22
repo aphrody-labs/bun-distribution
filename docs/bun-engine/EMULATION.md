@@ -50,7 +50,17 @@ core options, system, playlists) stays under `home`.
 
 Configured with `--enable-egl`, `host` also serves OpenGL and GLES cores: it renders them in a
 headless EGL context (Mesa surfaceless or pbuffer) and reads frames back through alternating
-PBOs, one frame behind. Vulkan cores are not served by `host` yet.
+PBOs, one frame behind. With `--enable-vulkan` it also serves Vulkan cores headless, through
+`vulkan_common` and the core's negotiation interface.
+
+Checked on a GPU-less host (Mesa llvmpipe and lavapipe) with homebrew only, driven through the
+binding with pad input: Nintendo DS runs with `desmume` (software, 2.9 ms per frame),
+`melondsds` (software 2.4 ms, OpenGL Core 4.6 about 33 ms) and `melonds` (2.4 ms; its binary
+needs `patchelf --clear-execstack` on current glibc); 3DS runs with `azahar` (Vulkan, about 39 ms,
+FBI shows and reacts); GameCube and Wii with `dolphin` do not run yet: the core boots Swiss, then
+`retro_run` waits for a frame its CPU thread never presents. DS needs no BIOS (FreeBIOS), and
+`dolphin` needs its `Sys` folder under `system/dolphin-emu` (`assets/system/Dolphin.zip` on the
+libretro buildbot).
 
 The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--with-webgpu_libs` and
 `--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11, and an emdawnwebgpu canvas path.
