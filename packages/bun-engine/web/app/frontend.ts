@@ -61,6 +61,7 @@ interface LaunchResult {
   ms: number;
   output?: string;
   error?: string;
+  player?: string;
 }
 
 type Tab = "systems" | "games" | "bios" | "installer" | "sources";
@@ -582,7 +583,40 @@ async function launch(check: boolean, route?: string): Promise<void> {
     result.ok ? "ok" : "error",
   );
   if (!check) await pollRunning();
+  if (!check && result.ok && result.player) await openPlayer(result.player, result.pid);
 }
+
+// A game RetroArch runs in process plays in this window, so one kiosk window (gamescope) holds both.
+let player: { frame: HTMLIFrameElement; pid?: number } | undefined;
+
+async function openPlayer(url: string, pid?: number): Promise<void> {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (await fetch(url, { mode: "no-cors" }).then(() => true, () => false)) break;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  const frame = document.createElement("iframe");
+  frame.src = url;
+  frame.allow = "autoplay; gamepad";
+  frame.className = "player";
+  frame.style.cssText = "position:fixed;inset:0;width:100vw;height:100vh;border:0;background:#000;z-index:100";
+  document.body.append(frame);
+  player = { frame, pid };
+  frame.addEventListener("load", () => frame.focus());
+}
+
+async function closePlayer(): Promise<void> {
+  if (!player) return;
+  const { frame, pid } = player;
+  player = undefined;
+  frame.remove();
+  if (pid !== undefined) await api(`/api/running/${pid}`, { method: "DELETE" }).catch(() => undefined);
+  await pollRunning();
+}
+
+// Escape in the player, or the pad chord Select+Start, comes back to the library.
+window.addEventListener("message", event => {
+  if (event.data === "retroarch-exit") void closePlayer();
+});
 
 async function activate(element: HTMLElement): Promise<void> {
   const data = element.dataset;
@@ -783,6 +817,10 @@ document.addEventListener("submit", event => {
 });
 
 document.addEventListener("keydown", event => {
+  if (player) {
+    if (event.key === "Escape") void closePlayer();
+    return;
+  }
   const target = event.target as HTMLElement;
   const typing = target.matches("input, select");
   const keys: Record<string, () => void> = {
@@ -820,7 +858,10 @@ const held = new Map<number, number>();
 let axisAt = 0;
 function pollGamepad(time: number): void {
   const pad = navigator.getGamepads?.().find(Boolean);
-  if (pad) {
+  if (player) {
+    // the game owns the pad; only the exit chord is ours
+    if (pad?.buttons[8]?.pressed && pad.buttons[9]?.pressed) void closePlayer();
+  } else if (pad) {
     const press = (index: number, action: () => void) => {
       const pressed = pad.buttons[index]?.pressed ?? false;
       const since = held.get(index);

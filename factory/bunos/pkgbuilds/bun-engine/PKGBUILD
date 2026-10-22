@@ -9,7 +9,9 @@ arch=('x86_64')
 url='https://github.com/aphrody-labs/bun-distribution'
 license=('GPL-3.0-or-later')
 depends=('glibc' 'gcc-libs' 'vulkan-icd-loader' 'libxkbcommon' 'wayland' 'bun-aphrody')
-optdepends=('mesa: Vulkan/GL drivers for the window and for OpenGL libretro cores (headless EGL)'
+optdepends=('gamescope: the bunos-gamescope-session full-screen session'
+            'chromium: the frontend window (kiosk in the gamescope session)'
+            'mesa: Vulkan/GL drivers for the window and for OpenGL libretro cores (headless EGL)'
             'qemu-full: reference QEMU for ARM firmware and Linux/Windows guests')
 makedepends=('git' 'rustup' 'clang' 'pkgconf' 'cmake' 'mesa' 'libx11')
 options=('!lto' '!debug')
@@ -38,6 +40,8 @@ package() {
     printf '#!/bin/sh\nexec bun /usr/share/bun-engine/src/%s.ts "$@"\n' "${cli#*:}" >"$srcdir/${cli%%:*}"
     install -Dm755 "$srcdir/${cli%%:*}" "$pkgdir/usr/bin/${cli%%:*}"
   done
+  install -Dm755 factory/bunos/pkgbuilds/bun-engine/bunos-gamescope-session "$pkgdir/usr/bin/bunos-gamescope-session"
+  install -Dm644 factory/bunos/pkgbuilds/bun-engine/bunos-gamescope.desktop     "$pkgdir/usr/share/wayland-sessions/bunos-gamescope.desktop"
   install -Dm755 vendor/retroarch/libretroarch.so "$pkgdir/usr/lib/libretroarch.so"
   install -Dm644 vendor/retroarch/COPYING "$pkgdir/usr/share/licenses/$pkgname/RETROARCH-COPYING"
   install -Dm644 crates/bun-engine-core/LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

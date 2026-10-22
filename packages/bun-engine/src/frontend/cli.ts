@@ -50,6 +50,11 @@ function appBrowser(): string | undefined {
   return candidates.find(path => path && existsSync(path));
 }
 
+/** Running as a gamescope session: its Wayland/X11 display, or the session variables it sets. */
+export function underGamescope(): boolean {
+  return Boolean(Bun.env.GAMESCOPE_WAYLAND_DISPLAY) || Bun.env.XDG_CURRENT_DESKTOP === "gamescope";
+}
+
 /**
  * Serves the frontend and opens it as an app window; the server stops when the window closes.
  * `--screenshot <png>` renders it headless through Bun.WebView instead (qualification).
@@ -82,14 +87,29 @@ export async function runFrontend(args: string[]): Promise<number> {
     await new Promise(() => {});
   }
   const profile = join(usrRoot(), "var", "lib", "bep", "frontend-profile");
+  // --session (and gamescope itself): one borderless full-screen window, audio without a click,
+  // the pad as the only input; gamescope scales and paces the frames
+  const session = args.includes("--session") || underGamescope();
   const window = Bun.spawn(
     [
       browser!,
-      `--app=${url}`,
+      session ? `--kiosk` : `--app=${url}`,
+      ...(session
+        ? [
+            url,
+            "--ozone-platform-hint=auto",
+            "--autoplay-policy=no-user-gesture-required",
+            "--enable-unsafe-webgpu",
+            "--enable-features=Vulkan,UseOzonePlatform",
+            "--overscroll-history-navigation=0",
+            "--disable-pinch",
+            "--noerrdialogs",
+            "--disable-session-crashed-bubble",
+          ]
+        : ["--window-size=1600,900"]),
       `--user-data-dir=${profile}`,
       "--no-first-run",
       "--no-default-browser-check",
-      "--window-size=1600,900",
     ],
     { stdout: "ignore", stderr: "ignore" },
   );

@@ -35,6 +35,8 @@ export interface LaunchResult {
   ms: number;
   output?: string;
   error?: string;
+  /** In-process RetroArch: the page that plays the game. */
+  player?: string;
 }
 
 function coreFile(core: string): string | undefined {
@@ -164,7 +166,13 @@ async function retroarchConfig(core: string): Promise<string> {
 }
 
 /** The command line of a route; `check` gives a bounded, non-interactive variant. */
-export async function commandFor(route: Route, game: Game, check: boolean, frames: number): Promise<string[]> {
+export async function commandFor(
+  route: Route,
+  game: Game,
+  check: boolean,
+  frames: number,
+  port = 8920,
+): Promise<string[]> {
   const [kind, id] = route.id.split(":") as [RouteKind, string];
   const values = {
     file: game.path,
@@ -190,7 +198,7 @@ export async function commandFor(route: Route, game: Game, check: boolean, frame
       "retroarch",
       "--core",
       id,
-      ...(check ? ["--frames", String(frames)] : ["--port", "8920"]),
+      ...(check ? ["--frames", String(frames)] : ["--port", String(port)]),
       game.path,
     ];
   }
@@ -264,7 +272,16 @@ export async function launchGame(
       error: String((error as Error).message),
     };
   }
-  const command = await commandFor(route, game, Boolean(options.check), options.frames ?? 120);
+  let player: string | undefined;
+  let port: number | undefined;
+  if (route.kind === "embedded" && !options.check) {
+    // a free port per game: each game is its own process with its own RetroArch
+    const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+    port = probe.port;
+    probe.stop(true);
+    player = `http://127.0.0.1:${port}/`;
+  }
+  const command = await commandFor(route, game, Boolean(options.check), options.frames ?? 120, port);
   const cwd = dirname(command[0]!);
   if (!options.check) {
     const child = Bun.spawn(command, {
@@ -291,6 +308,7 @@ export async function launchGame(
       mode,
       pid: child.pid,
       ms: Math.round(performance.now() - started),
+      player,
     };
   }
   const timeoutMs = options.timeoutMs ?? (route.kind === "bin" ? 30_000 : 120_000);

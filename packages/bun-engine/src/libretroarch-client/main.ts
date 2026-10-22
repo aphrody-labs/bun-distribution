@@ -118,7 +118,12 @@ const KEYS: Record<string, number> = {
   ArrowRight: 1 << 7,
 };
 let keys = 0;
-window.addEventListener("keydown", (e) => (keys |= KEYS[e.code] ?? 0));
+window.addEventListener("keydown", (e) => {
+  // embedded in the frontend: Escape returns to the library
+  if (e.code === "Escape" && window.parent !== window)
+    window.parent.postMessage("retroarch-exit", "*");
+  keys |= KEYS[e.code] ?? 0;
+});
 window.addEventListener("keyup", (e) => (keys &= ~(KEYS[e.code] ?? 0)));
 
 const sent = new Map<number, string>();

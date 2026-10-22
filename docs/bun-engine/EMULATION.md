@@ -62,6 +62,13 @@ it needs only `libretroarch` and the core from `bep add libretro <core>`, and sh
 linking (`linkCoreBios`) with the external route. The `bun-engine` package builds and installs
 `/usr/lib/libretroarch.so`.
 
+Under gamescope the frontend is the whole session: `bunos-gamescope-session` (installed with the
+`bun-engine` package, with a `wayland-sessions` entry) runs `gamescope -e -f -- bun-engine
+frontend --session`, which opens the library UI as one kiosk Chromium window (also when
+`GAMESCOPE_WAYLAND_DISPLAY` is set). An `embedded:<core>` game plays in an iframe of that window,
+each on its own free port, so there is no focus to hand between windows; Escape or Select+Start
+returns to the library and stops the game. Pass gamescope flags with `BUNOS_GAMESCOPE_ARGS`.
+
 `bun-engine retroarch --core <id|file> [content]` (`--frames N` runs headless and prints a summary) runs it behind `Bun.serve` and opens a WebGPU page:
 one WebSocket carries frames (only when their serial changes, deflated, and dropped for a client
 that falls behind), audio chunks for an AudioWorklet,

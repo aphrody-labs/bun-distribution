@@ -118,7 +118,7 @@
       "consoles": ["nintendo-3ds"],
       "extensions": ["3ds", "cci", "cxi", "3dsx", "cia", "app"],
       "binaries": ["azahar"],
-      "libretro": ["citra"],
+      "libretro": ["azahar", "citra"],
       "dats": ["metadat/no-intro/Nintendo - Nintendo 3DS.dat"]
     },
     {

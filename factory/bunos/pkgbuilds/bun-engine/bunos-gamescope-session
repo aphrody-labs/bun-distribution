@@ -1,0 +1,8 @@
+#!/bin/sh
+# Bun OS gamescope session: the Bun Engine frontend as the only full-screen client.
+# Override gamescope's flags with BUNOS_GAMESCOPE_ARGS (output size, refresh, HDR, FSR).
+export XDG_CURRENT_DESKTOP=gamescope
+export XDG_SESSION_TYPE=wayland
+export MOZ_ENABLE_WAYLAND=1
+# shellcheck disable=SC2086
+exec gamescope ${BUNOS_GAMESCOPE_ARGS:--e -f --adaptive-sync} -- bun-engine frontend --session

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Bun OS Gaming (gamescope)
+Comment=Controller-first Bun Engine frontend in a gamescope session
+Exec=/usr/bin/bunos-gamescope-session
+Type=Application
+DesktopNames=gamescope
