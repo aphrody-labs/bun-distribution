@@ -12,7 +12,9 @@ roles come from `--md-sys-color-*`, and the dark values in `frontend.css` are on
 python <path-to-skill>/replica-design/contrast.py docs/bun-engine/design/tokens.json
 ```
 
-Result: 13 pairs, 0 failing AA (body text 5.9:1 to 17.8:1, field border 3.82:1).
+Result: 25 pairs, 0 failing AA (body text 5.9:1 to 17.8:1, soft text 9.4:1 to 10.8:1, field border 3.82:1,
+focus ring 12.1:1 on surfaces). The hero text sits on a scrim over blurred cover art: with the text hidden, the
+lightest background pixel behind it gave at least 6.9:1 against the soft text role for each of the five showcase covers.
 
 ## Principles taken from console UIs
 
@@ -60,21 +62,57 @@ Player (iframe)
   exit      Escape or Select+Start; focus returns to the launching element
 ```
 
+## Built in phase 1 (console-grade home)
+
+Own wording, M3 role tokens, Roboto Flex (OFL, `packages/m3-fonts`), Lucide icons (ISC, inline SVG in
+`web/app/icons.ts`), our own pad glyphs (`web/app/glyphs.ts`), art only from our homebrew captures.
+Every duration goes through `--dur`, which `prefers-reduced-motion` and the Motion setting set to 0;
+interactions animate `transform` and `opacity` only.
+
+```
+Top bar (#top)        Library, Systems, Search, Settings tabs (icon + text), status pills, profile and power buttons
+                      (aria-label, no icon-only control without a name); aria-current on the active tab
+Hero (.hero)          last played game of the profile: blurred cover scrim, title, "Last played ... · N plays",
+                      one primary Play, a ghost Details; states: loading skeleton, nothing played yet, empty library,
+                      scanning
+Shelf (.shelf)        horizontal, scroll-snap, the focused tile is centred; Recent tiles (cover, title, system and age),
+                      then system tiles; padded so the 3 px ring is never clipped
+Footer hints          glyphs of the connected pad (Gamepad API id: Xbox letters, PlayStation-style shapes, Nintendo letters,
+                      generic letters), key caps without a pad
+Quick menu            F1, pad Guide/Home or Select + R3 while a game plays: Resume, Save state, Load state, Screenshot,
+                      Volume (slider), Stop game (asks first); verified pause state, results of the actions shown
+                      in an aria-live line; focus returns to the game frame (or to the opener outside a game)
+Confirm dialog        Cancel is focused first (Stop game, Exit to desktop, Restart frontend)
+Power menu            Exit to desktop, Restart frontend, Close; each asks to confirm
+Search                text field plus a pad-first on-screen keyboard (X deletes, Y adds a space), real keyboard types
+                      into the field from anywhere; result rows reuse the game row; states: idle, searching, results,
+                      none, error
+Settings              Preferences (performance counter, motion: real shell.db keys), Session, Library, Cores and BIOS,
+                      Systems and routes, About: all read from the host when the page opens
+Profiles              avatar button, "Who is playing?" overlay, add a profile with the on-screen keyboard
+States                loading skeletons, error card with Try again, offline banner (the service does not answer)
+```
+
+Measured on the VPS in headless Chrome (software rendering, 1280 x 720; `screens/ui-flow.ts`): keydown to
+`focusin` 0.6 to 7 ms (limit 100 ms), layout shift 0 after load and after navigation, `requestAnimationFrame`
+median 16.7 ms and p95 16.8 ms while idle, no control without an accessible name on the home page, and 0 s
+transitions under `prefers-reduced-motion: reduce`. Frame pacing while a game plays was not measured.
+
 ## Gaps (not built)
 
-- A "recent" row of large tiles at the top of the library.
-- A secondary row for system actions (settings, quit).
-- Confirm dialogs for stop and remove, with the safe choice focused first.
-- Reference captures for a pixel comparison: the library is now captured on the VPS with
-  headless Chrome (`screens/flow-*.png`, see `screens/README.md`), but only as showcase evidence
-  at 1280x720: no pixel diff exists and the pad and keyboard hint bar was not captured per input.
+- A per-game page with a hero and a related shelf (the game view still has its list and detail pane).
+- Media-app tiles, notifications beyond the toast (controller battery, downloads), focus and select sounds.
+- A quick menu for games that run in their own window (release emulators, RetroArch outside the page): only the
+  in-process `embedded:<core>` player has the host actions.
+- Settings panels for display, audio, network and storage: only the state the host really reports is shown.
+- Per-profile saves (states are shared; profiles split recents and play history).
+- Reference captures for a pixel comparison: only showcase evidence at 1280x720 exists, no pixel diff.
 
-## Built since
+## Built earlier
 
 - Covers: a `<stem>.png|webp|jpg` next to a game file is stored in `games.cover` at scan time and
   served from `/api/games/:id/cover`. System cards show the first cover of their games as a banner,
-  game rows a 2.6 x 1.8 rem thumbnail and the detail pane the picture. Surfaces use `--line` and
-  `--panel-2`; the focus ring (`--focus` box shadow) is unchanged.
+  game rows a 2.6 x 1.8 rem thumbnail and the detail pane the picture.
 - Showcase library of open homebrew per system (`HOMEBREW.md`) and the library to game to
   `embedded:<core>` player to Escape flow, with focus restored to the launching row.
 

@@ -66,6 +66,14 @@ No commercial title was tried. DS needs no BIOS (FreeBIOS), and
 `dolphin` needs its `Sys` folder under `system/dolphin-emu` (`assets/system/Dolphin.zip` on the
 libretro buildbot).
 
+The player page (`libretroarch-client`) and its server (`libretroarch-serve.ts`) carry the frontend's quick menu. The
+frontend window owns the menu and talks to the player iframe by `postMessage`; the page relays over its WebSocket.
+`{"type":"pause","paused":bool}` toggles `PAUSE_TOGGLE` only when `status().paused` differs and answers with the paused
+state RetroArch reports; `command` lines get a `reply` (RetroArch's answer, for example `GET_STATUS PAUSED ...`) and
+`SAVE_STATE`, `LOAD_STATE` and `SCREENSHOT` also get a `result` that names the file RetroArch wrote under `home/states` or
+`home/screenshots` (or says none appeared). Volume is a `GainNode` in the page. F1, the pad Guide button and Select + R3
+make the page ask the frontend for the menu; the page ignores the pad while the menu is open.
+
 The fork also has a native `webgpu` video driver (`--enable-webgpu`, with `--with-webgpu_libs` and
 `--with-webgpu_cflags` pointing at wgpu-native or Dawn) for X11 and Wayland, and an emdawnwebgpu canvas path.
 Under headless sway the Wayland path renders, toggles fullscreen, takes keyboard and pointer input and
