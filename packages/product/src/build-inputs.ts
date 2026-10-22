@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { lstatSync, readFileSync, realpathSync } from "node:fs";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
+import { join } from "node:path";
 import { checkoutRoot as resolveCheckoutRoot, findWorkspaceRoot } from "@aphrody/paths";
 const sha = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
@@ -18,14 +18,7 @@ export function productBuildContext(env: NodeJS.ProcessEnv = process.env, from?:
 export function canonicalBunInputs(checkout: string, revision: string) {
   if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
   const checkoutRoot = realpathSync(checkout);
-  const ownedFile = (path: string) => {
-    const file = join(checkoutRoot, path);
-    const inside = relative(checkoutRoot, realpathSync(file));
-    if (inside.startsWith(".." + sep) || isAbsolute(inside) || !lstatSync(file).isFile())
-      throw new Error("Canonical Bun source file escapes the checkout");
-    return file;
-  };
-  const git = (...args: string[]) => {
+  const git =(...args: string[]) => {
     const result = Bun.spawnSync(["git", ...args], {
       cwd: checkoutRoot,
       stdout: "pipe",
