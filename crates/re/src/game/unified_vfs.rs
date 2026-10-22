@@ -9,7 +9,8 @@
 //! (`ievr`, `dbxv2`), made unique with a numeric suffix when two installs resolve to the same
 //! one.
 
-use std::path::PathBuf;
+use std::collections::{BTreeMap, HashMap};
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
@@ -153,6 +154,112 @@ impl UnifiedVfs {
             "totalEntries": self.len(),
             "totalBytes": total_bytes,
         })
+    }
+}
+
+/// Entry and byte tally.
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+pub struct Count {
+    /// Number of entries.
+    pub entries: usize,
+    /// Sum of their reported sizes (0 where an owner does not report a size).
+    pub bytes: u64,
+}
+
+impl Count {
+    fn add(&mut self, size: u64) {
+        self.entries += 1;
+        self.bytes += size;
+    }
+}
+
+/// A classified catalog over every mounted game: the searchable index of the merged asset set.
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnifiedIndex {
+    /// Combined entry/byte total.
+    pub total: Count,
+    /// Per game.
+    pub by_game: BTreeMap<String, Count>,
+    /// Per asset kind (`Texture`, `Model`, `Audio`, ...).
+    pub by_kind: BTreeMap<String, Count>,
+    /// Per game, then per kind.
+    pub by_game_kind: BTreeMap<String, BTreeMap<String, Count>>,
+    /// The most common extensions, descending (top 40).
+    pub top_extensions: Vec<(String, usize)>,
+}
+
+/// One search hit addressed by unified `<game>/<path>`.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Hit {
+    /// Owning game label.
+    pub game: String,
+    /// Unified path (`<game>/<entry>`), ready for [`UnifiedVfs::read`].
+    pub path: String,
+    /// Asset kind.
+    pub kind: String,
+    /// Format id (extension or sniffed magic).
+    pub format: String,
+    /// Reported size.
+    pub size: u64,
+}
+
+impl UnifiedVfs {
+    /// Build the classified catalog across every game (no reads; uses listed metadata).
+    #[must_use]
+    pub fn index(&self) -> UnifiedIndex {
+        let mut index = UnifiedIndex::default();
+        let mut extensions: HashMap<String, usize> = HashMap::new();
+        for (game, entry) in self.entries() {
+            let kind = format!("{:?}", entry.kind);
+            index.total.add(entry.size);
+            index.by_game.entry(game.to_string()).or_default().add(entry.size);
+            index.by_kind.entry(kind.clone()).or_default().add(entry.size);
+            index
+                .by_game_kind
+                .entry(game.to_string())
+                .or_default()
+                .entry(kind)
+                .or_default()
+                .add(entry.size);
+            let ext = Path::new(&entry.path)
+                .extension()
+                .and_then(|value| value.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            if !ext.is_empty() {
+                *extensions.entry(ext).or_default() += 1;
+            }
+        }
+        let mut extensions: Vec<(String, usize)> = extensions.into_iter().collect();
+        extensions.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
+        extensions.truncate(40);
+        index.top_extensions = extensions;
+        index
+    }
+
+    /// Entries whose unified path contains `query` (case-insensitive), capped at `limit`.
+    #[must_use]
+    pub fn search(&self, query: &str, limit: usize) -> Vec<Hit> {
+        let needle = query.to_ascii_lowercase();
+        let mut hits = Vec::new();
+        for (game, entry) in self.entries() {
+            let unified = format!("{game}/{}", entry.path);
+            if unified.to_ascii_lowercase().contains(&needle) {
+                hits.push(Hit {
+                    game: game.to_string(),
+                    path: unified,
+                    kind: format!("{:?}", entry.kind),
+                    format: entry.format.clone(),
+                    size: entry.size,
+                });
+                if hits.len() >= limit {
+                    break;
+                }
+            }
+        }
+        hits
     }
 }
 

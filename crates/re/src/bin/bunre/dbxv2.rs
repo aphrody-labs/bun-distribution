@@ -591,7 +591,14 @@ mod media {
                 "out": args.get("--out"),
             }));
         }
-        emit(args.get("--out"), &vfs.stats())
+        if let Some(query) = args.get("--search") {
+            let limit = args
+                .get("--limit")
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(200);
+            return emit(args.get("--out"), &vfs.search(query, limit));
+        }
+        emit(args.get("--out"), &vfs.index())
     }
 
     fn threads(args: &Args) -> usize {
@@ -631,7 +638,10 @@ mod media {
     pub fn main(command: &str, args: &Args) -> ExitCode {
         let single = args.positional.len() == 1;
         match command {
-            "unified" if !args.positional.is_empty() && args.only(&["--read", "--out"]) => {
+            "unified"
+                if !args.positional.is_empty()
+                    && args.only(&["--read", "--search", "--limit", "--out"]) =>
+            {
                 unified(args)
             }
             "extract" if single && args.only(&EXTRACT_OPTIONS) => {
