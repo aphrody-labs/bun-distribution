@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Export a parsed DBXV2 `.emd` object to a binary glTF (GLB), so a Xenoverse model goes through
-//! the same renderer as the Inazuma Eleven models (`aphrody-nie-render3d` / `nie render glb-png`).
+//! Export parsed DBXV2 `.emd` objects to a binary glTF (GLB), so Xenoverse models go through the
+//! same renderer as the Inazuma Eleven models (`aphrody-nie-render3d` / `nie render glb-png`).
 //!
 //! Each EMD submesh becomes one glTF mesh primitive with `POSITION`, `NORMAL` and `TEXCOORD_0`
-//! and `UNSIGNED_INT` indices (triangles). Skinning, tangents, colours and materials are dropped:
-//! this is a geometry bridge for visual inspection, not a faithful asset conversion.
+//! and `UNSIGNED_INT` indices (triangles). [`assemble_glb`] merges several parts (a character's
+//! body pieces share one model space) into one GLB, each part bound to its own EMB texture.
+//! Skinning, tangents, colours and the DYT colour-ramp are dropped: this is a geometry/texture
+//! bridge for visual inspection, not a faithful asset conversion.
 
 use std::io::Write;
 
@@ -20,27 +22,36 @@ const ARRAY_BUFFER: u32 = 34962;
 const ELEMENT_ARRAY_BUFFER: u32 = 34963;
 const TRIANGLES: u32 = 4;
 
-/// Encode `emd` as a self-contained GLB (glТF 2.0 binary), geometry only.
+/// Encode one `emd` as a self-contained GLB, geometry only.
 #[must_use]
 pub fn emd_to_glb(emd: &EmdFile) -> Vec<u8> {
-    emd_to_glb_textured(emd, None)
+    assemble_glb(&[(emd, None)])
 }
 
-/// Encode `emd` as a GLB, optionally binding one PNG texture as the base colour of every mesh.
-///
-/// `texture_png` is a ready PNG (see [`encode_png_rgba`]). When present, a glTF image/sampler/
-/// texture/material is added and assigned to all primitives; when `None`, the model is untextured.
+/// Encode one `emd` as a GLB, optionally binding one PNG texture as the base colour of every mesh.
 #[must_use]
 pub fn emd_to_glb_textured(emd: &EmdFile, texture_png: Option<&[u8]>) -> Vec<u8> {
+    assemble_glb(&[(emd, texture_png)])
+}
+
+/// Merge several `(emd, optional PNG texture)` parts into one GLB — e.g. a character's body pieces.
+///
+/// Parts share model space, so their raw vertex positions align into one model. Each textured
+/// part gets its own glTF image/texture/material, bound to that part's primitives.
+#[must_use]
+pub fn assemble_glb(parts: &[(&EmdFile, Option<&[u8]>)]) -> Vec<u8> {
     let mut bin: Vec<u8> = Vec::new();
     let mut buffer_views: Vec<Value> = Vec::new();
     let mut accessors: Vec<Value> = Vec::new();
     let mut meshes: Vec<Value> = Vec::new();
     let mut nodes: Vec<Value> = Vec::new();
+    let mut images: Vec<Value> = Vec::new();
+    let mut samplers: Vec<Value> = Vec::new();
+    let mut textures: Vec<Value> = Vec::new();
+    let mut materials: Vec<Value> = Vec::new();
 
-    // Append `data` to the binary buffer as a bufferView, 4-byte aligned, and return its index.
-    // Append `data` to the binary buffer as a bufferView, 4-byte aligned, and return its index.
-    // `target` of 0 means none (required for image bufferViews).
+    // Append `data` to the binary buffer as a 4-byte-aligned bufferView; `target` 0 means none
+    // (required for image bufferViews). Returns the bufferView index.
     let mut push_view = |bin: &mut Vec<u8>, buffer_views: &mut Vec<Value>, data: &[u8], target: u32| -> usize {
         while bin.len() % 4 != 0 {
             bin.push(0);
@@ -55,97 +66,91 @@ pub fn emd_to_glb_textured(emd: &EmdFile, texture_png: Option<&[u8]>) -> Vec<u8>
         buffer_views.len() - 1
     };
 
-    for part in &emd.parts {
-        for mesh in &part.meshes {
-            let mut primitives: Vec<Value> = Vec::new();
-            for submesh in &mesh.submeshes {
-                if submesh.vertices.is_empty() || submesh.indices.is_empty() {
+    for (emd, texture_png) in parts {
+        // One material per textured part (bound to that part's meshes below).
+        let material = texture_png.map(|png| {
+            let image_view = push_view(&mut bin, &mut buffer_views, png, 0);
+            images.push(json!({ "bufferView": image_view, "mimeType": "image/png" }));
+            samplers.push(json!({}));
+            textures.push(json!({ "source": images.len() - 1, "sampler": samplers.len() - 1 }));
+            materials.push(json!({
+                "pbrMetallicRoughness": {
+                    "baseColorTexture": { "index": textures.len() - 1 },
+                    "metallicFactor": 0.0,
+                    "roughnessFactor": 1.0,
+                }
+            }));
+            materials.len() - 1
+        });
+
+        for part in &emd.parts {
+            for mesh in &part.meshes {
+                let mut primitives: Vec<Value> = Vec::new();
+                for submesh in &mesh.submeshes {
+                    if submesh.vertices.is_empty() || submesh.indices.is_empty() {
+                        continue;
+                    }
+                    let count = submesh.vertices.len();
+                    let mut positions = Vec::with_capacity(count * 12);
+                    let mut normals = Vec::with_capacity(count * 12);
+                    let mut uvs = Vec::with_capacity(count * 8);
+                    let (mut min, mut max) = ([f32::MAX; 3], [f32::MIN; 3]);
+                    for vertex in &submesh.vertices {
+                        for axis in 0..3 {
+                            min[axis] = min[axis].min(vertex.position[axis]);
+                            max[axis] = max[axis].max(vertex.position[axis]);
+                        }
+                        positions.extend_from_slice(f32x3_le(vertex.position).as_slice());
+                        normals.extend_from_slice(f32x3_le(vertex.normal).as_slice());
+                        uvs.extend_from_slice(&vertex.uv[0].to_le_bytes());
+                        uvs.extend_from_slice(&vertex.uv[1].to_le_bytes());
+                    }
+                    let mut indices = Vec::with_capacity(submesh.indices.len() * 4);
+                    for index in &submesh.indices {
+                        indices.extend_from_slice(&index.to_le_bytes());
+                    }
+
+                    let pos_view = push_view(&mut bin, &mut buffer_views, &positions, ARRAY_BUFFER);
+                    accessors.push(json!({
+                        "bufferView": pos_view, "componentType": FLOAT, "count": count,
+                        "type": "VEC3", "min": min, "max": max,
+                    }));
+                    let pos_acc = accessors.len() - 1;
+                    let nrm_view = push_view(&mut bin, &mut buffer_views, &normals, ARRAY_BUFFER);
+                    accessors.push(json!({
+                        "bufferView": nrm_view, "componentType": FLOAT, "count": count, "type": "VEC3",
+                    }));
+                    let nrm_acc = accessors.len() - 1;
+                    let uv_view = push_view(&mut bin, &mut buffer_views, &uvs, ARRAY_BUFFER);
+                    accessors.push(json!({
+                        "bufferView": uv_view, "componentType": FLOAT, "count": count, "type": "VEC2",
+                    }));
+                    let uv_acc = accessors.len() - 1;
+                    let idx_view = push_view(&mut bin, &mut buffer_views, &indices, ELEMENT_ARRAY_BUFFER);
+                    accessors.push(json!({
+                        "bufferView": idx_view, "componentType": UNSIGNED_INT,
+                        "count": submesh.indices.len(), "type": "SCALAR",
+                    }));
+                    let idx_acc = accessors.len() - 1;
+
+                    let mut primitive = json!({
+                        "attributes": { "POSITION": pos_acc, "NORMAL": nrm_acc, "TEXCOORD_0": uv_acc },
+                        "indices": idx_acc,
+                        "mode": TRIANGLES,
+                    });
+                    if let Some(material) = material {
+                        primitive["material"] = json!(material);
+                    }
+                    primitives.push(primitive);
+                }
+                if primitives.is_empty() {
                     continue;
                 }
-                let count = submesh.vertices.len();
-                let mut positions = Vec::with_capacity(count * 12);
-                let mut normals = Vec::with_capacity(count * 12);
-                let mut uvs = Vec::with_capacity(count * 8);
-                let (mut min, mut max) = ([f32::MAX; 3], [f32::MIN; 3]);
-                for vertex in &submesh.vertices {
-                    for axis in 0..3 {
-                        let value = vertex.position[axis];
-                        min[axis] = min[axis].min(value);
-                        max[axis] = max[axis].max(value);
-                    }
-                    positions.extend_from_slice(bytemuck_f32x3(vertex.position).as_slice());
-                    normals.extend_from_slice(bytemuck_f32x3(vertex.normal).as_slice());
-                    uvs.extend_from_slice(&vertex.uv[0].to_le_bytes());
-                    uvs.extend_from_slice(&vertex.uv[1].to_le_bytes());
-                }
-                let mut indices = Vec::with_capacity(submesh.indices.len() * 4);
-                for index in &submesh.indices {
-                    indices.extend_from_slice(&index.to_le_bytes());
-                }
-
-                let pos_view = push_view(&mut bin, &mut buffer_views, &positions, ARRAY_BUFFER);
-                accessors.push(json!({
-                    "bufferView": pos_view, "componentType": FLOAT, "count": count,
-                    "type": "VEC3", "min": min, "max": max,
-                }));
-                let pos_acc = accessors.len() - 1;
-
-                let nrm_view = push_view(&mut bin, &mut buffer_views, &normals, ARRAY_BUFFER);
-                accessors.push(json!({
-                    "bufferView": nrm_view, "componentType": FLOAT, "count": count, "type": "VEC3",
-                }));
-                let nrm_acc = accessors.len() - 1;
-
-                let uv_view = push_view(&mut bin, &mut buffer_views, &uvs, ARRAY_BUFFER);
-                accessors.push(json!({
-                    "bufferView": uv_view, "componentType": FLOAT, "count": count, "type": "VEC2",
-                }));
-                let uv_acc = accessors.len() - 1;
-
-                let idx_view = push_view(&mut bin, &mut buffer_views, &indices, ELEMENT_ARRAY_BUFFER);
-                accessors.push(json!({
-                    "bufferView": idx_view, "componentType": UNSIGNED_INT,
-                    "count": submesh.indices.len(), "type": "SCALAR",
-                }));
-                let idx_acc = accessors.len() - 1;
-
-                let mut primitive = json!({
-                    "attributes": { "POSITION": pos_acc, "NORMAL": nrm_acc, "TEXCOORD_0": uv_acc },
-                    "indices": idx_acc,
-                    "mode": TRIANGLES,
-                });
-                if texture_png.is_some() {
-                    primitive["material"] = json!(0);
-                }
-                primitives.push(primitive);
+                meshes.push(json!({ "name": mesh.name, "primitives": primitives }));
+                nodes.push(json!({ "name": mesh.name, "mesh": meshes.len() - 1 }));
             }
-            if primitives.is_empty() {
-                continue;
-            }
-            meshes.push(json!({ "name": mesh.name, "primitives": primitives }));
-            nodes.push(json!({ "name": mesh.name, "mesh": meshes.len() - 1 }));
         }
     }
-
-    // Embed the texture (as a bufferView without a target) before the buffer is finalised.
-    let (images, samplers, textures, materials) = match texture_png {
-        Some(png) => {
-            let image_view = push_view(&mut bin, &mut buffer_views, png, 0);
-            (
-                json!([ { "bufferView": image_view, "mimeType": "image/png" } ]),
-                json!([ {} ]),
-                json!([ { "source": 0, "sampler": 0 } ]),
-                json!([ {
-                    "pbrMetallicRoughness": {
-                        "baseColorTexture": { "index": 0 },
-                        "metallicFactor": 0.0,
-                        "roughnessFactor": 1.0,
-                    }
-                } ]),
-            )
-        }
-        None => (json!([]), json!([]), json!([]), json!([])),
-    };
 
     let mut gltf = json!({
         "asset": { "version": "2.0", "generator": "bunre dbxv2 emd-glb" },
@@ -157,17 +162,17 @@ pub fn emd_to_glb_textured(emd: &EmdFile, texture_png: Option<&[u8]>) -> Vec<u8>
         "bufferViews": buffer_views,
         "buffers": [ { "byteLength": bin.len() } ],
     });
-    if texture_png.is_some() {
-        gltf["images"] = images;
-        gltf["samplers"] = samplers;
-        gltf["textures"] = textures;
-        gltf["materials"] = materials;
+    if !materials.is_empty() {
+        gltf["images"] = json!(images);
+        gltf["samplers"] = json!(samplers);
+        gltf["textures"] = json!(textures);
+        gltf["materials"] = json!(materials);
     }
 
     package_glb(&serde_json::to_vec(&gltf).unwrap_or_default(), &bin)
 }
 
-fn bytemuck_f32x3(values: [f32; 3]) -> [u8; 12] {
+fn f32x3_le(values: [f32; 3]) -> [u8; 12] {
     let mut out = [0u8; 12];
     for (slot, value) in out.chunks_exact_mut(4).zip(values) {
         slot.copy_from_slice(&value.to_le_bytes());

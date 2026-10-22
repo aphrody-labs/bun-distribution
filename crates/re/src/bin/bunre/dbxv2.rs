@@ -38,6 +38,7 @@ Usage: bunre dbxv2 <command> ...
           [--out <file>]                      mount several games under one <game>/<path> view
   emb <file.emb> --output-dir <new-dir>       unpack one EMB container
   emd-glb <file.emd> --out <file.glb>         export a DBXV2 model to GLB (renders via nie render)
+  chara-glb <chara-dir> <prefix> --out <glb>  assemble a whole character's parts into one GLB
   tex <root> | audio <root> | models <root> | parse <root>
   text <file.msg> [--output <new-file>] | text <dir> [--output-dir <new-dir>]
   report <out> [--game <game>]                aggregate manifests -> reports/GLOBAL_REPORT.json
@@ -623,6 +624,57 @@ mod media {
         bun_re::game::emd_gltf::encode_png_rgba(texture.width, texture.height, &texture.rgba)
     }
 
+    /// Assemble every body part `<prefix>_*.emd` in `chara_dir` (skipping LOD meshes) into one
+    /// textured GLB — a whole DBXV2 character through the nie renderer.
+    fn chara_glb(chara_dir: &Path, prefix: &str, out: &str) -> ExitCode {
+        let mut entries: Vec<std::path::PathBuf> = match std::fs::read_dir(chara_dir) {
+            Ok(dir) => dir
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| {
+                    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+                    name.starts_with(prefix)
+                        && name.ends_with(".emd")
+                        && !name.contains("_LOD")
+                })
+                .collect(),
+            Err(error) => return fail(format!("could not list {}: {error}", chara_dir.display())),
+        };
+        entries.sort();
+        if entries.is_empty() {
+            return fail(format!("no {prefix}_*.emd under {}", chara_dir.display()));
+        }
+
+        // Keep each part's parsed EMD and PNG alive while assemble_glb borrows them.
+        let mut owned: Vec<(bun_re::game::EmdFile, Option<Vec<u8>>)> = Vec::new();
+        let mut names = Vec::new();
+        for path in &entries {
+            let Ok(bytes) = std::fs::read(path) else { continue };
+            let Ok(emd) = bun_re::game::EmdFile::parse(&bytes) else {
+                continue;
+            };
+            owned.push((emd, texture_png_for_emd(path)));
+            names.push(path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string());
+        }
+        if owned.is_empty() {
+            return fail("no part parsed");
+        }
+        let refs: Vec<(&bun_re::game::EmdFile, Option<&[u8]>)> =
+            owned.iter().map(|(emd, tex)| (emd, tex.as_deref())).collect();
+        let glb = bun_re::game::emd_gltf::assemble_glb(&refs);
+        let textured = owned.iter().filter(|(_, tex)| tex.is_some()).count();
+        match std::fs::write(out, &glb) {
+            Ok(()) => print_json(&json!({
+                "character": prefix,
+                "glb": out,
+                "bytes": glb.len(),
+                "parts": names,
+                "textured_parts": textured,
+            })),
+            Err(error) => fail(format!("could not write {out}: {error}")),
+        }
+    }
+
     fn threads(args: &Args) -> usize {
         args.get("--threads")
             .and_then(|value| value.parse().ok())
@@ -688,6 +740,12 @@ mod media {
                     })),
                     Err(error) => fail(format!("could not write {out}: {error}")),
                 }
+            }
+            "chara-glb" if args.positional.len() == 2 && args.only(&["--out"]) => {
+                let Some(out) = args.get("--out") else {
+                    return usage();
+                };
+                chara_glb(Path::new(&args.positional[0]), &args.positional[1], out)
             }
             "merge" if single && args.only(&["--out"]) => {
                 let Some(out) = args.get("--out") else {
