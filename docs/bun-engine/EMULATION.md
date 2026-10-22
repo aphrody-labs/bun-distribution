@@ -58,8 +58,11 @@ binding with pad input: Nintendo DS runs with `desmume` (software, 2.9 ms per fr
 `melondsds` (software 2.4 ms, OpenGL Core 4.6 about 33 ms) and `melonds` (2.4 ms; its binary
 needs `patchelf --clear-execstack` on current glibc); 3DS runs with `azahar` (Vulkan, about 39 ms,
 FBI shows and reacts); GameCube and Wii run with `dolphin` (Snes9xGX homebrew: GameCube about
-14 ms per frame, Wii about 16 ms, OpenGL Core 4.6 on llvmpipe), while the Swiss loader stalls
-at its frame 72 inside the guest (the video interface stops; not our driver, a core-side stall). No commercial title was tried. DS needs no BIOS (FreeBIOS), and
+14 ms per frame, Wii about 16 ms, OpenGL Core 4.6 on llvmpipe), while the Swiss loader hung at its frame 72 inside the core: Swiss sends SI command 0x1D (set game
+ID) to the pad port, `CSIDevice_GCController::RunBuffer` answered 0 ("not ready, retry") with a transfer
+interval of 0, and `CoreTimingManager::Advance` rescheduled the transfer at the same time forever. With
+`return -1` instead (patch in `docs/bun-engine/patches/`, for libretro/dolphin) Swiss draws its menu.
+No commercial title was tried. DS needs no BIOS (FreeBIOS), and
 `dolphin` needs its `Sys` folder under `system/dolphin-emu` (`assets/system/Dolphin.zip` on the
 libretro buildbot).
 

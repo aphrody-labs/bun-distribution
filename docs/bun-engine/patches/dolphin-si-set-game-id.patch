@@ -1,0 +1,17 @@
+diff --git a/Source/Core/Core/HW/SI/SI_DeviceGCController.cpp b/Source/Core/Core/HW/SI/SI_DeviceGCController.cpp
+index 1f7a7b6..963c138 100644
+--- a/Source/Core/Core/HW/SI/SI_DeviceGCController.cpp
++++ b/Source/Core/Core/HW/SI/SI_DeviceGCController.cpp
+@@ -100,7 +100,11 @@ int CSIDevice_GCController::RunBuffer(u8* buffer, int request_length)
+   // adapter, while licensed accessories ignore this command.
+   case EBufferCommands::CMD_SET_GAME_ID:
+   {
+-    return 0;
++    // Returning 0 means "response not ready, retry after TransferInterval()". This device has
++    // TransferInterval() == 0, so SITransferPending would reschedule itself at the current
++    // time forever inside CoreTimingManager::Advance(), hanging the CPU thread. Complete the
++    // transfer with no response instead, like a licensed controller ignoring the command.
++    return -1;
+   }
+ 
+   // DEFAULT
