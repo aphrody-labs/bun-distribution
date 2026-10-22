@@ -902,9 +902,15 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
     {
         let mut pos = 0;
         let mut count = 0;
+        let string_table_end = string_table_off
+            .saturating_add(string_table_len)
+            .min(data.len());
         while pos < string_table_len && count < string_table_count {
             let start = string_table_off + pos;
-            let slice = &data[start..string_table_off + string_table_len];
+            if start >= string_table_end {
+                break;
+            }
+            let slice = &data[start..string_table_end];
             let nul = slice.iter().position(|&b| b == 0).unwrap_or(slice.len());
             let s = String::from_utf8_lossy(&slice[..nul]).into_owned();
             strings.insert(pos as i32, s.clone());
@@ -953,7 +959,15 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
                         i32::from_le_bytes(data[ep + 4..ep + 8].try_into().unwrap()) as usize;
 
                     if str_start < key_str_len {
-                        let slice = &data[str_blob + str_start..key_table_offset + key_length];
+                        // A file misidentified as a key table yields offsets read straight from
+                        // unrelated bytes (e.g. the float 1.0 == 0x3F800000): bound the range
+                        // instead of slicing with it and panicking.
+                        let start = str_blob.saturating_add(str_start);
+                        let end = key_table_offset.saturating_add(key_length);
+                        if start > end || end > data.len() {
+                            continue;
+                        }
+                        let slice = &data[start..end];
                         let nul = slice.iter().position(|&b| b == 0).unwrap_or(slice.len());
                         let s = String::from_utf8_lossy(&slice[..nul]).into_owned();
                         key_table.insert(crc, s);
