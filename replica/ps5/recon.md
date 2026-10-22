@@ -6,6 +6,17 @@ Scope: study how a living-room console home is organised so the Bun Engine libra
 game art, icon, typeface, copy or colour value is taken; no screenshot is stored in this repository.
 PlayStation and the game titles shown belong to their owners.
 
+## Owner decision (2026-10-22)
+
+Build our own console-grade UI and our own gamescope session at the same feature set and the same
+level of finish as a current console home, with no copied material: our name, our wording, our
+colours (M3 role tokens), our open typeface, our icons (open set), art from open homebrew captures only.
+"Premium" is defined by measurable rules, not by imitation: 60 fps interaction, focus moves in at most
+100 ms, every state designed (empty, loading, error, offline), AA contrast everywhere
+(`docs/bun-engine/design/tokens.json`), reduced-motion honoured, full D-pad and keyboard reach, and
+one visible focus treatment. Generic output of the design search tool (light palette, fashion fonts,
+glass style) was reviewed and rejected: it does not fit a dark 10-foot gamepad surface.
+
 ## Sources
 
 | Source | URL | Evidence |

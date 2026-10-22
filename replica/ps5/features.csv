@@ -9,3 +9,14 @@ Media-app tiles,apps,could,yes,no,only if bun-engine launches non-game apps
 Store front and prices,store,skip,yes,skip,owned catalogue and commerce
 Trophies parties messages,social,skip,yes,skip,network and accounts
 Game and promo art,content,skip,yes,skip,licensed material; use our own homebrew captures
+Quick menu overlay in game (resume, stop, save state, screenshot, volume),gamescope session,must,yes,no,opens on a pad chord without leaving the game; returns focus
+Performance overlay toggle (fps, frame time),gamescope session,should,yes,no,MangoHud or our own counter; off by default
+Suspend and resume the running game,gamescope session,should,yes,no,SIGSTOP/SIGCONT on the game process or core pause; state kept
+Notifications toast (download done, controller low battery),gamescope session,could,yes,no,aria-live polite; never steals focus
+Controller glyph hints in the footer (A select, B back),home,must,yes,no,glyphs follow the connected pad; our own icon set
+Power and session menu (sleep, restart, exit to desktop),gamescope session,must,yes,no,confirm dialog with the safe choice focused
+Multi-profile with per-profile saves and recents,home,should,yes,no,library.db profile column; profile overlay
+Settings (display, audio, controllers, network, storage),settings,must,yes,no,reads real state from the host; no fake toggles
+Search with on-screen keyboard for the pad,search,should,yes,no,pad-first keyboard; real keyboard still works
+Cover art and hero from homebrew captures,home,must,yes,no,from the homebrew showcase; no third-party art
+Sounds for focus and select,audio,could,yes,no,our own short sounds; mutable; never required
