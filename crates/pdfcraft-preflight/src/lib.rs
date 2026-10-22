@@ -297,10 +297,53 @@ impl DeviceColour {
     }
 }
 
+/// Streams that are data, not content: font programs, CMaps, CIDToGIDMap, metadata, ICC profiles
+/// and embedded files. Their bytes can hold `k`/`K` between NULs (whitespace in PDF), which must
+/// not read as a CMYK operator.
+fn data_streams(objs: &[(ObjRef, std::sync::Arc<Object>)]) -> std::collections::HashSet<ObjRef> {
+    const KEYS: [&[u8]; 9] = [
+        b"FontFile",
+        b"FontFile2",
+        b"FontFile3",
+        b"CIDToGIDMap",
+        b"ToUnicode",
+        b"Encoding",
+        b"Metadata",
+        b"DestOutputProfile",
+        b"CIDSet",
+    ];
+    let mut out = std::collections::HashSet::new();
+    for (_, o) in objs {
+        let Some(d) = dict_of(o) else { continue };
+        for k in KEYS {
+            if let Some(Object::Ref(r)) = d.get(k) {
+                out.insert(*r);
+            }
+        }
+        // /EF << /F 12 0 R /UF 12 0 R >> of a file specification.
+        if let Some(Object::Dict(ef)) = d.get(b"EF") {
+            for k in [b"F".as_slice(), b"UF", b"DOS", b"Mac", b"Unix"] {
+                if let Some(Object::Ref(r)) = ef.get(k) {
+                    out.insert(*r);
+                }
+            }
+        }
+        // ICCBased colour spaces: [/ICCBased 7 0 R].
+        if let Some(Object::Array(a)) = d.get(b"ColorSpace")
+            && a.first().and_then(Object::as_name) == Some(b"ICCBased")
+            && let Some(Object::Ref(r)) = a.get(1)
+        {
+            out.insert(*r);
+        }
+    }
+    out
+}
+
 /// Whether any content or object uses a device colour space.
 fn uses_device_colour(doc: &Document, objs: &[(ObjRef, std::sync::Arc<Object>)]) -> DeviceColour {
     let mut used = DeviceColour::default();
-    for (_, o) in objs {
+    let data = data_streams(objs);
+    for (r, o) in objs {
         let Some(d) = dict_of(o) else { continue };
         // A resource dictionary's /ColorSpace, whether it is this object or the page's inline
         // /Resources.
@@ -325,6 +368,10 @@ fn uses_device_colour(doc: &Document, objs: &[(ObjRef, std::sync::Arc<Object>)])
             }
         }
         if let Object::Stream(s) = &**o
+            && !data.contains(r)
+            && d.get(b"Length1").is_none()
+            && d.get(b"Length2").is_none()
+            && d.get(b"Length3").is_none()
             && d.get(b"Type").is_none()
             && d.get(b"Subtype")
                 .is_none_or(|t| t.as_name() == Some(b"Form"))
