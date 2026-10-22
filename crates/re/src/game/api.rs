@@ -13,8 +13,8 @@ use crate::game::convert;
 use crate::game::{
     ReError, Result,
     formats::{
-        cms::CmsFile, cus::CusFile, emb_archive::EmbArchive, emd::EmdFile, esk::EskFile,
-        msg::MsgFile, pup::PupFile,
+        cms::CmsFile, cus::CusFile, ema::EmaFile, emb_archive::EmbArchive, emd::EmdFile,
+        emo::EmoFile, esk::EskFile, msg::MsgFile, pup::PupFile,
     },
     gameplay::{self, Loaded},
 };
@@ -37,7 +37,7 @@ pub fn category_of(extension: &str) -> &'static str {
         "cpk" => "archive",
         "emd" | "emo" | "nsk" | "emg" => "model",
         "esk" => "skeleton",
-        "ean" | "cam" => "animation",
+        "ean" | "cam" | "ema" => "animation",
         "bac" | "bcm" | "bdm" | "bsa" | "bas" => "battle",
         "bai" => "ai",
         "bcs" | "cms" | "cus" | "cso" | "psc" | "pup" => "character",
@@ -56,11 +56,11 @@ pub fn category_of(extension: &str) -> &'static str {
     }
 }
 
-const KNOWN: [&str; 46] = [
-    "cpk", "emd", "emo", "nsk", "emg", "esk", "ean", "cam", "bac", "bcm", "bdm", "bsa", "bas",
-    "bai", "bcs", "cms", "cus", "cso", "psc", "pup", "eepk", "emp", "etr", "ecf", "aur", "ait",
-    "emb", "emm", "dds", "dyt", "hca", "acb", "awb", "afs2", "adx", "usm", "msg", "idb", "qxd",
-    "qml", "tsd", "tnl", "tsr", "iggy", "gfx", "spm",
+const KNOWN: [&str; 47] = [
+    "cpk", "emd", "emo", "ema", "nsk", "emg", "esk", "ean", "cam", "bac", "bcm", "bdm", "bsa",
+    "bas", "bai", "bcs", "cms", "cus", "cso", "psc", "pup", "eepk", "emp", "etr", "ecf", "aur",
+    "ait", "emb", "emm", "dds", "dyt", "hca", "acb", "awb", "afs2", "adx", "usm", "msg", "idb",
+    "qxd", "qml", "tsd", "tnl", "tsr", "iggy", "gfx", "spm",
 ];
 
 #[cfg(feature = "dbxv2")]
@@ -91,6 +91,8 @@ pub fn identify(bytes: &[u8], file_name: &str) -> FormatInfo {
         b"CRID" => Some("usm"),
         b"#EMB" => Some("emb"),
         b"#EMD" => Some("emd"),
+        b"#EMO" => Some("emo"),
+        b"#EMA" => Some("ema"),
         b"#ESK" => Some("esk"),
         b"#EAN" => Some("ean"),
         b"#EMM" => Some("emm"),
@@ -201,6 +203,30 @@ pub fn summarize(bytes: &[u8], file_name: &str) -> Result<Value> {
                 "parts": parts,
             })
         }
+        "emo" => {
+            let object = EmoFile::parse(bytes)?;
+            let parts: Vec<Value> = object
+                .parts
+                .iter()
+                .map(|part| {
+                    let submeshes: Vec<&str> = part
+                        .meshes
+                        .iter()
+                        .flat_map(|mesh| &mesh.submeshes)
+                        .map(|sub| sub.name.as_str())
+                        .collect();
+                    let vertices: usize = part.meshes.iter().map(|mesh| mesh.vertices.len()).sum();
+                    json!({ "name": part.name, "meshes": part.meshes.len(), "vertices": vertices, "submeshes": submeshes })
+                })
+                .collect();
+            json!({
+                "version": object.version,
+                "triangles": object.total_triangles(),
+                "parts": parts,
+                "nodes": object.nodes,
+            })
+        }
+        "ema" => to_value(&EmaFile::parse(bytes)?)?,
         "cms" => to_value(&CmsFile::parse(bytes)?)?,
         "cus" => to_value(&CusFile::parse(bytes)?)?,
         "pup" => to_value(&PupFile::parse(bytes)?)?,
@@ -334,8 +360,16 @@ pub fn support() -> Value {
         ),
         row("emm", "header", "validated walk; header fields only"),
         row("eepk", "identify", "no reader"),
-        row("ema", "identify", "no reader"),
-        row("emo", "identify", "no reader"),
+        row(
+            "ema",
+            "full",
+            "object, material and light motions: key frames, values, tangents, node tree"
+        ),
+        row(
+            "emo",
+            "full",
+            "parts, EMG meshes (all vertex attributes), texture lists, node tree"
+        ),
     ])
 }
 
