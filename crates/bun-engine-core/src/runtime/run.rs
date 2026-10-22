@@ -25,6 +25,10 @@ pub struct RunOptions {
     /// Upscale with FSR1 instead of nearest-neighbour sprites.
     pub fsr: bool,
     pub sharpness_stops: f32,
+    /// Display filter name (`display-filter`): off, plain, scanlines, crt, lcd, sharp.
+    pub filter: Option<String>,
+    /// Integer scaling for the filtered view.
+    pub integer_scale: bool,
 }
 
 /// What the app reported when it exited.
@@ -65,6 +69,18 @@ pub fn machine_app(
             sharpness_stops: options.sharpness_stops,
             target: None,
         });
+    }
+    #[cfg(feature = "display-filter")]
+    if !options.headless {
+        let mut filter = app.world_mut().resource_mut::<super::display_filter::DisplayFilter>();
+        if let Some(kind) = options
+            .filter
+            .as_deref()
+            .and_then(super::display_filter::FilterKind::parse)
+        {
+            filter.kind = kind;
+        }
+        filter.integer_scale = options.integer_scale;
     }
     let report = Arc::new(Mutex::new(RunReport::default()));
     app.insert_resource(ReportSink(report.clone()))

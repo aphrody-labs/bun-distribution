@@ -130,3 +130,14 @@ focus, gamepads).
 
 `examples/bevy_web.rs` (`--target wasm32-unknown-unknown --no-default-features --features
 runtime-web,nes`): the NES machine on Bevy's WebGPU backend in `<canvas id="bun-engine">`.
+
+## Display filters and shell (`display-filter`, `shell`; both in `default`)
+
+- `runtime::display_filter`: `DisplayFilter { kind, strength, integer_scale, cycle_key }` resource
+  (kinds off, plain, scanlines, crt, lcd, sharp). A `Material2d` quad with `display_filter.wesl`
+  replaces the nearest sprite while the kind is not `off`. `F2` cycles; CLI `--filter NAME
+  [--integer-scale]`.
+- `runtime::shell`: `ShellState` (`Home`, `Playing`, `QuickMenu`), quick menu on `F1` / gamepad
+  Mode (Resume, Save state, Load state, Screenshot, Stop; pauses the machine), `F3` performance
+  overlay. States and screenshots go under `ShellConfig::state_dir`.
+- Audit of the Bevy capabilities not used yet: `BEVY-AUDIT.md`.

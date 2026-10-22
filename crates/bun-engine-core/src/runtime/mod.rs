@@ -7,11 +7,15 @@
 
 #[cfg(feature = "audio")]
 pub mod audio;
+#[cfg(feature = "display-filter")]
+pub mod display_filter;
 #[cfg(feature = "render")]
 pub mod fsr1;
 pub mod input;
 pub mod machine;
 pub mod run;
+#[cfg(feature = "shell")]
+pub mod shell;
 #[cfg(all(feature = "render", feature = "steam"))]
 pub mod steam;
 
@@ -221,6 +225,10 @@ impl BunEnginePlugin {
             app.add_systems(Update, exit_on_escape);
         }
         app.add_plugins((fsr1::Fsr1Plugin, machine::MachineRuntimePlugin));
+        #[cfg(feature = "display-filter")]
+        app.add_plugins(display_filter::DisplayFilterPlugin);
+        #[cfg(feature = "shell")]
+        app.add_plugins(shell::ShellPlugin);
     }
 }
 

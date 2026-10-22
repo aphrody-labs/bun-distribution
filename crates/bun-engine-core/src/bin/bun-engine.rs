@@ -6,7 +6,7 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--steam [--steam-*]]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--filter off|plain|scanlines|crt|lcd|sharp] [--integer-scale] [--steam [--steam-*]]";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -68,6 +68,7 @@ fn main() -> ExitCode {
     // Headless replay: scripted pad input and a per-frame screen digest trace (`re replica`).
     let (mut script, mut trace) = (Vec::<(u32, u64, u64)>::new(), None::<PathBuf>);
     let (mut fsr, mut sharpness) = (false, 0.25_f32);
+    let (mut filter, mut integer_scale) = (None::<String>, false);
     #[cfg(feature = "steam")]
     let mut steam_args = Vec::<String>::new();
     let mut cmdline = String::from(
@@ -86,6 +87,8 @@ fn main() -> ExitCode {
             },
             "--trace" => trace = args.next().map(PathBuf::from),
             "--fsr" => fsr = true,
+            "--filter" => filter = args.next(),
+            "--integer-scale" => integer_scale = true,
             "--sharpness" => {
                 sharpness = args
                     .next()
@@ -192,6 +195,8 @@ fn main() -> ExitCode {
             out,
             fsr,
             sharpness_stops: sharpness,
+            filter,
+            integer_scale,
             ..Default::default()
         };
         // Steam starts before the window and GPU device (overlay hook), so before `machine_app`.

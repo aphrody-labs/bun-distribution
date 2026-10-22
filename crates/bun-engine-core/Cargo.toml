@@ -11,7 +11,7 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
-default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream"]
+default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream", "display-filter", "shell"]
 # Nintendo DS on Dust through aphrody-nds-sdk (software 2D/3D rendering, saves, saved states).
 nds = ["dep:aphrody-nds-sdk", "aphrody-nds-sdk/nds"]
 # Dust 2D/3D on the host's existing WGPU 30 device; CPU mode remains available.
@@ -62,6 +62,12 @@ render = [
     "bevy/keyboard",
     "bevy/mouse",
 ]
+# Display filters for the machine picture (scanlines, CRT, LCD grid, sharp bilinear, integer
+# scaling) on a Material2d quad: `runtime::display_filter`.
+display-filter = ["render"]
+# Shell UI: app states (bevy_state), quick menu (Resume/Save/Load/Screenshot/Stop) and the
+# performance overlay in bevy_ui: `runtime::shell`.
+shell = ["render", "bevy/bevy_state"]
 # The desktop window (Bevy DefaultPlugins, multi-threaded, X11/Wayland on Linux).
 window = ["render", "dep:aphrody-gpu-backend", "bevy/multi_threaded", "bevy/x11", "bevy/wayland"]
 # Machine audio on a bevy_audio sink (ALSA on Linux).
