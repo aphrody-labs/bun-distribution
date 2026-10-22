@@ -132,3 +132,8 @@ left out of the landing page and reported by the script.
 - Not applied: the Worker `aphrody-webos` is deployed only by `apps/webos/deploy.ts` from a pushed commit in the
   protected environment. Craft hosts already answer `301 https://aphrody.com/?app=<id>` from the deployed Worker;
   the path form (`/light`) arrives with the next deployment.
+- Zone `aphrody.app`, ruleset `4189be37cb1b498390a81986470650a7` (phase `http_request_dynamic_redirect`), rule
+  `8d637dcb359446369ad4d93fdf21b8d2`: on host `aphrody.app`, `/install`, `/install.sh`, `/install.ps1`,
+  `/llms.txt`, `/llms-full.txt`, `/docs/*` and `/api/bun/*` answer a 301 to the same path on
+  `https://bun.aphrody.app` (query kept), because the Bun site lives there. Requested by the bun repo owner
+  session and confirmed by the owner. The existing `www.aphrody.app` rule is untouched. To undo, delete the rule.
