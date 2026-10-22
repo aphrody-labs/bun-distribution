@@ -4,6 +4,7 @@
   --panel: var(--md-sys-color-surface-container, #0f131d);
   --panel-2: var(--md-sys-color-surface-container-high, #151a27);
   --line: var(--md-sys-color-outline-variant, #232a3c);
+  --field: var(--md-sys-color-outline, #6b7690);
   --text: var(--md-sys-color-on-surface, #eef2fb);
   --muted: var(--md-sys-color-on-surface-variant, #8d97b0);
   --focus: var(--md-sys-color-tertiary, #ffd34d);
@@ -515,7 +516,7 @@ td.buttons button {
 .add input,
 .add select {
   background: var(--panel-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field);
   border-radius: 0.7rem;
   padding: 0.5rem 0.8rem;
 }
