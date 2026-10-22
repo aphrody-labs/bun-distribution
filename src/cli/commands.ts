@@ -178,6 +178,8 @@ define(
       "toolchains/**",
       "--ignore-pattern",
       "**/fixtures/**",
+      "--ignore-pattern",
+      "**/node_modules/**",
       ...LINT_PATHS,
     ),
   },
