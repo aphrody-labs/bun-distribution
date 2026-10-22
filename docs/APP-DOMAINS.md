@@ -12,26 +12,70 @@ inventory, which Infra also checks against its desired state. Bun owns Worker
 runtime and routing configuration. The homepage, www redirect and assets/dist
 R2 custom domains retain their existing owners.
 
-## Hosts
+## Canonical origin and paths
 
-| App | Canonical hostname | Existing alias | Edge owner |
+The canonical origin is https://aphrody.com. Product hosts are no longer
+separate identities: each one answers a permanent 301 to a path of the apex,
+preserving the sub-path and query string. The declarative source is
+`infra/config/routes.catalog.json` (host to `{kind, path, keep}`, plus the
+path to WebOS package map). The WebOS Worker (`apps/webos/worker/index.ts`)
+derives `redirectFor` from it, the WebOS shell opens the package of a catalog
+path, and the legacy `/?app=<package>` link redirects to the package path.
+`bun.aphrody.com` now redirects straight to the apex (no hop through
+aphrody.app).
+
+Hosts that stay separate (`keep: true`): `git.aphrody.app`, `source.aphrody.app`, `deploy.aphrody.app`, `downloads.aphrody.com`, `cdn.aphrody.com`, `assets.aphrody.app`, `dist.aphrody.app`, `nie.aphrody.com`.
+
+| Host | Kind | Redirects to |
 | --- | --- | --- |
-| Video | https://app-video.aphrody.app | https://filmcraft.aphrody.app | aphrody-app |
-| Generation | https://app-generation.aphrody.app | https://artcraft.aphrody.app | aphrody-app |
-| Images | https://app-images.aphrody.app | https://photocraft.aphrody.app | aphrody-app |
-| Vectors | https://app-vectors.aphrody.app | https://vectorcraft.aphrody.app | aphrody-app |
-| Compositing | https://app-compositing.aphrody.app | https://effectcraft.aphrody.app | aphrody-app |
-| Photo processing | https://app-photo-processing.aphrody.app | https://lightcraft.aphrody.app | aphrody-app |
-| PDF | https://app-pdf.aphrody.app | https://pdfcraft.aphrody.app | aphrody-app |
-| Documents | https://app-documents.aphrody.app | https://wordcraft.aphrody.app | aphrody-app |
-| Audio | https://app-audio.aphrody.app | https://soundcraft.aphrody.app | aphrody-app |
-| Layout | https://app-layout.aphrody.app | https://designcraft.aphrody.app | aphrody-app |
-| CAD | https://app-cad.aphrody.app | https://cadcraft.aphrody.app | aphrody-app |
-| Slides | https://app-slides.aphrody.app | https://deckcraft.aphrody.app | aphrody-app |
-| Tables | https://app-tables.aphrody.app | https://gridcraft.aphrody.app | aphrody-app |
-| Interface layouts | https://app-interface-layouts.aphrody.app | https://figcraft.aphrody.app | aphrody-app |
-| APT | https://apt.aphrody.app | — | aphrody-app |
-| Desktop | https://desktop.aphrody.app | — | aphrody-app |
+| app-video.aphrody.app | app | https://aphrody.com/film |
+| filmcraft.aphrody.app | craft-alias | https://aphrody.com/film |
+| app-generation.aphrody.app | app | https://aphrody.com/art |
+| artcraft.aphrody.app | craft-alias | https://aphrody.com/art |
+| app-images.aphrody.app | app | https://aphrody.com/photo |
+| photocraft.aphrody.app | craft-alias | https://aphrody.com/photo |
+| app-vectors.aphrody.app | app | https://aphrody.com/vector |
+| vectorcraft.aphrody.app | craft-alias | https://aphrody.com/vector |
+| app-compositing.aphrody.app | app | https://aphrody.com/effect |
+| effectcraft.aphrody.app | craft-alias | https://aphrody.com/effect |
+| app-photo-processing.aphrody.app | app | https://aphrody.com/light |
+| lightcraft.aphrody.app | craft-alias | https://aphrody.com/light |
+| app-pdf.aphrody.app | app | https://aphrody.com/pdf |
+| pdfcraft.aphrody.app | craft-alias | https://aphrody.com/pdf |
+| app-documents.aphrody.app | app | https://aphrody.com/word |
+| wordcraft.aphrody.app | craft-alias | https://aphrody.com/word |
+| app-audio.aphrody.app | app | https://aphrody.com/sound |
+| soundcraft.aphrody.app | craft-alias | https://aphrody.com/sound |
+| app-layout.aphrody.app | app | https://aphrody.com/design |
+| designcraft.aphrody.app | craft-alias | https://aphrody.com/design |
+| app-cad.aphrody.app | app | https://aphrody.com/cad |
+| cadcraft.aphrody.app | craft-alias | https://aphrody.com/cad |
+| app-slides.aphrody.app | app | https://aphrody.com/deck |
+| deckcraft.aphrody.app | craft-alias | https://aphrody.com/deck |
+| app-tables.aphrody.app | app | https://aphrody.com/grid |
+| gridcraft.aphrody.app | craft-alias | https://aphrody.com/grid |
+| app-interface-layouts.aphrody.app | app | https://aphrody.com/fig |
+| figcraft.aphrody.app | craft-alias | https://aphrody.com/fig |
+| craft.aphrody.app | craft | https://aphrody.com/art (sub-paths kept) |
+| play.aphrody.app | product | https://aphrody.com/play |
+| apt.aphrody.app | product | https://aphrody.com/apps |
+| desktop.aphrody.app | product | https://aphrody.com/apps |
+| os.aphrody.com | product | https://aphrody.com/os |
+| creator.aphrody.com | product | https://aphrody.com/creator |
+| bun.aphrody.com | product | https://aphrody.com/ |
+| aphrody.app | legacy-apex | https://aphrody.com/ |
+| www.aphrody.app | legacy-apex | https://aphrody.com/ |
+| www.aphrody.com | www | https://aphrody.com/ (sub-paths kept) |
+
+`play.aphrody.app/` still goes through `playRedirect` to `/workspace/games`
+first. `os.aphrody.com` and `creator.aphrody.com` are served by their nginx
+vhosts today and only follow the catalog once their vhosts redirect. The
+sections below describe the pre-consolidation hostnames and the DNS, Worker
+route and custom-domain ownership those redirects still rely on.
+
+## Previous hosts
+
+The 14 library applications keep `app-<capability>.aphrody.app` plus the library alias until Cloudflare routes are removed; both redirect as listed above.
 
 ## Routing and qualification
 

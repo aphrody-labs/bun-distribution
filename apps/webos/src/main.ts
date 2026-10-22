@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import routeCatalog from "../../../infra/config/routes.catalog.json";
 import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { activityApp } from "./apps/activity";
 import { appStore } from "./apps/appstore";
@@ -978,7 +979,13 @@ installKeys(wm, {
 });
 
 void registerServiceWorker();
-const wanted = new URLSearchParams(location.search).get("app");
+// /?app=<package> (legacy) or a catalog path such as /pdf both select the package to open.
+const wanted =
+  new URLSearchParams(location.search).get("app") ??
+  (routeCatalog.apps as Record<string, string>)[
+    location.pathname.replace(/\/+$/, "")
+  ] ??
+  null;
 void reconcile()
   .then(registry)
   .then((entries) => {

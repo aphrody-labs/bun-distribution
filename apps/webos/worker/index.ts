@@ -3,6 +3,7 @@
 import { workspaceResponse } from "./workspace";
 import { gameContentResponse } from "./game-content";
 import { playRedirect, playResponse } from "./play";
+import catalog from "../../../infra/config/routes.catalog.json";
 
 interface R2ObjectBodyLike {
   body: ReadableStream;
@@ -239,53 +240,40 @@ const LEGACY_ROUTES = [
 ];
 const LEGACY_ORIGIN = "https://aphrody.app";
 
-/** Old product hosts redirect to the Web OS; each Craft capability opens its package. */
-const CRAFT_PACKAGE: Record<string, string> = {
-  craft: "creative",
-  filmcraft: "craft-film",
-  video: "craft-film",
-  artcraft: "creative",
-  generation: "creative",
-  photocraft: "craft-photo",
-  images: "craft-photo",
-  vectorcraft: "craft-vector",
-  vectors: "craft-vector",
-  effectcraft: "craft-effect",
-  compositing: "craft-effect",
-  lightcraft: "craft-light",
-  "photo-processing": "craft-light",
-  pdfcraft: "craft-pdf",
-  pdf: "craft-pdf",
-  wordcraft: "craft-word",
-  documents: "craft-word",
-  soundcraft: "craft-sound",
-  audio: "craft-sound",
-  designcraft: "craft-design",
-  layout: "craft-design",
-  cadcraft: "craft-cad",
-  cad: "craft-cad",
-  deckcraft: "craft-deck",
-  slides: "craft-deck",
-  gridcraft: "craft-grid",
-  tables: "craft-grid",
-  figcraft: "craft-fig",
-  "interface-layouts": "craft-fig",
-  desktop: "apps",
-  apt: "apps",
+interface RouteEntry {
+  kind: string;
+  path?: string;
+  keep: boolean;
+  passthrough?: boolean;
+}
+const ROUTES = catalog as {
+  origin: string;
+  hosts: Record<string, RouteEntry>;
+  apps: Record<string, string>;
 };
+const PATH_BY_PACKAGE = new Map(
+  Object.entries(ROUTES.apps).map(([path, pkg]) => [pkg, path]),
+);
 
+/** Old product hosts redirect to a path of the canonical origin (infra/config/routes.catalog.json). */
 function redirectFor(url: URL): string | undefined {
   const play = playRedirect(url);
   if (play) return play;
-  const host = url.hostname;
-  if (host === "www.aphrody.com")
-    return `https://aphrody.com${url.pathname}${url.search}`;
-  if (host === "aphrody.app" || host === "www.aphrody.app")
-    return "https://aphrody.com/";
-  const m = /^(?:app-)?([a-z-]+?)(?:craft)?\.aphrody\.app$/.exec(host);
-  if (m) {
-    const name = host.startsWith("app-") ? m[1]! : host.split(".")[0]!;
-    return `https://aphrody.com/?app=${CRAFT_PACKAGE[name] ?? "apps"}`;
+  const route = ROUTES.hosts[url.hostname];
+  if (route && !route.keep && route.path) {
+    const rest = url.pathname === "/" ? "" : url.pathname;
+    const base = route.passthrough && rest ? "" : route.path;
+    const path = (base.endsWith("/") ? base.slice(0, -1) : base) + rest;
+    return `${ROUTES.origin}${path || "/"}${url.search}`;
+  }
+  // Legacy deep link /?app=<package> becomes the package path.
+  if (url.hostname === "aphrody.com" && url.pathname === "/") {
+    const path = PATH_BY_PACKAGE.get(url.searchParams.get("app") ?? "");
+    if (path) {
+      const rest = new URL(url);
+      rest.searchParams.delete("app");
+      return `${ROUTES.origin}${path}${rest.search}`;
+    }
   }
   return undefined;
 }

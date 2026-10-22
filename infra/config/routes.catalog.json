@@ -1,0 +1,247 @@
+{
+  "$comment": "Single source of truth for public host to path routing. keep=true hosts stay separate; keep=false hosts redirect (301) to origin+path. passthrough=true keeps a non-root request path as is. apps maps a path to the WebOS package opened there (legacy /?app=<package> redirects to that path).",
+  "origin": "https://aphrody.com",
+  "hosts": {
+    "app-video.aphrody.app": {
+      "kind": "app",
+      "path": "/film",
+      "keep": false
+    },
+    "filmcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/film",
+      "keep": false
+    },
+    "app-generation.aphrody.app": {
+      "kind": "app",
+      "path": "/art",
+      "keep": false
+    },
+    "artcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/art",
+      "keep": false
+    },
+    "app-images.aphrody.app": {
+      "kind": "app",
+      "path": "/photo",
+      "keep": false
+    },
+    "photocraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/photo",
+      "keep": false
+    },
+    "app-vectors.aphrody.app": {
+      "kind": "app",
+      "path": "/vector",
+      "keep": false
+    },
+    "vectorcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/vector",
+      "keep": false
+    },
+    "app-compositing.aphrody.app": {
+      "kind": "app",
+      "path": "/effect",
+      "keep": false
+    },
+    "effectcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/effect",
+      "keep": false
+    },
+    "app-photo-processing.aphrody.app": {
+      "kind": "app",
+      "path": "/light",
+      "keep": false
+    },
+    "lightcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/light",
+      "keep": false
+    },
+    "app-pdf.aphrody.app": {
+      "kind": "app",
+      "path": "/pdf",
+      "keep": false
+    },
+    "pdfcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/pdf",
+      "keep": false
+    },
+    "app-documents.aphrody.app": {
+      "kind": "app",
+      "path": "/word",
+      "keep": false
+    },
+    "wordcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/word",
+      "keep": false
+    },
+    "app-audio.aphrody.app": {
+      "kind": "app",
+      "path": "/sound",
+      "keep": false
+    },
+    "soundcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/sound",
+      "keep": false
+    },
+    "app-layout.aphrody.app": {
+      "kind": "app",
+      "path": "/design",
+      "keep": false
+    },
+    "designcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/design",
+      "keep": false
+    },
+    "app-cad.aphrody.app": {
+      "kind": "app",
+      "path": "/cad",
+      "keep": false
+    },
+    "cadcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/cad",
+      "keep": false
+    },
+    "app-slides.aphrody.app": {
+      "kind": "app",
+      "path": "/deck",
+      "keep": false
+    },
+    "deckcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/deck",
+      "keep": false
+    },
+    "app-tables.aphrody.app": {
+      "kind": "app",
+      "path": "/grid",
+      "keep": false
+    },
+    "gridcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/grid",
+      "keep": false
+    },
+    "app-interface-layouts.aphrody.app": {
+      "kind": "app",
+      "path": "/fig",
+      "keep": false
+    },
+    "figcraft.aphrody.app": {
+      "kind": "craft-alias",
+      "path": "/fig",
+      "keep": false
+    },
+    "craft.aphrody.app": {
+      "kind": "craft",
+      "path": "/art",
+      "keep": false,
+      "passthrough": true
+    },
+    "play.aphrody.app": {
+      "kind": "product",
+      "path": "/play",
+      "keep": false
+    },
+    "apt.aphrody.app": {
+      "kind": "product",
+      "path": "/apps",
+      "keep": false
+    },
+    "desktop.aphrody.app": {
+      "kind": "product",
+      "path": "/apps",
+      "keep": false
+    },
+    "os.aphrody.com": {
+      "kind": "product",
+      "path": "/os",
+      "keep": false
+    },
+    "creator.aphrody.com": {
+      "kind": "product",
+      "path": "/creator",
+      "keep": false
+    },
+    "bun.aphrody.com": {
+      "kind": "product",
+      "path": "/",
+      "keep": false
+    },
+    "aphrody.app": {
+      "kind": "legacy-apex",
+      "path": "/",
+      "keep": false
+    },
+    "www.aphrody.app": {
+      "kind": "legacy-apex",
+      "path": "/",
+      "keep": false
+    },
+    "www.aphrody.com": {
+      "kind": "www",
+      "path": "/",
+      "keep": false,
+      "passthrough": true
+    },
+    "git.aphrody.app": {
+      "kind": "service",
+      "keep": true
+    },
+    "source.aphrody.app": {
+      "kind": "service",
+      "keep": true
+    },
+    "deploy.aphrody.app": {
+      "kind": "service",
+      "keep": true
+    },
+    "downloads.aphrody.com": {
+      "kind": "service",
+      "keep": true
+    },
+    "cdn.aphrody.com": {
+      "kind": "service",
+      "keep": true
+    },
+    "assets.aphrody.app": {
+      "kind": "service",
+      "keep": true
+    },
+    "dist.aphrody.app": {
+      "kind": "service",
+      "keep": true
+    },
+    "nie.aphrody.com": {
+      "kind": "service",
+      "keep": true
+    }
+  },
+  "apps": {
+    "/art": "creative",
+    "/apps": "apps",
+    "/film": "craft-film",
+    "/photo": "craft-photo",
+    "/vector": "craft-vector",
+    "/effect": "craft-effect",
+    "/light": "craft-light",
+    "/pdf": "craft-pdf",
+    "/word": "craft-word",
+    "/sound": "craft-sound",
+    "/design": "craft-design",
+    "/cad": "craft-cad",
+    "/deck": "craft-deck",
+    "/grid": "craft-grid",
+    "/fig": "craft-fig"
+  }
+}
