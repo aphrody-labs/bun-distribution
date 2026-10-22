@@ -34,7 +34,7 @@ Historical paths follow the same rules, so `git log --follow` works across the r
 
 - Bevy's `[workspace]` is removed from `crates/bevy/Cargo.toml`; its members are root members
   (`crates/bevy`, `crates/bevy_*`, the three `compile_fail` suites, `crates/bevy/benches`,
-  `crates/bevy/errors`, the example crates and `tools/bevy/*`). `crates/bevy/tests-integration`,
+  `crates/bevy/errors`, the example crates, `tools/bevy/ci` and the flat tool crates `crates/build-*`, `crates/example-showcase`, `crates/export-content`). `crates/bevy/tests-integration`,
   `crates/bevy/examples/mobile/android_basic` and `crates/bevy_color/crates/gen_tests` stay
   outside the workspace, as upstream.
 - Bevy's `[workspace.lints]` are written per crate, combined with the root lints at the stricter
@@ -44,7 +44,7 @@ Historical paths follow the same rules, so `git log --follow` works across the r
   `wasm-release` profile is kept over Bevy's.
 - Paths that crossed the old repository root are rewritten: `../bevy_*` siblings,
   `crates/bevy/src/lib.rs` docs from `docs/bevy/cargo_features.md`, `constants` in the
-  wgsl-analyzer metadata, `tools/bevy/compile_fail_utils`, and the tool inputs under
+  wgsl-analyzer metadata, `crates/compile_fail_utils`, and the tool inputs under
   `docs/bevy/`. Tools that read the umbrella manifest run from `crates/bevy`.
 - The root `[workspace.dependencies]` pins `bevy`, `bevy_*`, `iecode-bevy-*` point at these
   path crates (version 0.20.0); `wgpu` stays unified at 30.

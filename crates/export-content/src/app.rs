@@ -36,7 +36,7 @@ impl Content {
     pub fn load() -> Result<Self> {
         // Bun OS layout: the release content lives in docs/bevy/release-content.
         let content_dir =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../docs/bevy/release-content");
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/bevy/release-content");
 
         let release_notes_dir = content_dir.join("release-notes");
         let release_notes = load_content(release_notes_dir, "release note")?;

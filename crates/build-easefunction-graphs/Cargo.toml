@@ -6,8 +6,8 @@ publish = false
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy_math = { path = "../../../crates/bevy_math" }
-bevy_curve = { path = "../../../crates/bevy_curve" }
+bevy_math = { path = "../bevy_math" }
+bevy_curve = { path = "../bevy_curve" }
 svg = "0.18.0"
 
 # Bevy's workspace lints (upstream [workspace.lints]) merged with the Bun OS root lints at

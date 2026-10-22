@@ -667,6 +667,12 @@ members = [
   "crates/bevy_window",
   "crates/bevy_winit",
   "crates/bevy_world_serialization",
+  "crates/build-easefunction-graphs",
+  "crates/build-templated-pages",
+  "crates/build-wasm-example",
+  "crates/compile_fail_utils",
+  "crates/example-showcase",
+  "crates/export-content",
   "crates/bevy_derive/compile_fail",
   "crates/bevy_ecs/compile_fail",
   "crates/bevy_reflect/compile_fail",
@@ -679,13 +685,7 @@ members = [
   "crates/bevy/examples/large_scenes/caldera_hotel",
   "crates/bevy/examples/large_scenes/bevy_city",
   "crates/bevy/examples/large_scenes/mipmap_generator",
-  "tools/bevy/build-easefunction-graphs",
-  "tools/bevy/build-templated-pages",
-  "tools/bevy/build-wasm-example",
   "tools/bevy/ci",
-  "tools/bevy/compile_fail_utils",
-  "tools/bevy/example-showcase",
-  "tools/bevy/export-content",
 ]
 
 [workspace.package]
