@@ -23,6 +23,9 @@ pub mod reverse;
 pub mod steam;
 pub mod text;
 pub mod unified;
+/// Streamed mount of several game installs under one `<game>/<path>` namespace.
+#[cfg(feature = "assets")]
+pub mod unified_vfs;
 pub mod world;
 
 #[cfg(feature = "wasm")]

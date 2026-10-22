@@ -551,7 +551,48 @@ mod media {
     };
     use serde_json::json;
 
-    use super::{Args, fail, print_json, report_result, usage, utc_now};
+    use super::{Args, emit, fail, print_json, report_result, usage, utc_now};
+
+    /// `unified <root>... [--read <game/path>] [--out <file>]`: mount several installs under one
+    /// streamed `<game>/<path>` namespace. With no `--read`, emit aggregate stats; with `--read`,
+    /// stream that one entry (to `--out`, else report its byte length). Proves the two games mount
+    /// and read through a single handle without extraction.
+    fn unified(args: &Args) -> ExitCode {
+        use bun_re::game::assets::Keys;
+        use bun_re::game::assets::vfs::MountOptions;
+        use bun_re::game::unified_vfs::UnifiedVfs;
+
+        let roots: Vec<std::path::PathBuf> =
+            args.positional.iter().map(std::path::PathBuf::from).collect();
+        let options = MountOptions {
+            keys: Keys::default(),
+            profile: None,
+            limits: None,
+            skip_loose: false,
+            only: Vec::new(),
+        };
+        let vfs = match UnifiedVfs::mount(&roots, &options) {
+            Ok(vfs) => vfs,
+            Err(error) => return fail(error),
+        };
+        if let Some(target) = args.get("--read") {
+            let bytes = match vfs.read(target) {
+                Ok(bytes) => bytes,
+                Err(error) => return fail(error),
+            };
+            if let Some(out) = args.get("--out")
+                && let Err(error) = std::fs::write(out, &bytes)
+            {
+                return fail(format!("could not write {out}: {error}"));
+            }
+            return print_json(&json!({
+                "read": target,
+                "bytes": bytes.len(),
+                "out": args.get("--out"),
+            }));
+        }
+        emit(args.get("--out"), &vfs.stats())
+    }
 
     fn threads(args: &Args) -> usize {
         args.get("--threads")
@@ -590,6 +631,9 @@ mod media {
     pub fn main(command: &str, args: &Args) -> ExitCode {
         let single = args.positional.len() == 1;
         match command {
+            "unified" if !args.positional.is_empty() && args.only(&["--read", "--out"]) => {
+                unified(args)
+            }
             "extract" if single && args.only(&EXTRACT_OPTIONS) => {
                 let (Some(out), Some(options)) = (args.get("--out"), extract_options(args)) else {
                     return usage();

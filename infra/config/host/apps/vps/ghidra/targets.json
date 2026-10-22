@@ -1,0 +1,15 @@
+{
+  "targets": [
+    "/targets/ievr/nie.exe",
+    "/targets/dbxv2/bin/xgcore.dll",
+    "/targets/dbxv2/bin/render_pass_x64.dll",
+    "/targets/ievr/GameBootstrapper.exe",
+    "/targets/extra/**/*.exe",
+    "/targets/extra/**/*.dll"
+  ],
+  "exclude": [
+    "*/EasyAntiCheat/*",
+    "*/EpicOnlineServices/*",
+    "*/bin/DBXV2.exe"
+  ]
+}

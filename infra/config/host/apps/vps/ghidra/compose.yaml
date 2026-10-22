@@ -1,0 +1,41 @@
+# Continuous headless Ghidra reverse engineering on the VPS. Start with ./up.sh.
+#
+# The worker analyzes every target of targets.json by SHA-256, exports functions, call graph,
+# strings, imports and decompiled C, then rescans every RE_POLL_SECONDS: a Steam update of a
+# target triggers a fresh analysis automatically. State and projects live on /home, not on
+# the nearly full root filesystem.
+name: bun-ghidra
+
+services:
+  ghidra-re:
+    image: aphrody/ghidra-re:jdk21
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: bun-ghidra-re
+    restart: unless-stopped
+    # One build-factory lane: four decompiler processes at most, low CPU weight.
+    cpus: 4
+    cpu_shares: 256
+    mem_limit: 16g
+    memswap_limit: 16g
+    pids_limit: 2048
+    network_mode: none
+    user: "1000:1000"
+    environment:
+      RE_DECOMP_JOBS: "4"
+      RE_JVM_MAX_HEAP: "12g"
+      RE_POLL_SECONDS: "600"
+    volumes:
+      - ${RE_WORK:-/home/ubuntu/re/ghidra}:/work
+      # Ghidra unpacks bundles and import scratch under /tmp: keep it off the image layer.
+      - ${RE_WORK:-/home/ubuntu/re/ghidra}/tmp:/tmp
+      - ${GHIDRA_DIR:?run ./up.sh or export GHIDRA_DIR}:/opt/ghidra:ro
+      - ${IEVR_DIR:-/games/SteamLibrary/steamapps/common/INAZUMA ELEVEN Victory Road}:/targets/ievr:ro
+      - ${DBXV2_DIR:-/games/SteamLibrary/steamapps/common/DB Xenoverse 2}:/targets/dbxv2:ro
+      - ${RE_EXTRA:-/home/ubuntu/re/targets}:/targets/extra:ro
+      - ./targets.json:/opt/re/targets.json:ro
+      - ./ghidra_re.py:/opt/re/ghidra_re.py:ro
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
