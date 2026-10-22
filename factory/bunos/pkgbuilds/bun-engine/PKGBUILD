@@ -12,6 +12,9 @@ depends=('glibc' 'gcc-libs' 'vulkan-icd-loader' 'libxkbcommon' 'wayland' 'bun-ap
 optdepends=('gamescope: the bunos-gamescope-session full-screen session'
             'chromium: the frontend window (kiosk in the gamescope session)'
             'mesa: Vulkan/GL drivers for the window and for OpenGL libretro cores (headless EGL)'
+            'libretro-shaders-slang: RetroArch slang shader presets for the native video drivers'
+            'libretro-database-git: cheats, content databases and cursors RetroArch reads from /usr/share/libretro/database (AUR, also built by omarchy-pkgs)'
+            'libretro-overlays: RetroArch bezel and controller overlays'
             'qemu-full: reference QEMU for ARM firmware and Linux/Windows guests')
 makedepends=('git' 'rustup' 'clang' 'pkgconf' 'cmake' 'mesa' 'libx11')
 options=('!lto' '!debug')

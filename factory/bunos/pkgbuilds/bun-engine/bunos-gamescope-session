@@ -1,8 +1,30 @@
 #!/bin/sh
 # Bun OS gamescope session: the Bun Engine frontend as the only full-screen client.
 # Override gamescope's flags with BUNOS_GAMESCOPE_ARGS (output size, refresh, HDR, FSR).
+#
+# The environment defaults below are taken from ChimeraOS gamescope-session-plus
+# (vendor/chimeraos-gamescope-session, MIT, Copyright (c) 2020-2023 Joaquin Ignacio Aramendia),
+# limited to the ones that apply to a single kiosk client without Steam.
 export XDG_CURRENT_DESKTOP=gamescope
 export XDG_SESSION_TYPE=wayland
 export MOZ_ENABLE_WAYLAND=1
+# Use gamescope's WSI layer (better frame limiting) and keep the client from minimising on focus loss.
+export ENABLE_GAMESCOPE_WSI=1
+export SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS=0
+# Do not wait for buffers to idle on the client side before sending them to gamescope.
+export vk_xwayland_wait_ready=false
+# Intel: avoid colour corruption from render-buffer compression.
+export INTEL_DEBUG=norbc
+export mesa_glthread=true
+# Remember the output mode between sessions.
+export GAMESCOPE_MODE_SAVE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gamescope/modes.cfg"
+mkdir -p "$(dirname "$GAMESCOPE_MODE_SAVE_FILE")" && touch "$GAMESCOPE_MODE_SAVE_FILE"
+# Emulators open many files and sockets.
+ulimit -n 524288 2>/dev/null || ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
+# Per-user and per-machine overrides, as in gamescope-session-plus.
+for conf in /etc/bunos/gamescope-session.conf "${XDG_CONFIG_HOME:-$HOME/.config}/bunos/gamescope-session.conf"; do
+  # shellcheck disable=SC1090
+  [ -f "$conf" ] && . "$conf"
+done
 # shellcheck disable=SC2086
 exec gamescope ${BUNOS_GAMESCOPE_ARGS:--e -f --adaptive-sync} -- bun-engine frontend --session

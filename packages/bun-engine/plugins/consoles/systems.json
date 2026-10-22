@@ -46,7 +46,7 @@
       "extensions": ["nes", "unf", "unif", "fds"],
       "native": { "machine": "nes", "extensions": ["nes"] },
       "binaries": ["tetanes", "ares", "mame"],
-      "libretro": ["nestopia", "fceumm", "mesen"],
+      "libretro": ["nestopia", "fceumm", "mesen", "rustynes"],
       "dats": [
         "metadat/no-intro/Nintendo - Nintendo Entertainment System.dat",
         "metadat/homebrew/Nintendo - Nintendo Entertainment System.dat"
@@ -75,7 +75,7 @@
       "consoles": ["nintendo-game-boy"],
       "extensions": ["gb", "gbc", "sgb"],
       "binaries": ["mgba", "ares", "jgenesis"],
-      "libretro": ["gambatte", "sameboy", "mgba"],
+      "libretro": ["gambatte", "sameboy", "mgba", "gearboy"],
       "dats": ["metadat/no-intro/Nintendo - Game Boy.dat", "metadat/no-intro/Nintendo - Game Boy Color.dat"]
     },
     {
@@ -283,8 +283,143 @@
       "consoles": [],
       "extensions": ["md", "gen", "smd", "bin", "sms", "gg"],
       "binaries": ["jgenesis", "ares"],
-      "libretro": ["genesis_plus_gx", "picodrive"],
+      "libretro": ["genesis_plus_gx", "picodrive", "gearsystem"],
       "dats": ["metadat/no-intro/Sega - Mega Drive - Genesis.dat", "metadat/homebrew/Sega - Mega Drive - Genesis.dat"]
+    },
+    {
+      "id": "atari2600",
+      "name": "Atari 2600",
+      "manufacturer": "Atari",
+      "year": 1977,
+      "consoles": [],
+      "extensions": ["a26"],
+      "binaries": [],
+      "libretro": ["stella"],
+      "dats": ["metadat/no-intro/Atari - 2600.dat"]
+    },
+    {
+      "id": "jaguar",
+      "name": "Atari Jaguar",
+      "manufacturer": "Atari",
+      "year": 1993,
+      "consoles": [],
+      "extensions": ["j64", "jag"],
+      "binaries": [],
+      "libretro": ["virtualjaguar"],
+      "dats": ["metadat/no-intro/Atari - Jaguar.dat"]
+    },
+    {
+      "id": "vectrex",
+      "name": "Vectrex",
+      "manufacturer": "GCE",
+      "year": 1982,
+      "consoles": [],
+      "extensions": ["vec"],
+      "binaries": [],
+      "libretro": ["vecx"],
+      "dats": ["metadat/no-intro/GCE - Vectrex.dat"]
+    },
+    {
+      "id": "amiga",
+      "name": "Amiga",
+      "manufacturer": "Commodore",
+      "year": 1985,
+      "consoles": [],
+      "extensions": ["adf", "adz", "dms", "ipf", "hdf", "lha"],
+      "binaries": [],
+      "libretro": ["amiberry"],
+      "dats": ["dat/Commodore - Amiga.dat"]
+    },
+    {
+      "id": "scummvm",
+      "name": "ScummVM adventure games",
+      "manufacturer": "ScummVM",
+      "year": 1998,
+      "consoles": [],
+      "extensions": ["scummvm"],
+      "binaries": [],
+      "libretro": ["scummvm"],
+      "dats": ["dat/ScummVM.dat"]
+    },
+    {
+      "id": "pce",
+      "name": "PC Engine / TurboGrafx-16",
+      "manufacturer": "NEC",
+      "year": 1987,
+      "consoles": [],
+      "extensions": ["pce", "sgx"],
+      "binaries": [],
+      "libretro": ["mednafen_pce_fast", "mednafen_pce"],
+      "dats": [
+        "metadat/no-intro/NEC - PC Engine - TurboGrafx 16.dat",
+        "metadat/no-intro/NEC - PC Engine SuperGrafx.dat"
+      ]
+    },
+    {
+      "id": "saturn",
+      "name": "Saturn",
+      "manufacturer": "Sega",
+      "year": 1994,
+      "consoles": [],
+      "extensions": ["cue", "chd", "ccd"],
+      "binaries": [],
+      "libretro": ["mednafen_saturn", "yabause"],
+      "dats": ["metadat/redump/Sega - Saturn.dat"]
+    },
+    {
+      "id": "virtualboy",
+      "name": "Virtual Boy",
+      "manufacturer": "Nintendo",
+      "year": 1995,
+      "consoles": [],
+      "extensions": ["vb", "vboy"],
+      "binaries": [],
+      "libretro": ["mednafen_vb"],
+      "dats": ["metadat/no-intro/Nintendo - Virtual Boy.dat"]
+    },
+    {
+      "id": "ngp",
+      "name": "Neo Geo Pocket / Color",
+      "manufacturer": "SNK",
+      "year": 1998,
+      "consoles": [],
+      "extensions": ["ngp", "ngc", "ngpc", "npc"],
+      "binaries": [],
+      "libretro": ["mednafen_ngp"],
+      "dats": ["metadat/no-intro/SNK - Neo Geo Pocket.dat", "metadat/no-intro/SNK - Neo Geo Pocket Color.dat"]
+    },
+    {
+      "id": "wonderswan",
+      "name": "WonderSwan / Color",
+      "manufacturer": "Bandai",
+      "year": 1999,
+      "consoles": [],
+      "extensions": ["ws", "wsc"],
+      "binaries": [],
+      "libretro": ["mednafen_wswan"],
+      "dats": ["metadat/no-intro/Bandai - WonderSwan.dat", "metadat/no-intro/Bandai - WonderSwan Color.dat"]
+    },
+    {
+      "id": "lynx",
+      "name": "Atari Lynx",
+      "manufacturer": "Atari",
+      "year": 1989,
+      "consoles": [],
+      "extensions": ["lnx", "lyx"],
+      "binaries": [],
+      "libretro": ["handy"],
+      "dats": ["metadat/no-intro/Atari - Lynx.dat"]
+    },
+    {
+      "id": "c64",
+      "name": "Commodore 64",
+      "manufacturer": "Commodore",
+      "year": 1982,
+      "consoles": [],
+      "extensions": ["d64", "t64", "tap", "crt", "prg"],
+      "binaries": [],
+      "libretro": ["vice_x64"],
+      "dats": ["metadat/no-intro/Commodore - 64.dat"]
     },
     {
       "id": "arcade",

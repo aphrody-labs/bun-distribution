@@ -240,8 +240,26 @@ export class RetroArch implements Disposable {
       dirs[key] = join(home, dir);
       mkdirSync(dirs[key], { recursive: true });
     }
+    // libretro data: the pinned forks when checked out, else the system packages
+    // (cheats, content databases, cursors, core info)
+    const share = (name: string) => [
+      join(repoRoot, "vendor", "libretro-database", name),
+      join("/usr/share/libretro/database", name),
+    ];
+    const candidates: Record<string, string[]> = {
+      cheat_database_path: share("cht"),
+      content_database_path: share("rdb"),
+      cursor_directory: share("cursors"),
+      libretro_info_path: [join(repoRoot, "vendor", "libretro-core-info"), "/usr/share/libretro/info"],
+    };
+    const forks: Record<string, string> = {};
+    for (const [key, dirs] of Object.entries(candidates)) {
+      const found = dirs.find(dir => existsSync(dir));
+      if (found) forks[key] = found;
+    }
     const settings: Record<string, string | number | boolean> = {
       ...dirs,
+      ...forks,
       video_driver: "host",
       audio_driver: "host",
       input_driver: "null",
