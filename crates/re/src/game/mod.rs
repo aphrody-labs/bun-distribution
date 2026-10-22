@@ -26,6 +26,9 @@ pub mod unified;
 /// Streamed mount of several game installs under one `<game>/<path>` namespace.
 #[cfg(feature = "assets")]
 pub mod unified_vfs;
+/// Engine-facing asset runtime: streams and format-decodes assets from the merged games.
+#[cfg(feature = "assets")]
+pub mod runtime;
 pub mod world;
 
 #[cfg(feature = "wasm")]

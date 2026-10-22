@@ -598,6 +598,13 @@ mod media {
                 .unwrap_or(200);
             return emit(args.get("--out"), &vfs.search(query, limit));
         }
+        if let Some(target) = args.get("--describe") {
+            let runtime = bun_re::game::runtime::AssetRuntime::new(vfs);
+            return match runtime.describe(target) {
+                Ok(value) => emit(args.get("--out"), &value),
+                Err(error) => fail(error),
+            };
+        }
         emit(args.get("--out"), &vfs.index())
     }
 
@@ -640,7 +647,7 @@ mod media {
         match command {
             "unified"
                 if !args.positional.is_empty()
-                    && args.only(&["--read", "--search", "--limit", "--out"]) =>
+                    && args.only(&["--read", "--search", "--limit", "--describe", "--out"]) =>
             {
                 unified(args)
             }
