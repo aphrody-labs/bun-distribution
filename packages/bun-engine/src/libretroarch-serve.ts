@@ -3,7 +3,10 @@
 import type { ServerWebSocket } from "bun";
 import page from "./libretroarch-client/index.html";
 import { AUDIO_HEADER, FRAME_HEADER, Message } from "./libretroarch-gpu";
+import { statSync } from "node:fs";
+import { join } from "node:path";
 import { RetroArch, type OpenOptions } from "./libretroarch";
+import { usrRoot } from "./usr";
 
 export interface ServeOptions extends OpenOptions {
   port?: number;
@@ -12,7 +15,8 @@ export interface ServeOptions extends OpenOptions {
 
 type ClientMessage =
   | { type: "joypad"; port: number; buttons: number; axes?: number[] }
-  | { type: "command"; line: string };
+  | { type: "command"; line: string; id?: number }
+  | { type: "pause"; paused: boolean };
 
 export function serveRetroArch(options: ServeOptions = {}) {
   const ra = RetroArch.open(options);
@@ -20,6 +24,19 @@ export function serveRetroArch(options: ServeOptions = {}) {
   const samples = new Float32Array(16384);
   let lastSerial = -1n;
   let running = true;
+  const home = options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
+  // The newest file RetroArch wrote under home/<sub> since `since` (states, screenshots): the proof
+  // a quick-menu action did something, since SAVE_STATE and SCREENSHOT answer nothing themselves.
+  function written(sub: string, since: number): string | undefined {
+    const dir = join(home, sub);
+    let best: { file: string; time: number } | undefined;
+    for (const file of new Bun.Glob("**/*").scanSync({ cwd: dir, onlyFiles: true })) {
+      if (sub === "states" && file.endsWith(".png")) continue;
+      const time = statSync(join(dir, file)).mtimeMs;
+      if (time >= since && (!best || time > best.time)) best = { file, time };
+    }
+    return best?.file;
+  }
 
   const server = Bun.serve({
     hostname: options.hostname ?? "127.0.0.1",
@@ -44,7 +61,29 @@ export function serveRetroArch(options: ServeOptions = {}) {
         const message = JSON.parse(String(raw)) as ClientMessage;
         if (message.type === "joypad")
           ra.joypad(message.port, message.buttons, message.axes);
-        else if (message.type === "command") ra.command(message.line);
+        else if (message.type === "command") {
+          const line = message.line.trim().toUpperCase();
+          const since = Date.now() - 50;
+          const sub = line === "SAVE_STATE" ? "states" : line === "SCREENSHOT" ? "screenshots" : undefined;
+          if (line === "LOAD_STATE" && !new Bun.Glob("**/*").scanSync({ cwd: join(home, "states") }).next().value) {
+            _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: false, text: "no saved state yet" }));
+            return;
+          }
+          ra.command(message.line);
+          // the reply (status) reaches the sender a moment later; files are checked after RetroArch wrote them
+          setTimeout(() => {
+            if (!running) return;
+            _ws.send(JSON.stringify({ type: "reply", id: message.id, line: message.line, text: ra.replies() }));
+            if (sub) {
+              const file = written(sub, since);
+              _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: Boolean(file), text: file ?? "nothing was written" }));
+            } else if (line === "LOAD_STATE") _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: true, text: "state loaded" }));
+          }, sub ? 600 : 150);
+        } else if (message.type === "pause") {
+          if (message.paused !== ra.status().paused) ra.command("PAUSE_TOGGLE");
+          // report what RetroArch says after it applied the toggle, not what was asked
+          setTimeout(() => running && _ws.send(JSON.stringify({ type: "paused", paused: ra.status().paused })), 120);
+        }
       },
     },
   });

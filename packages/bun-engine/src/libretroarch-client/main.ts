@@ -48,7 +48,9 @@ class Ring extends AudioWorkletProcessor {
 }
 registerProcessor("retroarch-ring", Ring);
 `;
-let audio: { context: AudioContext; node: AudioWorkletNode } | undefined;
+let audio: { context: AudioContext; node: AudioWorkletNode; gain: GainNode } | undefined;
+// the quick menu's volume, 0..1 (kept here so it also applies to audio that starts later)
+let volume = 1;
 let audioStarting = false;
 
 async function startAudio(rate: number) {
@@ -61,8 +63,10 @@ async function startAudio(rate: number) {
   const node = new AudioWorkletNode(audioContext, "retroarch-ring", {
     outputChannelCount: [2],
   });
-  node.connect(audioContext.destination);
-  audio = { context: audioContext, node };
+  const gain = audioContext.createGain();
+  gain.gain.value = volume;
+  node.connect(gain).connect(audioContext.destination);
+  audio = { context: audioContext, node, gain };
   window.addEventListener("pointerdown", () => audioContext.resume(), {
     once: true,
   });
@@ -73,7 +77,18 @@ async function startAudio(rate: number) {
 
 const ws = new WebSocket(new URL("/ws", location.href.replace(/^http/, "ws")));
 ws.binaryType = "arraybuffer";
+// Embedded in the frontend, the parent window owns the quick menu: this page forwards the menu
+// requests (F1, pad Guide, Select+R3) and carries out its actions over the RetroArch socket.
+const embedded = window.parent !== window;
+let menuOpen = false;
+const toParent = (message: object) => embedded && window.parent.postMessage({ bunos: true, ...message }, "*");
 ws.onmessage = ({ data }) => {
+  if (typeof data === "string") {
+    const reply = JSON.parse(data) as { type: string; id?: number; paused?: boolean; ok?: boolean; line?: string; text?: string };
+    if (reply.type === "paused") toParent({ type: "paused", paused: reply.paused });
+    else if (reply.type === "result") toParent({ type: "result", id: reply.id, line: reply.line, ok: reply.ok, text: reply.text });
+    return;
+  }
   const message = data as ArrayBuffer;
   const kind = new Uint8Array(message, 0, 1)[0];
   if (kind === Message.Frame) pending = decodeFrame(message);
@@ -119,22 +134,30 @@ const KEYS: Record<string, number> = {
 };
 let keys = 0;
 window.addEventListener("keydown", (e) => {
-  // embedded in the frontend: Escape returns to the library
-  if (e.code === "Escape" && window.parent !== window)
-    window.parent.postMessage("retroarch-exit", "*");
-  keys |= KEYS[e.code] ?? 0;
+  // embedded in the frontend: Escape returns to the library, F1 opens the quick menu
+  if (e.code === "Escape" && embedded) window.parent.postMessage("retroarch-exit", "*");
+  if (e.code === "F1" && embedded) {
+    e.preventDefault();
+    toParent({ type: "menu" });
+  }
+  if (!menuOpen) keys |= KEYS[e.code] ?? 0;
 });
 window.addEventListener("keyup", (e) => (keys &= ~(KEYS[e.code] ?? 0)));
 
 const sent = new Map<number, string>();
+let menuHeld = false;
 function pollInput() {
   if (ws.readyState !== WebSocket.OPEN) return;
   const pads = navigator.getGamepads();
+  // Guide / Home (button 16) or Select + R3 asks the frontend for its quick menu
+  const asking = pads.some((pad) => pad?.buttons[16]?.pressed || (pad?.buttons[8]?.pressed && pad.buttons[11]?.pressed));
+  if (asking && !menuHeld && !menuOpen) toParent({ type: "menu" });
+  menuHeld = asking;
   for (let port = 0; port < Math.max(1, pads.length); port++) {
     const pad = pads[port];
-    let buttons = port === 0 ? keys : 0;
+    let buttons = port === 0 && !menuOpen ? keys : 0;
     const axes: number[] = [];
-    if (pad?.mapping === "standard") {
+    if (pad?.mapping === "standard" && !menuOpen) {
       pad.buttons.forEach((b, i) => b.pressed && (buttons |= STANDARD[i] ?? 0));
       for (let i = 0; i < 4; i++)
         axes.push(Math.round((pad.axes[i] ?? 0) * 0x7fff));
@@ -167,6 +190,37 @@ function render() {
   requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
+
+// Quick-menu requests from the frontend window (checked against our parent in the handler).
+window.addEventListener("message", ({ source, data }) => {
+  if (source !== window.parent || !data?.bunos) return;
+  const send = (message: object) => ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(message));
+  switch (data.action) {
+    case "open": // pause the core and stop feeding it input while the menu is up
+      menuOpen = true;
+      keys = 0;
+      send({ type: "pause", paused: true });
+      break;
+    case "close": // buttons held for the menu must not reach the game: release input first
+      send({ type: "pause", paused: false });
+      setTimeout(() => (menuOpen = false), 250);
+      break;
+    case "save":
+      send({ type: "command", line: "SAVE_STATE", id: data.id });
+      break;
+    case "load":
+      send({ type: "command", line: "LOAD_STATE", id: data.id });
+      break;
+    case "screenshot":
+      send({ type: "command", line: "SCREENSHOT", id: data.id });
+      break;
+    case "volume":
+      volume = Math.min(1, Math.max(0, Number(data.value)));
+      if (audio) audio.gain.gain.value = volume;
+      toParent({ type: "volume", value: volume });
+      break;
+  }
+});
 
 /** For automation: frames presented, a command sender and an offscreen readback summary. */
 Object.assign(globalThis, {
