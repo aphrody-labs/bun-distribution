@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# bunos-session status | switch desktop|gaming | restart
+state="${XDG_STATE_HOME:-$HOME/.local/state}/bunos"
+case "$1" in
+  status) cat "$state/session" 2>/dev/null || echo gaming ;;
+  switch)
+    case "$2" in desktop|gaming) ;; *) echo "usage: bunos-session switch desktop|gaming" >&2; exit 2 ;; esac
+    mkdir -p "$state"; printf '%s\n' "$2" >"$state/next"
+    # bunos-session.service restarts the selector once the running compositor exits.
+    if pgrep -u "$(id -u)" -x Hyprland >/dev/null; then hyprctl dispatch exit >/dev/null 2>&1 || uwsm stop
+    else pkill -u "$(id -u)" -x gamescope || pkill -u "$(id -u)" -x gamescope-wl || true; fi ;;
+  restart) pkill -u "$(id -u)" -x gamescope; pkill -u "$(id -u)" -x Hyprland ;;
+  *) echo "usage: bunos-session status|switch desktop|gaming|restart" >&2; exit 2 ;;
+esac

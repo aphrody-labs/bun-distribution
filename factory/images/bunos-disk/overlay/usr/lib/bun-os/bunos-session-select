@@ -1,0 +1,45 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Bun OS session selector, run by bunos-session.service on tty1 as the autologin user.
+# No display manager: gaming (gamescope + Bun Engine library) is the default; desktop (Omarchy Hyprland
+# through uwsm) is chosen by the boot menu (bunos.session=desktop on the kernel command line) or by
+# `bunos-session switch desktop|gaming`, which stops the running compositor so this unit starts the other.
+state="${XDG_STATE_HOME:-$HOME/.local/state}/bunos"
+mkdir -p "$state"
+want=""
+for arg in $(cat /proc/cmdline); do
+  case $arg in bunos.session=*) want=${arg#bunos.session=} ;; esac
+done
+if [ -f "$state/next" ]; then want=$(cat "$state/next"); rm -f "$state/next"; fi
+[ -n "$want" ] || want=$(cat "$state/session" 2>/dev/null)
+case $want in desktop|gaming) ;; *) want=gaming ;; esac
+printf '%s\n' "$want" >"$state/session"
+
+export XDG_SESSION_TYPE=wayland
+export OMARCHY_PATH=/usr/share/omarchy
+# No render node (VM without a GPU): software GL/Vulkan so the compositors can still start.
+if ! ls /dev/dri/renderD* >/dev/null 2>&1; then
+  export LIBGL_ALWAYS_SOFTWARE=1 WLR_RENDERER_ALLOW_SOFTWARE=1 AQ_NO_MODIFIERS=1 \
+    VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json
+fi
+
+echo "Bun OS: starting the $want session ($(uname -r))" >/dev/tty1 2>/dev/null || true
+logger -t bunos-session "starting $want session"
+case $want in
+  desktop)
+    exec uwsm start -e -D Hyprland hyprland.desktop ;;
+  *)
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    start=$(date +%s)
+    /usr/bin/bunos-gamescope-session; rc=$?
+    # gamescope needs a real GPU (it refuses llvmpipe): after two quick failures start the desktop once.
+    if [ "$rc" -ne 0 ] && [ $(( $(date +%s) - start )) -lt 30 ]; then
+      n=$(( $(cat "$state/fails" 2>/dev/null || echo 0) + 1 )); echo "$n" >"$state/fails"
+      if [ "$n" -ge 2 ]; then
+        echo 0 >"$state/fails"; echo desktop >"$state/next"
+        echo "Bun OS: gamescope failed twice (exit $rc); starting the desktop session" >/dev/tty1 2>/dev/null || true
+        logger -t bunos-session "gamescope failed twice (exit $rc); falling back to the desktop session"
+      fi
+    else echo 0 >"$state/fails"; fi
+    exit "$rc" ;;
+esac

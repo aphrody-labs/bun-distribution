@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1.7
+# SPDX-License-Identifier: MIT
+# bunos-disk: rootfs for the bootable Bun OS disk image (see docs/bun-os/REAL-OS.md).
+# Base: the imported Omarchy 4.0.4 Arch rootfs (Hyprland, uwsm, NetworkManager, linux 7.2.x).
+# Adds gamescope + the Bun Engine frontend session, btrfs/vfat tooling, a bootable initramfs and the
+# display-manager-free session unit. Built by build.sh; assembled into a disk by assemble.sh.
+ARG BASE=bunos-omarchy:imported-rootfs
+FROM ${BASE}
+RUN pacman --disable-sandbox --noconfirm -Syu \
+ && pacman --disable-sandbox --noconfirm --needed -S gamescope xorg-xwayland vulkan-swrast vulkan-virtio vulkan-tools \
+      btrfs-progs dosfstools mtools snapper efibootmgr sudo \
+ && rm -rf /var/cache/pacman/pkg/*
+COPY overlay/ /
+COPY bun /usr/bin/bun
+COPY be/ /usr/share/bun-engine/
+RUN chmod 0440 /etc/sudoers.d/10-bunos-dev \
+ && printf '#!/bin/sh\nexec /usr/bin/bun /usr/share/bun-engine/cli.js "$@"\n' >/usr/bin/bun-engine && chmod +x /usr/bin/bun-engine \
+ && ln -sf /usr/bin/bun /usr/bin/bunx \
+ && useradd -m -u 1000 -G wheel,video,input,render,audio,seat -s /bin/bash bunos 2>/dev/null || usermod -aG wheel,video,input,render,audio bunos; \
+    echo 'bunos:bunos' | chpasswd; passwd -d root \
+ && rm -f /etc/systemd/system/multi-user.target.wants/try-omarchy-* /etc/systemd/system/multi-user.target.wants/omarchy-provision-owner.service \
+          /etc/systemd/system/multi-user.target.wants/mnt-host.mount /etc/systemd/system/display-manager.service \
+ && systemctl enable bunos-session.service bunos-firstboot.service NetworkManager.service systemd-resolved.service seatd.service 2>&1 | tail -3; \
+    systemctl set-default graphical.target; \
+    systemctl mask sddm.service 2>&1 | tail -1; \
+    echo bunos >/etc/hostname; \
+    printf 'LABEL=bunos-root / btrfs subvol=@,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /home btrfs subvol=@home,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /.snapshots btrfs subvol=@snapshots,noatime 0 0\nLABEL=BUNOS-ESP /boot vfat umask=0077 0 2\n' >/etc/fstab \
+ && mkinitcpio -P 2>&1 | tail -5; ls -la /boot

@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+set -e
+hostnamectl set-hostname bunos 2>/dev/null || echo bunos >/etc/hostname
+install -d -o bunos -g bunos /home/bunos/.config /home/bunos/.local/share /home/bunos/.local/state/bunos
+ln -sfn /usr/share/omarchy /home/bunos/.local/share/omarchy
+for d in hypr foot kitty btop starship.toml; do
+  [ -e "/usr/share/omarchy/config/$d" ] && [ ! -e "/home/bunos/.config/$d" ] && cp -a "/usr/share/omarchy/config/$d" /home/bunos/.config/
+done
+chown -R bunos:bunos /home/bunos
+install -d /var/lib/bunos; date -u >/var/lib/bunos/firstboot.done

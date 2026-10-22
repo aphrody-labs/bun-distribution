@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Bun OS Desktop (Omarchy Hyprland)
+Exec=uwsm start -e -D Hyprland hyprland.desktop
+Type=Application
+DesktopNames=Hyprland

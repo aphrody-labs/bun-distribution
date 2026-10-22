@@ -1,0 +1,11 @@
+[Unit]
+Description=Bun OS first boot (hostname, locale, home skeleton)
+ConditionPathExists=!/var/lib/bunos/firstboot.done
+Before=bunos-session.service getty@tty1.service
+After=local-fs.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/bun-os/bunos-firstboot
+[Install]
+WantedBy=multi-user.target
