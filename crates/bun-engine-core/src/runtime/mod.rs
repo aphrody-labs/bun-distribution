@@ -11,13 +11,19 @@ pub mod audio;
 pub mod display_filter;
 #[cfg(feature = "render")]
 pub mod fsr1;
+#[cfg(feature = "home")]
+pub mod home;
 pub mod input;
 pub mod machine;
+#[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+pub mod remote;
 pub mod run;
 #[cfg(feature = "shell")]
 pub mod shell;
 #[cfg(all(feature = "render", feature = "steam"))]
 pub mod steam;
+#[cfg(feature = "shell")]
+pub mod theme;
 
 use std::time::Duration;
 
@@ -86,6 +92,10 @@ pub struct BunEnginePlugin {
     pub backends: Option<wgpu::Backends>,
     /// Spawn the engine's 2D camera ([`EngineCamera`]).
     pub camera: bool,
+    /// Kiosk: borderless fullscreen on the primary monitor (gamescope, a console session).
+    pub fullscreen: bool,
+    /// Kiosk: hide the mouse cursor over the window.
+    pub hide_cursor: bool,
 }
 
 impl BunEnginePlugin {
@@ -104,7 +114,16 @@ impl BunEnginePlugin {
             #[cfg(feature = "render")]
             backends: cfg!(windows).then_some(wgpu::Backends::DX12),
             camera: true,
+            fullscreen: false,
+            hide_cursor: false,
         }
+    }
+
+    /// Kiosk session (gamescope): borderless fullscreen and no cursor.
+    pub fn kiosk(mut self) -> Self {
+        self.fullscreen = true;
+        self.hide_cursor = true;
+        self
     }
 
     pub fn headless() -> Self {
@@ -160,7 +179,9 @@ impl BunEnginePlugin {
         use crate::bevy::{
             DefaultPlugins,
             image::ImagePlugin,
-            window::{Window, WindowPlugin, WindowResolution},
+            window::{
+                CursorOptions, MonitorSelection, Window, WindowMode, WindowPlugin, WindowResolution,
+            },
         };
         if self.default_plugins {
             let (w, h) = self.size.unwrap_or((1024, 768));
@@ -168,6 +189,11 @@ impl BunEnginePlugin {
                 title: self.title.clone(),
                 resolution: WindowResolution::new(w, h),
                 present_mode: self.present_mode,
+                mode: if self.fullscreen {
+                    WindowMode::BorderlessFullscreen(MonitorSelection::Primary)
+                } else {
+                    WindowMode::Windowed
+                },
                 desired_maximum_frame_latency: self.frame_latency.and_then(std::num::NonZero::new),
                 // Browser: draw into `<canvas id="bun-engine">` sized by its parent.
                 #[cfg(target_arch = "wasm32")]
@@ -185,6 +211,10 @@ impl BunEnginePlugin {
             let plugins = DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(window),
+                    primary_cursor_options: Some(CursorOptions {
+                        visible: !self.hide_cursor,
+                        ..Default::default()
+                    }),
                     ..Default::default()
                 })
                 .set(ImagePlugin::default_nearest())
@@ -229,6 +259,8 @@ impl BunEnginePlugin {
         app.add_plugins(display_filter::DisplayFilterPlugin);
         #[cfg(feature = "shell")]
         app.add_plugins(shell::ShellPlugin);
+        #[cfg(feature = "home")]
+        app.add_plugins(home::HomePlugin::default());
     }
 }
 

@@ -57,3 +57,17 @@ engine opts out of all of them, so every item below is a deliberate opt-in.
 - Everything above was read in `crates/bevy*`; only items 1 and 2 were compiled.
 - The filter shader is validated by wgpu/naga when the pipeline is first built, i.e. at runtime
   on a machine with a GPU adapter.
+
+## Status after phase 2 (verified on the VPS: Xvfb, lavapipe software Vulkan, no GPU)
+
+| # | Status | Evidence |
+|---|---|---|
+| 1 | Done, run | WESL `display_filter` builds a real pipeline; six filters and integer scale captured (`docs/bun-engine/screens/machine-*.png`). No shader fix was needed. |
+| 2 | Done, run | F1 opens the quick menu (state QuickMenu, machine paused, frame counter frozen), pause via BRP freezes frames, F2 cycles, Screenshot action writes PPM + window PNG. |
+| 3 | Partly | Focus + directional navigation (`AutoDirectionalNavigator`), 3 px accent ring, hints, hero/shelf/tiles, Loading/Empty/Error/Ready: done and run with real key events and a real `library.db`. Not done: `ui_widgets` (plain Nodes), cover art, scrolling, gamepad input is untested (no device; same code path as keys via `HomeCommand`). |
+| 5, 6 | Not done | picking, UiMaterial/gradients |
+| 8 | Done, run | composed-window `Screenshot` over BRP and from the menu. |
+| 10 | Implemented, not verified | rumble request sent on confirm; no gamepad on the VPS. |
+| 14 | Done, run | BRP loopback with `bun/*` methods; no token (BRP has none). |
+| 17 | Partly | flags set `BorderlessFullscreen` and `cursor_visible=false` (read back over BRP). Under Xvfb without a window manager the window stayed at its requested size, so real fullscreen is not verified; reactive Home redraw not done. |
+| 4, 7, 9, 11-13, 15, 16, 18-20 | Not done | unchanged |

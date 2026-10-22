@@ -11,7 +11,7 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 
 # Every consumer selects what it shares; nothing is duplicated in another crate.
 [features]
-default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream", "display-filter", "shell"]
+default = ["window", "audio", "gamepad", "nds", "nes", "gba", "psx", "host", "arm", "x86", "wii", "cartridge", "stream", "display-filter", "shell", "home"]
 # Nintendo DS on Dust through aphrody-nds-sdk (software 2D/3D rendering, saves, saved states).
 nds = ["dep:aphrody-nds-sdk", "aphrody-nds-sdk/nds"]
 # Dust 2D/3D on the host's existing WGPU 30 device; CPU mode remains available.
@@ -67,7 +67,15 @@ render = [
 display-filter = ["render"]
 # Shell UI: app states (bevy_state), quick menu (Resume/Save/Load/Screenshot/Stop) and the
 # performance overlay in bevy_ui: `runtime::shell`.
-shell = ["render", "bevy/bevy_state"]
+# `png` writes the composed-window Screenshot.
+shell = ["render", "bevy/bevy_state", "bevy/png", "dep:serde_json"]
+# Native home: tiles, hero, system shelf, directional focus navigation (bevy_input_focus) and a
+# library trait with a mock and a read-only SQLite source (the library.db of packages/bun-engine):
+# `runtime::home`.
+home = ["shell", "bevy/bevy_input_focus", "dep:rusqlite"]
+# Bevy Remote Protocol on loopback (127.0.0.1) so `bun` can drive the filter, pause and capture:
+# `runtime::remote`. Native only (the HTTP server does not exist on wasm); not in `default`.
+remote = ["shell", "bevy/bevy_remote", "dep:serde_json"]
 # The desktop window (Bevy DefaultPlugins, multi-threaded, X11/Wayland on Linux).
 window = ["render", "dep:aphrody-gpu-backend", "bevy/multi_threaded", "bevy/x11", "bevy/wayland"]
 # Machine audio on a bevy_audio sink (ALSA on Linux).
@@ -135,6 +143,7 @@ ring = { version = "0.17", optional = true }
 rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"], optional = true }
 rsa = { version = "0.9", optional = true }
 rustls = { workspace = true, features = ["std", "ring", "tls12"], optional = true }
+rusqlite = { workspace = true, features = ["bundled"], optional = true }
 steamworks = { version = "0.13.1", features = ["raw-bindings"], optional = true }
 
 [target.'cfg(windows)'.dependencies]

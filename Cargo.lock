@@ -8545,6 +8545,7 @@ dependencies = [
  "rdynarmic",
  "ring",
  "rsa 0.9.10",
+ "rusqlite",
  "rustboyadvance-core",
  "rustls",
  "rusty_enet",

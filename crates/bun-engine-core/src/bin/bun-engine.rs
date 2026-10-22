@@ -6,7 +6,8 @@ use bun_engine::cartridge::dust::rom::raw;
 use bun_engine::machine::{Machine, Step, arm::ArmFirmware};
 use serde_json::json;
 
-const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--filter off|plain|scanlines|crt|lcd|sharp] [--integer-scale] [--steam [--steam-*]]";
+const USAGE: &str = "usage: bun-engine info <rom.nds> [--json] | bun-engine shell [--session|status|install-session] | bun-engine steam <command> (feature steam) | bun-engine stream <host>|--loopback [options] | bun-engine home [--library DB|mock|mock:empty|mock:error|mock:loading] [kiosk options] | bun-engine run <nds|3ds|switch|gba|nes|psx|wii|gc|arm|x86|linux|melonds|dolphin|azahar|kyty> <image> [--headless] [--bios FILE] [--frames N] [--out DIR] [--cmdline ARGS] [--input key@first[-last],...] [--trace FILE.jsonl] [--fsr [--sharpness STOPS]] [--filter off|plain|scanlines|crt|lcd|sharp] [--integer-scale] [--steam [--steam-*]] [kiosk options]
+kiosk options: [--kiosk] [--fullscreen] [--hide-cursor] [--size WxH] [--state-dir DIR] [--remote[=PORT]] (BRP on 127.0.0.1, feature remote)";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1).peekable();
@@ -17,6 +18,11 @@ fn main() -> ExitCode {
         }
         Some("run") => {
             args.next();
+        }
+        #[cfg(feature = "home")]
+        Some("home") => {
+            args.next();
+            return home(args);
         }
         // The console shell is its own Bevy app (crates/bun-os-shell) built next to this binary.
         Some("shell") => {
@@ -69,6 +75,7 @@ fn main() -> ExitCode {
     let (mut script, mut trace) = (Vec::<(u32, u64, u64)>::new(), None::<PathBuf>);
     let (mut fsr, mut sharpness) = (false, 0.25_f32);
     let (mut filter, mut integer_scale) = (None::<String>, false);
+    let mut shell_options = bun_engine::runtime::run::RunOptions::default();
     #[cfg(feature = "steam")]
     let mut steam_args = Vec::<String>::new();
     let mut cmdline = String::from(
@@ -89,6 +96,7 @@ fn main() -> ExitCode {
             "--fsr" => fsr = true,
             "--filter" => filter = args.next(),
             "--integer-scale" => integer_scale = true,
+            flag if shell_flag(flag, &mut args, &mut shell_options) => {}
             "--sharpness" => {
                 sharpness = args
                     .next()
@@ -197,7 +205,7 @@ fn main() -> ExitCode {
             sharpness_stops: sharpness,
             filter,
             integer_scale,
-            ..Default::default()
+            ..shell_options
         };
         // Steam starts before the window and GPU device (overlay hook), so before `machine_app`.
         #[cfg(feature = "steam")]
@@ -276,6 +284,59 @@ fn main() -> ExitCode {
 
 /// One JSON line of a replay trace: frame index, held keys and the FNV-1a 64 digest of every
 /// screen (dimensions and RGB bytes), so two runs compare frame by frame without storing images.
+/// Kiosk, window, state directory, library and BRP flags shared by `run` and `home`.
+fn shell_flag(
+    flag: &str,
+    args: &mut std::iter::Peekable<impl Iterator<Item = String>>,
+    options: &mut bun_engine::runtime::run::RunOptions,
+) -> bool {
+    match flag {
+        "--kiosk" => {
+            options.fullscreen = true;
+            options.hide_cursor = true;
+        }
+        "--fullscreen" => options.fullscreen = true,
+        "--hide-cursor" => options.hide_cursor = true,
+        "--size" => {
+            options.size = args.next().and_then(|v| {
+                let (w, h) = v.split_once('x')?;
+                Some((w.parse().ok()?, h.parse().ok()?))
+            });
+        }
+        "--state-dir" => options.state_dir = args.next().map(PathBuf::from),
+        "--library" => options.library = args.next(),
+        "--remote" => options.remote = Some(15702),
+        other if other.starts_with("--remote=") => {
+            options.remote = other["--remote=".len()..].parse().ok();
+        }
+        _ => return false,
+    }
+    true
+}
+
+/// `bun-engine home`: the native home over a library, no machine.
+#[cfg(feature = "home")]
+fn home(mut args: std::iter::Peekable<impl Iterator<Item = String>>) -> ExitCode {
+    let mut options = bun_engine::runtime::run::RunOptions {
+        title: "Bun Engine".into(),
+        ..Default::default()
+    };
+    while let Some(a) = args.next() {
+        if !shell_flag(&a, &mut args, &mut options) {
+            eprintln!("{USAGE}");
+            return ExitCode::from(2);
+        }
+    }
+    #[cfg(not(feature = "remote"))]
+    if options.remote.is_some() {
+        return fail("--remote needs a build with the `remote` feature".into());
+    }
+    match bun_engine::runtime::run::home_app(&options).run() {
+        bun_engine::bevy::app::AppExit::Success => ExitCode::SUCCESS,
+        bun_engine::bevy::app::AppExit::Error(code) => ExitCode::from(code.get()),
+    }
+}
+
 fn trace_line(frame: u64, keys: u32, screens: &[bun_engine::machine::Screen]) -> String {
     let digests = screens
         .iter()

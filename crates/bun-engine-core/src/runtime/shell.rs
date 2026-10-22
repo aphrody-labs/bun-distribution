@@ -9,11 +9,17 @@
 //!   (`<state_dir>/<machine>.state`); their [`MachineStateResult`] is shown as a toast.
 //! - `F3` toggles the overlay: frames per second, frame time and the machine's frame count.
 //!
-//! Colours are the dark fallbacks of the Material 3 roles in `docs/bun-engine/design/tokens.json`;
+//! Colours are the Material 3 roles of `docs/bun-engine/design/tokens.json` (`runtime::theme`);
 //! the focus ring is a solid 3 px outline in the accent role.
+//!
+//! Feedback and capture:
+//! - Confirming a menu entry rumbles every connected gamepad briefly (`ShellConfig::rumble`).
+//! - `Screenshot` saves the machine picture (PPM) and the composed window (UI and display filter,
+//!   PNG, through Bevy's `Screenshot`) once the menu has closed.
 
 use std::path::PathBuf;
 
+use crate::bevy::ecs::system::SystemParam;
 use crate::bevy::{
     app::{App, AppExit, Plugin, Startup, Update},
     color::Color,
@@ -21,9 +27,10 @@ use crate::bevy::{
     ecs::prelude::*,
     input::{
         ButtonInput,
-        gamepad::{Gamepad, GamepadButton},
+        gamepad::{Gamepad, GamepadButton, GamepadRumbleIntensity, GamepadRumbleRequest},
         keyboard::KeyCode,
     },
+    render::view::window::screenshot::{Screenshot, save_to_disk},
     state::prelude::*,
     text::{FontSize, TextColor, TextFont},
     time::Time,
@@ -33,6 +40,7 @@ use crate::bevy::{
     },
 };
 
+use super::theme::{self, Role};
 use super::{
     LoadState, MachineScreen, MachineSlot, MachineStateResult, MachineStatus, RemoveMachine,
     SaveState,
@@ -90,6 +98,8 @@ pub struct ShellConfig {
     /// Shows and hides the performance overlay.
     pub overlay_key: KeyCode,
     pub overlay: bool,
+    /// Rumble the gamepads when a menu entry is confirmed.
+    pub rumble: bool,
 }
 
 impl Default for ShellConfig {
@@ -99,34 +109,105 @@ impl Default for ShellConfig {
             menu_key: KeyCode::F1,
             overlay_key: KeyCode::F3,
             overlay: false,
+            rumble: true,
         }
     }
 }
 
-/// Material 3 dark role fallbacks (docs/bun-engine/design/tokens.json).
-mod role {
-    use crate::bevy::color::Color;
-    pub const SURFACE: Color = Color::srgba(0.059, 0.075, 0.114, 0.94);
-    pub const SURFACE_HIGH: Color = Color::srgb(0.082, 0.102, 0.153);
-    pub const TEXT: Color = Color::srgb(0.933, 0.949, 0.984);
-    pub const TEXT_MUTED: Color = Color::srgb(0.553, 0.592, 0.690);
-    pub const ACCENT: Color = Color::srgb(1.0, 0.827, 0.302);
-}
-
 /// Focus ring width in logical pixels.
-const RING: f32 = 3.0;
+pub(super) const RING: f32 = 3.0;
 
 #[derive(Resource, Default)]
 struct MenuCursor(usize);
 
 /// The `paused` value to restore when the menu closes.
 #[derive(Resource, Default)]
-struct WasPaused(bool);
+pub(super) struct WasPaused(pub bool);
 
 #[derive(Resource, Default)]
-struct Toast {
+pub(super) struct Toast {
     text: String,
     until: f64,
+}
+
+impl Toast {
+    /// Show `text` for three seconds from `now` (seconds).
+    pub(super) fn say(&mut self, text: impl Into<String>, now: f64) {
+        self.text = text.into();
+        self.until = now + 3.0;
+    }
+}
+
+/// Composed-window screenshots waiting for the UI to settle: (frames left, destination).
+#[derive(Resource, Default)]
+pub(super) struct PendingCaptures(Vec<(u32, PathBuf)>);
+
+impl PendingCaptures {
+    /// Capture the primary window (UI, display filter and picture) to a PNG `delay` frames from now.
+    pub(super) fn request(&mut self, delay: u32, path: PathBuf) {
+        self.0.push((delay, path));
+    }
+}
+
+/// Briefly rumble every connected gamepad (menu confirmation).
+pub(super) fn rumble_confirm(
+    enabled: bool,
+    pads: &Query<Entity, With<Gamepad>>,
+    rumble: &mut MessageWriter<GamepadRumbleRequest>,
+) {
+    if !enabled {
+        return;
+    }
+    for gamepad in pads.iter() {
+        rumble.write(GamepadRumbleRequest::Add {
+            gamepad,
+            duration: std::time::Duration::from_millis(80),
+            intensity: GamepadRumbleIntensity::weak_motor(0.5),
+        });
+    }
+}
+
+/// Rumble and window capture, bundled to keep `navigate` under Bevy's 16 system parameters.
+#[derive(SystemParam)]
+struct Feedback<'w, 's> {
+    gamepads: Query<'w, 's, Entity, With<Gamepad>>,
+    rumble: MessageWriter<'w, GamepadRumbleRequest>,
+    captures: ResMut<'w, PendingCaptures>,
+}
+
+impl Feedback<'_, '_> {
+    fn confirm(&mut self, enabled: bool) {
+        rumble_confirm(enabled, &self.gamepads, &mut self.rumble);
+    }
+}
+
+fn run_captures(
+    mut pending: ResMut<PendingCaptures>,
+    mut commands: Commands,
+    mut toast: ResMut<Toast>,
+    time: Res<Time>,
+) {
+    let mut due = Vec::new();
+    pending.0.retain_mut(|(frames, path)| {
+        if *frames == 0 {
+            due.push(path.clone());
+            false
+        } else {
+            *frames -= 1;
+            true
+        }
+    });
+    for path in due {
+        if let Some(parent) = path.parent()
+            && let Err(e) = std::fs::create_dir_all(parent)
+        {
+            toast.say(format!("Capture failed: {e}"), time.elapsed_secs_f64());
+            continue;
+        }
+        commands
+            .spawn(Screenshot::primary_window())
+            .observe(save_to_disk(path));
+    }
 }
 
 #[derive(Component)]
@@ -152,6 +233,7 @@ impl Plugin for ShellPlugin {
             .init_resource::<MenuCursor>()
             .init_resource::<WasPaused>()
             .init_resource::<Toast>()
+            .init_resource::<PendingCaptures>()
             .add_systems(Startup, spawn_hud)
             .add_systems(OnEnter(ShellState::QuickMenu), open_menu)
             .add_systems(OnExit(ShellState::QuickMenu), close_menu)
@@ -163,6 +245,7 @@ impl Plugin for ShellPlugin {
                     navigate.run_if(in_state(ShellState::QuickMenu)),
                     highlight.run_if(in_state(ShellState::QuickMenu)),
                     collect_results,
+                    run_captures,
                     update_hud,
                 )
                     .chain(),
@@ -184,7 +267,7 @@ fn spawn_hud(mut commands: Commands) {
             font_size: FontSize::Px(16.0),
             ..Default::default()
         },
-        TextColor(role::ACCENT),
+        TextColor(theme::color(Role::Accent)),
         PerfText,
     ));
     commands.spawn((
@@ -200,7 +283,7 @@ fn spawn_hud(mut commands: Commands) {
             font_size: FontSize::Px(18.0),
             ..Default::default()
         },
-        TextColor(role::TEXT),
+        TextColor(theme::color(Role::Text)),
         ToastText,
     ));
 }
@@ -262,7 +345,7 @@ fn open_menu(
                 justify_content: JustifyContent::Center,
                 ..Default::default()
             },
-            BackgroundColor(Color::srgba(0.027, 0.035, 0.059, 0.6)),
+            BackgroundColor(theme::color_alpha(Role::Bg, 0.6)),
             GlobalZIndex(90),
             DespawnOnExit(ShellState::QuickMenu),
         ))
@@ -276,7 +359,7 @@ fn open_menu(
                     border_radius: BorderRadius::all(Val::Px(16.0)),
                     ..Default::default()
                 },
-                BackgroundColor(role::SURFACE),
+                BackgroundColor(theme::color_alpha(Role::Surface, 0.94)),
             ))
             .with_children(|panel| {
                 for (i, action) in QuickAction::ALL.into_iter().enumerate() {
@@ -286,7 +369,7 @@ fn open_menu(
                             border_radius: BorderRadius::all(Val::Px(10.0)),
                             ..Default::default()
                         },
-                        BackgroundColor(role::SURFACE_HIGH),
+                        BackgroundColor(theme::color(Role::SurfaceHigh)),
                         Outline::new(Val::Px(RING), Val::Px(2.0), Color::NONE),
                         MenuItem(i),
                         Text::new(action.label()),
@@ -294,7 +377,7 @@ fn open_menu(
                             font_size: FontSize::Px(22.0),
                             ..Default::default()
                         },
-                        TextColor(role::TEXT),
+                        TextColor(theme::color(Role::Text)),
                     ));
                 }
                 panel.spawn((
@@ -303,7 +386,7 @@ fn open_menu(
                         font_size: FontSize::Px(14.0),
                         ..Default::default()
                     },
-                    TextColor(role::TEXT_MUTED),
+                    TextColor(theme::color(Role::TextMuted)),
                 ));
             });
         });
@@ -331,6 +414,7 @@ fn navigate(
     mut toast: ResMut<Toast>,
     time: Res<Time>,
     mut commands: Commands,
+    mut feedback: Feedback,
 ) {
     let key = |codes: &[KeyCode]| {
         keys.as_ref()
@@ -351,6 +435,7 @@ fn navigate(
     if !(key(&[KeyCode::Enter, KeyCode::Space]) || pad(GamepadButton::South)) {
         return;
     }
+    feedback.confirm(config.rumble);
     let Some(status) = status else { return };
     let state_path = config.state_dir.join(format!("{}.state", status.name));
     let mut say = |text: String| {
@@ -386,6 +471,13 @@ fn navigate(
                     Ok(()) => format!("Screenshot: {}", path.display()),
                     Err(e) => format!("Screenshot failed: {e}"),
                 });
+                feedback.captures.request(
+                    4,
+                    config.state_dir.join("screenshots").join(format!(
+                        "{}-{}-window.png",
+                        status.name, status.frames
+                    )),
+                );
             }
             next.set(ShellState::Playing);
         }
@@ -405,11 +497,11 @@ fn highlight(
 ) {
     for (item, mut outline, mut background) in &mut items {
         let focused = item.0 == cursor.0;
-        outline.color = if focused { role::ACCENT } else { Color::NONE };
+        outline.color = if focused { theme::color(Role::Accent) } else { Color::NONE };
         background.0 = if focused {
-            Color::srgb(0.12, 0.14, 0.2)
+            theme::color(Role::Border)
         } else {
-            role::SURFACE_HIGH
+            theme::color(Role::SurfaceHigh)
         };
     }
 }

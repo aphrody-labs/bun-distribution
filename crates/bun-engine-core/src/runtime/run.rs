@@ -29,6 +29,18 @@ pub struct RunOptions {
     pub filter: Option<String>,
     /// Integer scaling for the filtered view.
     pub integer_scale: bool,
+    /// Kiosk: borderless fullscreen (gamescope, console session).
+    pub fullscreen: bool,
+    /// Kiosk: hide the mouse cursor over the window.
+    pub hide_cursor: bool,
+    /// Serve BRP on 127.0.0.1:<port> (feature `remote`).
+    pub remote: Option<u16>,
+    /// Saved states and screenshots go here (default `saves`).
+    pub state_dir: Option<PathBuf>,
+    /// Initial logical window size.
+    pub size: Option<(u32, u32)>,
+    /// Home library: a `library.db` path or `mock`, `mock:empty`, `mock:error`, `mock:loading`.
+    pub library: Option<String>,
 }
 
 /// What the app reported when it exited.
@@ -52,9 +64,14 @@ pub fn machine_app(
     let engine = if options.headless {
         BunEnginePlugin::headless()
     } else {
-        BunEnginePlugin::windowed(options.title.clone())
+        let mut engine = BunEnginePlugin::windowed(options.title.clone());
+        engine.fullscreen = options.fullscreen;
+        engine.hide_cursor = options.hide_cursor;
+        engine.size = options.size;
+        engine
     };
     app.add_plugins(engine);
+    configure_shell(&mut app, options);
     app.insert_machine(machine);
     {
         let mut status = app.world_mut().resource_mut::<MachineStatus>();
@@ -86,6 +103,39 @@ pub fn machine_app(
     app.insert_resource(ReportSink(report.clone()))
         .add_systems(Last, collect.after(super::machine::write_out_on_exit));
     (app, report)
+}
+
+/// Shell settings shared by the machine app and the home app: state directory, home library and
+/// BRP.
+fn configure_shell(app: &mut App, options: &RunOptions) {
+    if options.headless {
+        return;
+    }
+    #[cfg(feature = "shell")]
+    if let Some(dir) = &options.state_dir {
+        app.world_mut().resource_mut::<super::shell::ShellConfig>().state_dir = dir.clone();
+    }
+    #[cfg(feature = "home")]
+    if let Some(spec) = &options.library {
+        app.insert_resource(super::home::HomeLibrary(super::home::source_from_spec(spec)));
+    }
+    #[cfg(all(feature = "remote", not(target_arch = "wasm32")))]
+    if let Some(port) = options.remote {
+        app.add_plugins(super::remote::RemoteControlPlugin { port });
+    }
+    let _ = (app, options);
+}
+
+/// The home alone: no machine, the library and the shell in a window (`bun-engine home`).
+pub fn home_app(options: &RunOptions) -> App {
+    let mut app = App::new();
+    let mut engine = BunEnginePlugin::windowed(options.title.clone());
+    engine.fullscreen = options.fullscreen;
+    engine.hide_cursor = options.hide_cursor;
+    engine.size = options.size;
+    app.add_plugins(engine);
+    configure_shell(&mut app, options);
+    app
 }
 
 /// Run `machine` until it shuts down, reaches `--frames` or the window closes.

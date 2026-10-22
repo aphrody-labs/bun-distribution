@@ -248,3 +248,21 @@ path. This is a software-rendering measurement of this host: it says nothing abo
   pad is covered in phase 2 (virtual device) and the player path is now reported by the page (`retroarch.renderer`).
 - SNES has no capture (no open SNES homebrew was fetched).
 - The Nestopia frame is stretched in the player because the core reports its NTSC-filter geometry.
+
+## Bevy runtime captures (native `bun-engine`, phase 2)
+
+Produced on the VPS with the native Bevy 0.20 build of `crates/bun-engine-core` (`run nes alter_ego.nes`, `home`),
+under Xvfb with the lavapipe software Vulkan adapter (`VK_ICD_FILENAMES=.../lvp_icd.json WGPU_BACKEND=vulkan`). Every PNG
+is a composed-window `Screenshot` requested over BRP (`bun/capture`); keys came from `xdotool`. Scripts: `bevy-harness/`
+(`scn-machine.sh`, `scn-home.sh`, `scn-db.sh`, `shoot-lib.sh`). Software rendering: this proves the WESL pipeline builds
+and the picture is right, not GPU speed or gamescope pacing.
+
+| Files | What |
+| --- | --- |
+| `machine-filter-{off,plain,scanlines,crt,lcd,sharp}.png` | each display filter over Alter Ego (TetaNES bundled homebrew), 1280x720 |
+| `machine-{fit,integer}-{sharp,scanlines}.png` | 1100x700 window (fit 2.92): fractional fit vs integer scale (x2) |
+| `machine-menu-{open,down,screenshot-selected}.png`, `machine-paused.png` | F1 quick menu (machine paused), focus ring, BRP pause |
+| `home-{loading,empty,error,ready}.png`, `home-ready-{1024x768,800x600}.png` | home states (mock library) and layouts |
+| `home-focus-moved.png`, `home-filtered.png`, `home-after-play.png` | directional focus with real key presses, shelf filter, Play |
+| `home-library-db.png`, `home-library-missing.png` | real `library.db` (schema created by `frontend/library.ts`), and a missing file |
+| `home-kiosk.png` | `--kiosk` (see BEVY.md for what Xvfb without a window manager can show) |

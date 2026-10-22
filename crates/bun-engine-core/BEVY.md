@@ -141,3 +141,24 @@ runtime-web,nes`): the NES machine on Bevy's WebGPU backend in `<canvas id="bun-
   Mode (Resume, Save state, Load state, Screenshot, Stop; pauses the machine), `F3` performance
   overlay. States and screenshots go under `ShellConfig::state_dir`.
 - Audit of the Bevy capabilities not used yet: `BEVY-AUDIT.md`.
+
+## Native home, BRP and kiosk (`home`, `remote`; phase 2)
+
+- `runtime::home` (`home`, in `default`): `bun-engine home [--library DB|mock|mock:empty|mock:error|mock:loading]`.
+  Hero with one Play, system shelf (filter), tiles, controller-hints footer; D-pad, left stick or arrows move
+  `bevy_input_focus` focus through the geometric `AutoDirectionalNavigator`; Enter/South plays or selects, Backspace/East goes
+  back. The focus ring is 3 px in the accent role; all colours are the M3 roles of `docs/bun-engine/design/tokens.json`
+  (`runtime::theme`, embedded and parsed once). States: Loading, Ready, Empty, Error (Retry). Library: trait
+  `LibrarySource` with `MockLibrary` and `SqliteLibrary` (rusqlite, the workspace pin with `bundled`, opened READ_ONLY; reads
+  `$BEP_ROOT/var/lib/bep/library.db` table `games`, default `usr/var/lib/bep/library.db`). Playing writes a `HomeLaunch` message;
+  starting the machine is the host's job. Not done: cover art, scrolling (the grid shows what fits, the shelf filters),
+  mouse/touch picking.
+- `runtime::remote` (`remote`, native only, not in `default`): `--remote[=PORT]` serves BRP on 127.0.0.1:15702 (and Bevy's render
+  sub-app server on 15703). No authentication exists in BRP: loopback is the only control. Methods `bun/status`, `bun/filter`,
+  `bun/pause`, `bun/menu`, `bun/capture` (composed-window PNG), `bun/home`, `bun/exit`; Bevy's reflection methods also work.
+- Shell: the Screenshot action also saves the composed window PNG (`Screenshot::primary_window`); confirming a menu entry
+  sends a `GamepadRumbleRequest` to every gamepad (`ShellConfig::rumble`).
+- Kiosk: `--kiosk` = `--fullscreen` (BorderlessFullscreen, primary monitor) + `--hide-cursor` (`CursorOptions::visible`); also
+  `--size WxH`, `--state-dir DIR`.
+- Build note: the VPS filesystem was under pressure, so the verification build used rlib-only and stripped debuginfo in an
+  uncommitted overlay; the committed `Cargo.toml` keeps `crate-type = ["rlib","cdylib","staticlib"]`.
