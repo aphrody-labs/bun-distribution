@@ -2,6 +2,7 @@
 import { h } from "../dom";
 import { allAppCapabilities } from "@aphrody/bun-workspace/capabilities";
 import { catalog } from "../os";
+import routeCatalog from "../../../../infra/config/routes.catalog.json";
 import { appStore } from "./appstore";
 import { openWebApp } from "./webapps";
 import type { RegistryEntry } from "../pkg";
@@ -49,6 +50,15 @@ export async function creativeApp(
     .flatMap((entry) => {
       const host = hostedCatalog.hosts[entry.libraryId];
       if (!host) return [];
+      // The product hosts 301 to a path of the canonical origin (infra/config/routes.catalog.json).
+      const route = (
+        routeCatalog.hosts as Record<string, { path?: string }>
+      )[`${host.host}.aphrody.app`];
+      // A path that selects this very window has no browser build to open: say so instead of looping.
+      const selfPath =
+        !route?.path ||
+        (routeCatalog.apps as Record<string, string>)[route.path] ===
+          "creative";
       return [
         h(
           "article",
@@ -68,19 +78,21 @@ export async function creativeApp(
           h(
             "div",
             { class: "sact" },
-            h(
-              "button",
-              {
-                class: "btn",
-                onclick: () =>
-                  openWebApp({
-                    id: entry.id,
-                    name: entry.title,
-                    url: `https://${host.host}.aphrody.app`,
-                  }),
-              },
-              "Open studio",
-            ),
+            selfPath
+              ? h("span", { class: "muted" }, "No browser build is packaged yet")
+              : h(
+                  "button",
+                  {
+                    class: "btn",
+                    onclick: () =>
+                      openWebApp({
+                        id: entry.id,
+                        name: entry.title,
+                        url: `${routeCatalog.origin}${route!.path}`,
+                      }),
+                  },
+                  "Open studio",
+                ),
           ),
         ),
       ];
