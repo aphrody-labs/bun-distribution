@@ -18,7 +18,7 @@ services:
       - ./data:/data
       - ./config.yaml:/data/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOME}/build/gitea-work:${HOME}/build/gitea-work
+      - /build/gitea-work:/build/gitea-work
     logging:
       driver: json-file
       options:

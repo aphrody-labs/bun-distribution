@@ -35,9 +35,10 @@ container:
     - /home/ubuntu/apps/gitea-runner/ssh/known_hosts:ro
     - /home/ubuntu/build/cache/gitea-runner
   sweep: true
-  # Job workspaces live on the /home btrfs (sdb+sdc), not in Docker volumes on the root disk: one native job
-  # holds 4 to 19 GB and three run at once. The runner container mounts this directory at the same path.
+  # Job workspaces live in /build on the root disk, apart from the /home btrfs (sdb+sdc) that holds the checkouts,
+  # caches and corpora: one native job holds 4 to 19 GB and three run at once. The runner container mounts this
+  # directory at the same path.
   bind_workdir: true
-  workdir_parent: home/ubuntu/build/gitea-work
+  workdir_parent: build/gitea-work
 cache:
   enabled: false
