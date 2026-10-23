@@ -128,6 +128,13 @@ function npmVersions(name: string): Promise<string[]> {
 async function heldBack(pkgs: NpmPackage[]): Promise<Map<string, string>> {
   const catalog: Record<string, string> = (await Bun.file(join(ROOT, "package.json")).json()).catalog ?? {};
   const byName = new Map(pkgs.map(pkg => [pkg.name, pkg]));
+  // Workspace members outside packages/ and apps/ (the toolchains/bun submodule): `bun publish` pins their exact version.
+  const lock = Bun.JSONC.parse(await Bun.file(join(ROOT, "bun.lock")).text()) as {
+    workspaces: Record<string, { name?: string; version?: string }>;
+  };
+  const members = new Map(
+    Object.values(lock.workspaces).flatMap(ws => (ws.name && ws.version ? [[ws.name, ws.version] as const] : [])),
+  );
   const held = new Map<string, string>();
   for (const pkg of pkgs) {
     for (const [dep, raw] of Object.entries(pkg.specs)) {
@@ -137,6 +144,7 @@ async function heldBack(pkgs: NpmPackage[]): Promise<Map<string, string>> {
         [name, spec] = [spec.slice(4, spec.lastIndexOf("@")), spec.slice(spec.lastIndexOf("@") + 1)];
       const local = byName.get(name);
       let reason: string | undefined;
+      if (spec.startsWith("workspace:") && !local && members.has(name)) spec = members.get(name)!;
       if (spec.startsWith("workspace:")) reason = local ? undefined : `${name} is private or not in packages/ or apps/`;
       else if (/^(file|link|catalog):/.test(spec)) reason = `${name} is ${spec}`;
       else if (local && Bun.semver.satisfies(local.version, spec)) reason = undefined;
