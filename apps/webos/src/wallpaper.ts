@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-// Generated wallpaper: a contour map of an invented terrain, lit by soft glows in the theme's accent roles.
-// Drawn once per theme or size on a 2D canvas; nothing animates, nothing is downloaded.
+// Desktop wallpaper, painted on one 2D canvas from a WallpaperSpec (prefs.ts): a generated contour map of an
+// invented terrain lit by glows in M3 roles (seed, density and colours editable), a solid colour, a gradient,
+// or a picture from the WebOS file system. Nothing animates and nothing is downloaded.
+import { HOME, webos } from "./os";
+import type { ColorToken, WallpaperSpec } from "./prefs";
 
 type Rgb = [number, number, number];
 
-function parseColor(value: string): Rgb {
+function parseColor(value: string): Rgb | undefined {
   const v = value.trim();
   if (v.startsWith("#")) {
     const hex =
@@ -16,14 +19,16 @@ function parseColor(value: string): Rgb {
             .join("")
         : v.slice(1, 7);
     const n = Number.parseInt(hex, 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return Number.isNaN(n)
+      ? undefined
+      : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
   const m = /rgba?\(([^)]+)\)/.exec(v);
   if (m) {
     const [r = 0, g = 0, b = 0] = m[1]!.split(/[ ,/]+/).map(Number);
     return [r, g, b];
   }
-  return [20, 20, 30];
+  return undefined;
 }
 const rgba = ([r, g, b]: Rgb, a: number) => `rgba(${r},${g},${b},${a})`;
 const mix = (a: Rgb, b: Rgb, t: number): Rgb => [
@@ -34,11 +39,28 @@ const mix = (a: Rgb, b: Rgb, t: number): Rgb => [
 const luminance = ([r, g, b]: Rgb) =>
   (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 
+/** Resolve a colour token (an M3 role name or #rrggbb) against the current theme. */
+export function resolveToken(token: ColorToken): string {
+  if (token.startsWith("#")) return token;
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue(`--md-sys-color-${token}`)
+      .trim() || token
+  );
+}
+const rgbOf = (token: ColorToken, fallback: Rgb): Rgb =>
+  parseColor(resolveToken(token)) ?? fallback;
+
+/** Deterministic pseudo-random numbers from a seed. */
+function lcg(seed: number) {
+  let s = seed >>> 0;
+  return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+}
+
 /** Deterministic value noise so the same terrain appears on every visit. */
 function noise2(seed: number) {
   const perm = new Uint8Array(512);
-  let s = seed >>> 0;
-  const rand = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const rand = lcg(seed);
   const p = Array.from({ length: 256 }, (_, i) => i);
   for (let i = 255; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -62,36 +84,27 @@ function noise2(seed: number) {
   };
 }
 
-/** Paint the wallpaper into the canvas from the current M3 roles. */
-export function paintWallpaper(canvas: HTMLCanvasElement) {
-  const rect = canvas.getBoundingClientRect();
-  const w = Math.max(1, Math.round(rect.width));
-  const h = Math.max(1, Math.round(rect.height));
-  const dpr = Math.min(1.5, devicePixelRatio || 1);
-  canvas.width = Math.round(w * dpr);
-  canvas.height = Math.round(h * dpr);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+function contour(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  spec: WallpaperSpec,
+  dark: boolean,
+) {
+  const span = Math.max(w, h);
+  const base = rgbOf("surface-container-lowest", [20, 20, 30]);
+  const surface = rgbOf("surface", base);
+  const [g1, g2, g3] = spec.glows.map((t) => rgbOf(t, surface)) as [
+    Rgb,
+    Rgb,
+    Rgb,
+  ];
 
-  const css = getComputedStyle(document.documentElement);
-  const role = (name: string) =>
-    parseColor(css.getPropertyValue(`--md-sys-color-${name}`) || "#222");
-  const base = role("surface-container-lowest");
-  const surface = role("surface");
-  const primary = role("primary");
-  const secondary = role("secondary");
-  const tertiary = role("tertiary");
-  const dark = luminance(surface) < 0.5;
-
-  // Ground: a slow diagonal fall from the lowest surface into a primary-tinted dusk.
+  // Ground: a slow diagonal fall from the lowest surface into a tinted dusk.
   const ground = ctx.createLinearGradient(0, 0, w, h);
-  ground.addColorStop(0, rgba(mix(base, primary, dark ? 0.04 : 0.1), 1));
-  ground.addColorStop(
-    0.55,
-    rgba(mix(surface, secondary, dark ? 0.06 : 0.12), 1),
-  );
-  ground.addColorStop(1, rgba(mix(base, tertiary, dark ? 0.08 : 0.16), 1));
+  ground.addColorStop(0, rgba(mix(base, g1, dark ? 0.04 : 0.1), 1));
+  ground.addColorStop(0.55, rgba(mix(surface, g3, dark ? 0.06 : 0.12), 1));
+  ground.addColorStop(1, rgba(mix(base, g2, dark ? 0.08 : 0.16), 1));
   ctx.fillStyle = ground;
   ctx.fillRect(0, 0, w, h);
 
@@ -103,20 +116,23 @@ export function paintWallpaper(canvas: HTMLCanvasElement) {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   };
-  const span = Math.max(w, h);
-  glow(w * 0.8, h * 0.1, span * 0.62, primary, dark ? 0.42 : 0.4);
-  glow(w * 0.06, h * 0.94, span * 0.55, tertiary, dark ? 0.3 : 0.32);
-  glow(w * 0.46, h * 1.1, span * 0.42, secondary, dark ? 0.22 : 0.24);
+  glow(w * 0.8, h * 0.1, span * 0.62, g1, dark ? 0.42 : 0.4);
+  glow(w * 0.06, h * 0.94, span * 0.55, g2, dark ? 0.3 : 0.32);
+  glow(w * 0.46, h * 1.1, span * 0.42, g3, dark ? 0.22 : 0.24);
 
-  // Terrain: a few broad hills plus fractal noise, traced as contour lines with marching squares.
-  const n = noise2(0xb0b05);
-  const hills: [number, number, number, number][] = [
-    [0.72, 0.3, 0.26, 1],
-    [0.3, 0.62, 0.3, 0.85],
-    [0.88, 0.78, 0.18, 0.55],
-    [0.14, 0.2, 0.2, 0.5],
-    [0.52, 0.12, 0.16, 0.35],
-  ];
+  // Terrain: broad hills placed by the seed plus fractal noise, traced as contour lines with marching squares.
+  const n = noise2(spec.seed);
+  const rand = lcg(spec.seed ^ 0x9e3779b9);
+  const hills = Array.from(
+    { length: 5 },
+    (_, i) =>
+      [
+        0.1 + rand() * 0.8,
+        0.1 + rand() * 0.8,
+        0.14 + rand() * 0.18,
+        1 - i * 0.14,
+      ] as const,
+  );
   const field = (x: number, y: number) => {
     const nx = x / span;
     const ny = y / span;
@@ -145,10 +161,11 @@ export function paintWallpaper(canvas: HTMLCanvasElement) {
       if (v < min) min = v;
       if (v > max) max = v;
     }
+  const lineBase = rgbOf(spec.lines, g1);
   const line = dark
-    ? mix(primary, [255, 255, 255], 0.35)
-    : mix(primary, [0, 0, 0], 0.25);
-  const levels = 26;
+    ? mix(lineBase, [255, 255, 255], 0.35)
+    : mix(lineBase, [0, 0, 0], 0.25);
+  const levels = spec.levels;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   for (let l = 1; l < levels; l++) {
@@ -236,26 +253,143 @@ export function paintWallpaper(canvas: HTMLCanvasElement) {
   ctx.fillRect(0, 0, w, h);
 }
 
-/** Mount the wallpaper canvas into the desktop and repaint it on resize and theme changes. */
-export function mountWallpaper(): () => void {
+/** Paint the wallpaper into the canvas from a spec and the current M3 roles. */
+export function paintWallpaper(
+  canvas: HTMLCanvasElement,
+  spec: WallpaperSpec,
+  picture?: ImageBitmap,
+) {
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width));
+  const h = Math.max(1, Math.round(rect.height));
+  const dpr = Math.min(1.5, devicePixelRatio || 1);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const surface = rgbOf("surface", [20, 20, 30]);
+  const dark = luminance(surface) < 0.5;
+
+  if (spec.kind === "solid") {
+    ctx.fillStyle = rgba(rgbOf(spec.solid, surface), 1);
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+  if (spec.kind === "gradient") {
+    const rad = ((spec.angle - 90) * Math.PI) / 180;
+    const len = (Math.abs(w * Math.cos(rad)) + Math.abs(h * Math.sin(rad))) / 2;
+    const [cx, cy, dx, dy] = [
+      w / 2,
+      h / 2,
+      Math.cos(rad) * len,
+      Math.sin(rad) * len,
+    ];
+    const g = ctx.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
+    g.addColorStop(0, rgba(rgbOf(spec.gradient[0], surface), 1));
+    g.addColorStop(1, rgba(rgbOf(spec.gradient[1], surface), 1));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+  if (spec.kind === "image" && picture) {
+    ctx.fillStyle = rgba(rgbOf("surface-container-lowest", surface), 1);
+    ctx.fillRect(0, 0, w, h);
+    const scale = (spec.fit === "cover" ? Math.max : Math.min)(
+      w / picture.width,
+      h / picture.height,
+    );
+    const pw = picture.width * scale;
+    const ph = picture.height * scale;
+    ctx.drawImage(picture, (w - pw) / 2, (h - ph) / 2, pw, ph);
+    if (spec.dim > 0) {
+      ctx.fillStyle = `rgba(0,0,0,${spec.dim})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+    return;
+  }
+  contour(ctx, w, h, spec, dark);
+}
+
+const pictures = new Map<string, Promise<ImageBitmap | undefined>>();
+/** Decode a picture of the WebOS file system once per path. */
+export function loadPicture(path: string): Promise<ImageBitmap | undefined> {
+  let p = pictures.get(path);
+  if (!p) {
+    p = webos()
+      .then((os) =>
+        createImageBitmap(
+          new Blob([os.fs.read(path) as Uint8Array<ArrayBuffer>]),
+        ),
+      )
+      .catch(() => undefined);
+    pictures.set(path, p);
+  }
+  return p;
+}
+/** Forget a decoded picture after the file changed. */
+export const forgetPicture = (path: string) => pictures.delete(path);
+
+/** Folder new wallpaper pictures are copied into. */
+export const WALLPAPER_DIR = `${HOME}/Pictures/Wallpapers`;
+
+export interface WallpaperController {
+  /** Show this spec (repaints only when it, the theme or the size changed). */
+  show(spec: WallpaperSpec): void;
+  /** Repaint after a theme change. */
+  repaint(): void;
+}
+
+/** Mount the wallpaper canvas behind the desktop and repaint it on resize, theme and spec changes. */
+export function mountWallpaper(initial: WallpaperSpec): WallpaperController {
   const canvas = document.createElement("canvas");
   canvas.className = "wallpaper";
   canvas.setAttribute("aria-hidden", "true");
   document.body.prepend(canvas);
+  let spec = initial;
   let frame = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const paint = () => {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(() => {
-      paintWallpaper(canvas);
-      canvas.classList.add("ready");
+  let drawn = "";
+  let generation = 0;
+  const paint = (force = false) => {
+    const key = JSON.stringify(spec);
+    if (!force && key === drawn) return;
+    const mine = ++generation;
+    const current = spec;
+    const picture =
+      current.kind === "image" && current.image
+        ? loadPicture(current.image)
+        : Promise.resolve(undefined);
+    void picture.then((bitmap) => {
+      if (mine !== generation) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        // A missing picture falls back to the generated map instead of a blank desktop.
+        paintWallpaper(
+          canvas,
+          current.kind === "image" && !bitmap
+            ? { ...current, kind: "contour" }
+            : current,
+          bitmap,
+        );
+        drawn = key;
+        canvas.classList.add("ready");
+      });
     });
   };
   new ResizeObserver(() => {
     clearTimeout(timer);
-    timer = setTimeout(paint, 120);
+    timer = setTimeout(() => paint(true), 120);
   }).observe(canvas);
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint);
-  paint();
-  return paint;
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () =>
+    paint(true),
+  );
+  paint(true);
+  return {
+    show(next) {
+      spec = next;
+      paint();
+    },
+    repaint: () => paint(true),
+  };
 }

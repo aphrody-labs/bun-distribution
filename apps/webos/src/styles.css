@@ -3,21 +3,39 @@
 /* Shell layout, after Hyprland/waybar (gaps, rounded tiles, a thin status bar), ChromeOS (launcher, quick
    settings) and COSMIC (tinted surfaces). Motion stays short and is dropped per rule for reduced motion. */
 :root {
+  /* Defaults of the preference variables; appearance.ts sets the live values on <html>. */
   --gap: 10px;
   --bar-h: 40px;
-  --radius-win: 16px;
+  --ctl: 32px;
+  --ws-dot: 24px;
+  --fs: 1;
+  --shape: 1;
+  --pad: 1;
+  --blur: 20px;
+  --glass-a: 74%;
+  --glass-strong-a: 87%;
+  --focus-w: 3px;
+  --win-border: 2px;
+  --dock-icon: 44px;
+  --font-sans: "Google Sans Flex", "Roboto Flex", system-ui, sans-serif;
+  --radius-win: calc(16px * var(--shape));
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.05, 0.7, 0.1, 1);
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.18), 0 4px 14px rgb(0 0 0 / 0.14);
-  --shadow-3: 0 2px 6px rgb(0 0 0 / 0.2), 0 18px 48px rgb(0 0 0 / 0.32);
+  --shadow-color: var(--md-sys-color-shadow, var(--md-sys-color-scrim));
+  --shadow-1:
+    0 1px 2px color-mix(in srgb, var(--shadow-color) 18%, transparent),
+    0 4px 14px color-mix(in srgb, var(--shadow-color) 14%, transparent);
+  --shadow-3:
+    0 2px 6px color-mix(in srgb, var(--shadow-color) 20%, transparent),
+    0 18px 48px color-mix(in srgb, var(--shadow-color) 32%, transparent);
   --glass: color-mix(
     in srgb,
-    var(--md-sys-color-surface-container) 74%,
+    var(--md-sys-color-surface-container) var(--glass-a),
     transparent
   );
   --glass-strong: color-mix(
     in srgb,
-    var(--md-sys-color-surface-container-high) 88%,
+    var(--md-sys-color-surface-container-high) var(--glass-strong-a),
     transparent
   );
   --hairline: color-mix(
@@ -40,9 +58,7 @@ body {
   overflow: hidden;
 }
 body {
-  font:
-    14px / 1.45 "Google Sans Flex",
-    var(--md-ref-typeface-plain, Roboto, system-ui, sans-serif);
+  font: calc(14px * var(--fs)) / 1.45 var(--font-sans);
   color: var(--md-sys-color-on-surface);
   /* Painted until the wallpaper canvas is ready, in the same roles. */
   background:
@@ -72,9 +88,9 @@ button {
   border: 0;
   background: none;
 }
-/* Console-UI focus rule: a 3 px accent ring on every keyboard-focused control. */
+/* Console-UI focus rule: an accent ring (Settings, Accessibility) on every keyboard-focused control. */
 :focus-visible {
-  outline: 3px solid var(--md-sys-color-primary);
+  outline: var(--focus-w) solid var(--md-sys-color-primary);
   outline-offset: 2px;
 }
 kbd {
@@ -83,15 +99,12 @@ kbd {
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--shape));
   border: 1px solid var(--hairline);
   border-bottom-width: 2px;
   background: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface-variant);
-  font:
-    500 11px / 1 "Google Sans Flex",
-    system-ui,
-    sans-serif;
+  font: 500 calc(11px * var(--fs)) / 1 var(--font-sans);
 }
 
 /* Desktop and wallpaper ---------------------------------------------------------------------------- */
@@ -128,13 +141,14 @@ kbd {
   align-items: center;
   gap: 12px;
   height: var(--bar-h);
-  padding: 0 8px;
+  padding: 0 calc(8px * var(--pad));
   background: var(--glass);
-  backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(var(--blur)) saturate(1.4);
   border-bottom: 1px solid var(--hairline);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .bar-left,
+.bar-center,
 .bar-right {
   display: flex;
   align-items: center;
@@ -147,13 +161,13 @@ kbd {
 .brand {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: var(--ctl);
+  height: var(--ctl);
+  border-radius: calc(10px * var(--shape));
   flex: none;
 }
 .brand img {
-  border-radius: 7px;
+  border-radius: calc(7px * var(--shape));
 }
 .brand:hover,
 .tbtn:hover,
@@ -164,21 +178,21 @@ kbd {
 .tbtn {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: var(--ctl);
+  height: var(--ctl);
+  border-radius: calc(10px * var(--shape));
   flex: none;
   color: var(--md-sys-color-on-surface-variant);
 }
 .tbtn .mi {
-  font-size: 19px;
+  font-size: calc(19px * var(--fs));
 }
 .wsbar {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 0 6px;
-  height: 28px;
+  height: calc(var(--ws-dot) + 4px);
   margin-inline: 4px;
   border-radius: 999px;
   background: color-mix(
@@ -190,8 +204,8 @@ kbd {
 .ws {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: var(--ws-dot);
+  height: var(--ws-dot);
   border-radius: 999px;
 }
 .ws-mark {
@@ -216,7 +230,7 @@ kbd {
   background: var(--md-sys-color-on-surface-variant);
 }
 .ws.cur {
-  width: 34px;
+  width: calc(var(--ws-dot) + 10px);
 }
 .ws.cur .ws-mark {
   width: 28px;
@@ -224,10 +238,7 @@ kbd {
   border: 0;
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
-  font:
-    700 11px / 1 "Google Sans Flex",
-    system-ui,
-    sans-serif;
+  font: 700 calc(11px * var(--fs)) / 1 var(--font-sans);
 }
 .ws:hover:not(.cur) .ws-mark {
   background: var(--md-sys-color-on-surface);
@@ -243,7 +254,7 @@ kbd {
   color: var(--md-sys-color-on-surface);
 }
 .active-app .mi {
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
   color: var(--md-sys-color-primary);
 }
 .active-app span:last-child {
@@ -261,12 +272,12 @@ kbd {
   gap: 8px;
   height: 30px;
   padding: 0 12px;
-  border-radius: 10px;
+  border-radius: calc(10px * var(--shape));
   white-space: nowrap;
 }
 .bar-time {
   font-weight: 650;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
 }
@@ -289,7 +300,7 @@ kbd {
   color: var(--md-sys-color-on-surface);
 }
 .status .mi {
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
   width: 17px;
 }
 .status .mi[hidden] {
@@ -308,13 +319,10 @@ kbd {
   translate: -50% -4px;
   z-index: 10;
   padding: 5px 10px;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--shape));
   background: var(--md-sys-color-inverse-surface);
   color: var(--md-sys-color-inverse-on-surface);
-  font:
-    500 12px / 1.3 "Google Sans Flex",
-    system-ui,
-    sans-serif;
+  font: 500 calc(12px * var(--fs)) / 1.3 var(--font-sans);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -366,10 +374,11 @@ kbd {
   flex: none;
   background: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--md-sys-color-surface-bright) 30%, transparent);
 }
 .appicon .mi {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs));
   font-variation-settings:
     "FILL" 1,
     "wght" 500,
@@ -441,30 +450,30 @@ kbd {
   overflow-y: visible;
   scrollbar-width: none;
   background: var(--glass-strong);
-  backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(calc(var(--blur) * 1.2)) saturate(1.4);
   border: 1px solid var(--hairline);
-  border-radius: 22px;
+  border-radius: calc(22px * var(--shape));
   box-shadow: var(--shadow-3);
 }
 .dbtn {
   position: relative;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 56px;
-  border-radius: 16px;
+  width: calc(var(--dock-icon) + 10px);
+  height: calc(var(--dock-icon) + 12px);
+  border-radius: calc(16px * var(--shape));
   flex: none;
 }
 .dbtn .appicon {
-  width: 44px;
-  height: 44px;
+  width: var(--dock-icon);
+  height: var(--dock-icon);
   transition: scale 160ms var(--ease-out);
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
 }
 .dbtn .appicon .mi {
-  font-size: 23px;
+  font-size: calc(var(--dock-icon) * 0.52);
 }
 .dbtn:hover .appicon {
   scale: 1.08;
@@ -497,7 +506,7 @@ kbd {
 }
 .dsep {
   width: 1px;
-  height: 32px;
+  height: calc(var(--dock-icon) * 0.72);
   margin: 0 4px;
   background: var(--hairline);
   flex: none;
@@ -511,7 +520,7 @@ kbd {
   min-width: min(320px, 100%);
   min-height: 220px;
   /* Hyprland-style border: a hairline when idle, an accent gradient when focused. */
-  border: 2px solid transparent;
+  border: var(--win-border) solid transparent;
   border-radius: var(--radius-win);
   background:
     linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface))
@@ -543,7 +552,10 @@ kbd {
   display: none;
 }
 .win.maximized {
-  inset: var(--gap) var(--gap) 84px var(--gap) !important;
+  inset: calc(var(--reserve-top, 0px) + var(--gap))
+    calc(var(--reserve-right, 0px) + var(--gap))
+    max(var(--reserve-bottom, 84px), var(--gap))
+    calc(var(--reserve-left, 0px) + var(--gap)) !important;
   width: auto !important;
   height: auto !important;
 }
@@ -567,7 +579,7 @@ kbd {
   flex: none;
 }
 .win-bar > .mi {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
   color: var(--md-sys-color-on-surface-variant);
 }
 .win.active .win-bar > .mi {
@@ -576,7 +588,7 @@ kbd {
 .win-title {
   flex: 1;
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -594,7 +606,7 @@ kbd {
   color: var(--md-sys-color-on-surface-variant);
 }
 .win-btn .mi {
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
 }
 .win-btn:hover {
   background: var(--hover);
@@ -665,11 +677,7 @@ kbd {
   align-items: start;
 }
 .launcher::backdrop {
-  background: color-mix(
-    in srgb,
-    var(--md-sys-color-scrim, #000) 42%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 42%, transparent);
   backdrop-filter: blur(26px) saturate(1.2);
 }
 .lbox {
@@ -704,10 +712,10 @@ kbd {
 }
 .lsearch-wrap > .mi {
   color: var(--md-sys-color-primary);
-  font-size: 22px;
+  font-size: calc(22px * var(--fs));
 }
 .lsearch-wrap:focus-within {
-  outline: 3px solid var(--md-sys-color-primary);
+  outline: var(--focus-w) solid var(--md-sys-color-primary);
   outline-offset: 2px;
 }
 .lsearch {
@@ -716,7 +724,7 @@ kbd {
   height: 100%;
   border: 0;
   background: none;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
   outline: none;
 }
 .lsearch::-webkit-search-cancel-button {
@@ -731,11 +739,8 @@ kbd {
 }
 .lhead {
   margin: 18px 8px 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 600;
-  color: color-mix(in srgb, white 72%, var(--md-sys-color-primary));
-}
-:root[data-theme="light"] .lhead {
   color: var(--md-sys-color-on-surface);
 }
 .lsection {
@@ -749,13 +754,12 @@ kbd {
   align-content: start;
   gap: 8px;
   padding: 14px 6px 12px;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--shape));
   text-align: center;
   color: var(--md-sys-color-on-surface);
 }
 .launcher .ltile {
-  color: white;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
+  color: var(--md-sys-color-on-surface);
 }
 .ltile:hover,
 .ltile.first {
@@ -767,14 +771,14 @@ kbd {
 }
 .lname {
   font-weight: 500;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
 .lempty {
   margin: 24px;
   text-align: center;
-  color: white;
+  color: var(--md-sys-color-on-surface);
 }
 .lwebrow {
   display: flex;
@@ -805,7 +809,7 @@ kbd {
   width: min(360px, calc(100vw - 16px));
   padding: 16px;
   border: 1px solid var(--hairline);
-  border-radius: 24px;
+  border-radius: calc(24px * var(--shape));
   background: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--shadow-3);
@@ -826,12 +830,12 @@ kbd {
 }
 .qhead strong {
   display: block;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs));
   font-weight: 600;
 }
 .qsub {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--md-sys-color-on-surface-variant);
 }
 .qgrid {
@@ -845,14 +849,14 @@ kbd {
   gap: 10px;
   min-height: 60px;
   padding: 10px 12px;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--shape));
   text-align: start;
   background: var(--md-sys-color-surface-container-highest);
 }
 .qtile strong {
   display: block;
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .qtile.on {
   background: var(--md-sys-color-primary-container);
@@ -875,11 +879,11 @@ button.qtile:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--md-sys-color-on-surface-variant);
 }
 .qstorage-label .mi {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
 }
 .qstorage progress {
   width: 100%;
@@ -896,14 +900,14 @@ button.qtile:hover {
   flex: none;
   border: 5px solid var(--bg);
   background: conic-gradient(from 225deg, var(--a) 0 50%, var(--b) 50% 100%);
-  box-shadow: 0 0 0 1px color-mix(in srgb, white 16%, transparent);
+  box-shadow: 0 0 0 1px var(--md-sys-color-outline-variant);
 }
 .theme-dot.lg {
   width: 44px;
   height: 44px;
 }
 .theme-dot[aria-pressed="true"] {
-  outline: 3px solid var(--md-sys-color-primary);
+  outline: var(--focus-w) solid var(--md-sys-color-primary);
   outline-offset: 2px;
 }
 
@@ -918,7 +922,7 @@ button.qtile:hover {
   max-height: calc(100% - 100px);
   overflow: auto;
   padding: 24px 28px 22px;
-  border-radius: 28px;
+  border-radius: calc(28px * var(--shape));
   border: 1px solid var(--hairline);
   background: color-mix(
     in srgb,
@@ -956,12 +960,12 @@ button.qtile:hover {
   align-items: flex-start;
 }
 .welcome-logo {
-  border-radius: 14px;
+  border-radius: calc(14px * var(--shape));
   box-shadow: var(--shadow-1);
 }
 .welcome h1 {
   margin: 16px 0 6px;
-  font-size: 30px;
+  font-size: calc(30px * var(--fs));
   line-height: 1.15;
   font-weight: 650;
   font-stretch: 112%;
@@ -971,7 +975,7 @@ button.qtile:hover {
   margin: 0 0 18px;
   max-width: 46ch;
   color: var(--md-sys-color-on-surface-variant);
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
 }
 .welcome-search {
   display: flex;
@@ -1024,7 +1028,7 @@ button.qtile:hover {
 }
 .welcome-label {
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .welcome-themes {
   display: flex;
@@ -1042,7 +1046,7 @@ button.qtile:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--md-sys-color-on-surface-variant);
 }
 .hint {
@@ -1059,25 +1063,7 @@ button.qtile:hover {
   display: none;
 }
 
-/* Settings ------------------------------------------------------------------------------------------ */
-.settings {
-  padding: 24px 28px 28px;
-  overflow: auto;
-  flex: 1;
-}
-.settings h2 {
-  margin: 0 0 4px;
-  font-size: 24px;
-  font-weight: 600;
-}
-.settings h3 {
-  margin: 24px 0 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.settings .muted {
-  margin: 0 0 12px;
-}
+/* Theme cards and controls shared by Settings and the welcome card ------------------------------- */
 .theme-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1087,7 +1073,7 @@ button.qtile:hover {
   display: grid;
   gap: 4px;
   padding: 8px 8px 12px;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--shape));
   text-align: start;
   background: var(--md-sys-color-surface-container);
 }
@@ -1095,7 +1081,7 @@ button.qtile:hover {
   background: var(--md-sys-color-surface-container-high);
 }
 .theme-card[aria-checked="true"] {
-  outline: 3px solid var(--md-sys-color-primary);
+  outline: var(--focus-w) solid var(--md-sys-color-primary);
   outline-offset: 0;
 }
 .theme-preview {
@@ -1103,7 +1089,7 @@ button.qtile:hover {
   display: block;
   height: 74px;
   margin-bottom: 6px;
-  border-radius: 12px;
+  border-radius: calc(12px * var(--shape));
   overflow: hidden;
   background:
     radial-gradient(
@@ -1130,7 +1116,7 @@ button.qtile:hover {
   top: 16px;
   width: 46%;
   bottom: 8px;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--shape));
   background: var(--s);
   border: 1.5px solid var(--a);
 }
@@ -1138,7 +1124,7 @@ button.qtile:hover {
   left: auto;
   right: 8px;
   width: 40%;
-  border-color: color-mix(in srgb, var(--s) 60%, white 10%);
+  border-color: color-mix(in srgb, var(--s) 60%, var(--b));
 }
 .theme-name {
   padding-inline: 4px;
@@ -1146,7 +1132,7 @@ button.qtile:hover {
 }
 .theme-mood {
   padding-inline: 4px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   line-height: 1.35;
   color: var(--md-sys-color-on-surface-variant);
 }
@@ -1159,12 +1145,10 @@ button.qtile:hover {
   background: var(--md-sys-color-surface-container-high);
   align-self: flex-start;
 }
-.settings .seg {
-  margin: 0;
-}
 .segb {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   gap: 6px;
   height: 34px;
   padding: 0 16px;
@@ -1172,7 +1156,7 @@ button.qtile:hover {
   color: var(--md-sys-color-on-surface-variant);
 }
 .segb .mi {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
 }
 .segb[aria-selected="true"] {
   background: var(--md-sys-color-secondary-container);
@@ -1193,7 +1177,7 @@ button.qtile:hover {
   box-shadow: 0 0 0 1px var(--md-sys-color-outline);
 }
 .swatch[aria-pressed="true"] {
-  outline: 3px solid var(--md-sys-color-primary);
+  outline: var(--focus-w) solid var(--md-sys-color-primary);
   outline-offset: 2px;
 }
 .switch-row {
@@ -1203,7 +1187,7 @@ button.qtile:hover {
   gap: 16px;
   width: 100%;
   padding: 12px 16px;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--shape));
   text-align: start;
   background: var(--md-sys-color-surface-container);
 }
@@ -1212,7 +1196,7 @@ button.qtile:hover {
   font-weight: 600;
 }
 .switch-row .muted {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 .switch {
   position: relative;
@@ -1312,7 +1296,7 @@ button.qtile:hover {
   .dock {
     gap: 0;
     padding: 4px;
-    border-radius: 20px;
+    border-radius: calc(20px * var(--shape));
     bottom: max(8px, env(safe-area-inset-bottom));
   }
   .dbtn {
@@ -1334,10 +1318,11 @@ button.qtile:hover {
   }
   .home-head {
     padding-inline: 8px;
-    text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+    text-shadow: 0 1px 12px
+      color-mix(in srgb, var(--md-sys-color-scrim) 25%, transparent);
   }
   .home-time {
-    font-size: 56px;
+    font-size: calc(56px * var(--fs));
     line-height: 1;
     font-weight: 300;
     font-stretch: 110%;
@@ -1346,7 +1331,7 @@ button.qtile:hover {
   }
   .home-date {
     margin-top: 6px;
-    font-size: 16px;
+    font-size: calc(16px * var(--fs));
     color: var(--md-sys-color-on-surface-variant);
   }
   .home-search {
@@ -1378,7 +1363,7 @@ button.qtile:hover {
     height: 56px;
   }
   .home-grid .lname {
-    font-size: 12px;
+    font-size: calc(12px * var(--fs));
   }
   .launcher {
     padding: max(12px, env(safe-area-inset-top)) 12px
@@ -1401,7 +1386,7 @@ button.qtile:hover {
   place-items: center;
   width: 1.25em;
   height: 1.25em;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs));
   flex: none;
   line-height: 1;
   user-select: none;
@@ -1441,7 +1426,7 @@ button.qtile:hover {
   margin: 0 0 18px;
   padding: 22px 24px;
   border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: 24px;
+  border-radius: calc(24px * var(--shape));
   background: linear-gradient(
     125deg,
     var(--md-sys-color-surface-container-high),
@@ -1458,13 +1443,13 @@ button.qtile:hover {
 }
 .creative-kicker {
   color: var(--md-sys-color-primary);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 .creative-head h2 {
   margin: 5px 0;
-  font-size: 24px;
+  font-size: calc(24px * var(--fs));
   font-weight: 600;
 }
 .creative-head p {
@@ -1494,7 +1479,7 @@ button.qtile:hover {
   color: var(--md-sys-color-on-primary-container);
 }
 .licon .mi {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs));
 }
 
 /* Shared controls */
@@ -1604,12 +1589,12 @@ button.qtile:hover {
 }
 .fsize {
   color: var(--md-sys-color-on-surface-variant);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
 .files-status {
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--md-sys-color-on-surface-variant);
   border-top: 1px solid var(--md-sys-color-outline-variant);
 }
@@ -1759,7 +1744,7 @@ button.qtile:hover {
   text-align: center;
 }
 .bhome h2 {
-  font-size: 32px;
+  font-size: calc(32px * var(--fs));
   font-weight: 500;
   margin: 0 0 8px;
 }
@@ -1795,7 +1780,7 @@ button.qtile:hover {
 }
 .sdesc {
   color: var(--md-sys-color-on-surface-variant);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -1819,7 +1804,7 @@ button.qtile:hover {
   flex: 1;
 }
 .detail h2 {
-  font-size: 28px;
+  font-size: calc(28px * var(--fs));
   font-weight: 500;
   margin: 0 0 8px;
 }
@@ -1845,7 +1830,7 @@ button.qtile:hover {
   width: 48px;
   height: 48px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   flex: none;
 }
 .pkg-bar {
@@ -1854,7 +1839,7 @@ button.qtile:hover {
   accent-color: var(--md-sys-color-primary);
 }
 .pkg-status {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 .ins-out {
   flex: 1;
@@ -1936,12 +1921,12 @@ md-linear-progress[hidden] {
 .calc-hist {
   min-height: 1.4em;
   text-align: right;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .calc-out {
   display: block;
   text-align: right;
-  font-size: 36px;
+  font-size: calc(36px * var(--fs));
   font-variant-numeric: tabular-nums;
   overflow-x: auto;
   padding: 4px 8px;
@@ -1955,7 +1940,7 @@ md-linear-progress[hidden] {
 .calc-key {
   border-radius: var(--md-sys-shape-corner-large);
   background: var(--md-sys-color-surface-container-high);
-  font-size: 20px;
+  font-size: calc(20px * var(--fs));
   min-height: 48px;
 }
 .calc-key.op {
@@ -1989,7 +1974,7 @@ md-linear-progress[hidden] {
   position: absolute;
   box-sizing: border-box;
   border: 2px solid var(--md-sys-color-surface);
-  border-radius: 8px;
+  border-radius: calc(8px * var(--shape));
   color: #fff;
   padding: 6px;
   text-align: left;
@@ -1997,7 +1982,7 @@ md-linear-progress[hidden] {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .tm-cell:hover {
   filter: brightness(1.25);
@@ -2029,7 +2014,7 @@ md-linear-progress[hidden] {
   height: 22px;
 }
 .brand img {
-  border-radius: 6px;
+  border-radius: calc(6px * var(--shape));
 }
 .pkg-head .licon img {
   width: 36px;
@@ -2058,4 +2043,273 @@ md-linear-progress[hidden] {
 .vm-screen canvas {
   display: block;
   image-rendering: pixelated;
+}
+
+/* Preference-driven layout (appearance.ts sets the data attributes on <html>) ------------------------ */
+/* Bar at the bottom: the desktop takes the first row, tooltips and quick settings open upwards. */
+:root[data-bar="bottom"] body {
+  grid-template-rows: 1fr var(--bar-h);
+}
+:root[data-bar="bottom"] .topbar {
+  grid-row: 2;
+  border-bottom: 0;
+  border-top: 1px solid var(--hairline);
+}
+:root[data-bar="bottom"] .desk {
+  grid-row: 1;
+}
+:root[data-bar="bottom"] .topbar [data-tip]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+:root[data-bar="bottom"] .quick {
+  inset: auto 8px calc(var(--bar-h) + 6px) auto;
+}
+:root[data-bar="bottom"] .dock {
+  bottom: calc(var(--bar-h) + 10px);
+}
+.bar-center {
+  justify-content: center;
+}
+.bar-date[hidden] {
+  display: none;
+}
+
+/* Dock on a side edge: a vertical column centred on the desktop. */
+:root:is([data-dock="left"], [data-dock="right"]) .dock {
+  flex-direction: column;
+  left: auto;
+  bottom: auto;
+  top: calc(50% + var(--bar-h) / 2);
+  translate: 0 -50%;
+  max-width: none;
+  max-height: calc(100dvh - var(--bar-h) - 16px);
+  overflow: hidden auto;
+}
+:root[data-bar="bottom"]:is([data-dock="left"], [data-dock="right"]) .dock {
+  top: calc(50% - var(--bar-h) / 2);
+}
+:root[data-dock="left"] .dock {
+  left: max(10px, env(safe-area-inset-left));
+}
+:root[data-dock="right"] .dock {
+  right: max(10px, env(safe-area-inset-right));
+}
+:root:is([data-dock="left"], [data-dock="right"]) .dsep {
+  width: calc(var(--dock-icon) * 0.72);
+  height: 1px;
+  margin: 4px 0;
+}
+:root[data-dock="left"] .dock [data-tip]::after,
+:root[data-dock="right"] .dock [data-tip]::after {
+  top: 50%;
+  bottom: auto;
+  translate: 0 -50%;
+}
+:root[data-dock="left"] .dock [data-tip]::after {
+  left: calc(100% + 12px);
+}
+:root[data-dock="right"] .dock [data-tip]::after {
+  left: auto;
+  right: calc(100% + 12px);
+}
+:root:is([data-dock="left"], [data-dock="right"]) .dock [data-tip]:hover::after,
+:root:is([data-dock="left"], [data-dock="right"])
+  .dock
+  [data-tip]:focus-visible::after {
+  translate: 0 -50%;
+}
+:root:is([data-dock="left"], [data-dock="right"]) .dbtn.running::before {
+  bottom: auto;
+  left: 1px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 4px;
+  height: 5px;
+}
+:root:is([data-dock="left"], [data-dock="right"]) .dbtn.current::before {
+  width: 4px;
+  height: 18px;
+}
+:root[data-dock="right"] .dbtn.running::before {
+  left: auto;
+  right: 1px;
+}
+
+/* Dock autohide: it slides off its edge and comes back from a thin edge strip, on hover or focus. */
+.dock {
+  transition: translate 220ms var(--ease);
+}
+:root[data-dock-hide="auto"][data-dock="bottom"] .dock:not(.peek) {
+  translate: -50% calc(100% + 24px);
+}
+:root[data-dock-hide="auto"][data-dock="left"] .dock:not(.peek) {
+  translate: calc(-100% - 24px) -50%;
+}
+:root[data-dock-hide="auto"][data-dock="right"] .dock:not(.peek) {
+  translate: calc(100% + 24px) -50%;
+}
+.dock-edge {
+  display: none;
+  position: fixed;
+  z-index: 1999;
+}
+:root[data-dock-hide="auto"] .dock-edge {
+  display: block;
+}
+:root[data-dock="bottom"] .dock-edge {
+  inset: auto 0 0 0;
+  height: 6px;
+}
+:root[data-bar="bottom"][data-dock="bottom"] .dock-edge {
+  bottom: var(--bar-h);
+}
+:root[data-dock="left"] .dock-edge {
+  inset: var(--bar-h) auto 0 0;
+  width: 6px;
+}
+:root[data-dock="right"] .dock-edge {
+  inset: var(--bar-h) 0 0 auto;
+  width: 6px;
+}
+
+/* Motion preference: Reduced stops every transition and animation, whatever the system says. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High contrast: opaque surfaces and full-strength outlines on top of the maximum M3 contrast. */
+:root[data-contrast="high"] {
+  --hairline: var(--md-sys-color-outline);
+  --hover: color-mix(in srgb, var(--md-sys-color-on-surface) 16%, transparent);
+  --glass: var(--md-sys-color-surface-container);
+  --glass-strong: var(--md-sys-color-surface-container-high);
+}
+:root[data-contrast="high"] .win {
+  background:
+    linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface))
+      padding-box,
+    linear-gradient(var(--md-sys-color-outline), var(--md-sys-color-outline))
+      border-box;
+}
+:root[data-contrast="high"] .win.active {
+  background:
+    linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface))
+      padding-box,
+    linear-gradient(var(--md-sys-color-primary), var(--md-sys-color-primary))
+      border-box;
+}
+
+/* Larger targets: every bar, dock, window and list control reaches 44 px. */
+:root[data-targets="large"]
+  :is(.win-btn, .segb, .chip, .qtile, .ltile, .snav-item) {
+  min-height: 44px;
+}
+:root[data-targets="large"] .win-btn {
+  min-width: 44px;
+}
+:root[data-targets="large"] .win-bar {
+  height: 52px;
+}
+
+/* Desktop icons ----------------------------------------------------------------------------------- */
+.deskicons {
+  position: absolute;
+  inset: calc(var(--reserve-top, 0px) + 12px) auto auto
+    calc(var(--reserve-left, 0px) + 12px);
+  z-index: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fill, 104px);
+  gap: 4px;
+  max-height: calc(100% - var(--reserve-bottom, 84px) - 24px);
+}
+.deskicons[hidden] {
+  display: none;
+}
+.deskicon {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  width: 92px;
+  padding: 10px 4px;
+  border-radius: calc(16px * var(--shape));
+  color: var(--md-sys-color-on-surface);
+  text-align: center;
+}
+.deskicon .appicon {
+  width: 48px;
+  height: 48px;
+}
+.deskicon .lname {
+  padding: 1px 6px;
+  border-radius: calc(6px * var(--shape));
+  background: color-mix(in srgb, var(--md-sys-color-surface) 70%, transparent);
+}
+.deskicon:hover,
+.deskicon:focus-visible {
+  background: var(--hover);
+}
+
+/* Notifications and screen-reader hints ------------------------------------------------------------ */
+.toasts {
+  position: fixed;
+  z-index: 3000;
+  top: calc(var(--bar-h) + 10px);
+  right: 12px;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 24px));
+  pointer-events: none;
+}
+:root[data-bar="bottom"] .toasts {
+  top: 12px;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  border-radius: calc(18px * var(--shape));
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  box-shadow: var(--shadow-3);
+  pointer-events: auto;
+  animation: launcher-in 180ms var(--ease-out);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+.toast.leaving {
+  opacity: 0;
+  transition: opacity 180ms var(--ease);
+}
+.toast-text {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.toast .tbtn {
+  color: inherit;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Key caps of a chord ------------------------------------------------------------------------------ */
+.chord {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
 }

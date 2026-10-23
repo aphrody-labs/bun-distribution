@@ -173,12 +173,44 @@ const block = (roles: Roles | undefined, indent = "  ") =>
         .join("\n")
     : "";
 
-/** The stylesheet for a theme id, or for a custom seed when id is "seed". */
-export function themeCss(id: string, seed?: string): string {
+export interface ThemeOptions {
+  /** Seed of the "seed" theme. */
+  seed?: string;
+  /** Scheme variant of the "seed" theme. */
+  variant?: DesktopTheme["variant"] | "content" | "neutral" | "monochrome";
+  /** M3 contrast level, -1 to 1. Above 0 the hand-tuned surfaces give way to the generated roles. */
+  contrast?: number;
+  /** Saved custom themes, addressed as "custom:<id>". */
+  custom?: readonly {
+    id: string;
+    seed: string;
+    variant: NonNullable<ThemeOptions["variant"]>;
+    contrast: number;
+  }[];
+}
+
+/** The stylesheet for a theme id: a built-in theme, "seed" (Material You from a colour) or "custom:<id>". */
+export function themeCss(id: string, opts: ThemeOptions = {}): string {
+  const contrast = opts.contrast ?? 0;
+  const custom = id.startsWith("custom:")
+    ? opts.custom?.find((t) => `custom:${t.id}` === id)
+    : undefined;
+  if (custom)
+    return cssFromSeed(custom.seed, {
+      variant: custom.variant,
+      contrastLevel: Math.max(contrast, custom.contrast),
+    });
   const theme = THEMES.find((t) => t.id === id);
   if (!theme)
-    return cssFromSeed(seed ?? THEMES[0]!.seed, { variant: "tonalSpot" });
-  const base = cssFromSeed(theme.seed, { variant: theme.variant });
+    return cssFromSeed(opts.seed ?? THEMES[0]!.seed, {
+      variant: opts.variant ?? "tonalSpot",
+      contrastLevel: contrast,
+    });
+  const base = cssFromSeed(theme.seed, {
+    variant: theme.variant,
+    contrastLevel: contrast,
+  });
+  if (contrast > 0) return base;
   const dark = block(theme.dark, "    ");
   const light = block(theme.light);
   return [

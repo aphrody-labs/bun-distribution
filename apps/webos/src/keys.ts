@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Keyboard navigation after the Omarchy manual (04-navigation): Alt (or the Meta key where the browser
-// receives it) plays Super. Browsers keep Ctrl+W/T/N, so every chord uses Alt.
+// receives it) plays Super. Every chord comes from shortcuts.ts, overridden by the "keys.bindings" preference.
 import { h } from "./dom";
+import { prefs } from "./prefs";
+import {
+  ACTIONS,
+  GROUPS,
+  chordCaps,
+  chordOf,
+  familyOf,
+  type ShortcutAction,
+} from "./shortcuts";
 import type { Direction, WindowManager } from "./wm";
 
 export interface KeyActions {
@@ -12,135 +21,176 @@ export interface KeyActions {
   webHotkey(code: string): boolean;
 }
 
-export const SHORTCUTS: { group: string; items: [string, string][] }[] = [
-  {
-    group: "Launch",
-    items: [
-      ["Alt + Space", "Launcher"],
-      ["Alt + Enter", "Terminal"],
-      ["Alt + Shift + Enter", "Browser"],
-      ["Alt + Shift + F", "Files"],
-      ["Alt + /", "This list"],
-      ["Alt + Ctrl + T", "Activity"],
-      ["Alt + Ctrl + Q", "Calculator"],
-      ["Alt + Shift + A / Y / X / P", "ChatGPT, YouTube, X, Google Photos"],
-    ],
-  },
-  {
-    group: "Windows",
-    items: [
-      ["Alt + Arrows", "Move focus"],
-      ["Alt + Shift + Arrows", "Swap windows (floating: snap to a half)"],
-      ["Alt + F", "Maximize"],
-      ["Alt + W / Alt + Q", "Close window"],
-      ["Alt + Shift + Q", "Close all windows"],
-      ["Alt + M", "Minimize"],
-      ["Alt + O", "Pop out as floating"],
-      ["Alt + drag / right-drag", "Move / resize a window"],
-    ],
-  },
-  {
-    group: "Layout",
-    items: [
-      ["Alt + T", "Tiled or floating"],
-      ["Alt + L / Alt + Shift + L", "Cycle dwindle, scrolling, floating"],
-    ],
-  },
-  {
-    group: "Workspaces",
-    items: [
-      ["Alt + 1 to 0", "Go to workspace"],
-      ["Alt + Tab or Alt + .", "Next workspace (Alt + Shift + Tab: previous)"],
-      ["Alt + Shift + 1 to 0", "Move window to workspace"],
-      ["Ctrl + Alt + 1 to 0", "Move window without switching"],
-    ],
-  },
-  {
-    group: "Scratchpad",
-    items: [
-      ["Alt + S or Alt + `", "Show or hide the scratchpad"],
-      ["Alt + Shift + S", "Send window to the scratchpad"],
-    ],
-  },
-];
+/** Current chords of an action. */
+export function bindingsOf(action: ShortcutAction): string[] {
+  return prefs.get("keys.bindings")[action.id] ?? action.keys;
+}
+/** The first chord of an action id, for hints. */
+export function hintOf(id: string): string | undefined {
+  const a = ACTIONS.find((x) => x.id === id);
+  return a ? bindingsOf(a)[0] : undefined;
+}
 
-const DIRECTIONS: Record<string, Direction> = {
-  ArrowLeft: "left",
-  ArrowRight: "right",
-  ArrowUp: "up",
-  ArrowDown: "down",
-};
+/** chord -> action, rebuilt when bindings change. */
+let table = new Map<string, ShortcutAction>();
+function rebuild() {
+  table = new Map();
+  for (const a of ACTIONS)
+    for (const c of bindingsOf(a)) if (!table.has(c)) table.set(c, a);
+}
+
+let suspended = false;
+/** Pause shell shortcuts while Settings records a new chord. */
+export function suspendKeys(on: boolean) {
+  suspended = on;
+}
 
 export function installKeys(wm: WindowManager, actions: KeyActions) {
-  window.addEventListener("keydown", e => {
-    if (!(e.altKey || e.metaKey) || e.isComposing) return;
-    const shift = e.shiftKey;
-    const ctrl = e.ctrlKey;
-    const digit = /^Digit(\d)$/.exec(e.code)?.[1];
-    const run = (fn: () => void) => {
+  rebuild();
+  prefs.subscribe("keys.bindings", rebuild);
+  const cur = () => wm.active();
+  const run = (a: ShortcutAction, arg?: string) => {
+    const w = cur();
+    switch (a.id) {
+      case "launcher":
+        return actions.launcher();
+      case "help":
+        return actions.help();
+      case "focus":
+        return wm.focusDirection(arg as Direction);
+      case "swap":
+        return wm.swapDirection(arg as Direction);
+      case "window.maximize":
+        return w && wm.toggleMax(w);
+      case "window.close":
+        return w?.close();
+      case "window.closeAll":
+        return wm.closeAll();
+      case "window.minimize":
+        return w && wm.minimize(w);
+      case "layout.float":
+        return wm.setLayout("floating");
+      case "layout.toggle":
+        return wm.toggleTiled();
+      case "layout.next":
+        return wm.cycleLayout(1);
+      case "layout.previous":
+        return wm.cycleLayout(-1);
+      case "workspace.go":
+        return wm.goTo(Number(arg));
+      case "workspace.move":
+        return w && wm.moveToWorkspace(w, Number(arg), true);
+      case "workspace.send":
+        return w && wm.moveToWorkspace(w, Number(arg), false);
+      case "workspace.next":
+        return wm.cycleWorkspace(1);
+      case "workspace.previous":
+        return wm.cycleWorkspace(-1);
+      case "scratchpad.toggle":
+        return wm.toggleScratchpad();
+      case "scratchpad.send":
+        return w && wm.sendToScratchpad(w);
+      default:
+        if (a.id.startsWith("launch."))
+          actions.launch(a.id.slice("launch.".length));
+    }
+  };
+  window.addEventListener("keydown", (e) => {
+    if (suspended || e.isComposing || !(e.altKey || e.metaKey || e.ctrlKey))
+      return;
+    const fam = familyOf(e.code);
+    // Meta plays Super: a Meta chord falls back to the same chord with Alt.
+    const candidates = (chord: string) =>
+      e.metaKey && !e.altKey ? [chord, chord.replace("Meta", "Alt")] : [chord];
+    const lookups: [string, string | undefined][] = [
+      ...candidates(chordOf(e)).map(
+        (c) => [c, undefined] as [string, undefined],
+      ),
+      ...(fam
+        ? candidates(chordOf(e, fam.family)).map(
+            (c) =>
+              [
+                c,
+                fam.family === "Digit"
+                  ? String(fam.value === "0" ? 10 : Number(fam.value))
+                  : fam.value,
+              ] as [string, string],
+          )
+        : []),
+    ];
+    for (const [chord, arg] of lookups) {
+      const a = table.get(chord);
+      if (!a || (a.family && arg === undefined)) continue;
       e.preventDefault();
       e.stopPropagation();
-      fn();
-    };
-    const cur = () => wm.active();
-
-    if (digit !== undefined) {
-      const n = digit === "0" ? 10 : Number(digit);
-      if (ctrl) return run(() => cur() && wm.moveToWorkspace(cur()!, n, false));
-      if (shift) return run(() => cur() && wm.moveToWorkspace(cur()!, n, true));
-      return run(() => wm.goTo(n));
+      run(a, arg);
+      return;
     }
-    if (e.code in DIRECTIONS)
-      return run(() => (shift ? wm.swapDirection(DIRECTIONS[e.code]!) : wm.focusDirection(DIRECTIONS[e.code]!)));
-
-    if (shift && !ctrl && actions.webHotkey(e.code)) return run(() => {});
-    if (ctrl && e.code === "KeyT") return run(() => actions.launch("activity"));
-    if (ctrl && e.code === "KeyQ") return run(() => actions.launch("calculator"));
-
-    switch (e.code) {
-      case "Space":
-        return run(actions.launcher);
-      case "Enter":
-        return run(() => actions.launch(shift ? "browser" : "terminal"));
-      case "KeyF":
-        return run(() => (shift ? actions.launch("files") : cur() && wm.toggleMax(cur()!)));
-      case "KeyW":
-      case "KeyQ":
-        return run(() => (shift && e.code === "KeyQ" ? wm.closeAll() : cur()?.close()));
-      case "KeyM":
-        return run(() => cur() && wm.minimize(cur()!));
-      case "KeyO":
-        return run(() => wm.setLayout("floating"));
-      case "KeyT":
-        return run(() => wm.toggleTiled());
-      case "KeyL":
-        return run(() => wm.cycleLayout(shift ? -1 : 1));
-      case "Tab":
-      case "Period":
-        return run(() => wm.cycleWorkspace(shift ? -1 : 1));
-      case "KeyS":
-      case "Backquote":
-        return run(() => (shift ? cur() && wm.sendToScratchpad(cur()!) : wm.toggleScratchpad()));
-      case "Slash":
-        return run(actions.help);
+    if (
+      (e.altKey || e.metaKey) &&
+      e.shiftKey &&
+      !e.ctrlKey &&
+      actions.webHotkey(e.code)
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   });
 }
 
-/** Window content listing every shortcut. */
-export function shortcutsView(): HTMLElement {
+/** <kbd> caps of one chord. */
+export function chordKbd(chord: string): HTMLElement {
   return h(
-    "div",
-    { class: "detail" },
-    h("h2", {}, "Keyboard"),
-    h(
-      "p",
-      { class: "muted" },
-      "Alt works as the Super key. Meta (Windows, Command) works too where the browser receives it.",
-    ),
-    ...SHORTCUTS.flatMap(g => [
-      h("h3", {}, g.group),
-      h("dl", { class: "kv" }, ...g.items.flatMap(([k, d]) => [h("dt", { class: "mono" }, k), h("dd", {}, d)])),
-    ]),
+    "span",
+    { class: "chord" },
+    ...chordCaps(chord).map((k) => h("kbd", {}, k)),
   );
+}
+
+/** Sheet of every shortcut with its current chords; follows rebinding live. */
+export function shortcutsView(): HTMLElement {
+  const view = h("div", { class: "detail shortcuts" });
+  const render = () =>
+    view.replaceChildren(
+      h("h2", {}, "Keyboard shortcuts"),
+      h(
+        "p",
+        { class: "muted" },
+        "Alt works as the Super key. Meta (Windows, Command) works too where the browser receives it. Change any shortcut in Settings, Keyboard.",
+      ),
+      ...GROUPS.flatMap((g) => [
+        h("h3", {}, g),
+        h(
+          "dl",
+          { class: "kv" },
+          ...ACTIONS.filter((a) => a.group === g).flatMap((a) => {
+            const chords = bindingsOf(a);
+            return [
+              h(
+                "dt",
+                {},
+                ...(chords.length
+                  ? chords.map(chordKbd)
+                  : [h("span", { class: "muted" }, "Not set")]),
+              ),
+              h("dd", {}, a.label),
+            ];
+          }),
+        ),
+      ]),
+      h("h3", {}, "Mouse"),
+      h(
+        "dl",
+        { class: "kv" },
+        h("dt", {}, chordKbd("Alt+Drag")),
+        h("dd", {}, "Move a window (right-drag resizes)"),
+        h("dt", {}, chordKbd("Alt+Shift+Letter")),
+        h("dd", {}, "Open the web app given that letter in Web Apps"),
+      ),
+    );
+  const off = prefs.subscribe("keys.bindings", () =>
+    view.isConnected ? render() : off(),
+  );
+  render();
+  return view;
 }

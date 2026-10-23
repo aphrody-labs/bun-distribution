@@ -39,12 +39,22 @@ export interface OpenOptions {
 export interface WindowManagerOptions {
   /** Layout of workspaces without a saved choice (default floating). */
   defaultLayout?: Layout;
+  /** Gap between tiles and around the desktop edge, in pixels. */
+  gap?: number;
+  /** Space kept free on each desktop edge (the dock), in pixels. */
+  reserve?: Partial<Insets>;
+  /** Number of workspaces, 1 to WORKSPACES. */
+  workspaces?: number;
+}
+
+export interface Insets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
 }
 
 type Listener = () => void;
-const GAP = 10;
-/** Space kept free at the bottom of the desktop for the dock. */
-const DOCK = 84;
 const LAYOUT_KEY = "aph.layouts";
 
 interface Rect {
@@ -68,12 +78,16 @@ export class WindowManager {
   private listeners = new Set<Listener>();
   /** Window order per workspace, used by the tiled layouts. */
   private order = new Map<number, string[]>();
-  private readonly fallbackLayout: Layout;
+  private fallbackLayout: Layout = "floating";
+  private gap = 10;
+  /** Free space on each edge; the bottom defaults to the dock height. */
+  private reserve: Insets = { top: 0, right: 0, bottom: 84, left: 0 };
+  private count = WORKSPACES;
   constructor(
     private readonly desk: HTMLElement,
     options: WindowManagerOptions = {},
   ) {
-    this.fallbackLayout = options.defaultLayout ?? "floating";
+    this.applyOptions(options);
     this.layouts = {};
     try {
       const saved: unknown = JSON.parse(
@@ -95,6 +109,38 @@ export class WindowManager {
       this.layouts = {};
     }
     new ResizeObserver(() => this.arrange()).observe(desk);
+  }
+
+  /** Change gaps, reserved edges, workspace count or the default layout, then re-tile. */
+  configure(options: WindowManagerOptions) {
+    this.applyOptions(options);
+    if (this.workspace > this.count) this.goTo(this.count);
+    for (const w of this.windows.values())
+      if (w.ws > this.count) this.moveToWorkspace(w, this.count, false);
+    this.arrange();
+    this.emit();
+  }
+  private applyOptions(o: WindowManagerOptions) {
+    if (o.defaultLayout) this.fallbackLayout = o.defaultLayout;
+    if (o.gap !== undefined) this.gap = Math.max(0, o.gap);
+    if (o.reserve) this.reserve = { ...this.reserve, ...o.reserve };
+    if (o.workspaces !== undefined)
+      this.count = Math.max(1, Math.min(WORKSPACES, Math.round(o.workspaces)));
+  }
+  /** Number of workspaces in use. */
+  get workspaceCount() {
+    return this.count;
+  }
+  /** Free rectangle of the desktop: reserved edges and the outer gap removed. */
+  private freeArea(): Rect {
+    const { top, right, bottom, left } = this.reserve;
+    const g = this.gap;
+    return {
+      x: left + g,
+      y: top + g,
+      w: this.desk.clientWidth - left - right - g * 2,
+      h: this.desk.clientHeight - top - bottom - g,
+    };
   }
 
   onChange(fn: Listener) {
@@ -160,14 +206,13 @@ export class WindowManager {
     );
     // Floating windows open centred on the free desktop, each new one stepped down and right.
     const n = this.windows.size % 6;
-    const dw = this.desk.clientWidth;
-    const dh = this.desk.clientHeight - DOCK;
-    const w = Math.min(o.width ?? 880, dw - GAP * 2);
-    const hh = Math.min(o.height ?? 560, dh - GAP * 2);
+    const free = this.freeArea();
+    const w = Math.min(o.width ?? 880, free.w);
+    const hh = Math.min(o.height ?? 560, free.h - this.gap);
     el.style.width = `${w}px`;
     el.style.height = `${hh}px`;
-    el.style.left = `${Math.max(GAP, Math.min(dw - w - GAP, (dw - w) / 2 + n * 28))}px`;
-    el.style.top = `${Math.max(GAP, Math.min(dh - hh - GAP, (dh - hh) / 2 + n * 24))}px`;
+    el.style.left = `${Math.max(free.x, Math.min(free.x + free.w - w, free.x + (free.w - w) / 2 + n * 28))}px`;
+    el.style.top = `${Math.max(free.y, Math.min(free.y + free.h - hh - this.gap, free.y + (free.h - hh) / 2 + n * 24))}px`;
     if (o.float) el.classList.add("floating");
 
     const win: AppWindow = {
@@ -269,7 +314,7 @@ export class WindowManager {
 
   // Workspaces ---------------------------------------------------------------------------------
   goTo(ws: number) {
-    if (ws < 1 || ws > WORKSPACES) return;
+    if (ws < 1 || ws > this.count) return;
     this.workspace = ws;
     this.scratchOpen = false;
     this.applyVisibility();
@@ -279,10 +324,10 @@ export class WindowManager {
     this.emit();
   }
   cycleWorkspace(step = 1) {
-    this.goTo(((this.workspace - 1 + step + WORKSPACES) % WORKSPACES) + 1);
+    this.goTo(((this.workspace - 1 + step + this.count) % this.count) + 1);
   }
   moveToWorkspace(win: AppWindow, ws: number, follow: boolean) {
-    if (ws < 1 || ws > WORKSPACES) return;
+    if (ws < 1 || ws > this.count) return;
     const from = this.order.get(win.ws);
     if (from)
       this.order.set(
@@ -371,15 +416,16 @@ export class WindowManager {
         const width = this.desk.clientWidth;
         const height = this.desk.clientHeight;
         if (width <= 0 || height <= 0) continue;
-        const availableWidth = Math.max(120, width - GAP * 2);
-        const availableHeight = Math.max(120, height - DOCK - GAP);
-        const ww = Math.min(w.el.offsetWidth, availableWidth);
-        const wh = Math.min(w.el.offsetHeight, availableHeight);
+        const free = this.freeArea();
+        const ww = Math.min(w.el.offsetWidth, Math.max(120, free.w));
+        const wh = Math.min(w.el.offsetHeight, Math.max(120, free.h));
+        const right = width - this.reserve.right - ww;
+        const bottom = height - this.reserve.bottom - wh;
         Object.assign(w.el.style, {
           width: `${ww}px`,
           height: `${wh}px`,
-          left: `${Math.max(0, Math.min(w.el.offsetLeft, width - ww))}px`,
-          top: `${Math.max(0, Math.min(w.el.offsetTop, height - wh - DOCK))}px`,
+          left: `${Math.max(this.reserve.left, Math.min(w.el.offsetLeft, right))}px`,
+          top: `${Math.max(this.reserve.top, Math.min(w.el.offsetTop, bottom))}px`,
         });
       }
       return;
@@ -388,12 +434,7 @@ export class WindowManager {
       (w) => !w.scratch && !w.maximized && !w.floating,
     );
     for (const w of all) if (!tiled.includes(w)) this.unplace(w);
-    const area: Rect = {
-      x: GAP,
-      y: GAP,
-      w: this.desk.clientWidth - GAP * 2,
-      h: this.desk.clientHeight - GAP - DOCK,
-    };
+    const area = this.freeArea();
     if (!tiled.length || area.w <= 0) return;
     if (layout === "dwindle") this.dwindle(tiled, area);
     else this.scrolling(tiled, area);
@@ -405,12 +446,12 @@ export class WindowManager {
     if (!rest.length) return this.place(first, r);
     const horizontal = r.w >= r.h;
     const half: Rect = horizontal
-      ? { ...r, w: (r.w - GAP) / 2 }
-      : { ...r, h: (r.h - GAP) / 2 };
+      ? { ...r, w: (r.w - this.gap) / 2 }
+      : { ...r, h: (r.h - this.gap) / 2 };
     this.place(first, half);
     const next: Rect = horizontal
-      ? { x: r.x + half.w + GAP, y: r.y, w: half.w, h: r.h }
-      : { x: r.x, y: r.y + half.h + GAP, w: r.w, h: half.h };
+      ? { x: r.x + half.w + this.gap, y: r.y, w: half.w, h: r.h }
+      : { x: r.x, y: r.y + half.h + this.gap, w: r.w, h: half.h };
     this.dwindle(rest, next);
   }
 
@@ -421,9 +462,14 @@ export class WindowManager {
       0,
       list.findIndex((w) => w.el.classList.contains("active")),
     );
-    const start = r.x + (r.w - colW) / 2 - focused * (colW + GAP);
+    const start = r.x + (r.w - colW) / 2 - focused * (colW + this.gap);
     list.forEach((w, i) =>
-      this.place(w, { x: start + i * (colW + GAP), y: r.y, w: colW, h: r.h }),
+      this.place(w, {
+        x: start + i * (colW + this.gap),
+        y: r.y,
+        w: colW,
+        h: r.h,
+      }),
     );
   }
 
@@ -481,16 +527,22 @@ export class WindowManager {
     this.arrange();
   }
   private snap(w: AppWindow, dir: Direction) {
-    const dw = this.desk.clientWidth;
-    const dh = this.desk.clientHeight - DOCK;
+    const a = this.freeArea();
+    const g = this.gap;
+    const half = (a.w - g) / 2;
     const r: Rect =
       dir === "left"
-        ? { x: GAP, y: GAP, w: dw / 2 - GAP * 1.5, h: dh - GAP }
+        ? { x: a.x, y: a.y, w: half, h: a.h - g }
         : dir === "right"
-          ? { x: dw / 2 + GAP / 2, y: GAP, w: dw / 2 - GAP * 1.5, h: dh - GAP }
+          ? { x: a.x + half + g, y: a.y, w: half, h: a.h - g }
           : dir === "up"
-            ? { x: GAP, y: GAP, w: dw - GAP * 2, h: dh - GAP }
-            : { x: dw * 0.2, y: dh * 0.15, w: dw * 0.6, h: dh * 0.7 };
+            ? { x: a.x, y: a.y, w: a.w, h: a.h - g }
+            : {
+                x: a.x + a.w * 0.2,
+                y: a.y + a.h * 0.15,
+                w: a.w * 0.6,
+                h: a.h * 0.7,
+              };
     w.maximized = false;
     w.el.classList.remove("maximized");
     Object.assign(w.el.style, {

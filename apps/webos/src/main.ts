@@ -31,11 +31,27 @@ import {
   registry,
   type RegistryEntry,
 } from "./pkg";
-import { installKeys, shortcutsView } from "./keys";
+import { hintOf, installKeys, shortcutsView } from "./keys";
 import { initSounds, setSoundsEnabled, soundsEnabled } from "./sounds";
-import { SEEDS, THEMES, themeCss } from "./themes";
+import { THEMES } from "./themes";
 import { mountWallpaper } from "./wallpaper";
 import { WindowManager, type Layout } from "./wm";
+import { prefs, type BarItem, type WallpaperSpec } from "./prefs";
+import {
+  formatBytes,
+  formatDate,
+  formatTime,
+  installAppearance,
+  motionReduced,
+  onThemeChange,
+} from "./appearance";
+import { announce, installNotifications } from "./notify";
+import { chordCaps } from "./shortcuts";
+import { isSection, settingsApp, type SectionId } from "./apps/settings";
+
+// Preferences load from IndexedDB before the desktop is built; boot.ts already painted their snapshot.
+await prefs.ready;
+installAppearance();
 
 interface Builtin {
   id: string;
@@ -51,7 +67,11 @@ interface Builtin {
 }
 
 const desk = h("main", { class: "desk" });
-const wm = new WindowManager(desk, { defaultLayout: "dwindle" });
+const wm = new WindowManager(desk, {
+  defaultLayout: prefs.get("windows.tiling"),
+  gap: prefs.get("windows.gap"),
+  workspaces: prefs.get("workspaces.count"),
+});
 const craftHosts = new Map<string, CraftHost>();
 const dock = h("nav", { class: "dock", "aria-label": "Dock" });
 const bar = h("header", { class: "topbar" });
@@ -168,12 +188,12 @@ const builtins: Builtin[] = [
     id: "settings",
     name: "Settings",
     icon: "gear",
-    desc: "Theme, colour, sounds and appearance",
+    desc: "Appearance, wallpaper, desktop, keyboard, region and privacy",
     group: "core",
-    width: 720,
-    height: 620,
+    width: 960,
+    height: 680,
     float: true,
-    mount: (root) => settingsApp(root),
+    mount: (root) => mountSettings(root),
   },
   {
     id: "linux",
@@ -460,6 +480,8 @@ async function saveCraftFile(
 function refreshApps() {
   renderDock();
   renderHome();
+  renderDeskIcons();
+  settingsView?.refresh();
   if (launcher.open) renderLauncher();
 }
 
@@ -510,45 +532,34 @@ async function aboutApp(root: HTMLElement) {
 }
 
 // Appearance --------------------------------------------------------------------------------------
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const narrow = matchMedia("(max-width: 599px)");
-let repaintWallpaper: () => void = () => {};
 
-const currentTheme = () =>
-  localStorage.getItem("aph.theme") ??
-  (localStorage.getItem("aph.seed") ? "seed" : "aphrody");
-const currentMode = () => localStorage.getItem("aph.mode") ?? "auto";
-
-function applyPrefs(animate = false) {
-  const run = () => {
-    const mode = currentMode();
-    if (mode === "auto") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.dataset.theme = mode;
-    const style =
-      document.getElementById("seed-css") ??
-      document.head.appendChild(h("style", { id: "seed-css" }));
-    const theme = currentTheme();
-    style.textContent = themeCss(
-      theme,
-      localStorage.getItem("aph.seed") ?? undefined,
-    );
-    // src/boot.ts replays this before first paint on the next visit.
-    try {
-      if (theme === "aphrody") localStorage.removeItem("aph.themecss");
-      else localStorage.setItem("aph.themecss", style.textContent);
-    } catch {}
-    repaintWallpaper();
-    for (const fn of prefListeners) fn();
-  };
-  if (animate && document.startViewTransition && !reduceMotion.matches)
-    document.startViewTransition(run);
-  else run();
+// Settings window: one instance, deep links /settings/<section> ---------------------------------------
+let settingsView: ReturnType<typeof settingsApp> | undefined;
+let settingsSection: SectionId = "appearance";
+function mountSettings(root: HTMLElement) {
+  settingsView = settingsApp(
+    root,
+    {
+      apps: () =>
+        launchItems().map((i) => ({ id: i.id, name: i.name, icon: i.icon })),
+      appIcon,
+      workspace: () => wm.workspace,
+      onSection: (id) => {
+        settingsSection = id;
+        if (wm.windows.has("settings"))
+          history.replaceState(null, "", `/settings/${id}`);
+      },
+      openShortcuts: () =>
+        launchBuiltin(builtins.find((b) => b.id === "keys")!),
+    },
+    settingsSection,
+  );
 }
-const prefListeners = new Set<() => void>();
-function setPref(key: string, value: string | null) {
-  if (value === null) localStorage.removeItem(key);
-  else localStorage.setItem(key, value);
-  applyPrefs(true);
+function openSettings(section?: SectionId) {
+  if (section) settingsSection = section;
+  launchBuiltin(builtins.find((b) => b.id === "settings")!);
+  if (section) settingsView?.show(section);
 }
 
 /** Material Symbols ligature by glyph name. */
@@ -596,152 +607,11 @@ function themeSwatch(
   return h("button", {
     class: `theme-dot ${size}`.trim(),
     "aria-label": `${theme.name} theme`,
-    "aria-pressed": String(currentTheme() === theme.id),
+    "aria-pressed": String(prefs.get("theme.id") === theme.id),
     "data-tip": theme.name,
     style: `--a:${a};--b:${b};--bg:${bg};--s:${surface}`,
     onclick: onPick,
   });
-}
-
-function settingsApp(root: HTMLElement) {
-  const view = h("div", { class: "settings" });
-  const render = () => {
-    const theme = currentTheme();
-    const mode = currentMode();
-    view.replaceChildren(
-      h("h2", {}, "Appearance"),
-      h(
-        "p",
-        { class: "muted" },
-        "Themes recolour every window, the bar, the dock and the wallpaper.",
-      ),
-      h(
-        "div",
-        { class: "theme-cards", role: "radiogroup", "aria-label": "Theme" },
-        ...THEMES.map((t) => {
-          const [bg, surface, a, b] = t.preview;
-          return h(
-            "button",
-            {
-              class: "theme-card",
-              role: "radio",
-              "aria-checked": String(theme === t.id),
-              onclick: () => setPref("aph.theme", t.id),
-            },
-            h(
-              "span",
-              {
-                class: "theme-preview",
-                style: `--a:${a};--b:${b};--bg:${bg};--s:${surface}`,
-                "aria-hidden": "true",
-              },
-              h("span", { class: "tp-bar" }),
-              h("span", { class: "tp-win" }),
-              h("span", { class: "tp-win two" }),
-            ),
-            h("span", { class: "theme-name" }, t.name),
-            h("span", { class: "theme-mood" }, t.mood),
-          );
-        }),
-      ),
-      h("h3", {}, "Mode"),
-      h(
-        "div",
-        { class: "seg", role: "radiogroup", "aria-label": "Mode" },
-        ...(
-          [
-            ["auto", "Automatic", "brightness_auto"],
-            ["light", "Light", "light_mode"],
-            ["dark", "Dark", "dark_mode"],
-          ] as const
-        ).map(([m, label, glyph]) =>
-          h(
-            "button",
-            {
-              class: "segb",
-              role: "radio",
-              "aria-checked": String(mode === m),
-              "aria-selected": String(mode === m),
-              onclick: () => setPref("aph.mode", m === "auto" ? null : m),
-            },
-            sym(glyph),
-            label,
-          ),
-        ),
-      ),
-      h("h3", {}, "Your colour"),
-      h(
-        "p",
-        { class: "muted" },
-        "Build a Material You scheme from one colour instead of a theme.",
-      ),
-      h(
-        "div",
-        { class: "swatches" },
-        ...SEEDS.map(([name, hex]) =>
-          h("button", {
-            class: "swatch",
-            "aria-label": name,
-            "data-tip": name,
-            "aria-pressed": String(
-              theme === "seed" && localStorage.getItem("aph.seed") === hex,
-            ),
-            style: `background:${hex}`,
-            onclick: () => {
-              localStorage.setItem("aph.seed", hex);
-              setPref("aph.theme", "seed");
-            },
-          }),
-        ),
-      ),
-      h("h3", {}, "Sounds"),
-      h(
-        "button",
-        {
-          class: "switch-row",
-          role: "switch",
-          "aria-checked": String(soundsEnabled()),
-          onclick: () => {
-            setSoundsEnabled(!soundsEnabled());
-            render();
-            renderStatus();
-          },
-        },
-        h(
-          "span",
-          {},
-          h("strong", {}, "System sounds"),
-          h(
-            "span",
-            { class: "muted" },
-            "A soft cue when windows open and close",
-          ),
-        ),
-        h("span", { class: "switch", "aria-hidden": "true" }),
-      ),
-      h(
-        "div",
-        { class: "row" },
-        h(
-          "button",
-          {
-            class: "btn tonal",
-            onclick: () => {
-              localStorage.removeItem("aph.seed");
-              localStorage.removeItem("aph.mode");
-              setPref("aph.theme", null);
-            },
-          },
-          "Restore defaults",
-        ),
-      ),
-    );
-  };
-  prefListeners.add(() => {
-    if (view.isConnected) render();
-  });
-  render();
-  root.append(view);
 }
 
 // Launcher: search-first, fuzzy, keyboard driven ---------------------------------------------------
@@ -985,15 +855,8 @@ launcher.addEventListener("keydown", (e) => {
     }
   }
 });
-window.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-    e.preventDefault();
-    toggleLauncher();
-  }
-});
 
 // Dock ---------------------------------------------------------------------------------------------
-const PINNED = ["files", "browser", "terminal", "apps", "creative", "docs"];
 function dockButton(
   id: string,
   label: string,
@@ -1037,12 +900,14 @@ function renderDock() {
     h("span", { class: "dsep", "aria-hidden": "true" }),
   ];
   const seen = new Set<string>();
-  for (const id of PINNED) {
-    const b = builtins.find((entry) => entry.id === id)!;
+  const catalogItems = new Map(launchItems().map((i) => [i.id, i]));
+  for (const id of prefs.get("dock.pinned")) {
+    const item = catalogItems.get(id);
+    if (!item) continue;
     seen.add(id);
     items.push(
-      dockButton(id, b.name, b.icon, () =>
-        wm.windows.get(id) ? toggle(id) : launchBuiltin(b),
+      dockButton(id, item.name, item.icon, () =>
+        wm.windows.get(id) ? toggle(id) : item.run(),
       ),
     );
   }
@@ -1075,20 +940,8 @@ function renderHome() {
     h(
       "div",
       { class: "home-head" },
-      h(
-        "div",
-        { class: "home-time" },
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      ),
-      h(
-        "div",
-        { class: "home-date" },
-        now.toLocaleDateString([], {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        }),
-      ),
+      h("div", { class: "home-time" }, formatTime(now, false)),
+      h("div", { class: "home-date" }, formatDate(now, "long")),
     ),
     h(
       "button",
@@ -1116,7 +969,7 @@ desk.append(home);
 
 // Welcome card: first visit only, centred, dismissible ----------------------------------------------
 function showWelcome() {
-  if (localStorage.getItem("aph.welcome") === "done" || narrow.matches) return;
+  if (prefs.get("shell.welcomed") || narrow.matches) return;
   const card = h("section", {
     class: "welcome",
     role: "dialog",
@@ -1124,29 +977,37 @@ function showWelcome() {
     tabindex: -1,
   });
   const dismiss = () => {
-    localStorage.setItem("aph.welcome", "done");
+    prefs.set("shell.welcomed", true);
     card.classList.add("leaving");
     const done = () => card.remove();
-    if (reduceMotion.matches) done();
+    if (motionReduced()) done();
     else card.addEventListener("animationend", done, { once: true });
   };
-  const quick = ["files", "browser", "terminal", "apps", "creative", "docs"];
+  const catalogItems = new Map(launchItems().map((i) => [i.id, i]));
+  const quick = prefs
+    .get("dock.pinned")
+    .flatMap((id) => catalogItems.get(id) ?? []);
   const swatches = h("div", { class: "welcome-themes" });
   const paintSwatches = () =>
     swatches.replaceChildren(
-      ...THEMES.map((t) => themeSwatch(t, () => setPref("aph.theme", t.id))),
+      ...THEMES.map((t) => themeSwatch(t, () => prefs.set("theme.id", t.id))),
     );
-  prefListeners.add(() => {
+  const offTheme = prefs.subscribe("theme.id", () => {
     if (card.isConnected) paintSwatches();
+    else offTheme();
   });
   paintSwatches();
-  const kbd = (keys: string[], label: string) =>
-    h(
-      "span",
-      { class: "hint" },
-      ...keys.map((k) => h("kbd", {}, k)),
-      h("span", {}, label),
-    );
+  const kbd = (action: string, label: string) => {
+    const chord = hintOf(action);
+    return chord
+      ? h(
+          "span",
+          { class: "hint" },
+          ...chordCaps(chord).map((k) => h("kbd", {}, k)),
+          h("span", {}, label),
+        )
+      : null;
+  };
   card.append(
     h(
       "div",
@@ -1185,27 +1046,27 @@ function showWelcome() {
       },
       sym("search"),
       h("span", {}, "Search apps and the web"),
-      h("kbd", {}, "Alt"),
-      h("kbd", {}, "Space"),
+      ...(hintOf("launcher") ? chordCaps(hintOf("launcher")!) : []).map((k) =>
+        h("kbd", {}, k),
+      ),
     ),
     h(
       "div",
       { class: "welcome-apps" },
-      ...quick.map((id) => {
-        const b = builtins.find((entry) => entry.id === id)!;
-        return h(
+      ...quick.map((item) =>
+        h(
           "button",
           {
             class: "ltile",
             onclick: () => {
               dismiss();
-              launchBuiltin(b);
+              item.run();
             },
           },
-          appIcon(b.id, b.icon),
-          h("span", { class: "lname" }, b.name),
-        );
-      }),
+          appIcon(item.id, item.icon),
+          h("span", { class: "lname" }, item.name),
+        ),
+      ),
     ),
     h(
       "div",
@@ -1219,9 +1080,9 @@ function showWelcome() {
       h(
         "div",
         { class: "hints" },
-        kbd(["Alt", "Enter"], "Terminal"),
-        kbd(["Alt", "1–5"], "Workspaces"),
-        kbd(["Alt", "/"], "All shortcuts"),
+        kbd("launch.terminal", "Terminal"),
+        kbd("workspace.go", "Workspaces"),
+        kbd("help", "All shortcuts"),
       ),
       h("button", { class: "btn", onclick: dismiss }, "Start"),
     ),
@@ -1317,7 +1178,7 @@ addEventListener("offline", renderStatus);
   .catch(() => {});
 
 function renderQuick() {
-  const mode = currentMode();
+  const mode = prefs.get("theme.mode");
   const tile = (
     glyph: string,
     title: string,
@@ -1339,10 +1200,7 @@ function renderQuick() {
   const storage = h("div", { class: "qstorage" });
   void navigator.storage?.estimate?.().then(({ usage = 0, quota = 0 }) => {
     if (!quota) return;
-    const mb = (n: number) =>
-      n > 1e9
-        ? `${(n / 1e9).toFixed(1)} GB`
-        : `${Math.max(1, Math.round(n / 1e6))} MB`;
+    const mb = formatBytes;
     storage.replaceChildren(
       h(
         "div",
@@ -1360,15 +1218,7 @@ function renderQuick() {
       h(
         "div",
         {},
-        h(
-          "strong",
-          {},
-          new Date().toLocaleDateString([], {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          }),
-        ),
+        h("strong", {}, formatDate(new Date(), "long")),
         battery
           ? h(
               "span",
@@ -1385,7 +1235,7 @@ function renderQuick() {
           "data-tip": "All settings",
           onclick: () => {
             quick.hidePopover();
-            launchBuiltin(builtins.find((b) => b.id === "settings")!);
+            openSettings();
           },
         },
         icon("gear"),
@@ -1405,11 +1255,7 @@ function renderQuick() {
         "Sounds",
         soundsEnabled() ? "On" : "Off",
         soundsEnabled(),
-        () => {
-          setSoundsEnabled(!soundsEnabled());
-          renderStatus();
-          renderQuick();
-        },
+        () => setSoundsEnabled(!soundsEnabled()),
       ),
       tile(
         mode === "dark"
@@ -1421,9 +1267,10 @@ function renderQuick() {
         mode === "auto" ? "Automatic" : mode === "dark" ? "Dark" : "Light",
         mode !== "light",
         () => {
-          const next =
-            mode === "auto" ? "dark" : mode === "dark" ? "light" : null;
-          setPref("aph.mode", next);
+          prefs.set(
+            "theme.mode",
+            mode === "auto" ? "dark" : mode === "dark" ? "light" : "auto",
+          );
         },
       ),
       tile(
@@ -1438,7 +1285,7 @@ function renderQuick() {
       "div",
       { class: "qthemes" },
       ...THEMES.map((t) =>
-        themeSwatch(t, () => setPref("aph.theme", t.id), "lg"),
+        themeSwatch(t, () => prefs.set("theme.id", t.id), "lg"),
       ),
     ),
     storage,
@@ -1447,7 +1294,7 @@ function renderQuick() {
 quick.addEventListener("beforetoggle", (e) => {
   if ((e as ToggleEvent).newState === "open") renderQuick();
 });
-prefListeners.add(() => {
+prefs.subscribe("*", () => {
   if (quick.matches(":popover-open")) renderQuick();
 });
 wm.onChange(() => {
@@ -1456,17 +1303,19 @@ wm.onChange(() => {
 
 function tick() {
   const d = new Date();
-  timeEl.textContent = d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  timeEl.textContent = formatTime(d);
   timeEl.dateTime = d.toISOString();
-  dateEl.textContent = d.toLocaleDateString([], {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  const dateStyle = prefs.get("clock.date");
+  dateEl.hidden = dateStyle === "none";
+  dateEl.textContent = dateStyle === "none" ? "" : formatDate(d, dateStyle);
   if (narrow.matches) renderHome();
+}
+let clockTimer: ReturnType<typeof setInterval> | undefined;
+/** Tick each second when the clock shows seconds, else on the minute. */
+function startClock() {
+  clearInterval(clockTimer);
+  tick();
+  clockTimer = setInterval(tick, prefs.get("clock.seconds") ? 1000 : 15_000);
 }
 
 function renderBar() {
@@ -1478,7 +1327,7 @@ function renderBar() {
   );
   activeApp.classList.toggle("idle", !active);
   const occupied = wm.occupied();
-  const shown = Math.max(5, wm.workspace, ...occupied);
+  const shown = wm.workspaceCount;
   wsBar.replaceChildren(
     ...Array.from({ length: shown }, (_, i) => {
       const n = i + 1;
@@ -1502,28 +1351,31 @@ function renderBar() {
     "aria-label",
     `Layout: ${LAYOUT_NAME[layout]}. Change layout`,
   );
-  layoutBtn.dataset.tip = `${LAYOUT_NAME[layout]} (Alt+L)`;
+  const layoutHint = hintOf("layout.next");
+  layoutBtn.dataset.tip = layoutHint
+    ? `${LAYOUT_NAME[layout]} (${chordCaps(layoutHint).join("+")})`
+    : LAYOUT_NAME[layout];
 }
 wm.onChange(renderBar);
 
-bar.append(
-  h(
-    "div",
-    { class: "bar-left" },
-    h(
-      "button",
-      {
-        class: "brand",
-        onclick: () => toggleLauncher(),
-        "aria-label": "Show all apps",
-        "data-tip": "All apps (Alt+Space)",
-      },
-      h("img", { src: "/brand/64.png", alt: "", width: 22, height: 22 }),
-    ),
-    wsBar,
-    activeApp,
+const barLeft = h("div", { class: "bar-left" });
+const barCenter = h("div", { class: "bar-center" });
+const barRight = h("div", { class: "bar-right" });
+bar.append(barLeft, barCenter, barRight);
+const BAR_PARTS: Record<BarItem, HTMLElement> = {
+  launcher: h(
+    "button",
+    {
+      class: "brand",
+      onclick: () => toggleLauncher(),
+      "aria-label": "Show all apps",
+      "data-tip": "All apps",
+    },
+    h("img", { src: "/brand/64.png", alt: "", width: 22, height: 22 }),
   ),
-  h(
+  workspaces: wsBar,
+  active: activeApp,
+  clock: h(
     "button",
     {
       class: "bar-clock",
@@ -1533,34 +1385,153 @@ bar.append(
     timeEl,
     dateEl,
   ),
-  h(
-    "div",
-    { class: "bar-right" },
-    layoutBtn,
-    h(
-      "button",
-      {
-        class: "tbtn",
-        "aria-label": "Search",
-        "data-tip": "Search (Ctrl+K)",
-        onclick: () => openLauncher(),
-      },
-      icon("search"),
-    ),
-    statusBtn,
-    h(
-      "button",
-      {
-        class: "tbtn",
-        "aria-label": "Open settings",
-        "data-tip": "Settings",
-        onclick: () =>
-          launchBuiltin(builtins.find((b) => b.id === "settings")!),
-      },
-      icon("gear"),
-    ),
+  layout: layoutBtn,
+  search: h(
+    "button",
+    {
+      class: "tbtn",
+      "aria-label": "Search",
+      "data-tip": "Search",
+      onclick: () => openLauncher(),
+    },
+    icon("search"),
   ),
-);
+  status: statusBtn,
+  settings: h(
+    "button",
+    {
+      class: "tbtn",
+      "aria-label": "Open settings",
+      "data-tip": "Settings",
+      onclick: () => openSettings(),
+    },
+    icon("gear"),
+  ),
+};
+/** Place the bar items in their zones (Settings, Desktop, Top bar). */
+function layoutBar() {
+  const zones = prefs.get("bar.items");
+  const order = Object.keys(BAR_PARTS) as BarItem[];
+  for (const [zone, el] of [
+    ["left", barLeft],
+    ["center", barCenter],
+    ["right", barRight],
+  ] as const)
+    el.replaceChildren(
+      ...order.filter((i) => zones[i] === zone).map((i) => BAR_PARTS[i]),
+    );
+  const launcherHint = hintOf("launcher");
+  BAR_PARTS.launcher.dataset.tip = launcherHint
+    ? `All apps (${chordCaps(launcherHint).join("+")})`
+    : "All apps";
+}
+prefs.subscribe("bar.items", layoutBar);
+prefs.subscribe("keys.bindings", () => {
+  layoutBar();
+  renderBar();
+});
+layoutBar();
+
+// Desktop icons -------------------------------------------------------------------------------------
+const deskIcons = h("nav", { class: "deskicons", "aria-label": "Desktop" });
+function renderDeskIcons() {
+  deskIcons.hidden = !prefs.get("desktop.icons");
+  if (deskIcons.hidden) return deskIcons.replaceChildren();
+  const catalogItems = new Map(launchItems().map((i) => [i.id, i]));
+  deskIcons.replaceChildren(
+    ...prefs.get("desktop.apps").flatMap((id) => {
+      const item = catalogItems.get(id);
+      return item
+        ? [
+            h(
+              "button",
+              {
+                class: "deskicon",
+                title: item.desc,
+                ondblclick: () => item.run(),
+                onkeydown: (e: KeyboardEvent) => {
+                  if (e.key === "Enter") item.run();
+                },
+              },
+              appIcon(item.id, item.icon),
+              h("span", { class: "lname" }, item.name),
+            ),
+          ]
+        : [];
+    }),
+  );
+}
+desk.append(deskIcons);
+
+// Window manager and wallpaper follow the preferences -------------------------------------------
+/** Space the dock takes on its edge, so tiles and maximized windows stay clear of it. */
+function dockReserve() {
+  const size =
+    prefs.get("dock.size") + (prefs.get("a11y.largeTargets") ? 12 : 10);
+  const band = prefs.get("dock.autohide") || narrow.matches ? 0 : size + 30;
+  const edge = prefs.get("dock.position");
+  return {
+    top: 0,
+    bottom: edge === "bottom" ? band : 0,
+    left: edge === "left" ? band : 0,
+    right: edge === "right" ? band : 0,
+  };
+}
+function configureWm() {
+  const reserve = dockReserve();
+  for (const [k, v] of Object.entries(reserve))
+    document.documentElement.style.setProperty(`--reserve-${k}`, `${v}px`);
+  wm.configure({
+    gap: prefs.get("windows.gap"),
+    defaultLayout: prefs.get("windows.tiling"),
+    workspaces: prefs.get("workspaces.count"),
+    reserve,
+  });
+}
+for (const key of [
+  "windows.gap",
+  "windows.tiling",
+  "workspaces.count",
+  "dock.size",
+  "dock.position",
+  "dock.autohide",
+  "a11y.largeTargets",
+] as const)
+  prefs.subscribe(key, configureWm);
+narrow.addEventListener("change", configureWm);
+prefs.subscribe("dock.pinned", () => {
+  renderDock();
+  renderDeskIcons();
+});
+prefs.subscribe("desktop.icons", renderDeskIcons);
+prefs.subscribe("desktop.apps", renderDeskIcons);
+for (const key of [
+  "clock.seconds",
+  "clock.hourCycle",
+  "clock.date",
+  "region.locale",
+  "region.timeZone",
+  "region.dateStyle",
+] as const)
+  prefs.subscribe(key, startClock);
+prefs.subscribe("sound.enabled", renderStatus);
+
+const wallpaperFor = (ws: number): WallpaperSpec =>
+  prefs.get("wallpaper.workspaces")[ws] ?? prefs.get("wallpaper.default");
+
+// Dock autohide: the dock slides in when the pointer reaches its edge or a dock button gets focus.
+const dockEdge = h("div", { class: "dock-edge", "aria-hidden": "true" });
+let dockHideTimer: ReturnType<typeof setTimeout> | undefined;
+const peekDock = (on: boolean) => {
+  clearTimeout(dockHideTimer);
+  if (on) dock.classList.add("peek");
+  else dockHideTimer = setTimeout(() => dock.classList.remove("peek"), 600);
+};
+dockEdge.addEventListener("pointerenter", () => peekDock(true));
+dock.addEventListener("pointerenter", () => peekDock(true));
+dock.addEventListener("pointerleave", () => peekDock(false));
+dock.addEventListener("focusin", () => peekDock(true));
+dock.addEventListener("focusout", () => peekDock(false));
 
 // Boot ---------------------------------------------------------------------------------------------
 desk.id = "desk";
@@ -1570,20 +1541,44 @@ document.body.append(
   bar,
   desk,
   dock,
+  dockEdge,
   launcher,
   quick,
 );
-repaintWallpaper = mountWallpaper();
-applyPrefs();
-tick();
-setInterval(tick, 15_000);
+const wallpaper = mountWallpaper(wallpaperFor(wm.workspace));
+onThemeChange(() => wallpaper.repaint());
+const showWallpaper = () => wallpaper.show(wallpaperFor(wm.workspace));
+prefs.subscribe("wallpaper.default", showWallpaper);
+prefs.subscribe("wallpaper.workspaces", showWallpaper);
+let announcedWs = wm.workspace;
+wm.onChange(() => {
+  showWallpaper();
+  // Closing Settings leaves its /settings/<section> address.
+  if (settingsView && !wm.windows.has("settings")) {
+    settingsView.dispose();
+    settingsView = undefined;
+    if (location.pathname.startsWith("/settings"))
+      history.replaceState(null, "", "/");
+  }
+  if (wm.workspace !== announcedWs) {
+    announcedWs = wm.workspace;
+    announce(`Workspace ${wm.workspace}`);
+  }
+});
+configureWm();
+startClock();
 refreshApps();
 renderBar();
 renderStatus();
 initSounds();
+installNotifications();
 installKeys(wm, {
   launcher: toggleLauncher,
-  launch: (id) => launchBuiltin(builtins.find((b) => b.id === id)!),
+  launch: (id) => {
+    if (id === "settings") return openSettings();
+    const b = builtins.find((entry) => entry.id === id);
+    if (b) launchBuiltin(b);
+  },
   help: () => launchBuiltin(builtins.find((b) => b.id === "keys")!),
   webHotkey: (code) => {
     const app = webApps().find((a) => a.key === code);
@@ -1615,6 +1610,9 @@ void reconcile()
   .catch(() => {});
 
 // A requested app opens directly; a plain visit lands on a calm desktop (welcome card on the first one).
+const settingsPath = /^\/settings(?:\/([a-z]+))?\/?$/.exec(location.pathname);
 const target = builtins.find((x) => x.id === wanted);
-if (target) launchBuiltin(target);
+if (settingsPath)
+  openSettings(isSection(settingsPath[1]) ? settingsPath[1] : "appearance");
+else if (target) launchBuiltin(target);
 else if (!wanted) showWelcome();

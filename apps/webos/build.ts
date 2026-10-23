@@ -152,6 +152,29 @@ const tokens = [
 ].join("\n");
 await Bun.write(join(dist, "m3.css"), tokens);
 
+// Build identity for Settings > About: commit, time and the versions of the shell's direct libraries.
+const commit =
+  process.env.WEBOS_COMMIT ??
+  new TextDecoder()
+    .decode(Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: root }).stdout)
+    .trim();
+const versionOf = async (path: string) => {
+  const file = Bun.file(join(root, path, "package.json"));
+  return (await file.exists()) ? String((await file.json()).version) : "";
+};
+const buildInfo = {
+  commit: commit || "unknown",
+  built: new Date().toISOString(),
+  version: await versionOf("apps/webos"),
+  bun: Bun.version,
+  materialWeb: await versionOf("node_modules/@aphrody/material-web"),
+  m3Tokens: await versionOf("packages/m3-tokens"),
+  colorUtils: await versionOf(
+    "node_modules/@material/material-color-utilities",
+  ),
+  webosWasm: await versionOf("packages/webos-wasm"),
+};
+
 const result = await Bun.build({
   entrypoints: [
     join(import.meta.dir, "src/main.ts"),
@@ -162,7 +185,10 @@ const result = await Bun.build({
   target: "browser",
   minify: true,
   // Lit and other packages ship a dev build unless NODE_ENV is production at bundle time
-  define: { "process.env.NODE_ENV": '"production"' },
+  define: {
+    "process.env.NODE_ENV": '"production"',
+    __WEBOS_BUILD__: JSON.stringify(JSON.stringify(buildInfo)),
+  },
   sourcemap: "none",
   naming: "[name].js",
   splitting: false,
@@ -178,12 +204,15 @@ await cp(
   join(dist, "wasm/aphrody_webos_wasm_bg.wasm"),
 );
 await cp(join(root, "LICENSE-APACHE"), join(dist, "wasm/LICENSE-APACHE"));
-// @aphrody/m3-fonts: Google Sans Flex / Code and Material Symbols, subset to the faces the shell uses.
+// @aphrody/m3-fonts: Google Sans Flex / Code, Roboto Flex / Mono (Settings > Font) and Material Symbols.
 const fontSrc = join(root, "packages/m3-fonts/fonts");
 await mkdir(join(dist, "fonts"), { recursive: true });
 for (const [from, to] of [
   ["web/GoogleSansFlex-latin.woff2", "GoogleSansFlex-latin.woff2"],
   ["web/GoogleSansCode-latin.woff2", "GoogleSansCode-latin.woff2"],
+  ["web/RobotoFlex-latin.woff2", "RobotoFlex-latin.woff2"],
+  ["web/RobotoMono-latin.woff2", "RobotoMono-latin.woff2"],
+  ["web/RobotoMono-Italic-latin.woff2", "RobotoMono-Italic-latin.woff2"],
   [
     "upstream/material-symbols/material-symbols-rounded.woff2",
     "material-symbols-rounded.woff2",
@@ -194,7 +223,9 @@ const faces = (
   await Bun.file(join(root, "packages/m3-fonts/src/fonts.css")).text()
 )
   .split("@font-face")
-  .filter((f) => /Google Sans (Flex|Code)/.test(f.split("}")[0]!));
+  .filter((f) =>
+    /Google Sans (Flex|Code)|Roboto (Flex|Mono)/.test(f.split("}")[0]!),
+  );
 const symbols = (
   await Bun.file(join(root, "packages/m3-fonts/src/fonts-symbols.css")).text()
 )
