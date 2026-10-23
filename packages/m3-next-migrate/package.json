@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-next-migrate",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation",
   "keywords": [
     "bun",

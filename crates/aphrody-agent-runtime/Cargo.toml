@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-agent-runtime"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
@@ -53,7 +53,7 @@ which = { version = "8", features = [] }
 tracing = "0.1.44"
 
 [dev-dependencies]
-aphrody-jev = { path = "../aphrody-jev", version = "1.4.4", default-features = false, features = ["client"] }
+aphrody-jev = { path = "../aphrody-jev", version = "1.4.7", default-features = false, features = ["client"] }
 pretty_assertions = { version = "1", features = [] }
 tempfile = "3.27.0"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }

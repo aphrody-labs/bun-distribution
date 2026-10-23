@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-primitives",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
   "keywords": [
     "material-3",

@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-term"
 description = "Headless VT terminal engine (cell grid, native PTY, screen scraping, quad batching) for Aphrody computer use."
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

@@ -1,6 +1,6 @@
 {
   "name": "@bun-os/ds-dotnet",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": true,
   "description": "Nintendo DS and 3DS managed format readers (Kuriimu2 Konnect plugins, SPICA H3D, pk3DS ExeFS) hosted in Bun through bun:dotnet.",
   "license": "GPL-3.0-or-later",

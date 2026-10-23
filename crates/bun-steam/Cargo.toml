@@ -4,7 +4,7 @@
 # client absorbed from bun-re and the in-process Steamworks emulator.
 [package]
 name = "bun-steam"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-dev <contact@aphrody.com>"]

@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-shell-web"
 description = "Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol."
-version = "1.4.4"
+version = "1.4.7"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

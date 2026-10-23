@@ -689,7 +689,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/aphrody-labs/bun-distribution"
@@ -737,23 +737,23 @@ jsonwebtoken = { version = "9.3.1" }
 rxbyak = { git = "https://github.com/vricosti/rxbyak", rev = "3aac8e24bfe559e7b076d6fa6783ed4b1bb160f3" }
 rhazel = { git = "https://github.com/vricosti/rhazel", rev = "5d2e49e0ac5f24da800b7ca54b4bd7d520816118" }
 tracing-subscriber ={ version = "0.3.22", features = ["env-filter","fmt","json","regex","registry"] }
-aphrody-command = { path = "crates/aphrody-command", version = "1.4.4", features = [] }
-aphrody-agent-home = { path = "crates/aphrody-agent-home", version = "1.4.4", features = [] }
-aphrody-bun = { path = "crates/aphrody-bun", version = "1.4.4" }
+aphrody-command = { path = "crates/aphrody-command", version = "1.4.7", features = [] }
+aphrody-agent-home = { path = "crates/aphrody-agent-home", version = "1.4.7", features = [] }
+aphrody-bun = { path = "crates/aphrody-bun", version = "1.4.7" }
 aphrody-n2b-core = { version = "0.7.0", features = [] }
 memchr = { version = "2" }
 aphrody-oxc-bridge = { version = "0.2.0" }
-aphrody-llama-server = { path = "crates/aphrody-llama-server", version = "1.4.4", features = [] }
-aphrody-model-client = { path = "crates/aphrody-model-client", version = "1.4.4", features = [] }
-aphrody-models = { path = "crates/aphrody-models", version = "1.4.4", features = [] }
-aphrody-rag-core = { path = "crates/aphrody-rag-core", version = "1.4.4", features = [] }
+aphrody-llama-server = { path = "crates/aphrody-llama-server", version = "1.4.7", features = [] }
+aphrody-model-client = { path = "crates/aphrody-model-client", version = "1.4.7", features = [] }
+aphrody-models = { path = "crates/aphrody-models", version = "1.4.7", features = [] }
+aphrody-rag-core = { path = "crates/aphrody-rag-core", version = "1.4.7", features = [] }
 rookie-cookies = { version = "0.6.0" }
-yolo-runtime = { path = "crates/yolo-runtime", version = "1.4.4" }
+yolo-runtime = { path = "crates/yolo-runtime", version = "1.4.7" }
 bun-python-host = { path = "toolchains/bun/packages/bun-python-native/crates/bun-python-host" }
 # PyO3 resolves to the fork pinned by toolchains/bun ([patch.crates-io] below).
 pyo3 = { version = "0.29.3" }
 mimalloc = { version = "0.1", default-features = false, features = [] }
-aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.4", features = [] }
+aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.7", features = [] }
 libm = { version = "0.2.16" }
 filmcraft-engine = { path = "crates/filmcraft-engine" }
 filmcraft-ui-egui = { path = "crates/filmcraft-ui-egui" }
@@ -795,42 +795,42 @@ aphrody-mcp-client = { path = "crates/aphrody-mcp-client" }
 aphrody-x = { package = "bun_x", path = "toolchains/bun/src/x" }
 obscura-dom = { package = "bun_browser_dom", path = "toolchains/bun/src/browser/crates/dom" }
 obscura-net = { package = "bun_browser_net", path = "toolchains/bun/src/browser/crates/net" }
-craft-fonts = { path = "crates/craft-fonts", version = "1.4.4" }
-craft-fonts-tests = { path = "crates/craft-fonts-tests", version = "1.4.4" }
-craft-atomic = { path = "crates/craft-atomic", version = "1.4.4" }
-craft-settings = { path = "crates/craft-settings", version = "1.4.4" }
-craft-cms = { path = "crates/craft-cms", version = "1.4.4" }
-craft-print = { path = "crates/craft-print", version = "1.4.4" }
-craft-quit = { path = "crates/craft-quit", version = "1.4.4" }
-craft-ui = { path = "crates/craft-ui", version = "1.4.4" }
-pdfcraft-compare = { path = "crates/pdfcraft-compare", version = "1.4.4" }
-cadcraft-color = { path = "crates/cadcraft-color", version = "1.4.4" }
-cadcraft-geom = { path = "crates/cadcraft-geom", version = "1.4.4" }
-cadcraft-doc = { path = "crates/cadcraft-doc", version = "1.4.4" }
-cadcraft-engine = { path = "crates/cadcraft-engine", version = "1.4.4" }
-cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "1.4.4" }
-cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "1.4.4" }
-cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "1.4.4" }
-cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "1.4.4" }
-cadcraft-io = { path = "crates/cadcraft-io", version = "1.4.4" }
-cadcraft-mcp = { path = "crates/cadcraft-mcp", version = "1.4.4" }
-cadcraft-render = { path = "crates/cadcraft-render", version = "1.4.4" }
-cadcraft-ui-egui = { path = "crates/cadcraft-ui-egui", version = "1.4.4" }
-cadcraft = { path = "crates/cadcraft", version = "1.4.4" }
-gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "1.4.4" }
-aphrody-a2a = { path = "crates/aphrody-a2a", version = "1.4.4" }
-aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "1.4.4" }
-aphrody-app-protocol = { path = "crates/aphrody-app-protocol", version = "1.4.4" }
-aphrody-toolcall = { path = "crates/aphrody-toolcall", version = "1.4.4" }
-aphrody-patch = { path = "crates/aphrody-patch", version = "1.4.4" }
-aphrody-toolcall-repair = { path = "crates/aphrody-toolcall-repair", version = "1.4.4" }
-aphrody-translate-core = { path = "crates/aphrody-translate-core", version = "1.4.4" }
-aphrody-http-error = { path = "crates/aphrody-http-error", version = "1.4.4" }
-aphrody-guard = { path = "crates/aphrody-guard", version = "1.4.4" }
-aphrody-subsystem = { path = "crates/aphrody-subsystem", version = "1.4.4" }
-aphrody-proc = { path = "crates/aphrody-proc", version = "1.4.4" }
-aphrody-config = { path = "crates/aphrody-config", version = "1.4.4" }
-aphrody-jev = { path = "crates/aphrody-jev", version = "1.4.4", default-features = false }
+craft-fonts = { path = "crates/craft-fonts", version = "1.4.7" }
+craft-fonts-tests = { path = "crates/craft-fonts-tests", version = "1.4.7" }
+craft-atomic = { path = "crates/craft-atomic", version = "1.4.7" }
+craft-settings = { path = "crates/craft-settings", version = "1.4.7" }
+craft-cms = { path = "crates/craft-cms", version = "1.4.7" }
+craft-print = { path = "crates/craft-print", version = "1.4.7" }
+craft-quit = { path = "crates/craft-quit", version = "1.4.7" }
+craft-ui = { path = "crates/craft-ui", version = "1.4.7" }
+pdfcraft-compare = { path = "crates/pdfcraft-compare", version = "1.4.7" }
+cadcraft-color = { path = "crates/cadcraft-color", version = "1.4.7" }
+cadcraft-geom = { path = "crates/cadcraft-geom", version = "1.4.7" }
+cadcraft-doc = { path = "crates/cadcraft-doc", version = "1.4.7" }
+cadcraft-engine = { path = "crates/cadcraft-engine", version = "1.4.7" }
+cadcraft-constraints = { path = "crates/cadcraft-constraints", version = "1.4.7" }
+cadcraft-dxf = { path = "crates/cadcraft-dxf", version = "1.4.7" }
+cadcraft-dwg = { path = "crates/cadcraft-dwg", version = "1.4.7" }
+cadcraft-fonts = { path = "crates/cadcraft-fonts", version = "1.4.7" }
+cadcraft-io = { path = "crates/cadcraft-io", version = "1.4.7" }
+cadcraft-mcp = { path = "crates/cadcraft-mcp", version = "1.4.7" }
+cadcraft-render = { path = "crates/cadcraft-render", version = "1.4.7" }
+cadcraft-ui-egui = { path = "crates/cadcraft-ui-egui", version = "1.4.7" }
+cadcraft = { path = "crates/cadcraft", version = "1.4.7" }
+gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "1.4.7" }
+aphrody-a2a = { path = "crates/aphrody-a2a", version = "1.4.7" }
+aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "1.4.7" }
+aphrody-app-protocol = { path = "crates/aphrody-app-protocol", version = "1.4.7" }
+aphrody-toolcall = { path = "crates/aphrody-toolcall", version = "1.4.7" }
+aphrody-patch = { path = "crates/aphrody-patch", version = "1.4.7" }
+aphrody-toolcall-repair = { path = "crates/aphrody-toolcall-repair", version = "1.4.7" }
+aphrody-translate-core = { path = "crates/aphrody-translate-core", version = "1.4.7" }
+aphrody-http-error = { path = "crates/aphrody-http-error", version = "1.4.7" }
+aphrody-guard = { path = "crates/aphrody-guard", version = "1.4.7" }
+aphrody-subsystem = { path = "crates/aphrody-subsystem", version = "1.4.7" }
+aphrody-proc = { path = "crates/aphrody-proc", version = "1.4.7" }
+aphrody-config = { path = "crates/aphrody-config", version = "1.4.7" }
+aphrody-jev = { path = "crates/aphrody-jev", version = "1.4.7", default-features = false }
 acadrust = "0.6.3"
 anyhow = { version = "1.0.104", default-features = false }
 async-trait = { version = "0.1.92", default-features = false }
@@ -933,7 +933,7 @@ ahash = "0.8"
 crossbeam-channel = "0.5"
 aphrody-emu-utils = {  path = "crates/aphrody-emu-utils", features = ["triple-buffer", "app"] }
 aphrody-dust-core = {  path = "crates/aphrody-dust-core" }
-bun-steam = { path = "crates/bun-steam", version = "1.4.4", default-features = false }
+bun-steam = { path = "crates/bun-steam", version = "1.4.7", default-features = false }
 bun-engine = { path = "crates/bun-engine-core", default-features = false }
 aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", features = ["webgpu"] }
 aphrody-wii = { path = "crates/aphrody-wii" }
@@ -1354,9 +1354,9 @@ input_common = { path = "crates/ruzu-input-common" }
 video_core = { path = "crates/ruzu-video-core" }
 frontend_common = { path = "crates/ruzu-frontend-common" }
 shader_recompiler = { path = "crates/ruzu-shader-recompiler" }
-tauri = { package = "aphrody-tauri", path = "packages/bun-tauri/crates/aphrody-tauri", version = "1.4.4", default-features = false }
-tauri-build = { package = "aphrody-tauri-build", path = "packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
+tauri = { package = "aphrody-tauri", path = "packages/bun-tauri/crates/aphrody-tauri", version = "1.4.7", default-features = false }
+tauri-build = { package = "aphrody-tauri-build", path = "packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.7" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.7" }
 aphrody-render = { path = "crates/aphrody-render" }
 aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens" }
 cubeb = "0.34"

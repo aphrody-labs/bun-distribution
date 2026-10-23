@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-plugin"
-version = "1.4.4"
+version = "1.4.7"
 description = "Build script and runtime Tauri plugin definitions"
 authors = ["Tauri Programme within The Commons Conservancy"]
 homepage = "https://tauri.app/"

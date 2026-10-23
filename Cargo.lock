@@ -746,7 +746,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "aphrody"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-command",
  "aphrody-guard",
@@ -762,7 +762,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "base64 0.23.1",
  "chrono",
@@ -774,7 +774,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-client"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-pb",
@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-coord"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-server",
@@ -823,7 +823,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-grpc"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-client",
@@ -842,7 +842,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-pb"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "chrono",
@@ -861,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-a2a-server"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-pb",
@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-agent-home"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-config",
  "aphrody-models",
@@ -910,7 +910,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-agent-proto"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "serde",
@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-agent-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-proto",
  "aphrody-agent-tools",
@@ -952,7 +952,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-agent-tools"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-agent-proto",
@@ -985,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-antigravity"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "base64 0.23.1",
@@ -1019,7 +1019,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-app"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-app-server",
  "aphrody-capture",
@@ -1032,7 +1032,7 @@ dependencies = [
  "aphrody-models",
  "aphrody-proc",
  "aphrody-shell-tauri",
- "aphrody-sprite-sheet 1.4.4",
+ "aphrody-sprite-sheet 1.4.7",
  "aphrody-subsystem",
  "aphrody-tauri",
  "aphrody-tauri-build",
@@ -1057,7 +1057,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-app-protocol"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "serde",
@@ -1066,7 +1066,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-app-server"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-agent-proto",
@@ -1098,7 +1098,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-backend"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes-gcm 0.11.1",
  "anyhow",
@@ -1119,7 +1119,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-bindgen"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "bindgen 0.73.2",
@@ -1132,14 +1132,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-boq"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "aphrody-bun"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-reproduce",
  "aphrody-m3-tokens",
@@ -1156,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-bun-docs"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-n2b-registry",
  "aphrody-proc",
@@ -1170,7 +1170,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-capture"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "image",
  "thiserror 2.0.21",
@@ -1179,7 +1179,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-certificates"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-ovh",
@@ -1198,7 +1198,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-code-graph"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "aphrody-store",
@@ -1220,7 +1220,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-command"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-a2a",
  "aphrody-a2a-client",
@@ -1262,7 +1262,7 @@ dependencies = [
  "aphrody-render",
  "aphrody-secrets",
  "aphrody-site",
- "aphrody-ssh 1.4.4",
+ "aphrody-ssh 1.4.7",
  "aphrody-tauri-cli",
  "aphrody-term",
  "aphrody-terminal-backend",
@@ -1320,7 +1320,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-command-pure"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-rag-core",
  "aphrody-toolcall-repair",
@@ -1332,7 +1332,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-command-wasm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-command-pure",
  "aphrody-rag-core",
@@ -1343,7 +1343,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-config"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "serde",
@@ -1355,7 +1355,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-create-tauri-app"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "ctrlc",
@@ -1371,7 +1371,7 @@ version = "0.1.1"
 
 [[package]]
 name = "aphrody-ctr-desktop"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-ctr-emu",
  "aphrody-gpu-backend",
@@ -1387,7 +1387,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ctr-emu"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "zakuro-common",
  "zakuro-core",
@@ -1395,7 +1395,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-diagnostics"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-antigravity",
@@ -1414,7 +1414,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-discord"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-proc",
@@ -1433,7 +1433,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-drive"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-kernel",
  "aphrody-proc",
@@ -1594,7 +1594,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-embed"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-http-error",
  "aphrody-models",
@@ -1643,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-engine"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-agent-proto",
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ffi"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-agent-home",
@@ -1708,7 +1708,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-firefly"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "reqwest 0.13.5",
  "rustls",
@@ -1722,7 +1722,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-fsindex"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "rusqlite",
  "serde",
@@ -1734,7 +1734,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-gateway"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-config",
  "aphrody-model-client",
@@ -1755,7 +1755,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-gemini-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-config",
  "aphrody-mcp-client",
@@ -1776,7 +1776,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-gemini-web"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-boq",
  "regex",
@@ -1793,7 +1793,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-google"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-antigravity",
  "aphrody-gemini-runtime",
@@ -1814,7 +1814,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-gpu-backend"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cudarc",
  "js-sys",
@@ -1828,7 +1828,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-guard"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "libc",
  "pretty_assertions",
@@ -1840,7 +1840,7 @@ version = "0.1.1"
 
 [[package]]
 name = "aphrody-http-error"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "axum",
  "serde",
@@ -1850,10 +1850,10 @@ dependencies = [
 
 [[package]]
 name = "aphrody-identity"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-tokens",
- "aphrody-sprite-sheet 1.4.4",
+ "aphrody-sprite-sheet 1.4.7",
  "aphrody-svg",
  "base64 0.23.1",
  "ico",
@@ -1871,7 +1871,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-infer"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-models",
  "dirs 7.0.0",
@@ -1884,13 +1884,13 @@ dependencies = [
 
 [[package]]
 name = "aphrody-infra"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-ovh",
  "aphrody-proc",
  "aphrody-remote-desktop",
- "aphrody-ssh 1.4.4",
+ "aphrody-ssh 1.4.7",
  "aphrody-vpn",
  "aphrody-wireguard",
  "aphrody-yolo",
@@ -1919,7 +1919,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-jev"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "axum",
  "futures",
@@ -1935,7 +1935,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-jobs"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1950,7 +1950,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-kernel"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-bun-docs",
@@ -1981,7 +1981,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-kernel-client"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde_json",
  "thiserror 2.0.21",
@@ -1990,7 +1990,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-llama"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-llama-sys",
  "encoding_rs",
@@ -2005,7 +2005,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-llama-server"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-gemini-web",
  "aphrody-infer",
@@ -2038,7 +2038,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-llama-sys"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-bindgen",
@@ -2048,7 +2048,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-m3"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-identity",
  "aphrody-m3-tokens",
@@ -2059,7 +2059,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-m3-reproduce"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-tokens",
  "clap",
@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-m3-tokens"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "base64 0.23.1",
  "image",
@@ -2084,7 +2084,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-mcp"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-a2a",
@@ -2154,7 +2154,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-mcp-client"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-config",
  "aphrody-proc",
@@ -2175,7 +2175,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-memory"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-models",
@@ -2201,7 +2201,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ml-config"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "atomicwrites 0.4.4",
@@ -2215,7 +2215,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ml-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-ml-config",
@@ -2246,7 +2246,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-model-antigravity"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-antigravity",
  "aphrody-model-client",
@@ -2264,7 +2264,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-model-client"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-toolcall",
  "async-trait",
@@ -2283,7 +2283,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-models"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-secrets",
  "chrono",
@@ -2377,7 +2377,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nds-sdk"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-ctr-emu",
  "aphrody-dust-core",
@@ -2389,11 +2389,11 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nds-sys"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "aphrody-nie-app"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-core",
@@ -2412,14 +2412,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-asm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "aphrody-nie-bench"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-formats",
@@ -2430,7 +2430,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-bevy"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-formats",
  "bevy_app",
@@ -2447,7 +2447,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-camera"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-data",
@@ -2463,7 +2463,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-cli"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-app",
@@ -2517,7 +2517,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-computer-use"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-index",
@@ -2532,7 +2532,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-data",
  "aphrody-nie-geom",
@@ -2543,7 +2543,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-data"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -2551,7 +2551,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-editor"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-render3d",
@@ -2562,7 +2562,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-explore"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-data",
@@ -2580,7 +2580,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-ffi"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-app",
@@ -2597,7 +2597,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-forge"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-asm",
@@ -2612,7 +2612,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-formats"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes 0.8.4",
  "aphrody-nie-lua",
@@ -2638,7 +2638,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-game"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-gpu-backend",
@@ -2666,14 +2666,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-geom"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "aphrody-nie-headless"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-core",
@@ -2688,7 +2688,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-identity-source"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-identity",
  "aphrody-nie-data",
@@ -2698,7 +2698,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-index"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "ignore",
  "r2d2",
@@ -2713,7 +2713,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-inventory"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "bun-re",
@@ -2726,7 +2726,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-launcher"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm 0.10.3",
@@ -2753,7 +2753,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-lua"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-data",
  "aphrody-nie-formats",
@@ -2766,7 +2766,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-lua-web"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-data",
  "aphrody-nie-formats",
@@ -2777,7 +2777,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-mcp"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-cli",
@@ -2787,7 +2787,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-model-serve"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-data",
@@ -2807,7 +2807,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-net"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-core",
@@ -2825,7 +2825,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-ocgen"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-data",
  "aphrody-nie-formats",
@@ -2838,7 +2838,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-pe"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
  "sha2 0.10.9",
@@ -2847,7 +2847,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-pe-inspect"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "bun-re",
@@ -2858,7 +2858,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-pg"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-formats",
@@ -2872,7 +2872,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-play"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-app",
@@ -2886,7 +2886,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-queue"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "redis",
  "thiserror 2.0.21",
@@ -2895,7 +2895,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-render"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-formats",
  "aphrody-nie-render3d",
@@ -2904,7 +2904,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-render3d"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-gpu-backend",
@@ -2925,7 +2925,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-core",
@@ -2939,7 +2939,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-save"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-formats",
  "serde",
@@ -2949,7 +2949,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-seed"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-formats",
@@ -2964,7 +2964,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-sql"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bytes",
  "rusqlite",
@@ -2981,7 +2981,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-tasks"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "async-trait",
  "serde",
@@ -2994,7 +2994,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-trace"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bun-steam",
  "libc",
@@ -3013,14 +3013,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-video"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "aphrody-nie-viola"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-formats",
  "memmap2 0.9.11",
@@ -3031,7 +3031,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-wasm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-app",
  "aphrody-nie-asm",
@@ -3074,7 +3074,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-wiki"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "rand 0.10.3",
@@ -3088,7 +3088,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nie-zukan"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-web-crawl",
@@ -3106,7 +3106,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-nu"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "aphrody-subsystem",
@@ -3117,7 +3117,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ocr"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-ocr-core",
  "aphrody-ocr-onnx",
@@ -3126,7 +3126,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ocr-core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "chrono",
@@ -3139,7 +3139,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ocr-onnx"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-infer",
  "aphrody-models",
@@ -3153,7 +3153,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ocr-vlm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-infer",
  "aphrody-models",
@@ -3170,7 +3170,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ovh"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-proc",
@@ -3205,7 +3205,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-patch"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "similar",
@@ -3215,7 +3215,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-proc"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "rustix 1.1.5",
@@ -3230,7 +3230,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-rag"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-code-graph",
  "aphrody-config",
@@ -3262,7 +3262,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-rag-core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "blake3",
  "ndarray",
@@ -3281,7 +3281,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-rag-eval"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-rag",
  "aphrody-rag-core",
@@ -3300,7 +3300,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-remote-desktop"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-capture",
@@ -3322,7 +3322,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-render"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-tokens",
  "base64 0.23.1",
@@ -3341,7 +3341,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-rollout"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "pretty_assertions",
  "serde",
@@ -3355,7 +3355,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-rust"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-rag-core",
  "pyo3",
@@ -3363,7 +3363,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-secrets"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes-gcm 0.11.1",
  "argon2 0.6.0",
@@ -3381,7 +3381,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-session"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-memory",
  "aphrody-models",
@@ -3398,11 +3398,11 @@ dependencies = [
 
 [[package]]
 name = "aphrody-shell-session"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "aphrody-shell-tauri"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-plugin",
@@ -3414,11 +3414,11 @@ dependencies = [
 
 [[package]]
 name = "aphrody-shell-vfs"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "aphrody-shell-web"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-shell-session",
  "aphrody-shell-vfs",
@@ -3430,7 +3430,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-site"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-google",
  "aphrody-m3-tokens",
@@ -3450,7 +3450,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-softraster"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "aphrody-sprite-sheet"
@@ -3460,14 +3460,14 @@ checksum = "45af443ed5eb73d349f08d5c24c672d4db5ba8b15899519e9d469b1f8f1a9fdd"
 
 [[package]]
 name = "aphrody-sprite-sheet"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "aphrody-sql"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "deadpool-postgres",
  "pgvector",
@@ -3506,7 +3506,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-ssh"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -3524,7 +3524,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-store"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-sql",
@@ -3541,7 +3541,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-subsystem"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "async-trait",
  "serde",
@@ -3552,7 +3552,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-svg"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-tokens",
  "resvg 0.48.1",
@@ -3571,7 +3571,7 @@ version = "0.1.1"
 
 [[package]]
 name = "aphrody-tauri"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-build",
@@ -3633,7 +3633,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-build"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-utils",
@@ -3652,7 +3652,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-bundler"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-macos-sign",
@@ -3697,7 +3697,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-cli"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-bundler",
  "aphrody-tauri-macos-sign",
@@ -3778,7 +3778,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-codegen"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "base64 0.22.1",
@@ -3803,7 +3803,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-macos-sign"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "apple-codesign",
  "base64 0.22.1",
@@ -3825,7 +3825,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-macros"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-codegen",
  "aphrody-tauri-utils",
@@ -3837,7 +3837,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-plugin"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-utils",
@@ -3851,7 +3851,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "cookie",
@@ -3870,7 +3870,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime-cef"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-macros",
@@ -3907,7 +3907,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-utils"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes-gcm 0.10.3",
  "anyhow",
@@ -3949,7 +3949,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-term"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-terminal-core",
  "memchr",
@@ -3960,7 +3960,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-terminal-backend"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-a2a-coord",
@@ -3981,14 +3981,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-terminal-core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "rio-vt",
 ]
 
 [[package]]
 name = "aphrody-toolcall"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "async-trait",
  "pretty_assertions",
@@ -3999,7 +3999,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-toolcall-repair"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-patch",
  "pretty_assertions",
@@ -4012,7 +4012,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-toolchains"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "serde_json",
@@ -4023,7 +4023,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-train"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-agent-home",
  "aphrody-models",
@@ -4043,7 +4043,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-translate"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-proc",
@@ -4067,14 +4067,14 @@ dependencies = [
 
 [[package]]
 name = "aphrody-translate-core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "regex",
 ]
 
 [[package]]
 name = "aphrody-vision"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-capture",
  "aphrody-models",
@@ -4090,7 +4090,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-voice"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-models",
  "aphrody-proc",
@@ -4111,7 +4111,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-vpn"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "reqwest 0.13.5",
@@ -4165,7 +4165,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-webos-wasm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-google",
  "aphrody-patch",
@@ -4279,7 +4279,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-wireguard"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-proc",
  "base64 0.23.1",
@@ -4299,7 +4299,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-yolo"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-fsindex",
@@ -5492,7 +5492,7 @@ dependencies = [
 
 [[package]]
 name = "audio_core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "common",
  "core",
@@ -8565,7 +8565,7 @@ dependencies = [
 
 [[package]]
 name = "bun-os-platform"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-m3-tokens",
  "bevy_app",
@@ -8586,7 +8586,7 @@ dependencies = [
 
 [[package]]
 name = "bun-os-shell"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "accesskit 0.24.1",
  "aphrody-m3-tokens",
@@ -8654,7 +8654,7 @@ dependencies = [
 
 [[package]]
 name = "bun-steam"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-nie-net",
@@ -8678,7 +8678,7 @@ dependencies = [
 
 [[package]]
 name = "bun-windows-winclean"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-capture",
  "aphrody-proc",
@@ -8715,7 +8715,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "bun_browser_browser",
@@ -8729,7 +8729,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_browser"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "base64 0.23.1",
  "bun_browser_dom",
@@ -8746,7 +8746,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_cdp"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -8771,7 +8771,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_crawl"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "blake3",
  "bun_browser_dom",
@@ -8795,7 +8795,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_detect"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "reqwest 0.13.5",
  "rustls",
@@ -8807,7 +8807,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_dom"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cssparser 0.37.0",
  "html5ever 0.40.1",
@@ -8817,7 +8817,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_engine"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "bun_browser_browser",
@@ -8840,7 +8840,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_extract"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "async-trait",
  "base64 0.23.1",
@@ -8854,7 +8854,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_frames"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "base64 0.23.1",
  "bun_no_window",
@@ -8868,7 +8868,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_index"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "memmap2 0.9.11",
  "parking_lot",
@@ -8879,7 +8879,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_js"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes 0.9.3",
  "aes-gcm 0.11.1",
@@ -8911,7 +8911,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_layout"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "arrayvec",
  "grid",
@@ -8921,7 +8921,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_mcp"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -8938,7 +8938,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_net"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8963,7 +8963,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_render"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "ab_glyph",
  "athena-text",
@@ -8984,7 +8984,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_service"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bun_browser",
  "bun_browser_dom",
@@ -9001,7 +9001,7 @@ dependencies = [
 
 [[package]]
 name = "bun_browser_ssrf"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "bun_ecma_ast"
@@ -9145,7 +9145,7 @@ version = "0.153.0"
 
 [[package]]
 name = "bun_git"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "base64 0.23.1",
  "gix",
@@ -9162,7 +9162,7 @@ dependencies = [
 
 [[package]]
 name = "bun_google"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bun_browser",
  "bun_browser_dom",
@@ -9179,7 +9179,7 @@ dependencies = [
 
 [[package]]
 name = "bun_native"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "libloading 0.9.0",
  "serde",
@@ -9189,11 +9189,11 @@ dependencies = [
 
 [[package]]
 name = "bun_no_window"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "bun_pkg_cli"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bun_pkg_core",
  "bun_pkg_net",
@@ -9210,7 +9210,7 @@ dependencies = [
 
 [[package]]
 name = "bun_pkg_core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "node-semver",
  "pep440_rs",
@@ -9220,7 +9220,7 @@ dependencies = [
 
 [[package]]
 name = "bun_pkg_net"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bun_pkg_store",
  "reqwest 0.13.5",
@@ -9232,7 +9232,7 @@ dependencies = [
 
 [[package]]
 name = "bun_pkg_store"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "hex",
  "reflink-copy",
@@ -9250,7 +9250,7 @@ dependencies = [
 
 [[package]]
 name = "bun_x"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -9270,7 +9270,7 @@ dependencies = [
 
 [[package]]
 name = "bunos-utils"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "addr2line 0.26.1",
  "ar",
@@ -9525,7 +9525,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-engine",
  "cadcraft-io",
@@ -9545,7 +9545,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-cli"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-engine",
  "cadcraft-io",
@@ -9556,14 +9556,14 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-color"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "cadcraft-constraints"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-doc",
  "cadcraft-geom",
@@ -9573,7 +9573,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-doc"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-color",
  "cadcraft-geom",
@@ -9584,14 +9584,14 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-dwg"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "acadrust",
 ]
 
 [[package]]
 name = "cadcraft-dxf"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "encoding_rs",
  "log",
@@ -9600,7 +9600,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-engine"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-color",
  "cadcraft-constraints",
@@ -9619,7 +9619,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-fonts"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-geom",
  "harfrust 0.12.0",
@@ -9629,14 +9629,14 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-geom"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "cadcraft-io"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-color",
  "cadcraft-doc",
@@ -9654,7 +9654,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-mcp"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-engine",
  "cadcraft-render",
@@ -9664,7 +9664,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-render"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-color",
  "cadcraft-doc",
@@ -9678,7 +9678,7 @@ dependencies = [
 
 [[package]]
 name = "cadcraft-ui-egui"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "cadcraft-color",
  "cadcraft-doc",
@@ -10005,7 +10005,7 @@ dependencies = [
 
 [[package]]
 name = "capture_harness"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "clap",
@@ -10860,7 +10860,7 @@ checksum = "55b672471b4e9f9e95499ea597ff64941a309b2cdbffcc46f2cc5e2d971fd335"
 
 [[package]]
 name = "common"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bitflags 2.13.2",
  "bytemuck",
@@ -11193,7 +11193,7 @@ dependencies = [
 
 [[package]]
 name = "core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes 0.8.4",
  "bitflags 2.13.2",
@@ -11610,14 +11610,14 @@ dependencies = [
 
 [[package]]
 name = "craft-atomic"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "rustix 1.1.5",
 ]
 
 [[package]]
 name = "craft-cms"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "moxcms 0.9.1",
  "rayon",
@@ -11625,11 +11625,11 @@ dependencies = [
 
 [[package]]
 name = "craft-fonts"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "craft-fonts-tests"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "craft-fonts",
  "sha2 0.11.1",
@@ -11646,7 +11646,7 @@ dependencies = [
 
 [[package]]
 name = "craft-print"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "miniz_oxide 0.9.1",
  "roxmltree 0.21.1",
@@ -11657,7 +11657,7 @@ dependencies = [
 
 [[package]]
 name = "craft-quit"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "dispatch2",
  "egui",
@@ -11668,7 +11668,7 @@ dependencies = [
 
 [[package]]
 name = "craft-settings"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "craft-atomic",
  "dirs 7.0.0",
@@ -11679,7 +11679,7 @@ dependencies = [
 
 [[package]]
 name = "craft-ui"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-identity",
  "aphrody-m3",
@@ -11694,7 +11694,7 @@ dependencies = [
 
 [[package]]
 name = "craft-xtask"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "serde_json",
 ]
@@ -12256,7 +12256,7 @@ dependencies = [
 
 [[package]]
 name = "crypto"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes 0.8.4",
  "cipher 0.4.4",
@@ -13285,7 +13285,7 @@ dependencies = [
 
 [[package]]
 name = "dedicated_room"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "clap",
  "common",
@@ -17975,7 +17975,7 @@ dependencies = [
 
 [[package]]
 name = "frontend_common"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "common",
  "core",
@@ -20896,7 +20896,7 @@ dependencies = [
 
 [[package]]
 name = "gridcraft-pdf"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "gridcraft-ui-egui"
@@ -21672,7 +21672,7 @@ dependencies = [
 
 [[package]]
 name = "hid_core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bitflags 2.13.2",
  "common",
@@ -23092,7 +23092,7 @@ dependencies = [
 
 [[package]]
 name = "input_common"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bitflags 2.13.2",
  "common",
@@ -24707,7 +24707,7 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "libm3"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "accesskit 0.24.1",
  "aphrody-m3",
@@ -24718,7 +24718,7 @@ dependencies = [
 
 [[package]]
 name = "libm3-wasm"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "libm3",
 ]
@@ -26840,7 +26840,7 @@ dependencies = [
 
 [[package]]
 name = "network"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "common",
  "log",
@@ -29537,7 +29537,7 @@ dependencies = [
 
 [[package]]
 name = "pdfcraft-compare"
-version = "1.4.4"
+version = "1.4.7"
 
 [[package]]
 name = "pdfcraft-content"
@@ -34514,7 +34514,7 @@ dependencies = [
 
 [[package]]
 name = "ruzu"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "ash",
  "audio_core",
@@ -34553,7 +34553,7 @@ dependencies = [
 
 [[package]]
 name = "ruzu_cmd"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "ash",
  "audio_core",
@@ -35692,7 +35692,7 @@ dependencies = [
 
 [[package]]
 name = "shader_recompiler"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "bitflags 2.13.2",
  "common",
@@ -35768,7 +35768,7 @@ dependencies = [
 
 [[package]]
 name = "shenron-dbxv2"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-nie-formats",
  "bun-re",
@@ -38231,7 +38231,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-aphrody"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "android_logger",
  "anyhow",
@@ -43102,7 +43102,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "video_core"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-switch",
@@ -44071,7 +44071,7 @@ dependencies = [
 
 [[package]]
 name = "web_service"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "common",
  "jsonwebtoken",
@@ -44143,7 +44143,7 @@ dependencies = [
 
 [[package]]
 name = "webos-server"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "axum",
  "serde_json",
@@ -47313,7 +47313,7 @@ dependencies = [
 
 [[package]]
 name = "yolo-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-gpu-backend",
  "async-trait",

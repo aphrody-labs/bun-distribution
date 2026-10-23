@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/sql",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec",
   "license": "Apache-2.0",
   "files": [

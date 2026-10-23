@@ -1,6 +1,6 @@
 {
   "name": "@shenron/db",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": true,
   "description": "PostgreSQL partagé Shenron : schéma Drizzle, pool postgres-js (Next) et driver Bun.SQL (scripts, API), indépendant du framework",
   "license": "Apache-2.0",

@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-bindgen"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 description = "Bindgen-based generator for dynamically loaded native-library bindings."
 license = "MIT OR Apache-2.0"

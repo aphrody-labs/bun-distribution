@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-llama"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 description = "Safe Rust bindings for llama.cpp with runtime dynamic loading."
 license = "MIT OR Apache-2.0"

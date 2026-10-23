@@ -6,7 +6,7 @@
 [package]
 name = "aphrody-bun"
 repository = "https://github.com/aphrody-labs/aphrody"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 license = "Apache-2.0"
 description = "Native Rust plugin for Bun applications using bun:ffi."

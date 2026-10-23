@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/bun-windows-isolatedwindowsenvironmentutils",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "bun:windows Win32 family for isolatedwindowsenvironmentutils.dll, generated from Microsoft.Windows.SDK.Win32Metadata 71.0.30-preview",
   "license": "MIT",
   "files": [

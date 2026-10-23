@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-explorer",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",

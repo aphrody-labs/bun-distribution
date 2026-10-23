@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/scaffold",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
   "keywords": [
     "material-3",

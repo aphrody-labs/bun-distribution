@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/canvas",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
   "keywords": [
     "aphrody",

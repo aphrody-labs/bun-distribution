@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-embed"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]

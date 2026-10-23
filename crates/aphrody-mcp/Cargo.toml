@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-mcp"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]
@@ -84,7 +84,7 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-jev = { path = "../aphrody-jev", version = "1.4.4", default-features = false, features = ["client"] }
+aphrody-jev = { path = "../aphrody-jev", version = "1.4.7", default-features = false, features = ["client"] }
 aphrody-models = { path = "../aphrody-models", features = [] }
 aphrody-config = { path = "../aphrody-config", features = [] }
 aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }

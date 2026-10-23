@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-kernel-client"
 description = "Cross-platform local JSON-RPC client for the Aphrody OS kernel endpoint served by aphrody-mcp."
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

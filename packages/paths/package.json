@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/paths",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Cross-platform path resolution for Aphrody workspaces and runtime data",
   "license": "Apache-2.0",
   "files": [

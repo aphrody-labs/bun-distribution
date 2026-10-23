@@ -1,6 +1,6 @@
 {
   "name": "@storyteller/ui-model-selector",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

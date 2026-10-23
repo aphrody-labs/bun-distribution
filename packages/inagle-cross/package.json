@@ -1,6 +1,6 @@
 {
   "name": "@rosegriffon/inagle-cross",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets",
   "license": "UNLICENSED",

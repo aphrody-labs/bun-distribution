@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/webos-wasm",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Rust WebAssembly backend of the Aphrody browser OS: OPFS-persisted file system, explorer wire protocol, local shell and terminal, binary triage and patches.",
   "license": "Apache-2.0",
   "files": [

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/a2a",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
   "license": "Apache-2.0",
   "files": [

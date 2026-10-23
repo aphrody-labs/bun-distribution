@@ -3,7 +3,7 @@
 # bevy_audio, states) over the Bun Engine machines, the Steam owner and the bep library.
 [package]
 name = "bun-os-shell"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-dev <contact@aphrody.com>"]

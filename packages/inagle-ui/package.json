@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/inagle-ui",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "Inagle explorer/maps UI helpers: re-exports @rosegriffon/inagle/ui (iecode packages/inagle), provided by the iecode workspace.",
   "license": "UNLICENSED",

@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-ml-runtime"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 description = "Runtime package discovery, downloading, and dynamic library loading for the Aphrody ML base."
 license = "MIT OR Apache-2.0"

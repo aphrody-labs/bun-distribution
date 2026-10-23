@@ -1,6 +1,6 @@
 {
   "name": "@rosegriffon/inagle",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data",
   "keywords": [

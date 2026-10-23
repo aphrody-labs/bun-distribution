@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-runtime"
-version = "1.4.4"
+version = "1.4.7"
 description = "Runtime for Tauri applications"
 exclude = ["CHANGELOG.md", "/target"]
 authors = ["Tauri Programme within The Commons Conservancy"]

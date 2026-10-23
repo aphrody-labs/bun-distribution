@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/tauri",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Tauri API, every plugin guest binding of tauri-plugin-aphrody, and the Bun runtime bridge",
   "license": "Apache-2.0 OR MIT",
   "files": [

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/yolo-cli",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Yolo command line on Bun: workspace operations, documentation generation, code scan/rename/parse, plugin and forge commands",
   "license": "MIT",
   "repository": {

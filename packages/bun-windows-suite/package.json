@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/bun-windows-suite",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Optional activation facade for Bun Windows, WinRT, WinUI, .NET and Microsoft developer tooling",
   "license": "MIT",
   "files": [

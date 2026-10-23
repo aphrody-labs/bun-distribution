@@ -8,7 +8,7 @@
 [package]
 name = "aphrody-drive"
 description = "Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview."
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 # Derived from the FSL-licensed Spacedrive source in `drive/`. This is deliberately not inherited

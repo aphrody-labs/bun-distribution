@@ -5,7 +5,7 @@
 # feature exposes them to the console shell and the Bun Engine runtime as resources and messages.
 [package]
 name = "bun-os-platform"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-dev <contact@aphrody.com>"]

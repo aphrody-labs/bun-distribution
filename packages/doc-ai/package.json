@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/doc-ai",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "AI-first documentation and automatic translation system",
   "homepage": "https://github.com/aphrody-labs/aphrody/tree/main/packages/ai/doc-ai#readme",
   "bugs": {

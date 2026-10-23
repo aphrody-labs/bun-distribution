@@ -1,6 +1,6 @@
 {
   "name": "@storyteller/ui-help-menu",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "type": "module",
   "main": "./src/index.ts",
   "module": "./src/index.ts",

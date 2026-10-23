@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/ag-ui",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "license": "Apache-2.0",
   "description": "Aphrody AG-UI Protocol — Pure Bun & TypeScript 7 suite connecting Agentic UI events, streaming lifecycle, Protobuf codec, A2UI surfaces, and Agent-to-User bridges.",
   "type": "module",

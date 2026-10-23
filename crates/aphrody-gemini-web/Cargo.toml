@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-gemini-web"
 repository.workspace = true
-version = "1.4.4"
+version = "1.4.7"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["aphrody-code <noreply@aphrody-code.dev>"]

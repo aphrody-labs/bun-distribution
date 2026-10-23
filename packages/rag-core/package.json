@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/rag-core",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade.",
   "license": "Apache-2.0",
   "files": [

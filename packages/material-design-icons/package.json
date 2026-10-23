@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/material-design-icons",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "Material Symbols SVG catalogue (vendor/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
   "license": "Apache-2.0",
   "repository": {

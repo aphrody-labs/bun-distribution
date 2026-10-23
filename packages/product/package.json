@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/product",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
   "license": "Apache-2.0",

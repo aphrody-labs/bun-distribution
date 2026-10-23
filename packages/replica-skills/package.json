@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/replica-skills",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Replica product workflows for Bun OS and Aphrody Labs",
   "license": "MIT",
   "files": [

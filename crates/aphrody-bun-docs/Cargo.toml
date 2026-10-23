@@ -1,7 +1,7 @@
 [package]
 name = "aphrody-bun-docs"
 description = "Offline Bun documentation (docs/ of the aphrody-labs/bun fork) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem."
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

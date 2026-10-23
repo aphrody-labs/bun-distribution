@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/yolo-core",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Unified core library for YOLO, modeled directly after Bun's core library architecture",
   "license": "MIT",
   "repository": {

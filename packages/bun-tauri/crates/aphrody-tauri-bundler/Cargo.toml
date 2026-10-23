@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-bundler"
-version = "1.4.4"
+version = "1.4.7"
 authors = ["George Burton <burtonageo@gmail.com>", "Tauri Programme within The Commons Conservancy"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 license = "Apache-2.0 OR MIT"

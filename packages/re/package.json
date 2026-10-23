@@ -1,6 +1,6 @@
 {
   "name": "@bun-os/re",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": true,
   "description": "Bun OS RE command and pipeline facade over the canonical aphrody-labs/rea source owner in vendor/rea.",
   "license": "MIT AND Apache-2.0",

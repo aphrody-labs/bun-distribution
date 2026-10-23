@@ -14,10 +14,10 @@ authors = ["aphrody-code"]
 tauri = { version = "=1.4.4", path = "crates/aphrody-tauri", package = "aphrody-tauri", default-features = false, features = [
   "compression",
 ] }
-tauri-runtime = { version = "1.4.4", path = "crates/aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
+tauri-runtime = { version = "1.4.7", path = "crates/aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
 tauri-runtime-cef = { version = "=1.4.4", path = "crates/aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef" }
 tauri-plugin = { version = "=1.4.4", path = "crates/aphrody-tauri-plugin", package = "aphrody-tauri-plugin" }
-tauri-utils = { version = "1.4.4", path = "crates/aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+tauri-utils = { version = "1.4.7", path = "crates/aphrody-tauri-utils", package = "aphrody-tauri-utils" }
 anyhow = "1.0.104"
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
 bytes = "1.12.1"

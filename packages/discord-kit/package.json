@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/discord-kit",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun.",
   "license": "Apache-2.0",
   "files": [

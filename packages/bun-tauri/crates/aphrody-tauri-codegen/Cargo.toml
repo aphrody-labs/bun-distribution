@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-codegen"
-version = "1.4.4"
+version = "1.4.7"
 description = "code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros`"
 exclude = ["CHANGELOG.md", "/target"]
 authors = ["Tauri Programme within The Commons Conservancy"]

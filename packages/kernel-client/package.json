@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/os",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill.",
   "license": "Apache-2.0",
   "files": [

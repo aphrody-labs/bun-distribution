@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/update",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
   "license": "Apache-2.0",
   "author": "Aphrody",

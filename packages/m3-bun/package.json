@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-bun",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
   "keywords": [
     "bun",

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/cli-wasm",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "description": "The pure aphrody commands (rag, toolcall, html, text) as WebAssembly for the browser, Bun and Node: the same code as `aphrody pure` of the native CLI.",
   "license": "Apache-2.0",
   "files": [

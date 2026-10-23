@@ -1,6 +1,6 @@
 {
   "name": "@rosegriffon/menu-render-webgpu",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "Renderer WebGPU 2D pixel-perfect pour les écrans de menu IEVR (quads texturés instanciés, projection ortho 1280×720, sampler nearest, premultiplied alpha, blend par drawType, z-order painter par drawPriority). Fallback DOM <GameMenu> de @rosegriffon/menu-render.",
   "license": "UNLICENSED",

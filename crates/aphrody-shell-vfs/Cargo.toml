@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-shell-vfs"
 description = "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell."
-version = "1.4.4"
+version = "1.4.7"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

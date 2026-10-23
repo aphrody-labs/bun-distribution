@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/bun-emu-host",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "license": "GPL-3.0-or-later",
   "bin": {
     "bun-emu-host": "./src/cli.ts"

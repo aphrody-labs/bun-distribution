@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-react",
-  "version": "1.4.5",
+  "version": "1.4.7",
   "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
   "repository": {
     "type": "git",

@@ -1,6 +1,6 @@
 {
   "name": "@shenron/auth",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": true,
   "description": "Briques Better Auth partagées (site Next, bot Bun, API) : secret, origines, cookies, fournisseur Discord, handler Request/Response",
   "license": "Apache-2.0",

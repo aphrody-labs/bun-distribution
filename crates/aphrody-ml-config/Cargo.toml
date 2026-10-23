@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-ml-config"
-version = "1.4.4"
+version = "1.4.7"
 edition = "2024"
 description = "Extensible typed TOML configuration storage of the Aphrody ML base (~/.koharu/config.toml)."
 license = "MIT OR Apache-2.0"

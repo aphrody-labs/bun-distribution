@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-terminal-core"
 description = "Portable Rio VT terminal state shared by the native PTY backend, WASM and Tauri hosts."
-version = "1.4.4"
+version = "1.4.7"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

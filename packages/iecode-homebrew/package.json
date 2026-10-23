@@ -1,6 +1,6 @@
 {
   "name": "iecode-homebrew",
-  "version": "1.4.4",
+  "version": "1.4.7",
   "private": false,
   "description": "Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains",
   "license": "UNLICENSED",
