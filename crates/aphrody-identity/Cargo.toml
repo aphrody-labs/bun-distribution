@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-identity"
 description = "Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions)."
-version                = "1.4.4"
+version                = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]

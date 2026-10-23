@@ -242,7 +242,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri",
@@ -301,7 +301,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-build"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-codegen",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-bundler"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-macos-sign",
@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-cli"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-bundler",
  "aphrody-tauri-macos-sign",
@@ -454,7 +454,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-codegen"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "base64 0.22.1",
@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-macos-sign"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "apple-codesign",
  "base64 0.22.1",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-macros"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-codegen",
  "aphrody-tauri-utils",
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-plugin"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-utils",
@@ -527,7 +527,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "cookie",
@@ -546,7 +546,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime-cef"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-macros",
@@ -594,7 +594,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-utils"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -9925,7 +9925,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-aphrody"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "android_logger",
  "anyhow",

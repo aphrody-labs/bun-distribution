@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-svg"
 description = "The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff."
-version                = "1.4.4"
+version                = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 authors = ["aphrody-code"]

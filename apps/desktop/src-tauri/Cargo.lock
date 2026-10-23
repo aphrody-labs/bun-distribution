@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-build",
@@ -179,7 +179,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-build"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-utils",
@@ -198,7 +198,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-codegen"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "base64 0.22.1",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-macros"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-codegen",
  "aphrody-tauri-utils",
@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-plugin"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "aphrody-tauri-utils",
@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri-utils",
  "cookie",
@@ -268,7 +268,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-runtime-cef"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-macros",
@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-utils"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "brotli",
@@ -4040,7 +4040,7 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
 name = "tauri-plugin-aphrody"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-plugin",

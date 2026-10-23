@@ -29,7 +29,7 @@ name = "tauri_runtime"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
 http = { workspace = true }
 raw-window-handle = "0.6"
 url = { workspace = true }

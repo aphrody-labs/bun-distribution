@@ -13,7 +13,7 @@ rust-version = "1.95"
 name = "acl_tests"
 
 [dev-dependencies]
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "build-2",
 ] }
 serde_json = { workspace = true }

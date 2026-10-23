@@ -22,7 +22,7 @@ quote = { workspace = true }
 syn = "2"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "build-2",
 ] }
 thiserror = { workspace = true }

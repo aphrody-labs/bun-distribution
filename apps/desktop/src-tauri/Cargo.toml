@@ -11,14 +11,14 @@ license = "MIT"
 resolver = "3"
 
 [build-dependencies]
-tauri-build = { package = "aphrody-tauri-build", version = "=1.4.4", path = "../../../packages/bun-tauri/crates/aphrody-tauri-build" }
+tauri-build = { package = "aphrody-tauri-build", version = "=1.4.7", path = "../../../packages/bun-tauri/crates/aphrody-tauri-build" }
 
 [dependencies]
-tauri = { package = "aphrody-tauri", version = "=1.4.4", path = "../../../packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = [
+tauri = { package = "aphrody-tauri", version = "=1.4.7", path = "../../../packages/bun-tauri/crates/aphrody-tauri", default-features = false, features = [
   "compression",
 ] }
-tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "=1.4.4", path = "../../../packages/bun-tauri/crates/aphrody-tauri-runtime-cef" }
-tauri-plugin-aphrody = { version = "=1.4.4", path = "../../../packages/bun-tauri/crates/tauri-plugin-aphrody", default-features = false }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", version = "=1.4.7", path = "../../../packages/bun-tauri/crates/aphrody-tauri-runtime-cef" }
+tauri-plugin-aphrody = { version = "=1.4.7", path = "../../../packages/bun-tauri/crates/tauri-plugin-aphrody", default-features = false }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

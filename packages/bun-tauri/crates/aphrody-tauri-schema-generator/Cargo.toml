@@ -10,7 +10,7 @@ name = "tauri-schema-generator"
 path = "src/main.rs"
 
 [build-dependencies]
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "schema",
 ] }
 schemars = { workspace = true, features = ["url2", "preserve_order"] }

@@ -53,9 +53,9 @@ uuid = { workspace = true, optional = true, features = ["v4"] }
 url = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-tauri-runtime = { version = "~1.4.4", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
-tauri-macros = { version = "~1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-runtime = { version = "~1.4.7", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
+tauri-macros = { version = "~1.4.7", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "resources",
 ] }
 getrandom = "0.3"
@@ -153,7 +153,7 @@ objc2-ui-kit = { version = "0.3.2", default-features = false, features = ["UIApp
 glob = { workspace = true }
 heck = "0.5"
 tauri-build = { version = "1.4.7", path = "../aphrody-tauri-build", package = "aphrody-tauri-build", default-features = false }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "build-2",
 ] }
 

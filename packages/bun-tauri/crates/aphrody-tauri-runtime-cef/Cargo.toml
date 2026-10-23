@@ -26,10 +26,10 @@ name = "macos-application-bootstrap"
 harness = false
 
 [dependencies]
-tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = [
+tauri = { version = "1.4.7", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = [
   "gtk4",
 ] }
-tauri-macros = { version = "~1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
+tauri-macros = { version = "~1.4.7", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
 base64 = "0.22"
 cef = { path = "../../../../toolchains/bun/src/browser/cef-rs/cef", version = "=154.5.0", features = [
   "build-util",
@@ -47,8 +47,8 @@ raw-window-handle = "0.6"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 sha2 = "0.10"
-tauri-runtime = { version = "~1.4.4", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
-tauri-utils = { version = "~1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
+tauri-runtime = { version = "~1.4.7", path = "../aphrody-tauri-runtime", package = "aphrody-tauri-runtime" }
+tauri-utils = { version = "~1.4.7", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = [
   "html-manipulation",
 ] }
 url = { workspace = true }
