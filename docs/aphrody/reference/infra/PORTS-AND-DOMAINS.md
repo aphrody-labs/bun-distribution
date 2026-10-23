@@ -13,8 +13,8 @@ Authoritative sources (never a second registry):
   a public host.
 - `tools/config/production-topology.json` — the port policy (`publicPorts` vs `internalOnly`) per host.
 - `tools/config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
-- `tools/config/asset-catalog.json` — the static CDN (`cdn.aphrody.com`), which has no backend process
-  and therefore no `service-catalog.json` entry.
+- `tools/aphrody/config/asset-catalog.json` — the static CDN release trees of `cdn.aphrody.com`, served by
+  `aphrody-fonts-proxy`.
 - `crates/infra/infra/src/validate.rs` (`aphrody-infra validate`) enforces cross-catalog
   consistency: no two services share a port or unit, every `port`/`health` is loopback/private and
   declared `internalOnly` in the topology, every retired entry carries `status`+`retiredAt`, and
@@ -84,7 +84,7 @@ closed 2026-09-26.
 | `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody.com.conf`) |
 | `bot.aphrody.com` | `/` | `aphrody-discord-dev` (`127.0.0.1:4010`) | Bun dev app: signed Discord HTTP interactions, Gateway session for non-interaction events, OAuth2 login/callback; managed by `aphrody-infra` |
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
-| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`tools/config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/home/ubuntu/apps/cdn` and its vhost were removed with the Aphrody retirement (`tools/config/asset-catalog.json` `status: retired`); not part of the bundle |
+| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release trees `/home/ubuntu/apps/cdn/current` and `symbols/current` (`tools/aphrody/config/asset-catalog.json`), served by `aphrody-fonts-proxy` (`127.0.0.1:8796`) | live on the vps host nginx since 2026-10-23 (`scripts/aphrody/tools/infra/cdn.ts publish`) |
 | `nie.aphrody.com` | `/health`, `/api/`, `/f/`, `/b`, `/cdn/` | nie-site :8085, nie-model-serve :8790 | retired 2026-09-25 |
 | `nie.aphrody.com` | **`/downloads/inacord/latest.json`, `/downloads/channels/stable/latest.json`, `/downloads/files/`** | static Inacord updater feed (`~/nie/var/releases/inacord/public/...`) | **kept live intentionally** (docs/PLAN.md 2026-09-26 ledger entry) even though the rest of the nie backend and the Inacord desktop app itself are retired — installed clients still poll this feed |
 | `rosegriffon.fr` (+`www.`) | `/` | rg-website :3004 | live |
