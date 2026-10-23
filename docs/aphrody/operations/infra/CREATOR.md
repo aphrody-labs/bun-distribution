@@ -28,6 +28,11 @@ bun scripts/aphrody/release/publish-creator.ts host-apply --apply --host local  
 
 `--host <ssh-alias>` publishes to the vps over OpenSSH instead (default `vps`).
 
+A canary Bun cannot download its `bun-windows-x64-baseline` runtime: run the publisher with the
+`bun-linux-x64` of an aphrody-labs/bun release and pass the `bun-windows-x64.exe` of the same release with
+`--compile-executable-path` (checked against its `SHA256SUMS.txt`). Release 1.4.7 (2026-10-23) was built with
+the `main-runtime-633fd8a28f47` pair.
+
 Bump `version` in `packages/product/package.json` before a release: the updater installs a release only
 when its version is newer. The exe is compiled with `bun build --compile --target=bun-windows-x64`; its icon and
 version resources are set with the pinned rcedit (SHA-256 in the script) under Wine because `--windows-icon` only

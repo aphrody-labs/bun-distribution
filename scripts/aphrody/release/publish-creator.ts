@@ -12,6 +12,8 @@
  *
  *   --host <ssh-host|local>  where the release lives (default vps); `local` on the vps itself, where the
  *                            Windows exe is cross-compiled and branded under Wine
+ *   --compile-executable-path <bun-windows-x64.exe>
+ *                            Windows runtime matching the running Bun, when --target cannot download one
  *
  * Runbook: docs/aphrody/operations/infra/CREATOR.md. Remote commands go through OpenSSH in batch mode.
  */
@@ -37,6 +39,14 @@ const HOST = (() => {
   const host = i >= 0 ? Bun.argv[i + 1] : SITE.host;
   if (!host || !/^[A-Za-z0-9_.-]+$/.test(host)) throw new Error(`refused host: ${host}`);
   return host;
+})();
+/**
+ * A Windows x64 Bun of the same build as the compiling Bun (a release pair of aphrody-labs/bun) when the target
+ * runtime cannot be downloaded for this version, as for canary builds of the fork.
+ */
+const WINDOWS_RUNTIME = (() => {
+  const i = Bun.argv.indexOf("--compile-executable-path");
+  return i >= 0 ? resolve(Bun.argv[i + 1] ?? "") : undefined;
 })();
 import { build as buildPage, SEED } from "@aphrody/product/creator/site";
 import { brandExe } from "./windows-exe.ts";
@@ -195,6 +205,7 @@ async function stage(): Promise<{
       "build",
       "--compile",
       `--target=${TARGET.bunTarget}`,
+      ...(WINDOWS_RUNTIME ? ["--compile-executable-path", WINDOWS_RUNTIME] : []),
       "src/cli.ts",
       "--outfile",
       join(pack, TARGET.exe),
@@ -385,7 +396,7 @@ if (import.meta.main) {
       break;
     default:
       console.error(
-        "usage: publish-creator.ts plan|stage|release|verify|host-plan|host-apply [--apply] [--host <ssh-host|local>]",
+        "usage: publish-creator.ts plan|stage|release|verify|host-plan|host-apply [--apply] [--host <ssh-host|local>] [--compile-executable-path <exe>]",
       );
       process.exit(2);
   }
