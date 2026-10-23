@@ -47,10 +47,7 @@ describe("asset CDN", () => {
         expect(entries.map(e => `${e.scope}:${e.path}`)).toEqual(["a:logo.png", "b:copy/logo.png", "b:own.svg"]);
         expect(problems.map(p => p.kind)).toEqual(["cross-source-duplicate"]);
 
-        const missing = await scan(
-          catalog([...sources, { scope: "c", path: "nope/assets", exclude: [] }]),
-          root,
-        );
+        const missing = await scan(catalog([...sources, { scope: "c", path: "nope/assets", exclude: [] }]), root);
         expect(missing.problems.some(p => p.kind === "missing-source")).toBe(true);
       } finally {
         await rm(root, { recursive: true, force: true });

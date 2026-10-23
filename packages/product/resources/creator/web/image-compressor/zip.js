@@ -20,10 +20,7 @@
 
   function dosDateTime(date) {
     var time = (date.getHours() << 11) | (date.getMinutes() << 5) | (date.getSeconds() >> 1);
-    var day =
-      ((Math.max(date.getFullYear(), 1980) - 1980) << 9) |
-      ((date.getMonth() + 1) << 5) |
-      date.getDate();
+    var day = ((Math.max(date.getFullYear(), 1980) - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
     return { time: time, day: day };
   }
 

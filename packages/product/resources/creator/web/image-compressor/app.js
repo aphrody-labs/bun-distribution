@@ -117,9 +117,7 @@
           formatBytes(item.file.size) +
           " → " +
           formatBytes(item.result.blob.size) +
-          (item.result.keptOriginal
-            ? " (original conservé : pas de gain)"
-            : " (−" + saved + " %)") +
+          (item.result.keptOriginal ? " (original conservé : pas de gain)" : " (−" + saved + " %)") +
           " · " +
           item.result.width +
           "×" +

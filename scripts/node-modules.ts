@@ -190,7 +190,12 @@ async function proveConsumer(member: string, lock: BunLockfile): Promise<Set<str
   const label = relative(root, member).replaceAll("\\", "/");
   const consumer = await Bun.file(join(member, "package.json")).json();
   const locked = lock.workspaces?.[label];
-  if (!locked || locked.name !== consumer.name || locked.version !== consumer.version || consumer.version !== product.version)
+  if (
+    !locked ||
+    locked.name !== consumer.name ||
+    locked.version !== consumer.version ||
+    consumer.version !== product.version
+  )
     throw new Error("Consumer manifest is not aligned with the root lockfile.");
   const known = new Set<string>();
   for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const) {
