@@ -1,30 +1,74 @@
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 
-/** Resolve the M3 source root without assuming a particular checkout layout. */
-const roots = [
-  process.env.APHRODY_M3_ROOT,
-  resolve(process.cwd(), "m3"),
-  resolve(import.meta.dir, "../aphrody-m3"),
-].filter((root): root is string => !!root);
-export const ROOT = roots.find(root => existsSync(join(root, "packages/m3-tokens"))) ?? roots[0]!;
+interface Manifest {
+  name?: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+}
 
 const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
+const manifest = (dir: string): Manifest | undefined => {
+  const text = read(join(dir, "package.json"));
+  return text ? (JSON.parse(text) as Manifest) : undefined;
+};
+const hasTokens = (root: string) => existsSync(join(root, "packages/m3-tokens/package.json"));
 
+/** This package's own directory, wherever it is installed. */
+export const PACKAGE_DIR = join(import.meta.dir, "..");
+
+/** The M3 source checkout, when there is one: `$APHRODY_M3_ROOT`, then the checkout this package
+ * runs from (the nearest ancestor with `packages/m3-tokens`, never past `node_modules`), then
+ * `./m3`. Undefined when the package is installed from npm outside a checkout: the tools then read
+ * their data from this package's dependencies. */
+function findRoot(): string | undefined {
+  if (process.env.APHRODY_M3_ROOT) return resolve(process.env.APHRODY_M3_ROOT);
+  for (let dir = PACKAGE_DIR; dir !== dirname(dir) && basename(dir) !== "node_modules"; dir = dirname(dir)) {
+    if (hasTokens(dir)) return dir;
+  }
+  const local = resolve(process.cwd(), "m3");
+  return hasTokens(local) ? local : undefined;
+}
+export const ROOT: string | undefined = findRoot();
+
+/** Directory of the installed package `name`, resolved from this package (its dependencies, or the
+ * workspace link inside a checkout); undefined when it is not installed. */
+export function packageDir(name: string, from = PACKAGE_DIR): string | undefined {
+  for (const specifier of [`${name}/package.json`, name]) {
+    let file: string;
+    try {
+      file = Bun.resolveSync(specifier, from);
+    } catch {
+      continue;
+    }
+    for (let dir = dirname(file); dir !== dirname(dir); dir = dirname(dir)) {
+      if (manifest(dir)?.name === name) return dir;
+    }
+  }
+  return undefined;
+}
+
+/** The workspace packages of a checkout, else this package and its installed @aphrody dependencies. */
 export function listPackages(root = ROOT): string[] {
-  const dir = join(root, "packages");
-  const packages = readdirSync(dir).flatMap(d => {
-    const p = join(dir, d, "package.json");
-    if (!existsSync(p)) return [];
-    const j = JSON.parse(readFileSync(p, "utf8"));
-    return [`${j.name}@${j.version ?? "0.0.0"}  packages/${d}`];
-  });
-  const own = join(import.meta.dir, "../package.json");
-  if (existsSync(own)) {
-    const j = JSON.parse(readFileSync(own, "utf8"));
-    const entry = `${j.name}@${j.version ?? "0.0.0"}  external/${j.name}`;
-    if (!packages.some(p => p.startsWith(`${j.name}@`))) packages.push(entry);
+  const dir = root ? join(root, "packages") : undefined;
+  const checkout = dir !== undefined && existsSync(dir);
+  const packages = checkout
+    ? readdirSync(dir).flatMap(d => {
+        const j = manifest(join(dir, d));
+        return j ? [`${j.name}@${j.version ?? "0.0.0"}  packages/${d}`] : [];
+      })
+    : [];
+  const own = manifest(PACKAGE_DIR);
+  if (own?.name && !packages.some(p => p.startsWith(`${own.name}@`))) {
+    packages.push(`${own.name}@${own.version ?? "0.0.0"}  external/${own.name}`);
+    if (!checkout) {
+      for (const name of Object.keys(own.dependencies ?? {}).filter(n => n.startsWith("@aphrody/"))) {
+        const installed = packageDir(name);
+        const j = installed ? manifest(installed) : undefined;
+        if (j) packages.push(`${j.name}@${j.version ?? "0.0.0"}  external/${j.name}`);
+      }
+    }
   }
   return packages;
 }
@@ -46,11 +90,20 @@ function exportedSheets(exports: unknown): string[] {
   return [];
 }
 
+/** The token package: `packages/m3-tokens` of a checkout, else the installed `@aphrody/m3-tokens`. */
+function tokenPackage(root: string | undefined): { pkg: string; label: string } | undefined {
+  if (root) return { pkg: join(root, "packages/m3-tokens"), label: "packages/m3-tokens" };
+  const pkg = packageDir("@aphrody/m3-tokens");
+  return pkg ? { pkg, label: "@aphrody/m3-tokens" } : undefined;
+}
+
 /** Every exported `--md-*` CSS property and dynamic colour role, once per name. */
 export function loadTokens(root = ROOT): Token[] {
-  const pkg = join(root, "packages/m3-tokens");
-  const manifest = read(join(pkg, "package.json"));
-  const exports: unknown = manifest ? (JSON.parse(manifest) as { exports?: unknown }).exports : undefined;
+  const found = tokenPackage(root);
+  if (!found) return [];
+  const { pkg, label } = found;
+  const text = read(join(pkg, "package.json"));
+  const exports: unknown = text ? (JSON.parse(text) as { exports?: unknown }).exports : undefined;
   const out = new Map<string, Token>();
   const add = (token: Token) => {
     // The first declaration is representative; theme/direction variants do not create new names.
@@ -66,7 +119,7 @@ export function loadTokens(root = ROOT): Token[] {
       add({
         name: m[1]!,
         value: m[2]!.trim(),
-        source: `packages/m3-tokens/${path}`,
+        source: `${label}/${path}`,
       });
     }
   }
@@ -79,7 +132,7 @@ export function loadTokens(root = ROOT): Token[] {
     add({
       name: `--md-sys-color-${kebab(m[1]!)}`,
       value: "(dynamic colour role)",
-      source: "packages/m3-tokens/src/dynamic-color.ts",
+      source: `${label}/src/dynamic-color.ts`,
     });
   }
   return [...out.values()];
@@ -110,14 +163,16 @@ function* walk(dir: string, includeJson = false): Generator<string> {
 
 /** The single native Web acquisition corpus, explicitly configurable for qualified hosts. */
 export function designCorpusRoot(root = ROOT, configured = process.env.APHRODY_DESIGN_CORPUS): string | undefined {
-  const corpus = resolve(configured ?? join(root, "../var/mirrors/design-sync"));
+  const base = configured ?? (root ? join(root, "../var/mirrors/design-sync") : undefined);
+  if (!base) return undefined;
+  const corpus = resolve(base);
   return existsSync(join(corpus, "AI_READY.md")) && statSync(corpus).isDirectory() ? corpus : undefined;
 }
 
 export function searchDocs(query: string, limit = 20, root = ROOT, corpus = designCorpusRoot(root)): string[] {
   const q = query.toLowerCase();
   const hits: string[] = [];
-  const docs = join(root, "docs");
+  const docs = root ? join(root, "docs") : undefined;
   const sources = [
     ...(corpus
       ? [...walk(corpus, true)].map(file => ({
@@ -125,7 +180,7 @@ export function searchDocs(query: string, limit = 20, root = ROOT, corpus = desi
           source: `design-sync/${relative(corpus, file).replaceAll("\\", "/")}`,
         }))
       : []),
-    ...(existsSync(docs)
+    ...(root && docs && existsSync(docs)
       ? [...walk(docs)].map(file => ({
           file,
           source: relative(root, file).replaceAll("\\", "/"),
@@ -157,6 +212,7 @@ export function researchLinks(root = ROOT, corpus = designCorpusRoot(root)): { f
       links,
     };
   }
+  if (!root) return { files: [], links: [] };
   const dir = join(root, "docs/research");
   const files = existsSync(dir) ? [...walk(dir)].map(f => relative(root, f)) : [];
   // The link index moved with the M3 integrations to the Bun fork checkout next to this repository.
@@ -172,7 +228,8 @@ export function researchLinks(root = ROOT, corpus = designCorpusRoot(root)): { f
 
 export function listTemplates(root = ROOT): string[] {
   const rows: string[] = [];
-  for (const base of ["templates", "examples", "examples/tauri"]) {
+  if (!root) return rows;
+  for (const base of ["packages/m3-templates", "templates", "examples", "examples/tauri"]) {
     const dir = join(root, base);
     if (!existsSync(dir)) continue;
     for (const e of readdirSync(dir)) {

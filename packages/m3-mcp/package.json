@@ -30,7 +30,9 @@
     "typecheck": "bun check --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@aphrody/m3-design": "workspace:*",
     "@aphrody/m3-os-themes": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-design-icons": "workspace:*",
     "zod": "catalog:"
   },

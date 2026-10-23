@@ -5,7 +5,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import type { Target } from "@aphrody/m3-os-themes";
-import { ROOT, listPackages, listTemplates, lookupTokens, researchLinks, searchDocs, validateTokens } from "./catalog";
+import {
+  listPackages,
+  packageDir,
+  listTemplates,
+  lookupTokens,
+  researchLinks,
+  searchDocs,
+  validateTokens,
+} from "./catalog";
 
 // The theme generators (16 ms with m3-tokens) and the symbol catalogue are loaded by the tools that use them, not at
 // start-up: listing the tools never waits for them.
@@ -160,15 +168,9 @@ export const M3_TOOLS: M3Tool[] = [
       fill: z.string().optional(),
     },
     async ({ input, out, style, fill }, signal) => {
-      const args = [
-        "bun",
-        join(ROOT, "packages/material-design-icons/scripts/svg-to-ico.ts"),
-        input,
-        "--out",
-        out,
-        "--style",
-        style,
-      ];
+      const icons = packageDir("@aphrody/material-design-icons");
+      if (!icons) return { ...text("@aphrody/material-design-icons is not installed"), isError: true };
+      const args = [process.execPath, join(icons, "scripts/svg-to-ico.ts"), input, "--out", out, "--style", style];
       if (fill) args.push("--fill", fill);
       const { code, stdout, stderr } = await runBun(args, signal);
       return {
@@ -288,15 +290,17 @@ async function runBun(cmd: string[], signal?: AbortSignal): Promise<{ code: numb
   return { code, stdout, stderr };
 }
 
-/** The m3-design CLI: the sibling workspace package, else the M3 source root. */
-function designCliPath(): string {
-  const sibling = join(import.meta.dir, "../../m3-design/src/cli.ts");
-  return existsSync(sibling) ? sibling : join(ROOT, "packages/m3-design/src/cli.ts");
+/** The m3-design CLI of the installed `@aphrody/m3-design` dependency (the workspace link in a checkout). */
+function designCliPath(): string | undefined {
+  const dir = packageDir("@aphrody/m3-design");
+  return dir ? join(dir, "src/cli.ts") : undefined;
 }
 
 /** Run an m3-design command. Exit codes in `ok` are results (1 = a gate failed); others are errors. */
 async function designCli(args: string[], signal?: AbortSignal, ok: readonly number[] = [0]): Promise<ToolResult> {
-  const { code, stdout, stderr } = await runBun([process.execPath, designCliPath(), ...args], signal);
+  const cli = designCliPath();
+  if (!cli) return { ...text("@aphrody/m3-design is not installed"), isError: true };
+  const { code, stdout, stderr } = await runBun([process.execPath, cli, ...args], signal);
   const body = `${stdout}${stderr ? `\n${stderr}` : ""}`.trim();
   return {
     ...text(ok.length > 1 ? `exit ${code}\n${body}` : body),
