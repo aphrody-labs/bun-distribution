@@ -22,8 +22,9 @@
     {
       "host": "os.aphrody.com",
       "service": "aphrody-os",
-      "upstream": "static:/var/www/os.aphrody.com",
+      "upstream": "static:301",
       "probePath": "/",
+      "response": 301,
       "vhost": "nginx/aphrody/os.aphrody.com.conf"
     },
     {
@@ -146,25 +147,11 @@
   ],
   "internal": [
     {
-      "service": "aphrody-bun-os",
-      "upstream": "127.0.0.1:18804",
-      "via": "nginx",
-      "publicHost": "os.aphrody.com",
-      "paths": ["/desktop/", "/api/webos/capabilities", "/dist/workers/repl.js", "/dist/wasm/bun/bun_wasm.wasm"]
-    },
-    {
       "service": "aphrody-downloads",
       "upstream": "127.0.0.1:8797",
       "via": "nginx",
       "publicHost": "aphrody.com",
       "paths": ["/api/search", "/api/index/search"]
-    },
-    {
-      "service": "aphrody-downloads",
-      "upstream": "127.0.0.1:8797",
-      "via": "nginx",
-      "publicHost": "os.aphrody.com",
-      "paths": ["/api/search"]
     },
     {
       "service": "aphrody-ai-http",

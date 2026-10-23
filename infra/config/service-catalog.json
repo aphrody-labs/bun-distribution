@@ -31,7 +31,9 @@
       "sourceRepo": "aphrody",
       "public": false,
       "publicProxy": "nginx",
-      "note": "Additive browser desktop at os.aphrody.com/desktop/. GNU Linux Bun1.4.4, immutable image, loopback18804, non-root read-only container with disposable tmpfs and no host mounts. Host APIs disabled; browser OPFS and explicit permissions remain local. Existing canonical OS root is preserved. Compose owner scripts/aphrody/deploy/docker/bun-os.compose.yaml in aphrody-labs/bun; qualification and rollback in docs/operations/infra/public-webos-2026-10-11.md. VPS first deployment authorized 2026-10-11; DBFR portability is not a deployment claim."
+      "note": "Retired 2026-10-23 with the WebOS: os.aphrody.com redirects to bun.aphrody.com, so the /desktop/ container (compose owner scripts/aphrody/deploy/docker/bun-os.compose.yaml, loopback 18804) no longer has a route; no image or container is kept on the vps.",
+      "status": "retired",
+      "retiredAt": "2026-10-23"
     },
     {
       "id": "aphrody-dbfr-site",
@@ -118,7 +120,7 @@
       "runtime": "none",
       "sourceRepo": "aphrody",
       "publicProxy": "nginx",
-      "note": "Aphrody OS web bundle (crates/ui/app/ui-dist) served by nginx from /var/www/os.aphrody.com with SPA fallback (vhost nginx/aphrody/os.aphrody.com.conf), no application origin and no unit; target of the homepage Open Aphrody OS button.",
+      "note": "os.aphrody.com is a permanent redirect to https://bun.aphrody.com since the WebOS was removed on 2026-10-23 (vhost nginx/aphrody/os.aphrody.com.conf); no bundle, origin or unit.",
       "public": true,
       "host": "vps"
     },
