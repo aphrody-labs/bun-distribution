@@ -38,12 +38,12 @@
     "target": "vps"
   },
   "assets": {
-    "install.sh": "scripts/install/install.sh",
-    "install.ps1": "scripts/install/install.ps1",
-    "install-full.sh": "packages/infra/workspace/assets/downloads/install-full.sh",
-    "install-full.ps1": "packages/infra/workspace/assets/downloads/install-full.ps1",
-    "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
-    "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg"
+    "install.sh": "scripts/aphrody/install/install.sh",
+    "install.ps1": "scripts/aphrody/install/install.ps1",
+    "install-full.sh": "packages/bun-workspace/assets/downloads/install-full.sh",
+    "install-full.ps1": "packages/bun-workspace/assets/downloads/install-full.ps1",
+    "pet.webp": "crates/aphrody-identity/assets/aphrody/sprites/spritesheet.webp",
+    "icon.svg": "packages/bun-workspace/assets/downloads/icon.svg"
   },
   "artifacts": [
     {

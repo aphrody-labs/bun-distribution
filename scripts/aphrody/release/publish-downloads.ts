@@ -7,6 +7,7 @@
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha> [--attempt <n>]  prepare + build the factory binaries (yolo ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
+ *                                 --only <id,...> publishes just those artifacts (installers always), noting the rest
  *   assets [--staged <dir>]       publish installers and optional prebuilt kits in an immutable snapshot
  *                                 repeat --staged; --staged-revision <sha> records their verified source revision
  *   github --release <id>         create/refresh the GitHub release of each configured EXISTING repository
@@ -813,10 +814,21 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
   const files: PublishedFile[] = [];
   const notes: string[] = [];
   const stage = stageRoot(id);
+  // `--only a,b`: a release of the artifacts the factory already has, without building the others.
+  const only = arg("only")
+    ?.split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+  const unknown = only?.filter(name => !cfg.artifacts.some(a => a.id === name)) ?? [];
+  if (unknown.length) throw new Error(`--only names unknown artifacts: ${unknown.join(", ")}`);
   mkdirSync(join(stage, "files"));
   await remote(cfg, `mkdir -p ${q(`${cfg.host.root}/releases/${id}/files`)}`);
 
   for (const a of cfg.artifacts) {
+    if (only && !only.includes(a.id)) {
+      notes.push(`${a.id}: not published in this release (not selected by --only)`);
+      continue;
+    }
     if (a.kind === "plugin") {
       files.push(...(await stagePlugin(a, id, commit)));
       continue;
@@ -1518,7 +1530,7 @@ export function downloadsHostPlan(cfg: DownloadsConfig) {
   const steps = [
     `target ${cfg.host.target}: preflight cataloged ${service.unit}, native nginx and valid ${cfg.site.certName} certificate`,
     `create ${rootDir}/{releases,app} owned by ubuntu`,
-    `upload packages/infra/product/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
+    `upload packages/product/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
     `restart ${service.unit}; require loopback /health; native nginx -t/reload`,
   ];
   return { preflight, setup, activate, steps };
@@ -1534,7 +1546,7 @@ export async function hostCommands(cfg: DownloadsConfig, apply: boolean, io = re
   }
   await io.remote(cfg, hostPlan.preflight);
   await io.remote(cfg, hostPlan.setup);
-  await io.put(cfg, join(root, "packages/infra/product/src/downloads/server.ts"), `${rootDir}/app/server.ts`);
+  await io.put(cfg, join(root, "packages/product/src/downloads/server.ts"), `${rootDir}/app/server.ts`);
   await io.remote(cfg, hostPlan.activate);
 }
 
@@ -1568,7 +1580,7 @@ if (import.meta.main) {
       break;
     default:
       console.error(
-        "usage: publish-downloads.ts plan|build|release|assets|github|verify|host-plan|host-apply [--revision <sha>] [--id <release>] [--release <id>] [--staged <dir> --staged-revision <sha>] [--apply]",
+        "usage: publish-downloads.ts plan|build|release|assets|github|verify|host-plan|host-apply [--revision <sha>] [--id <release>] [--only <id,...>] [--release <id>] [--staged <dir> --staged-revision <sha>] [--apply]",
       );
       process.exit(2);
   }
