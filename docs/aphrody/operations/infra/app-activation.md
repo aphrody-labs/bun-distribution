@@ -9,7 +9,7 @@ Run on the qualified host with its explicit canonical target:
 
 ```sh
 aphrody infra --root "$HOME/src/aphrody" deploy --stack app --target vps --local \
-  --id aphrody-app-video --source "$APHRODY_BUN_OS_CHECKOUT" \
+  --id <catalog-service-id> --source "$APHRODY_BUN_OS_CHECKOUT" \
   --build-report "$APHRODY_BUN_OS_BUILD_REPORT" \
   --bun "$HOME/.bun/bin/bun-1.4.4"
 ```
@@ -26,6 +26,11 @@ that same validator again. The build report is emitted in the Bun OS checkout's
 Source-free native
 doctor qualification is required. Catalog capability, host and listener bind
 the receipt without maintaining a second application registry.
+
+On 2026-10-23 the 14 reserved `aphrody-app-*` catalog entries, their `static:503` routes and the
+503 placeholder server of `control.aphrody.app.json` were removed: Cloudflare sends every
+`app-*.aphrody.app` and `*craft.aphrody.app` name to the `aphrody-webos` Worker, so no VPS origin can
+receive them. A future native application declares its catalog entry, route and TLS server first.
 
 Library capability aliases share their canonical service ID in the route
 catalog. Activation switches every hostname for that service together. On

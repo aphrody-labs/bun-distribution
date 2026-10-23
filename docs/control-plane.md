@@ -13,24 +13,14 @@ owned. No local Windows build or WSL is part of this deployment.
 
 | Capability | Loopback port | Domain |
 | --- | --- | --- |
-| video | 29000 | app-video.aphrody.app |
-| generation | 29001 | app-generation.aphrody.app |
-| images | 29002 | app-images.aphrody.app |
-| vectors | 29003 | app-vectors.aphrody.app |
-| compositing | 29004 | app-compositing.aphrody.app |
-| photo-processing | 29005 | app-photo-processing.aphrody.app |
-| pdf | 29006 | app-pdf.aphrody.app |
-| documents | 29007 | app-documents.aphrody.app |
-| audio | 29008 | app-audio.aphrody.app |
-| layout | 29009 | app-layout.aphrody.app |
-| cad | 29010 | app-cad.aphrody.app |
-| slides | 29011 | app-slides.aphrody.app |
-| tables | 29012 | app-tables.aphrody.app |
-| interface-layouts | 29013 | app-interface-layouts.aphrody.app |
 | Git forge | 29020 | source.aphrody.app (canonical); git.aphrody.app (legacy alias) |
 | Deployment | 29021 | deploy.aphrody.app |
 | Git SSH | 29022 | Private tunnel only |
 | Product API (staged) | 29030 | source.aphrody.app/api/product/v1/ |
+
+The `app-*.aphrody.app` and `*craft.aphrody.app` names are routes and custom domains of the
+`aphrody-webos` Cloudflare Worker (`apps/webos/wrangler.jsonc`); no VPS loopback service or Nginx
+vhost backs them.
 
 The Gitea vhost uses a Cloudflare Origin CA certificate for
 `source.aphrody.app` and `git.aphrody.app`, issued from a CSR generated on the
