@@ -247,7 +247,8 @@ await cp(
   join(dist, "wasm/aphrody_webos_wasm_bg.wasm"),
 );
 await cp(join(root, "LICENSE-APACHE"), join(dist, "wasm/LICENSE-APACHE"));
-// @aphrody/m3-fonts: Google Sans Flex / Code, Roboto Flex / Mono (Settings > Font) and Material Symbols.
+// @aphrody/m3-fonts: Google Sans Flex / Code, Roboto Flex / Mono (Settings > Font) and the full Material Symbols
+// Rounded font (catalog apps name any icon, so not the default subset of fonts-symbols.css).
 const fontSrc = join(root, "packages/m3-fonts/fonts");
 await mkdir(join(dist, "fonts"), { recursive: true });
 for (const [from, to] of [
@@ -270,7 +271,7 @@ const faces = (
     /Google Sans (Flex|Code)|Roboto (Flex|Mono)/.test(f.split("}")[0]!),
   );
 const symbols = (
-  await Bun.file(join(root, "packages/m3-fonts/src/fonts-symbols.css")).text()
+  await Bun.file(join(root, "packages/m3-fonts/src/fonts-symbols-full.css")).text()
 )
   .split("@font-face")
   .filter((f) => f.includes("Rounded"));

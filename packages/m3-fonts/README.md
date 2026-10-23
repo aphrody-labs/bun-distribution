@@ -18,17 +18,21 @@ document.body.style.fontFamily = FONT_STACKS.brand;
 
 License: Apache-2.0 AND OFL-1.1 (`LICENSE` for the code, `fonts/*-OFL.txt` for the typefaces). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
-| Import                                | Contents                                                                                                        |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `@aphrody/m3-fonts`                   | `FONTS`, `FONT_STACKS`, `SUBSETS`, `SUBSET_JOBS`, `fontFaceCss`, `faceRule`, `renderStylesheet`, `UPSTREAM_DIR` |
-| `@aphrody/m3-fonts/fonts.css`         | Latin core faces (always imported, < 3 MiB)                                                                     |
-| `@aphrody/m3-fonts/fonts-jp.css`      | Japanese faces chunked by `unicode-range`                                                                       |
-| `@aphrody/m3-fonts/fonts-symbols.css` | Material Symbols variable fonts (opt-in; `@aphrody/m3-icons` renders SVG)                                       |
-| `@aphrody/m3-fonts/fonts/*`           | the font files                                                                                                  |
+| Import                                     | Contents                                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@aphrody/m3-fonts`                        | `FONTS`, `SYMBOLS_FULL`, `SYMBOL_SUBSET_NAMES`, `FONT_STACKS`, `SUBSETS`, `SUBSET_JOBS`, `fontFaceCss`, `faceRule`, `renderStylesheet`, `UPSTREAM_DIR` |
+| `@aphrody/m3-fonts/fonts.css`              | Latin core faces (always imported, < 3 MiB)                                                                                                            |
+| `@aphrody/m3-fonts/fonts-jp.css`           | Japanese faces chunked by `unicode-range`                                                                                                              |
+| `@aphrody/m3-fonts/fonts-symbols.css`      | Material Symbols subset: the 264 icons the workspace uses, every axis kept (opt-in; `@aphrody/m3-icons` renders SVG)                                   |
+| `@aphrody/m3-fonts/fonts-symbols-full.css` | the full Material Symbols variable fonts (opt-in, every icon)                                                                                          |
+| `@aphrody/m3-fonts/fonts/*`                | the font files                                                                                                                                         |
 
 Files:
 
 - `fonts/web/*.woff2`: the subsets served to browsers (tracked), recorded in `src/subsets.json`.
+  `MaterialSymbols{Outlined,Rounded,Sharp}-subset.woff2` keep the icons of `src/symbols-subset.json` (181, 246
+  and 159 KB instead of 3.9, 5.3 and 3.5 MB), as ligatures and Private Use Area codepoints, with the FILL, wght,
+  GRAD and opsz axes. An icon outside the list renders as its name: import `fonts-symbols-full.css` instead.
 - `fonts/*.ttf`, `fonts/*-OFL.txt`: tracked variable sources and licences.
 - `fonts/upstream/`: Google Sans Flex/Code sources (fork `aphrody-labs/fonts` of `google/fonts`) and
   Material Symbols (`material-symbols@0.44.8`, the build the Rust icons module renders). Not tracked:
@@ -36,4 +40,5 @@ Files:
   pinned in `fonts.lock.json` (`--check` verifies only).
 
 Scripts: `gen` (stylesheets from the manifest), `subset` (fontTools through uv, `scripts/subset.py`),
+`symbols:names` (rescans the workspace for the icon names the subset keeps; `--check` reports a stale list),
 `typecheck`, `test` (fonts sync, then the manifest, file, lock and stylesheet checks).

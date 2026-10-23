@@ -36,6 +36,7 @@
     "./fonts.css": "./src/fonts.css",
     "./fonts-jp.css": "./src/fonts-jp.css",
     "./fonts-symbols.css": "./src/fonts-symbols.css",
+    "./fonts-symbols-full.css": "./src/fonts-symbols-full.css",
     "./fonts/*": "./fonts/*"
   },
   "publishConfig": {
@@ -44,6 +45,7 @@
   "scripts": {
     "gen": "bun scripts/generate.ts",
     "subset": "bun scripts/subset.ts",
+    "symbols:names": "bun scripts/symbols-names.ts",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test src",
     "prepack": "bun ../../scripts/m3/fonts-sync.ts --quiet"

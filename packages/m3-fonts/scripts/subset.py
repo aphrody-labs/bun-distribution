@@ -13,6 +13,10 @@ Plan entries:
   {"id", "source", "out", "ranges", "japanese": true, "chunk": N}         -> JP chunks: codepoints
       present in the font, restricted to kana/punctuation/full-width forms plus the ideographs of
       Windows-31J (JIS X 0208 levels 1-2 + NEC/IBM extensions), split into chunks of N codepoints.
+  {"id", "source", "out", "symbols": true, "names": [...]}               -> Material Symbols subset:
+      the icons `names` (resolved through their GSUB ligature), their Private Use Area codepoints
+      and the characters spelling them. Layout closure is off, so only the ligatures of the kept
+      icons survive; every variation axis (FILL, wght, GRAD, opsz) is kept.
 """
 
 import json
@@ -81,12 +85,60 @@ def write(source: Path, out: Path, cps: list[int], hinting: bool) -> int:
     return out.stat().st_size
 
 
+def ligatures_of(font: TTFont, names: list[str]) -> dict[str, str]:
+    """Ligature glyph of each of `names` in the font's GSUB ligature substitutions."""
+    cmap = font.getBestCmap()
+    table: dict[tuple[str, ...], str] = {}
+    for lookup in font["GSUB"].table.LookupList.Lookup:
+        for sub in lookup.SubTable:
+            lig_table = getattr(sub, "ExtSubTable", sub)
+            for first, entries in (getattr(lig_table, "ligatures", None) or {}).items():
+                for lig in entries:
+                    table.setdefault((first, *lig.Component), lig.LigGlyph)
+    out: dict[str, str] = {}
+    for name in names:
+        key = tuple(cmap.get(ord(ch), "") for ch in name)
+        if key in table:
+            out[name] = table[key]
+    return out
+
+
+def write_symbols(source: Path, out: Path, names: list[str]) -> list[int]:
+    font = TTFont(source)
+    ligatures = ligatures_of(font, names)
+    missing = [n for n in names if n not in ligatures]
+    if missing:
+        sys.exit(f"{source.name}: Material Symbols names without a ligature: {', '.join(missing)}")
+    reverse: dict[str, int] = {}
+    for cp, glyph in font.getBestCmap().items():
+        if cp >= 0xE000:
+            reverse.setdefault(glyph, cp)
+    cps = sorted({ord(ch) for n in names for ch in n} | {reverse[ligatures[n]] for n in names if ligatures[n] in reverse})
+    opts = options(hinting=False)
+    opts.layout_closure = False
+    s = subset.Subsetter(opts)
+    s.populate(unicodes=cps, glyphs=[ligatures[n] for n in names])
+    s.subset(font)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    subset.save_font(font, str(out), opts)
+    kept = ligatures_of(TTFont(out), names)
+    lost = [n for n in names if n not in kept]
+    if lost:
+        sys.exit(f"{out.name}: ligatures lost by the subset: {', '.join(lost)}")
+    return cps
+
+
 def main() -> None:
     root = Path(sys.argv[1])
     plan = json.load(sys.stdin)
     result = []
     for entry in plan:
         source = root / entry["source"]
+        if entry.get("symbols"):
+            out = root / entry["out"]
+            cps = write_symbols(source, out, entry["names"])
+            result.append({"id": entry["id"], "file": entry["out"], "unicodeRange": to_unicode_range(cps), "bytes": out.stat().st_size})
+            continue
         cmap = cmap_of(source)
         ranges = entry["ranges"]
         if not entry.get("japanese"):

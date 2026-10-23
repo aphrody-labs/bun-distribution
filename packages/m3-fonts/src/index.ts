@@ -3,16 +3,19 @@
 // package root. The variable TrueType sources (fonts/*.ttf, and fonts/upstream/ fetched and
 // hash-checked from fonts.lock.json by `bun scripts/m3/fonts-sync.ts` at the repository root) are subset
 // into WOFF2 web fonts under fonts/web by `bun run subset` (fontTools through uv); `src/subsets.json`
-// records the produced files and their unicode-range. Three stylesheets are generated:
+// records the produced files and their unicode-range. Four stylesheets are generated:
 //   src/fonts.css          Latin core faces + `--aphrody-font-*` stacks (always imported)
 //   src/fonts-jp.css       Japanese faces, chunked by unicode-range (fetched block by block)
-//   src/fonts-symbols.css  Material Symbols icon fonts (opt-in; @aphrody/m3-icons renders SVG)
+//   src/fonts-symbols.css  Material Symbols subset: the icons the workspace renders (opt-in;
+//                          @aphrody/m3-icons renders SVG), names in src/symbols-subset.json
+//   src/fonts-symbols-full.css  the full Material Symbols fonts (opt-in)
 // See docs/design/FONTS-AND-ICONS.md.
 import subsets from "./subsets.json" with { type: "json" };
+import symbolsSubset from "./symbols-subset.json" with { type: "json" };
 
 export type FontRole = "brand" | "plain" | "code" | "icon";
 export type FontScript = "latin" | "japanese";
-export type FontSheet = "core" | "jp" | "symbols";
+export type FontSheet = "core" | "jp" | "symbols" | "symbols-full";
 
 export interface FontFace {
   family: string;
@@ -54,6 +57,9 @@ export interface SubsetJob {
   /** Japanese: `ranges` form chunk 00, Windows-31J ideographs follow in chunks of `chunk`. */
   japanese?: boolean;
   chunk?: number;
+  /** Material Symbols: keep the icons `names` (ligatures, codepoints, every variation axis). */
+  symbols?: boolean;
+  names?: readonly string[];
 }
 
 /** Produced face, as recorded in `src/subsets.json`. */
@@ -93,6 +99,11 @@ export const JAPANESE_CHUNK = 500;
 export const UPSTREAM_DIR = "fonts/upstream";
 const GS = UPSTREAM_DIR;
 const MS = `${UPSTREAM_DIR}/material-symbols`;
+const SYMBOL_VARIANTS = ["Outlined", "Rounded", "Sharp"] as const;
+
+/** Material Symbols names kept by the default `fonts-symbols.css` subset: the icons the
+ * workspace's apps and packages render as font ligatures (`bun run symbols:names`). */
+export const SYMBOL_SUBSET_NAMES: readonly string[] = symbolsSubset.names;
 
 export const SUBSET_JOBS: readonly SubsetJob[] = [
   {
@@ -141,6 +152,14 @@ export const SUBSET_JOBS: readonly SubsetJob[] = [
     japanese: true,
     chunk: JAPANESE_CHUNK,
   },
+  ...SYMBOL_VARIANTS.map((v): SubsetJob => ({
+    id: `material-symbols-${v.toLowerCase()}`,
+    source: `${MS}/material-symbols-${v.toLowerCase()}.woff2`,
+    out: `fonts/web/MaterialSymbols${v}-subset.woff2`,
+    ranges: [],
+    symbols: true,
+    names: SYMBOL_SUBSET_NAMES,
+  })),
 ];
 
 export const SUBSETS: readonly SubsetFace[] = subsets;
@@ -169,8 +188,6 @@ function subsetFaces(id: string, family: string, licenseFile: string, extra: Par
     }),
   );
 }
-
-const SYMBOL_VARIANTS = ["Outlined", "Rounded", "Sharp"] as const;
 
 export const FONTS: readonly FontFamily[] = [
   {
@@ -246,24 +263,38 @@ export const FONTS: readonly FontFamily[] = [
       weight: [100, 700],
     }),
   },
-  ...SYMBOL_VARIANTS.map((v): FontFamily => {
-    const file = `${MS}/material-symbols-${v.toLowerCase()}.woff2`;
-    return {
-      family: `Material Symbols ${v}`,
-      role: "icon",
-      script: "latin",
-      sheet: "symbols",
-      source: "npm material-symbols@0.44.8 (the build aphrody crates/ui/bun/icons/material-symbols renders)",
-      sourceFile: file,
-      faces: [
-        face(`Material Symbols ${v}`, file, null, {
-          weight: [100, 700],
-          display: "block",
-        }),
-      ],
-    };
-  }),
+  ...SYMBOL_VARIANTS.map((v): FontFamily => ({
+    family: `Material Symbols ${v}`,
+    role: "icon",
+    script: "latin",
+    sheet: "symbols",
+    source: "npm material-symbols@0.44.8, subset to SYMBOL_SUBSET_NAMES",
+    sourceFile: `${MS}/material-symbols-${v.toLowerCase()}.woff2`,
+    // No unicode-range: the face only applies to icon elements, whose ligature text it spells.
+    faces: SUBSETS.filter(s => s.id === `material-symbols-${v.toLowerCase()}`).map(s =>
+      face(`Material Symbols ${v}`, s.file, null, { weight: [100, 700], display: "block" }),
+    ),
+  })),
 ];
+
+/** The full Material Symbols fonts (every icon), served by the opt-in `fonts-symbols-full.css`. */
+export const SYMBOLS_FULL: readonly FontFamily[] = SYMBOL_VARIANTS.map((v): FontFamily => {
+  const file = `${MS}/material-symbols-${v.toLowerCase()}.woff2`;
+  return {
+    family: `Material Symbols ${v}`,
+    role: "icon",
+    script: "latin",
+    sheet: "symbols-full",
+    source: "npm material-symbols@0.44.8 (the build aphrody crates/ui/bun/icons/material-symbols renders)",
+    sourceFile: file,
+    faces: [
+      face(`Material Symbols ${v}`, file, null, {
+        weight: [100, 700],
+        display: "block",
+      }),
+    ],
+  };
+});
 
 /** Platform faces after the bundled ones: Windows 11 (DirectWrite in WebView2), macOS, then Linux
  * (fontconfig families seen by WebKitGTK). Japanese system faces follow the Latin ones so kana and
@@ -287,11 +318,13 @@ export const SHEET_FILES = {
   core: "fonts.css",
   jp: "fonts-jp.css",
   symbols: "fonts-symbols.css",
+  "symbols-full": "fonts-symbols-full.css",
 } as const satisfies Record<FontSheet, string>;
 
-/** Renders the @font-face rules of `sheet` (every sheet when omitted); `base` prefixes each file. */
+/** Renders the @font-face rules of `sheet` (every sheet but `symbols-full` when omitted); `base` prefixes each file. */
 export function fontFaceCss(base = "", sheet?: FontSheet): string {
-  return FONTS.filter(f => !sheet || f.sheet === sheet)
+  return [...FONTS, ...SYMBOLS_FULL]
+    .filter(f => (sheet ? f.sheet === sheet : f.sheet !== "symbols-full"))
     .flatMap(f => f.faces)
     .map(x => faceRule(x, `${base}${x.file}`))
     .join("\n\n");
