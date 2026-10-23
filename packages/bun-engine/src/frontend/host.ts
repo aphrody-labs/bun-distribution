@@ -21,7 +21,11 @@ async function run(command: string[], timeoutMs = 2500): Promise<Ran> {
   try {
     const child = Bun.spawn([program, ...command.slice(1)], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
     const timer = setTimeout(() => child.kill(), timeoutMs);
-    const [out, err, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+    const [out, err, code] = await Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]);
     clearTimeout(timer);
     return { ok: code === 0, out, err: err.trim() };
   } catch (error) {
@@ -85,7 +89,15 @@ async function xrandrOutputs(): Promise<Output[] | undefined> {
       const active = /\s(\d+(?:\.\d+)?)\*/.exec(lines[j]!);
       if (active) refresh = Number(active[1]);
     }
-    outputs.push({ name: head[1]!, model: null, width: Number(head[2]), height: Number(head[3]), refresh, scale: null, on: null });
+    outputs.push({
+      name: head[1]!,
+      model: null,
+      width: Number(head[2]),
+      height: Number(head[3]),
+      refresh,
+      scale: null,
+      on: null,
+    });
   }
   return outputs.length ? outputs : undefined;
 }
@@ -100,7 +112,16 @@ function drmOutputs(): Output[] | undefined {
     try {
       if (readFileSync(join(base, entry, "status"), "utf8").trim() !== "connected") continue;
       const mode = /^(\d+)x(\d+)/.exec(readFileSync(join(base, entry, "modes"), "utf8").split("\n")[0] ?? "");
-      if (mode) outputs.push({ name: entry.replace(/^card\d+-/, ""), model: null, width: Number(mode[1]), height: Number(mode[2]), refresh: null, scale: null, on: null });
+      if (mode)
+        outputs.push({
+          name: entry.replace(/^card\d+-/, ""),
+          model: null,
+          width: Number(mode[1]),
+          height: Number(mode[2]),
+          refresh: null,
+          scale: null,
+          on: null,
+        });
     } catch {
       // a connector without status or modes is not a screen
     }
@@ -119,7 +140,8 @@ async function displaySection(): Promise<Section<{ outputs: Output[] }>> {
   }
   return {
     available: false,
-    reason: "No display server answered (no Sway socket, no X11 display) and the kernel lists no connected screen. The page still shows what the browser reports.",
+    reason:
+      "No display server answered (no Sway socket, no X11 display) and the kernel lists no connected screen. The page still shows what the browser reports.",
   };
 }
 
@@ -136,9 +158,17 @@ export interface Sink {
 
 async function pactlSinks(): Promise<Sink[] | { error: string } | undefined> {
   if (!Bun.which("pactl")) return undefined;
-  const [list, defaultSink] = await Promise.all([run(["pactl", "--format=json", "list", "sinks"]), run(["pactl", "get-default-sink"])]);
+  const [list, defaultSink] = await Promise.all([
+    run(["pactl", "--format=json", "list", "sinks"]),
+    run(["pactl", "get-default-sink"]),
+  ]);
   if (!list.ok) return { error: list.err || "pactl could not reach the sound server" };
-  const rows = JSON.parse(list.out) as Array<{ name: string; description?: string; mute?: boolean; volume?: Record<string, { value_percent?: string }> }>;
+  const rows = JSON.parse(list.out) as Array<{
+    name: string;
+    description?: string;
+    mute?: boolean;
+    volume?: Record<string, { value_percent?: string }>;
+  }>;
   const fallback = defaultSink.out.trim();
   return rows.map(row => {
     const percent = Object.values(row.volume ?? {})[0]?.value_percent;
@@ -166,7 +196,14 @@ async function wpctlSinks(): Promise<Sink[] | { error: string } | undefined> {
     if (inSinks && /(Sink endpoints|Sources|Source endpoints|Filters|Streams|Video|Settings):?\s*$/.test(line)) break;
     if (!inSinks) continue;
     const row = /^[\s│├└─]*(\*)?\s*(\d+)\.\s+(.+?)(?:\s+\[vol:\s*([\d.]+)(\s+MUTED)?\])?\s*$/.exec(line);
-    if (row) sinks.push({ id: row[2]!, name: row[3]!, default: Boolean(row[1]), volume: row[4] ? Number(row[4]) : null, muted: row[4] ? Boolean(row[5]) : null });
+    if (row)
+      sinks.push({
+        id: row[2]!,
+        name: row[3]!,
+        default: Boolean(row[1]),
+        volume: row[4] ? Number(row[4]) : null,
+        muted: row[4] ? Boolean(row[5]) : null,
+      });
   }
   return sinks;
 }
@@ -188,7 +225,10 @@ async function audioSection(): Promise<Section<{ sinks: Sink[] }>> {
     }
     return { available: true, source, sinks };
   }
-  return { available: false, reason: `No sound server answered (${tried.join("; ")}). Game audio still plays through the browser.` };
+  return {
+    available: false,
+    reason: `No sound server answered (${tried.join("; ")}). Game audio still plays through the browser.`,
+  };
 }
 
 // ---- network ------------------------------------------------------------------------------------
@@ -223,7 +263,9 @@ async function networkSection(): Promise<Section<{ interfaces: Interface[]; gate
         state: row.operstate.toLowerCase(),
         kind: null,
         connection: null,
-        addresses: (row.addr_info ?? []).filter(info => info.scope === "global").map(info => `${info.local}/${info.prefixlen}`),
+        addresses: (row.addr_info ?? [])
+          .filter(info => info.scope === "global")
+          .map(info => `${info.local}/${info.prefixlen}`),
         gateway: false,
         virtual: !existsSync(join("/sys/class/net", row.ifname, "device")),
       }));
@@ -244,7 +286,15 @@ async function networkSection(): Promise<Section<{ interfaces: Interface[]; gate
         } catch {
           // keep unknown
         }
-        return { name, state, kind: null, connection: null, addresses: [], gateway: false, virtual: !existsSync(join("/sys/class/net", name, "device")) };
+        return {
+          name,
+          state,
+          kind: null,
+          connection: null,
+          addresses: [],
+          gateway: false,
+          virtual: !existsSync(join("/sys/class/net", name, "device")),
+        };
       });
   } else {
     return { available: false, reason: "Neither the ip tool nor /sys/class/net is available on this device." };
@@ -315,7 +365,12 @@ function storageSection(): Section<{
     try {
       const device = statSync(path).dev;
       const fs = statfsSync(path);
-      const volume = volumes.get(device) ?? { labels: [], paths: [], totalBytes: fs.blocks * fs.bsize, freeBytes: fs.bavail * fs.bsize };
+      const volume = volumes.get(device) ?? {
+        labels: [],
+        paths: [],
+        totalBytes: fs.blocks * fs.bsize,
+        freeBytes: fs.bavail * fs.bsize,
+      };
       if (!volume.labels.includes(label)) volume.labels.push(label);
       volume.paths.push(path);
       volumes.set(device, volume);
@@ -323,7 +378,8 @@ function storageSection(): Section<{
       // a path the kernel cannot stat is left out
     }
   }
-  if (!volumes.size) return { available: false, reason: "None of the library, game or save folders exists yet on this device." };
+  if (!volumes.size)
+    return { available: false, reason: "None of the library, game or save folders exists yet on this device." };
   const saves = retroarchHome();
   const total = walkBytes(saves);
   const profiles = existsSync(join(saves, "profiles"))
@@ -331,7 +387,12 @@ function storageSection(): Section<{
         .filter(entry => entry.isDirectory())
         .map(entry => ({ profile: entry.name, bytes: walkBytes(join(saves, "profiles", entry.name)).bytes }))
     : [];
-  return { available: true, source: "statfs", volumes: [...volumes.values()], saves: { path: saves, ...total, profiles } };
+  return {
+    available: true,
+    source: "statfs",
+    volumes: [...volumes.values()],
+    saves: { path: saves, ...total, profiles },
+  };
 }
 
 export async function hostState() {
@@ -384,7 +445,8 @@ export async function sleepDisplay(): Promise<{ ok: boolean; mechanism?: SleepMe
   const result = await run(command);
   if (!result.ok) return { ok: false, mechanism: how, error: result.err || `${command[0]} failed` };
   await Bun.sleep(150);
-  if ((await displaysOn(how)) !== false) return { ok: false, mechanism: how, error: `${command[0]} ran but the display still reports on` };
+  if ((await displaysOn(how)) !== false)
+    return { ok: false, mechanism: how, error: `${command[0]} ran but the display still reports on` };
   asleep = true;
   return { ok: true, mechanism: how };
 }

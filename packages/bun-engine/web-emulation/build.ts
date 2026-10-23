@@ -551,7 +551,10 @@ async function index() {
       }
     }
   }
-  await Bun.write(join(dist, "index.json"), `${JSON.stringify({ schemaVersion: 1, cores: manifests, pending }, null, 2)}\n`);
+  await Bun.write(
+    join(dist, "index.json"),
+    `${JSON.stringify({ schemaVersion: 1, cores: manifests, pending }, null, 2)}\n`,
+  );
   log(`index: ${manifests.map(m => m.id).join(", ") || "no cores"}`);
 }
 

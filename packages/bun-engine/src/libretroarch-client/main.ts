@@ -1,13 +1,7 @@
 /// <reference types="@webgpu/types" />
 // Page side of libretroarch-serve: presents frames with WebGPU, plays audio through an
 // AudioWorklet and sends the standard gamepad (or the keyboard) as RetroPad bits.
-import {
-  decodeFrame,
-  Message,
-  AUDIO_HEADER,
-  RetroArchPresenter,
-  type PresentableFrame,
-} from "../libretroarch-gpu";
+import { decodeFrame, Message, AUDIO_HEADER, RetroArchPresenter, type PresentableFrame } from "../libretroarch-gpu";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#screen")!;
 const adapter = await navigator.gpu?.requestAdapter();
@@ -113,9 +107,7 @@ let audioStarting = false;
 async function startAudio(rate: number) {
   audioStarting = true;
   const audioContext = new AudioContext({ sampleRate: rate });
-  const url = URL.createObjectURL(
-    new Blob([WORKLET], { type: "text/javascript" }),
-  );
+  const url = URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" }));
   await audioContext.audioWorklet.addModule(url);
   const node = new AudioWorkletNode(audioContext, "retroarch-ring", {
     outputChannelCount: [2],
@@ -141,9 +133,17 @@ let menuOpen = false;
 const toParent = (message: object) => embedded && window.parent.postMessage({ bunos: true, ...message }, "*");
 ws.onmessage = ({ data }) => {
   if (typeof data === "string") {
-    const reply = JSON.parse(data) as { type: string; id?: number; paused?: boolean; ok?: boolean; line?: string; text?: string };
+    const reply = JSON.parse(data) as {
+      type: string;
+      id?: number;
+      paused?: boolean;
+      ok?: boolean;
+      line?: string;
+      text?: string;
+    };
     if (reply.type === "paused") toParent({ type: "paused", paused: reply.paused });
-    else if (reply.type === "result") toParent({ type: "result", id: reply.id, line: reply.line, ok: reply.ok, text: reply.text });
+    else if (reply.type === "result")
+      toParent({ type: "result", id: reply.id, line: reply.line, ok: reply.ok, text: reply.text });
     return;
   }
   const message = data as ArrayBuffer;
@@ -190,7 +190,7 @@ const KEYS: Record<string, number> = {
   ArrowRight: 1 << 7,
 };
 let keys = 0;
-window.addEventListener("keydown", (e) => {
+window.addEventListener("keydown", e => {
   // embedded in the frontend: Escape returns to the library, F1 opens the quick menu
   if (e.code === "Escape" && embedded) window.parent.postMessage("retroarch-exit", "*");
   if (e.code === "F1" && embedded) {
@@ -199,7 +199,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (!menuOpen) keys |= KEYS[e.code] ?? 0;
 });
-window.addEventListener("keyup", (e) => (keys &= ~(KEYS[e.code] ?? 0)));
+window.addEventListener("keyup", e => (keys &= ~(KEYS[e.code] ?? 0)));
 
 const sent = new Map<number, string>();
 let menuHeld = false;
@@ -207,7 +207,7 @@ function pollInput() {
   if (ws.readyState !== WebSocket.OPEN) return;
   const pads = navigator.getGamepads();
   // Guide / Home (button 16) or Select + R3 asks the frontend for its quick menu
-  const asking = pads.some((pad) => pad?.buttons[16]?.pressed || (pad?.buttons[8]?.pressed && pad.buttons[11]?.pressed));
+  const asking = pads.some(pad => pad?.buttons[16]?.pressed || (pad?.buttons[8]?.pressed && pad.buttons[11]?.pressed));
   if (asking && !menuHeld && !menuOpen) toParent({ type: "menu" });
   menuHeld = asking;
   for (let port = 0; port < Math.max(1, pads.length); port++) {
@@ -216,12 +216,8 @@ function pollInput() {
     const axes: number[] = [];
     if (pad?.mapping === "standard" && !menuOpen) {
       pad.buttons.forEach((b, i) => b.pressed && (buttons |= STANDARD[i] ?? 0));
-      for (let i = 0; i < 4; i++)
-        axes.push(Math.round((pad.axes[i] ?? 0) * 0x7fff));
-      axes.push(
-        Math.round((pad.buttons[6]?.value ?? 0) * 0x7fff),
-        Math.round((pad.buttons[7]?.value ?? 0) * 0x7fff),
-      );
+      for (let i = 0; i < 4; i++) axes.push(Math.round((pad.axes[i] ?? 0) * 0x7fff));
+      axes.push(Math.round((pad.buttons[6]?.value ?? 0) * 0x7fff), Math.round((pad.buttons[7]?.value ?? 0) * 0x7fff));
     }
     const state = `${buttons}:${axes}`;
     if (sent.get(port) === state) continue;
@@ -287,8 +283,7 @@ Object.assign(globalThis, {
     adapter: adapter ? adapter.info.description || adapter.info.vendor : "none",
     renderer,
     frames: () => frames,
-    command: (line: string) =>
-      ws.send(JSON.stringify({ type: "command", line })),
+    command: (line: string) => ws.send(JSON.stringify({ type: "command", line })),
     async capture(width = presenter?.width ?? surface?.width ?? 0, height = presenter?.height ?? surface?.height ?? 0) {
       if (!presenter) {
         // the 2D path keeps the converted frame: count its lit pixels and distinct colours

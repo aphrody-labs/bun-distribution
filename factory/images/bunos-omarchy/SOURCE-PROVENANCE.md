@@ -14,8 +14,7 @@ The signed package lock SHA-256 is
 `c4519a9e974feba651ab3175e5c0c0083bae50ef89febf129bc27a4014ea41a6`.
 Those digests were verified against the downloaded files in the owner-managed
 VPS source cache. The manifest identifies Omarchy upstream commit
-`c668141e9c42b13c80c9ca4ea108e11708c5e8a5`, release 4.0.4, package release
-10. This matches the stable recipe pin used by the existing package-only
+`c668141e9c42b13c80c9ca4ea108e11708c5e8a5`, release 4.0.4, package release 10. This matches the stable recipe pin used by the existing package-only
 candidate. Do not substitute the separate `quattro` manual checkout.
 
 The official release root filesystem is `rootfs.ext4.zst` at
@@ -46,4 +45,3 @@ conversion route; c2w v0.8.4 has a separately pinned binary and source
 provenance in [NOTICES.md](NOTICES.md). Its documented GUI limitations mean
 that a c2w graphical desktop remains experimental and must not be advertised
 as supported without a successful end-to-end browser qualification.
-

@@ -5,14 +5,14 @@
 update of a target produces a new SHA-256 and therefore a fresh analysis; earlier builds
 keep their exports.
 
-| Path (`RE_WORK=/home/ubuntu/re/ghidra`) | Content |
-|---|---|
-| `projects/<stem>-<sha12>.gpr` | Ghidra project, saved after auto-analysis (open it in the GUI) |
-| `out/<stem>-<sha12>/functions.csv` | `vaddr,name,source,size,params,cc`, the input of `crates/re` `ghidra_import` |
-| `out/.../functions.jsonl` | signature, namespace, thunk target and callees per function |
-| `out/.../calls.tsv`, `strings.tsv`, `imports.tsv` | call graph, defined strings, external symbols |
-| `out/.../decomp.jsonl` | decompiled C per function (resumable) |
-| `out/.../meta.json`, `state.json` | phase timings, counts, per-SHA status and errors |
+| Path (`RE_WORK=/home/ubuntu/re/ghidra`)           | Content                                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `projects/<stem>-<sha12>.gpr`                     | Ghidra project, saved after auto-analysis (open it in the GUI)               |
+| `out/<stem>-<sha12>/functions.csv`                | `vaddr,name,source,size,params,cc`, the input of `crates/re` `ghidra_import` |
+| `out/.../functions.jsonl`                         | signature, namespace, thunk target and callees per function                  |
+| `out/.../calls.tsv`, `strings.tsv`, `imports.tsv` | call graph, defined strings, external symbols                                |
+| `out/.../decomp.jsonl`                            | decompiled C per function (resumable)                                        |
+| `out/.../meta.json`, `state.json`                 | phase timings, counts, per-SHA status and errors                             |
 
 Every phase is resumable: a restart continues at the first unfinished phase, and decompilation
 skips functions already in `decomp.jsonl`. Stale project locks from a killed run are cleared at

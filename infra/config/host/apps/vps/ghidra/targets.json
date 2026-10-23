@@ -7,9 +7,5 @@
     "/targets/extra/**/*.exe",
     "/targets/extra/**/*.dll"
   ],
-  "exclude": [
-    "*/EasyAntiCheat/*",
-    "*/EpicOnlineServices/*",
-    "*/bin/DBXV2.exe"
-  ]
+  "exclude": ["*/EasyAntiCheat/*", "*/EpicOnlineServices/*", "*/bin/DBXV2.exe"]
 }

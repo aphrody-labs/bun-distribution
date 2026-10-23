@@ -97,16 +97,7 @@
       "sbin": "bin",
       "lib64": "lib"
     },
-    "usrDirectories": [
-      "bin",
-      "lib",
-      "lib32",
-      "include",
-      "share",
-      "local",
-      "src",
-      "libexec"
-    ],
+    "usrDirectories": ["bin", "lib", "lib32", "include", "share", "local", "src", "libexec"],
     "required": [
       "usr/share/licenses",
       "usr/share/man",

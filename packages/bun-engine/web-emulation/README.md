@@ -166,7 +166,7 @@ secondary threads), so melonDS falls back to its software renderer and QPainter 
 
 | Core                                               | Path                         | State                                                                                                    |
 | -------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `dust-nds`                                         | Rust, Bevy on WebGPU         | built candidate; fresh VPS receipt required before packaging                                            |
+| `dust-nds`                                         | Rust, Bevy on WebGPU         | built candidate; fresh VPS receipt required before packaging                                             |
 | `melonds`                                          | Qt 6 + Emscripten (pthreads) | built candidate; browser smoke must pass before packaging                                                |
 | `zakuro-3ds`                                       | Rust, Bevy on WebGPU         | Zakuro ported to wasm32 (in-memory images, no Vulkan/Cranelift/libloading, browser clock); build pending |
 | `azahar`                                           | Qt 6 + Emscripten            | recipe written (interpreter CPU, software renderer, no key blob); not yet run                            |

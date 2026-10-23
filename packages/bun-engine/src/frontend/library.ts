@@ -96,7 +96,12 @@ export function db(): Database {
     source TEXT NOT NULL, size INTEGER NOT NULL, mtime INTEGER NOT NULL, crc TEXT, md5 TEXT, title TEXT, description TEXT,
     developer TEXT, year TEXT, region TEXT, serial TEXT, dat TEXT, route TEXT, favorite INTEGER NOT NULL DEFAULT 0,
     playCount INTEGER NOT NULL DEFAULT 0, lastPlayed TEXT, scan INTEGER NOT NULL DEFAULT 0)`);
-  if (!database.query<{ name: string }, []>("PRAGMA table_info(games)").all().some(column => column.name === "cover"))
+  if (
+    !database
+      .query<{ name: string }, []>("PRAGMA table_info(games)")
+      .all()
+      .some(column => column.name === "cover")
+  )
     database.run("ALTER TABLE games ADD COLUMN cover TEXT");
   database.run("CREATE INDEX IF NOT EXISTS games_system ON games (system)");
   database.run(
@@ -629,7 +634,8 @@ export function listPlayers(): Player[] {
 
 export function addPlayer(name: string): Player {
   const clean = name.trim().replace(/\s+/g, " ");
-  if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,23}$/u.test(clean)) throw new Error("a profile name has 1 to 24 letters or digits");
+  if (!/^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,23}$/u.test(clean))
+    throw new Error("a profile name has 1 to 24 letters or digits");
   db().query("INSERT OR IGNORE INTO players (name) VALUES (?)").run(clean);
   return listPlayers().find(player => player.name === clean)!;
 }
@@ -643,14 +649,20 @@ export function recentGames(profile = "default", limit = 12): Game[] {
        ORDER BY p.last DESC LIMIT ?2`,
     )
     .all(profile, limit);
-  return rows.map(({ profileLast, profileCount, ...game }) => ({ ...game, lastPlayed: profileLast, playCount: profileCount }));
+  return rows.map(({ profileLast, profileCount, ...game }) => ({
+    ...game,
+    lastPlayed: profileLast,
+    playCount: profileCount,
+  }));
 }
 
 /** A game with the play count and last play of one profile (the games columns count every profile). */
 export function profileGame(id: number, profile = "default"): Game {
   const game = gameById(id);
   const own = db()
-    .query<{ n: number; last: string | null }, [number, string]>("SELECT count(*) AS n, max(at) AS last FROM plays WHERE game = ?1 AND profile = ?2")
+    .query<{ n: number; last: string | null }, [number, string]>(
+      "SELECT count(*) AS n, max(at) AS last FROM plays WHERE game = ?1 AND profile = ?2",
+    )
     .get(id, profile)!;
   return { ...game, playCount: own.n, lastPlayed: own.last };
 }

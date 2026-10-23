@@ -7,11 +7,9 @@ import { CHAT_DIGESTS } from "./shenron-chat-recovery";
 const NAME = "aphrody-shenron-chat-base-probe";
 export const BASE_PROBE_MODEL = "qwen3-4b-instruct-2507-no-lora";
 export function baseProbeArgs(image: string, runtime: string, base: string) {
-  if (!/^aphrody:toolbox-[a-f0-9]{12}$/.test(image))
-    throw Error("Immutable toolbox image required");
+  if (!/^aphrody:toolbox-[a-f0-9]{12}$/.test(image)) throw Error("Immutable toolbox image required");
   for (const path of [runtime, base])
-    if (!path.startsWith("/") || /[\r\n:]/.test(path))
-      throw Error("Absolute Linux mount paths required");
+    if (!path.startsWith("/") || /[\r\n:]/.test(path)) throw Error("Absolute Linux mount paths required");
   return [
     "create",
     "--name",
@@ -61,10 +59,7 @@ export function baseProbeArgs(image: string, runtime: string, base: string) {
 }
 async function command(args: string[], optional = false) {
   const p = Bun.spawn(["docker", ...args], { stdout: "pipe", stderr: "pipe" });
-  const [out, code] = await Promise.all([
-    new Response(p.stdout).text(),
-    p.exited,
-  ]);
+  const [out, code] = await Promise.all([new Response(p.stdout).text(), p.exited]);
   if (code && !optional) throw Error(`Docker ${args[0]} failed (${code})`);
   return { out: out.trim(), code };
 }
@@ -104,34 +99,24 @@ async function main() {
     }),
   );
   if (!argv.includes("--apply")) return;
-  if (process.getuid?.() !== 0)
-    throw Error("Apply requires Infra root execution");
+  if (process.getuid?.() !== 0) throw Error("Apply requires Infra root execution");
   const memory = await Bun.file("/proc/meminfo").text();
   const availableKiB = Number(memory.match(/^MemAvailable:\s+(\d+) kB/m)?.[1]);
   if (!Number.isFinite(availableKiB) || availableKiB < 4500 * 1024)
-    throw Error(
-      "Base probe requires 4500 MiB available memory including product headroom",
-    );
+    throw Error("Base probe requires 4500 MiB available memory including product headroom");
   const inputs = await Bun.file(payload).json();
   if (!Array.isArray(inputs) || !inputs.length || inputs.length > 3)
     throw Error("One to three private probe requests required");
   for (const request of inputs)
-    if (
-      !Array.isArray(request.messages) ||
-      request.messages.length > 32 ||
-      request.max_tokens !== 256
-    )
+    if (!Array.isArray(request.messages) || request.messages.length > 32 || request.max_tokens !== 256)
       throw Error("Probe preserves the 256 token budget and bounded messages");
   if (
     (await digest(base)) !== CHAT_DIGESTS.base ||
     (await digest(join(runtime, "llama-server"))) !== CHAT_DIGESTS.server
   )
     throw Error("Pinned base/runtime digest mismatch");
-  if (!(await command(["inspect", NAME], true)).code)
-    throw Error("Probe name is already owned");
-  const live = JSON.parse(
-    (await command(["inspect", "aphrody-shenron-chat-1"])).out,
-  )[0];
+  if (!(await command(["inspect", NAME], true)).code) throw Error("Probe name is already owned");
+  const live = JSON.parse((await command(["inspect", "aphrody-shenron-chat-1"])).out)[0];
   if (live.HostConfig.NanoCpus !== 5_000_000_000)
     throw Error("Expected five-CPU v2 service before reserving one probe CPU");
   const id = live.Id;
@@ -147,7 +132,7 @@ async function main() {
         await fetch("http://127.0.0.1:8800/health", {
           signal: AbortSignal.timeout(2000),
         })
-          .then((r) => r.ok)
+          .then(r => r.ok)
           .catch(() => false)
       )
         break;
@@ -193,8 +178,7 @@ async function main() {
   } finally {
     if (probeId) await command(["rm", "-f", probeId]);
     const current = JSON.parse((await command(["inspect", id])).out)[0];
-    if (current.HostConfig.NanoCpus === 4_000_000_000)
-      await command(["update", "--cpus", "5", id]);
+    if (current.HostConfig.NanoCpus === 4_000_000_000) await command(["update", "--cpus", "5", id]);
     else {
       console.error("Concurrent quota change observed; do not overwrite it");
       process.exitCode = 1;

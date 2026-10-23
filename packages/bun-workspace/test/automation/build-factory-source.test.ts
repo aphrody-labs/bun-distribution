@@ -100,7 +100,8 @@ async function fixture() {
     path: source,
     remote: "origin",
     url: remoteUrl,
-    repositoryName: "yolo", branch: "main",
+    repositoryName: "yolo",
+    branch: "main",
     owners: ["aphrody-labs"],
   };
   const execute = async (command: string) => {
@@ -332,7 +333,8 @@ test("CLI selection rejects an incompatible --no-submodules combination before d
         path: "/source",
         remote: "origin",
         url: "https://github.com/aphrody-labs/yolo.git",
-        repositoryName: "yolo", branch: "main",
+        repositoryName: "yolo",
+        branch: "main",
         owners: ["aphrody-labs"],
       },
       { submodules: ["vendor/bun"], initializeSubmodules: false },

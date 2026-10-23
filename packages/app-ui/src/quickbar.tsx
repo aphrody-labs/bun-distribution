@@ -361,9 +361,7 @@ export function QuickBar() {
           className="flex items-center gap-2 pb-2"
           onMouseDown={event => {
             if (event.button === 0 && event.target === event.currentTarget) {
-              void import("./web-runtime").then(({ getCurrentWindow }) =>
-                getCurrentWindow().startDragging(),
-              );
+              void import("./web-runtime").then(({ getCurrentWindow }) => getCurrentWindow().startDragging());
             }
           }}
         >

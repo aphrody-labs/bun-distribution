@@ -52,8 +52,12 @@ async function file(path: string | undefined): Promise<Response> {
   });
 }
 
-export function serve(port = Number(Bun.env.PORT ?? 8787), options: { privateROM?: { token: string; path: string } } = {}) {
-  if (options.privateROM && !/^[a-f0-9-]{36}$/.test(options.privateROM.token)) throw new Error("Invalid private ROM route token");
+export function serve(
+  port = Number(Bun.env.PORT ?? 8787),
+  options: { privateROM?: { token: string; path: string } } = {},
+) {
+  if (options.privateROM && !/^[a-f0-9-]{36}$/.test(options.privateROM.token))
+    throw new Error("Invalid private ROM route token");
   return Bun.serve({
     port,
     hostname: "127.0.0.1",
@@ -62,9 +66,15 @@ export function serve(port = Number(Bun.env.PORT ?? 8787), options: { privateROM
       let response: Response;
       if (options.privateROM && url.pathname === `/private-rom/${options.privateROM.token}`) {
         if (request.method !== "GET") response = new Response("method not allowed", { status: 405 });
-        else response = new Response(Bun.file(options.privateROM.path), { headers: { "content-type": "application/octet-stream", "cache-control": "no-store", "x-content-type-options": "nosniff" } });
-      }
-      else if (url.pathname === "/favicon.ico") response = new Response(null, { status: 204 });
+        else
+          response = new Response(Bun.file(options.privateROM.path), {
+            headers: {
+              "content-type": "application/octet-stream",
+              "cache-control": "no-store",
+              "x-content-type-options": "nosniff",
+            },
+          });
+      } else if (url.pathname === "/favicon.ico") response = new Response(null, { status: 204 });
       else if (url.pathname === "/api/emulation") response = await file(join(dist, "index.json"));
       else if (url.pathname.startsWith("/emulation/"))
         response = await file(contained(dist, url.pathname.slice("/emulation/".length)));

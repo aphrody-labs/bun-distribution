@@ -21,17 +21,25 @@ export async function verifyQualifiedProduct(
   expected: { target: string; runtime: { sha256: string; revision: string; abi: "gnu" } },
 ) {
   const receipt = await verifyProductPayload(workspace, receiptPath, expected);
-  const qualification = await Bun.file(qualificationPath).json() as ProductQualification;
+  const qualification = (await Bun.file(qualificationPath).json()) as ProductQualification;
   if (
-    qualification.schemaVersion !== 1 || qualification.kind !== "bun-os-product-qualification" ||
-    qualification.passed !== true || qualification.target !== receipt.target ||
+    qualification.schemaVersion !== 1 ||
+    qualification.kind !== "bun-os-product-qualification" ||
+    qualification.passed !== true ||
+    qualification.target !== receipt.target ||
     qualification.sourceRevision !== receipt.sourceRevision ||
     qualification.installedTreeSHA256 !== receipt.installedTreeSHA256 ||
     qualification.installedModesSHA256 !== receipt.installedModesSHA256 ||
     qualification.runtimeSHA256 !== receipt.runtime.sha256 ||
-    !Array.isArray(qualification.gates) || !qualification.gates.includes("product-cli") ||
-    !qualification.gates.includes("cli-wasm") || !qualification.gates.includes("ffi") ||
-    !qualification.gates.includes("agent-plugin") || !qualification.gates.includes("mcp")
-  ) throw new Error("Product payload requires passed CLI, CLI-WASM, FFI, agent-plugin and MCP gates bound to its source, runtime and installed tree");
+    !Array.isArray(qualification.gates) ||
+    !qualification.gates.includes("product-cli") ||
+    !qualification.gates.includes("cli-wasm") ||
+    !qualification.gates.includes("ffi") ||
+    !qualification.gates.includes("agent-plugin") ||
+    !qualification.gates.includes("mcp")
+  )
+    throw new Error(
+      "Product payload requires passed CLI, CLI-WASM, FFI, agent-plugin and MCP gates bound to its source, runtime and installed tree",
+    );
   return { receipt, qualification };
 }

@@ -14,12 +14,10 @@ interface ToolBin {
 /** Every `bin` of every workspace package: the `tool` group is discovered, never hard-coded. */
 async function discoverTools(): Promise<ToolBin[]> {
   const out: ToolBin[] = [];
-  const workspace = await Bun.file(join(root, "package.json")).json() as {
+  const workspace = (await Bun.file(join(root, "package.json")).json()) as {
     workspaces?: string[] | { packages?: string[] };
   };
-  const members = Array.isArray(workspace.workspaces)
-    ? workspace.workspaces
-    : workspace.workspaces?.packages ?? [];
+  const members = Array.isArray(workspace.workspaces) ? workspace.workspaces : (workspace.workspaces?.packages ?? []);
   const manifests = new Set<string>();
   for (const member of members) {
     for await (const file of new Bun.Glob(`${member.replace(/\/$/, "")}/package.json`).scan({ cwd: root }))

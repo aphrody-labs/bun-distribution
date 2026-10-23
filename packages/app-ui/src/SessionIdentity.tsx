@@ -2,10 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@aphrody/m3-primitives";
 import { aphrodyRpc, ensureAphrodyInitialized } from "./tauri-bridge";
-import {
-  readSessionIdentity,
-  type SessionIdentity as Identity,
-} from "./session-identity";
+import { readSessionIdentity, type SessionIdentity as Identity } from "./session-identity";
 
 /** Identity is read from the actual session broker; it never opens a second notification consumer. */
 export function SessionIdentity() {
@@ -17,10 +14,7 @@ export function SessionIdentity() {
     const current = ++generation.current;
     setPending(true);
     try {
-      const value = await readSessionIdentity(
-        ensureAphrodyInitialized,
-        aphrodyRpc,
-      );
+      const value = await readSessionIdentity(ensureAphrodyInitialized, aphrodyRpc);
       if (current !== generation.current) return;
       setIdentity(value);
       setError("");
@@ -35,10 +29,7 @@ export function SessionIdentity() {
     } catch (failure) {
       if (current !== generation.current) return;
       setIdentity(undefined);
-      const message =
-        failure instanceof Error
-          ? failure.message
-          : "Session service unavailable.";
+      const message = failure instanceof Error ? failure.message : "Session service unavailable.";
       setError(message);
       if (notify) toast.error(message);
     } finally {
@@ -65,11 +56,7 @@ export function SessionIdentity() {
       type="button"
       disabled={pending}
       onClick={() => void refresh(true)}
-      title={
-        error
-          ? `${error} Click to retry.`
-          : "Identity reported by the Aphrody session service. Click to refresh."
-      }
+      title={error ? `${error} Click to retry.` : "Identity reported by the Aphrody session service. Click to refresh."}
       className="flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-label-medium text-on-surface-variant hover:bg-surface-container-high disabled:opacity-60"
       aria-label={`${label}. Refresh session status`}
     >

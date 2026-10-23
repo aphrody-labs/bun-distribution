@@ -117,7 +117,8 @@ export function readShellSettings(): Record<ShellSetting, string> {
 export function writeShellSetting(name: string, value: string): Record<ShellSetting, string> {
   const spec = shellSettings[name as ShellSetting];
   if (!spec) throw new Error(`unknown setting ${name}`);
-  if (!(spec.values as readonly string[]).includes(value)) throw new Error(`${name} is one of ${spec.values.join(", ")}`);
+  if (!(spec.values as readonly string[]).includes(value))
+    throw new Error(`${name} is one of ${spec.values.join(", ")}`);
   const db = openProfiles();
   try {
     db.query(

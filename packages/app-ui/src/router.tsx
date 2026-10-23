@@ -16,11 +16,7 @@ import { CreatorRoute } from "./routes/creator";
 import { ExplorerView } from "./routes/explorer";
 import { RecentsView } from "./routes/explorer/views/RecentsView";
 import { FileKindsView, FileKindResultsView } from "./routes/file-kinds";
-import {
-  AtRiskFiles,
-  CompareVolumes,
-  RedundancyDashboard,
-} from "./routes/redundancy";
+import { AtRiskFiles, CompareVolumes, RedundancyDashboard } from "./routes/redundancy";
 import { Settings } from "./routes/settings";
 import { SourcesHome } from "./routes/sources";
 import { SourceDetail } from "./routes/sources/SourceDetail";

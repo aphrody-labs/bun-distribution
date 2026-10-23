@@ -17,8 +17,7 @@ import { productBuildContext } from "@aphrody/product/build-inputs";
 import { normalizeAppBase } from "./src/app-base";
 import { stageWebOsNotices } from "../webos-wasm/stage-notices";
 const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
-const escape = (value: string) =>
-  value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
+const escape = (value: string) => value.replace(/[&<>"']/g, character => `&#${character.charCodeAt(0)};`);
 
 if (import.meta.main) {
   const context = productBuildContext(process.env, import.meta.dir);
@@ -36,9 +35,7 @@ if (import.meta.main) {
   const outdir = resolve(values.out ?? join(import.meta.dir, "dist"));
   const base = normalizeAppBase(values.base ?? "/");
   if (values["public-assets"] && !values.out)
-    throw new Error(
-      "--public-assets requires an isolated --out artifact directory",
-    );
+    throw new Error("--public-assets requires an isolated --out artifact directory");
   const assets = values["public-assets"]
     ? ((await Bun.file(context.publicAssets).json()) as {
         schemaVersion: number;
@@ -46,42 +43,24 @@ if (import.meta.main) {
         localFontFallbacks: string[];
       })
     : undefined;
-  if (
-    assets &&
-    (assets.schemaVersion !== 1 ||
-      assets.baseUrl !== "https://assets.aphrody.app")
-  )
+  if (assets && (assets.schemaVersion !== 1 || assets.baseUrl !== "https://assets.aphrody.app"))
     throw new Error("Unqualified public assets configuration");
   // Bun OS is the single source of truth for every input: the revision is this repository HEAD.
   const bunCheckout = resolve(import.meta.dir, "../..");
   const sourceRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
     cwd: bunCheckout,
   });
-  if (sourceRevision.exitCode !== 0)
-    throw new Error("Canonical Bun checkout must have a source revision");
+  if (sourceRevision.exitCode !== 0) throw new Error("Canonical Bun checkout must have a source revision");
   const bunRevision = sourceRevision.stdout.toString().trim();
-  if (
-    Bun.env.APP_UI_BUN_REVISION &&
-    Bun.env.APP_UI_BUN_REVISION !== bunRevision
-  )
-    throw new Error(
-      "Selected Bun revision must match the canonical checkout HEAD",
-    );
+  if (Bun.env.APP_UI_BUN_REVISION && Bun.env.APP_UI_BUN_REVISION !== bunRevision)
+    throw new Error("Selected Bun revision must match the canonical checkout HEAD");
   const docsFile = resolve(import.meta.dir, "../../build/docs-catalog.json");
-  if (!(await Bun.file(docsFile).exists()))
-    await import("./scripts/docs-catalog.ts");
-  if (
-    Bun.env.APP_UI_DOCS_CATALOG &&
-    resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile)
-  )
-    throw new Error(
-      "APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt",
-    );
+  if (!(await Bun.file(docsFile).exists())) await import("./scripts/docs-catalog.ts");
+  if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
+    throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
   // Check both outputs before bundling imports the generated wasm-bindgen glue.
   // This build does not start a competing native compiler implicitly.
-  const webosPackage = dirname(
-    dirname(fileURLToPath(import.meta.resolve("@aphrody/webos-wasm"))),
-  );
+  const webosPackage = dirname(dirname(fileURLToPath(import.meta.resolve("@aphrody/webos-wasm"))));
   const webosWasm = join(webosPackage, "wasm", WEBOS_WASM_NAME);
   const webosGlue = join(dirname(webosWasm), "aphrody_webos_wasm.js");
   for (const artifact of [webosGlue, webosWasm]) {
@@ -105,35 +84,25 @@ if (import.meta.main) {
     // Browser and native hosts consume the same fixed App UI artifact layout.
     tauri: { uiDist: outdir },
     plugin: false,
-    plugins: [
-      m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }),
-      undeclaredDependencies,
-    ],
+    plugins: [m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }), undeclaredDependencies],
     cwd: config.dir,
   });
   // The Rust WebAssembly backend ships next to app.js.
-  await Bun.write(
-    join(result.outdir, "wasm", WEBOS_WASM_NAME),
-    Bun.file(webosWasm),
-  );
-  await Bun.write(
-    join(result.outdir, "wasm", "LICENSE-APACHE"),
-    Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")),
-  );
+  await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
+  await Bun.write(join(result.outdir, "wasm", "LICENSE-APACHE"), Bun.file(join(dirname(webosWasm), "LICENSE-APACHE")));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   // Preserve the bundler's rewritten script, stylesheet and asset references.
-  let shell = (
-    await Bun.file(join(result.outdir, TAURI_LAYOUT.html)).text()
-  ).replace('<base href="/"', `<base href="${base}"`);
+  let shell = (await Bun.file(join(result.outdir, TAURI_LAYOUT.html)).text()).replace(
+    '<base href="/"',
+    `<base href="${base}"`,
+  );
   await Bun.write(join(result.outdir, "index.html"), shell);
   if (values.out) {
     // Web artifacts keep stable file names: version the entry URLs in the no-cache shell so a
     // deployment never pairs a cached app.js (wasm-bindgen glue) with a newer .wasm.
     const hasher = new Bun.CryptoHasher("sha256");
     const parts = await Promise.all(
-      ["app.js", "app.css", join("wasm", WEBOS_WASM_NAME)].map((file) =>
-        Bun.file(join(result.outdir, file)).bytes(),
-      ),
+      ["app.js", "app.css", join("wasm", WEBOS_WASM_NAME)].map(file => Bun.file(join(result.outdir, file)).bytes()),
     );
     for (const part of parts) hasher.update(part);
     const version = hasher.digest("hex").slice(0, 12);
@@ -151,12 +120,7 @@ if (import.meta.main) {
     await Bun.write(
       join(result.outdir, "fonts.css"),
       ["core", "jp"]
-        .map((sheet) =>
-          renderPublicStylesheet(
-            assets.baseUrl,
-            sheet as "core" | "jp" | "symbols",
-          ),
-        )
+        .map(sheet => renderPublicStylesheet(assets.baseUrl, sheet as "core" | "jp" | "symbols"))
         .join("\n"),
     );
     await Bun.write(
@@ -182,8 +146,7 @@ if (import.meta.main) {
       sass: false,
     }),
   );
-  const { ProductSearchHome } =
-    await import("./src/routes/product/ProductSearchHome");
+  const { ProductSearchHome } = await import("./src/routes/product/ProductSearchHome");
   const home = renderToStaticMarkup(
     createElement(
       MemoryRouter,
@@ -195,20 +158,13 @@ if (import.meta.main) {
     ),
   ).replaceAll(
     /(?<![:\w/\\])(?:[A-Za-z]:[\\/]|\/)[^"<>]*?([\\/])(?:icon-(?:64|128|192)\.png|spritesheet\.webp)/g,
-    (path) => `./fonts/${path.split(/[\\/]/).pop()}`,
+    path => `./fonts/${path.split(/[\\/]/).pop()}`,
   );
   await Promise.all(
-    ["icon-64.png", "icon-128.png", "icon-192.png", "spritesheet.webp"].map(
-      async (name) => {
-        const source = join(
-          import.meta.dir,
-          "../identity",
-          name === "spritesheet.webp" ? "dist" : "assets",
-          name,
-        );
-        await Bun.write(join(result.outdir, "fonts", name), Bun.file(source));
-      },
-    ),
+    ["icon-64.png", "icon-128.png", "icon-192.png", "spritesheet.webp"].map(async name => {
+      const source = join(import.meta.dir, "../identity", name === "spritesheet.webp" ? "dist" : "assets", name);
+      await Bun.write(join(result.outdir, "fonts", name), Bun.file(source));
+    }),
   );
   const publicHome = shell
     .replace(
@@ -226,7 +182,7 @@ if (import.meta.main) {
   }> = JSON.parse(docsBytes);
   await Bun.write(join(result.outdir, "public-docs.json"), docsBytes);
   await Promise.all(
-    docs.map(async (article) => {
+    docs.map(async article => {
       const prose = Bun.markdown
         .html(article.content)
         .replace(/<h1([^>]*)>/g, '<h1$1 class="text-headline-large">')
@@ -242,10 +198,7 @@ if (import.meta.main) {
           '<div id="root"></div>',
           `<div id="root"><main class="min-h-screen bg-surface p-6 text-on-surface"><nav class="mx-auto mb-8 flex max-w-3xl flex-wrap gap-6"><a class="text-primary underline" href="/">Aphrody</a><a class="text-primary underline" href="/docs">Bun documentation</a><a class="text-primary underline" href="/os">Open Aphrody OS</a></nav><article class="mx-auto max-w-3xl space-y-6 text-body-large">${prose}</article></main></div>`,
         );
-      await Bun.write(
-        join(result.outdir, "public-docs", article.id + ".html"),
-        document,
-      );
+      await Bun.write(join(result.outdir, "public-docs", article.id + ".html"), document);
     }),
   );
   console.log(

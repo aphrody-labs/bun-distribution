@@ -6,12 +6,12 @@ repository-relative. Search the matching data with `--stack m3`, `--stack rg-ui`
 
 ## Which layer to use
 
-| Building | Use | Why |
-| --- | --- | --- |
-| Rose Griffon, Azalée or Achilléa web surfaces | `@rosegriffon/ui` (`packages/rg-ui`) + `@rosegriffon/app-shell` (`packages/rg-app-shell`) | Owns the five chrome themes, the shadcn bridge, Base UI components and the shared navigation chrome |
-| A new Aphrody/Bun app without a Rose Griffon brand | `@aphrody/m3*` (`packages/m3*`) | Material 3 tokens, Tailwind preset, Base UI wrappers, Next 16 integration, all generated from `crates/ui/m3-tokens` |
-| A web-component UI (Lit, `md-*`) | `@aphrody/material-web` fork (`vendor/material-web`) + `@aphrody/m3-react` | 119 `md-*` elements with React wrappers |
-| Any Tailwind v4 build on Bun | `@aphrody/bun-plugin-tailwind` (`toolchains/bun/packages/bun-plugin-tailwind`) | `Bun.build`, `Bun.serve` HTML imports, dev server and a PostCSS entry for Next; `theme: "m3"` preset |
+| Building                                           | Use                                                                                       | Why                                                                                                                 |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Rose Griffon, Azalée or Achilléa web surfaces      | `@rosegriffon/ui` (`packages/rg-ui`) + `@rosegriffon/app-shell` (`packages/rg-app-shell`) | Owns the five chrome themes, the shadcn bridge, Base UI components and the shared navigation chrome                 |
+| A new Aphrody/Bun app without a Rose Griffon brand | `@aphrody/m3*` (`packages/m3*`)                                                           | Material 3 tokens, Tailwind preset, Base UI wrappers, Next 16 integration, all generated from `crates/ui/m3-tokens` |
+| A web-component UI (Lit, `md-*`)                   | `@aphrody/material-web` fork (`vendor/material-web`) + `@aphrody/m3-react`                | 119 `md-*` elements with React wrappers                                                                             |
+| Any Tailwind v4 build on Bun                       | `@aphrody/bun-plugin-tailwind` (`toolchains/bun/packages/bun-plugin-tailwind`)            | `Bun.build`, `Bun.serve` HTML imports, dev server and a PostCSS entry for Next; `theme: "m3"` preset                |
 
 rg-ui is itself built on the M3 tokens (`@aphrody/m3-tokens` dependency): its themes declare
 `--md-sys-color-*` roles and map shadcn variables onto them, so both vocabularies work inside it.
@@ -62,14 +62,14 @@ rg-ui is itself built on the M3 tokens (`@aphrody/m3-tokens` dependency): its th
 
 ## Themes and selectors
 
-| Brand ID (brands.csv) | Selector | Scheme | Source of effective values |
-| --- | --- | --- | --- |
-| `rose-griffon-roy` | `.theme-roy`, `.roy` | light | `packages/rg-ui/src/styles.css` (default of rg-website) |
-| `rose-griffon-gaelle` | `.theme-gaelle`, `.gaelle` | light | `packages/rg-ui/src/styles.css` |
-| `rose-griffon-light` / `-dark` | `.theme-rg`, `.theme-rg-dark` | light / dark | `packages/rg-ui/src/brands.css` (not in the switcher yet) |
-| `azalee-light` / `azalee-dark` | `.theme-azalee-light`/`.azalee-light`, `.theme-azalee-dark`/`.azalee-dark` | light / dark | `packages/rg-ui/src/brands.css` |
-| `achillea` | `.theme-achillea`, `.achillea` | dark | `packages/rg-ui/src/brands.css` |
-| `m3-baseline-light` / `-dark` | `:root`, `.dark` | light / dark | `packages/m3-theme/tokens.css` |
+| Brand ID (brands.csv)          | Selector                                                                   | Scheme       | Source of effective values                                |
+| ------------------------------ | -------------------------------------------------------------------------- | ------------ | --------------------------------------------------------- |
+| `rose-griffon-roy`             | `.theme-roy`, `.roy`                                                       | light        | `packages/rg-ui/src/styles.css` (default of rg-website)   |
+| `rose-griffon-gaelle`          | `.theme-gaelle`, `.gaelle`                                                 | light        | `packages/rg-ui/src/styles.css`                           |
+| `rose-griffon-light` / `-dark` | `.theme-rg`, `.theme-rg-dark`                                              | light / dark | `packages/rg-ui/src/brands.css` (not in the switcher yet) |
+| `azalee-light` / `azalee-dark` | `.theme-azalee-light`/`.azalee-light`, `.theme-azalee-dark`/`.azalee-dark` | light / dark | `packages/rg-ui/src/brands.css`                           |
+| `achillea`                     | `.theme-achillea`, `.achillea`                                             | dark         | `packages/rg-ui/src/brands.css`                           |
+| `m3-baseline-light` / `-dark`  | `:root`, `.dark`                                                           | light / dark | `packages/m3-theme/tokens.css`                            |
 
 - The class goes on `<html>`; an inline script first in `<head>` (`SCRIPT_THEME`,
   `apps/rg-website/src/app/layout.tsx`) applies the `rg-theme` value before paint, then
@@ -92,7 +92,7 @@ scope; Achilléa uses `@font-face` families in `apps/rg-website/src/app/achillea
 /* apps/rg-website/src/app/globals.css */
 @import "tailwindcss" source("../.."); /* the build may run from the monorepo root */
 @import "@rosegriffon/ui/styles.css";
-@source "../../../../packages/rg-ui/src";       /* symlinked workspace sources are not detected */
+@source "../../../../packages/rg-ui/src"; /* symlinked workspace sources are not detected */
 @source "../../../../packages/rg-app-shell/src";
 @plugin "@tailwindcss/typography";
 ```

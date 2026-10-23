@@ -36,8 +36,7 @@ export function parseArgs(argv: string[]) {
         throw new Error("Base image must be pinned by registry digest");
       options.base = value;
     } else if (flag === "--ship") {
-      if (!/^[A-Za-z0-9_.-]+$/.test(value))
-        throw new Error(`invalid host: ${value}`);
+      if (!/^[A-Za-z0-9_.-]+$/.test(value)) throw new Error(`invalid host: ${value}`);
       options.ship.push(value);
     } else throw new Error(`unknown option: ${flag}`);
   }
@@ -46,19 +45,14 @@ export function parseArgs(argv: string[]) {
 
 export function toolboxTag(binaryDigest: string, base?: string): string {
   const digest = base
-    ? new Bun.CryptoHasher("sha256")
-        .update(binaryDigest)
-        .update("\n")
-        .update(base)
-        .digest("hex")
+    ? new Bun.CryptoHasher("sha256").update(binaryDigest).update("\n").update(base).digest("hex")
     : binaryDigest;
   return `toolbox-${digest.slice(0, 12)}`;
 }
 
 function run(cmd: string[], cwd = ROOT): string {
   const r = Bun.spawnSync(cmd, { cwd, stdout: "pipe", stderr: "inherit" });
-  if (r.exitCode !== 0)
-    throw new Error(`${cmd.slice(0, 3).join(" ")} failed (${r.exitCode})`);
+  if (r.exitCode !== 0) throw new Error(`${cmd.slice(0, 3).join(" ")} failed (${r.exitCode})`);
   return r.stdout.toString();
 }
 
@@ -71,8 +65,7 @@ if (import.meta.main) {
     // aphrody-sync replaces the binary by rename: hash the staged copy, not the live path.
     await copyFile(binary, join(stage, "aphrody"));
     const hasher = new Bun.CryptoHasher("sha256");
-    for await (const chunk of Bun.file(join(stage, "aphrody")).stream())
-      hasher.update(chunk);
+    for await (const chunk of Bun.file(join(stage, "aphrody")).stream()) hasher.update(chunk);
     tag = toolboxTag(hasher.digest("hex"), base);
     run([
       "docker",
@@ -89,32 +82,17 @@ if (import.meta.main) {
     rmSync(stage, { recursive: true, force: true });
   }
   for (const host of ship) {
-    const present = Bun.spawnSync(
-      [
-        "ssh",
-        "-o",
-        "BatchMode=yes",
-        host,
-        `docker image inspect -f . aphrody:${tag}`,
-      ],
-      {
-        stdout: "ignore",
-        stderr: "ignore",
-      },
-    );
+    const present = Bun.spawnSync(["ssh", "-o", "BatchMode=yes", host, `docker image inspect -f . aphrody:${tag}`], {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
     if (present.exitCode !== 0)
       run([
         "sh",
         "-c",
         `docker save aphrody:${tag} | gzip -1 | ssh -o BatchMode=yes ${host} 'gunzip | docker load -q'`,
       ]);
-    run([
-      "ssh",
-      "-o",
-      "BatchMode=yes",
-      host,
-      `docker tag aphrody:${tag} aphrody:toolbox`,
-    ]);
+    run(["ssh", "-o", "BatchMode=yes", host, `docker tag aphrody:${tag} aphrody:toolbox`]);
     console.log(`${host}: aphrody:${tag} -> aphrody:toolbox`);
   }
   console.log(`aphrody:${tag}`);

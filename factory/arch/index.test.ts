@@ -21,9 +21,9 @@ test("loads only source catalogs selected by the profile", async () => {
 
 test("rejects unknown or duplicated source catalog identifiers", async () => {
   const loader = async () => ({ id: "cachyos" });
-  await expect(
-    loadSelectedSourceCatalogs(["missing"], { cachyos: loader }),
-  ).rejects.toThrow("Unknown Arch source catalog: missing");
+  await expect(loadSelectedSourceCatalogs(["missing"], { cachyos: loader })).rejects.toThrow(
+    "Unknown Arch source catalog: missing",
+  );
   await expect(
     loadSelectedSourceCatalogs(["cachyos", "cachyos"], {
       cachyos: loader,

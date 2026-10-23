@@ -127,9 +127,7 @@ await Bun.write(resolve(outDir, "LICENSE"), license);
 
 const vendorLock = Bun.file(resolve(root, "vendor.lock"));
 const hasVendorLock = await vendorLock.exists();
-const vendor: { sources: { name: string; sha: string }[] } = hasVendorLock
-  ? await vendorLock.json()
-  : { sources: [] };
+const vendor: { sources: { name: string; sha: string }[] } = hasVendorLock ? await vendorLock.json() : { sources: [] };
 // The canonical distribution pins imported owners as flat Git submodules rather than vendor.lock.
 if (!hasVendorLock) {
   const tree = await git("ls-tree", "-r", "HEAD", "--", "vendor", "toolchains", "crates", "packages", "apps");

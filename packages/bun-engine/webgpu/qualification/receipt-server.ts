@@ -29,13 +29,9 @@ Bun.serve({
       "access-control-max-age": "600",
     };
     const url = new URL(request.url);
-    if (request.method === "OPTIONS")
-      return new Response(null, { status: 204, headers: cors });
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (request.method === "GET" && url.pathname === "/health") {
-      return Response.json(
-        { ok: true, acceptedReceipts: receipts.length },
-        { headers: cors },
-      );
+      return Response.json({ ok: true, acceptedReceipts: receipts.length }, { headers: cors });
     }
     if (request.method !== "POST" || url.pathname !== "/receipt") {
       return new Response("not found", { status: 404, headers: cors });
@@ -59,16 +55,9 @@ Bun.serve({
     const receipt = parsed;
     receipts.push(receipt);
     if (receipts.length > 16) receipts.shift();
-    console.log(
-      JSON.stringify({ receivedAt: new Date().toISOString(), receipt }),
-    );
-    return Response.json(
-      { accepted: true, index: receipts.length - 1 },
-      { headers: cors },
-    );
+    console.log(JSON.stringify({ receivedAt: new Date().toISOString(), receipt }));
+    return Response.json({ accepted: true, index: receipts.length - 1 }, { headers: cors });
   },
 });
 
-console.log(
-  "WebX qualification receipt collector listening on http://127.0.0.1:4540",
-);
+console.log("WebX qualification receipt collector listening on http://127.0.0.1:4540");

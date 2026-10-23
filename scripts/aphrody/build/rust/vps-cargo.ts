@@ -820,8 +820,9 @@ async function fetchArtifact(config: VpsCargoConfig, args: readonly string[], ro
   // Non-executable artifacts and target-qualified binaries are copies, not local programs to execute.
   // In particular, a Linux ELF fetched by the Windows workstation must be qualified on the VPS/container.
   const targetParts = target?.split("-") ?? [];
-  const targetOS = ["android", "windows", "darwin", "freebsd", "linux"].find((part) => targetParts.includes(part));
-  const localOS = process.platform === "win32" ? "windows" : process.platform === "darwin" ? "darwin" : process.platform;
+  const targetOS = ["android", "windows", "darwin", "freebsd", "linux"].find(part => targetParts.includes(part));
+  const localOS =
+    process.platform === "win32" ? "windows" : process.platform === "darwin" ? "darwin" : process.platform;
   const targetArch = targetParts[0];
   const localArch = process.arch === "x64" ? "x86_64" : process.arch === "arm64" ? "aarch64" : process.arch;
   if (

@@ -27,14 +27,20 @@ export function serveRetroArch(options: ServeOptions = {}) {
   const saves = options.profile ? prepareProfileSaves(home, options.profile) : undefined;
   const ra = RetroArch.open(
     saves
-      ? { ...options, config: { ...options.config, savestate_directory: saves.states, screenshot_directory: saves.screenshots } }
+      ? {
+          ...options,
+          config: { ...options.config, savestate_directory: saves.states, screenshot_directory: saves.screenshots },
+        }
       : options,
   );
   const clients = new Set<ServerWebSocket<unknown>>();
   const samples = new Float32Array(16384);
   let lastSerial = -1n;
   let running = true;
-  const folders = { states: saves?.states ?? join(home, "states"), screenshots: saves?.screenshots ?? join(home, "screenshots") };
+  const folders = {
+    states: saves?.states ?? join(home, "states"),
+    screenshots: saves?.screenshots ?? join(home, "screenshots"),
+  };
   // The newest file RetroArch wrote under the states/screenshots folder since `since`: the proof
   // a quick-menu action did something, since SAVE_STATE and SCREENSHOT answer nothing themselves.
   function written(sub: "states" | "screenshots", since: number): string | undefined {
@@ -53,8 +59,7 @@ export function serveRetroArch(options: ServeOptions = {}) {
     port: options.port ?? 0,
     routes: { "/": page },
     fetch(request, server) {
-      if (new URL(request.url).pathname === "/ws" && server.upgrade(request))
-        return;
+      if (new URL(request.url).pathname === "/ws" && server.upgrade(request)) return;
       return new Response("not found", { status: 404 });
     },
     websocket: {
@@ -69,8 +74,7 @@ export function serveRetroArch(options: ServeOptions = {}) {
       },
       message(_ws, raw) {
         const message = JSON.parse(String(raw)) as ClientMessage;
-        if (message.type === "joypad")
-          ra.joypad(message.port, message.buttons, message.axes);
+        if (message.type === "joypad") ra.joypad(message.port, message.buttons, message.axes);
         else if (message.type === "command") {
           const line = message.line.trim().toUpperCase();
           const since = Date.now() - 50;
@@ -81,14 +85,26 @@ export function serveRetroArch(options: ServeOptions = {}) {
           }
           ra.command(message.line);
           // the reply (status) reaches the sender a moment later; files are checked after RetroArch wrote them
-          setTimeout(() => {
-            if (!running) return;
-            _ws.send(JSON.stringify({ type: "reply", id: message.id, line: message.line, text: ra.replies() }));
-            if (sub) {
-              const file = written(sub, since);
-              _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: Boolean(file), text: file ?? "nothing was written" }));
-            } else if (line === "LOAD_STATE") _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: true, text: "state loaded" }));
-          }, sub ? 600 : 150);
+          setTimeout(
+            () => {
+              if (!running) return;
+              _ws.send(JSON.stringify({ type: "reply", id: message.id, line: message.line, text: ra.replies() }));
+              if (sub) {
+                const file = written(sub, since);
+                _ws.send(
+                  JSON.stringify({
+                    type: "result",
+                    id: message.id,
+                    line,
+                    ok: Boolean(file),
+                    text: file ?? "nothing was written",
+                  }),
+                );
+              } else if (line === "LOAD_STATE")
+                _ws.send(JSON.stringify({ type: "result", id: message.id, line, ok: true, text: "state loaded" }));
+            },
+            sub ? 600 : 150,
+          );
         } else if (message.type === "pause") {
           if (message.paused !== ra.status().paused) ra.command("PAUSE_TOGGLE");
           // report what RetroArch says after it applied the toggle, not what was asked
@@ -101,9 +117,7 @@ export function serveRetroArch(options: ServeOptions = {}) {
   // a client that falls behind drops frames instead of queueing them
   const BACKLOG = 4 << 20;
   function send(bytes: Uint8Array, droppable = false) {
-    for (const ws of clients)
-      if (!droppable || ws.getBufferedAmount() < BACKLOG)
-        ws.sendBinary(bytes, true);
+    for (const ws of clients) if (!droppable || ws.getBufferedAmount() < BACKLOG) ws.sendBinary(bytes, true);
   }
 
   function step() {
@@ -129,10 +143,7 @@ export function serveRetroArch(options: ServeOptions = {}) {
       const view = new DataView(out.buffer);
       view.setUint8(0, Message.Audio);
       view.setUint32(4, ra.status().audioRate, true);
-      out.set(
-        new Uint8Array(audio.buffer, audio.byteOffset, audio.byteLength),
-        AUDIO_HEADER,
-      );
+      out.set(new Uint8Array(audio.buffer, audio.byteOffset, audio.byteLength), AUDIO_HEADER);
       send(out);
     }
   }

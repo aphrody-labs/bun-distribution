@@ -105,7 +105,12 @@ Object.assign(globalThis, {
         peak = Math.max(peak, Math.abs(data[i]!));
         sum += data[i]! * data[i]!;
       }
-      return { cue, seconds: Number(length.toFixed(3)), peak: Number(peak.toFixed(4)), rms: Number(Math.sqrt(sum / live).toFixed(4)) };
+      return {
+        cue,
+        seconds: Number(length.toFixed(3)),
+        peak: Number(peak.toFixed(4)),
+        rms: Number(Math.sqrt(sum / live).toFixed(4)),
+      };
     },
   },
 });

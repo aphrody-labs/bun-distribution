@@ -15,14 +15,14 @@ the Bun OS changes. Retain both when moving or redistributing these files.
 The skills call Bun, not Python. The original standard-library Python tools
 stay beside their skills as the upstream reference.
 
-| Skill                  | Command                                              | Source                              |
-| ---------------------- | ---------------------------------------------------- | ----------------------------------- |
-| `replica-design`       | `m3-design contrast replica/design/tokens.json`      | `packages/m3-design/src/contrast.ts` |
-| `replica-diff`         | `m3-design parity replica/features.csv`              | `packages/m3-design/src/parity.ts`  |
-| `replica-diff`         | `m3-design imgdiff original.png clone.png`           | `packages/m3-design/src/imgdiff.ts` |
-| `replica-brand`        | `bun sweep.ts . --config replica/brand.json`         | `skills/replica-brand/sweep.ts`     |
-| `replica-launch`       | `bun listing.ts replica/launch/listing.json`         | `skills/replica-launch/listing.ts`  |
-| `replica-entrepreneur` | `bun reviews.ts replica/reviews.csv`                 | `skills/replica-entrepreneur/reviews.ts` |
+| Skill                  | Command                                         | Source                                   |
+| ---------------------- | ----------------------------------------------- | ---------------------------------------- |
+| `replica-design`       | `m3-design contrast replica/design/tokens.json` | `packages/m3-design/src/contrast.ts`     |
+| `replica-diff`         | `m3-design parity replica/features.csv`         | `packages/m3-design/src/parity.ts`       |
+| `replica-diff`         | `m3-design imgdiff original.png clone.png`      | `packages/m3-design/src/imgdiff.ts`      |
+| `replica-brand`        | `bun sweep.ts . --config replica/brand.json`    | `skills/replica-brand/sweep.ts`          |
+| `replica-launch`       | `bun listing.ts replica/launch/listing.json`    | `skills/replica-launch/listing.ts`       |
+| `replica-entrepreneur` | `bun reviews.ts replica/reviews.csv`            | `skills/replica-entrepreneur/reviews.ts` |
 
 `m3-design` runs as `bun run bunos design` from a Bun OS checkout root, or as
 `bunx @aphrody/m3-design` elsewhere. The design tools are also served by the

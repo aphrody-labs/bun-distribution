@@ -39,8 +39,7 @@ type WordCraftConnection = {
   key: string;
 };
 
-export type CraftControlConnection =
-  UnauthenticatedConnection | PhotoCraftConnection | WordCraftConnection;
+export type CraftControlConnection = UnauthenticatedConnection | PhotoCraftConnection | WordCraftConnection;
 
 export interface CraftControlOptions {
   /** Defaults to 30 seconds; capped at two minutes. */
@@ -123,27 +122,15 @@ function assertConnection(connection: CraftControlConnection): void {
   }
   if (connection.libraryId === "photocraft") {
     if (!connection.token)
-      throw new CraftControlError(
-        "MISSING_CREDENTIAL",
-        "PhotoCraft control requires this instance's token.",
-      );
+      throw new CraftControlError("MISSING_CREDENTIAL", "PhotoCraft control requires this instance's token.");
     if (!TOKEN_PATTERN.test(connection.token))
-      throw new CraftControlError(
-        "INVALID_CREDENTIAL",
-        "PhotoCraft token must be 64 hexadecimal characters.",
-      );
+      throw new CraftControlError("INVALID_CREDENTIAL", "PhotoCraft token must be 64 hexadecimal characters.");
   }
   if (connection.libraryId === "wordcraft") {
     if (!connection.key)
-      throw new CraftControlError(
-        "MISSING_CREDENTIAL",
-        "WordCraft control requires this instance's key.",
-      );
+      throw new CraftControlError("MISSING_CREDENTIAL", "WordCraft control requires this instance's key.");
     if (!TOKEN_PATTERN.test(connection.key))
-      throw new CraftControlError(
-        "INVALID_CREDENTIAL",
-        "WordCraft key must be 64 hexadecimal characters.",
-      );
+      throw new CraftControlError("INVALID_CREDENTIAL", "WordCraft key must be 64 hexadecimal characters.");
   }
 }
 
@@ -153,24 +140,10 @@ function assertOptions(options: CraftControlOptions): {
 } {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxResponseBytes = options.maxResponseBytes ?? DEFAULT_RESPONSE_BYTES;
-  if (
-    !Number.isSafeInteger(timeoutMs) ||
-    timeoutMs < 1 ||
-    timeoutMs > MAX_TIMEOUT_MS
-  )
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control timeout must be between 1 ms and 2 minutes.",
-    );
-  if (
-    !Number.isSafeInteger(maxResponseBytes) ||
-    maxResponseBytes < 1 ||
-    maxResponseBytes > MAX_RESPONSE_BYTES
-  )
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control response limit must be between 1 byte and 64 MiB.",
-    );
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS)
+    throw new CraftControlError("INVALID_REQUEST", "Craft control timeout must be between 1 ms and 2 minutes.");
+  if (!Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 1 || maxResponseBytes > MAX_RESPONSE_BYTES)
+    throw new CraftControlError("INVALID_REQUEST", "Craft control response limit must be between 1 byte and 64 MiB.");
   return { timeoutMs, maxResponseBytes };
 }
 
@@ -179,41 +152,24 @@ function encodeFrame(value: object): Uint8Array {
   try {
     encoded = JSON.stringify(value);
   } catch (cause) {
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control request must contain only JSON values.",
-      undefined,
-      { cause },
-    );
+    throw new CraftControlError("INVALID_REQUEST", "Craft control request must contain only JSON values.", undefined, {
+      cause,
+    });
   }
   if (typeof encoded !== "string")
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control request could not be serialized as JSON.",
-    );
+    throw new CraftControlError("INVALID_REQUEST", "Craft control request could not be serialized as JSON.");
   const frame = new TextEncoder().encode(`${encoded}\n`);
   if (frame.byteLength > MAX_REQUEST_BYTES)
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      `Craft control request exceeds ${MAX_REQUEST_BYTES} bytes.`,
-    );
+    throw new CraftControlError("INVALID_REQUEST", `Craft control request exceeds ${MAX_REQUEST_BYTES} bytes.`);
   return frame;
 }
 
-function parseReply(
-  line: string,
-  expectedId: string | number,
-): CraftControlReply {
+function parseReply(line: string, expectedId: string | number): CraftControlReply {
   let value: unknown;
   try {
     value = JSON.parse(line);
   } catch (cause) {
-    throw new CraftControlError(
-      "INVALID_RESPONSE",
-      "Craft control returned invalid JSON.",
-      undefined,
-      { cause },
-    );
+    throw new CraftControlError("INVALID_RESPONSE", "Craft control returned invalid JSON.", undefined, { cause });
   }
   if (
     !value ||
@@ -222,18 +178,11 @@ function parseReply(
     !((value as Record<string, unknown>).id === expectedId) ||
     typeof (value as Record<string, unknown>).ok !== "boolean"
   ) {
-    throw new CraftControlError(
-      "INVALID_RESPONSE",
-      "Craft control returned a reply with an unexpected shape or ID.",
-    );
+    throw new CraftControlError("INVALID_RESPONSE", "Craft control returned a reply with an unexpected shape or ID.");
   }
   const reply = value as CraftControlReply;
   if (reply.ok === false)
-    throw new CraftControlError(
-      "OWNER_ERROR",
-      reply.error ?? "Craft control request failed.",
-      reply,
-    );
+    throw new CraftControlError("OWNER_ERROR", reply.error ?? "Craft control request failed.", reply);
   return reply;
 }
 
@@ -250,25 +199,11 @@ export async function callCraftControl(
 ): Promise<CraftControlReply> {
   assertConnection(connection);
   const { timeoutMs, maxResponseBytes } = assertOptions(options);
-  if (
-    typeof method !== "string" ||
-    method.length === 0 ||
-    method.includes("\0")
-  )
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control method must be a nonempty NUL-free string.",
-    );
+  if (typeof method !== "string" || method.length === 0 || method.includes("\0"))
+    throw new CraftControlError("INVALID_REQUEST", "Craft control method must be a nonempty NUL-free string.");
   if (!params || typeof params !== "object" || Array.isArray(params))
-    throw new CraftControlError(
-      "INVALID_REQUEST",
-      "Craft control params must be a JSON object.",
-    );
-  if (options.signal?.aborted)
-    throw new CraftControlError(
-      "ABORTED",
-      "Craft control request was aborted.",
-    );
+    throw new CraftControlError("INVALID_REQUEST", "Craft control params must be a JSON object.");
+  if (options.signal?.aborted) throw new CraftControlError("ABORTED", "Craft control request was aborted.");
   if (activeConnections >= MAX_ACTIVE_CONNECTIONS)
     throw new CraftControlError(
       "CONNECTION_LIMIT",
@@ -309,18 +244,9 @@ export async function callCraftControl(
       else if (reply) resolve(reply);
       socket?.close();
     };
-    const abort = () =>
-      finish(
-        new CraftControlError("ABORTED", "Craft control request was aborted."),
-      );
+    const abort = () => finish(new CraftControlError("ABORTED", "Craft control request was aborted."));
     const timer = setTimeout(
-      () =>
-        finish(
-          new CraftControlError(
-            "TIMEOUT",
-            `Craft control did not reply within ${timeoutMs} ms.`,
-          ),
-        ),
+      () => finish(new CraftControlError("TIMEOUT", `Craft control did not reply within ${timeoutMs} ms.`)),
       timeoutMs,
     );
     options.signal?.addEventListener("abort", abort, { once: true });
@@ -342,12 +268,7 @@ export async function callCraftControl(
             }
             const written = connected.write(authFrame ?? requestFrame);
             if (written < (authFrame ?? requestFrame).byteLength)
-              finish(
-                new CraftControlError(
-                  "CONNECT_FAILED",
-                  "Craft control request could not be written completely.",
-                ),
-              );
+              finish(new CraftControlError("CONNECT_FAILED", "Craft control request could not be written completely."));
           },
           data(connected, chunk) {
             if (settled) return;
@@ -365,12 +286,9 @@ export async function callCraftControl(
               responseText += decoder.decode(chunk, { stream: true });
             } catch (cause) {
               finish(
-                new CraftControlError(
-                  "INVALID_RESPONSE",
-                  "Craft control returned malformed UTF-8.",
-                  undefined,
-                  { cause },
-                ),
+                new CraftControlError("INVALID_RESPONSE", "Craft control returned malformed UTF-8.", undefined, {
+                  cause,
+                }),
               );
               return;
             }
@@ -383,12 +301,9 @@ export async function callCraftControl(
               decoder.decode();
             } catch (cause) {
               finish(
-                new CraftControlError(
-                  "INVALID_RESPONSE",
-                  "Craft control returned malformed UTF-8.",
-                  undefined,
-                  { cause },
-                ),
+                new CraftControlError("INVALID_RESPONSE", "Craft control returned malformed UTF-8.", undefined, {
+                  cause,
+                }),
               );
               return;
             }
@@ -406,22 +321,14 @@ export async function callCraftControl(
             try {
               if (exchange === "auth") {
                 const auth = parseReply(line, "auth");
-                if (!auth.ok)
-                  throw new CraftControlError(
-                    "OWNER_ERROR",
-                    "PhotoCraft authentication failed.",
-                    auth,
-                  );
+                if (!auth.ok) throw new CraftControlError("OWNER_ERROR", "PhotoCraft authentication failed.", auth);
                 exchange = "request";
                 responseBytes = 0;
                 responseText = "";
                 const written = connected.write(requestFrame);
                 if (written < requestFrame.byteLength)
                   finish(
-                    new CraftControlError(
-                      "CONNECT_FAILED",
-                      "Craft control request could not be written completely.",
-                    ),
+                    new CraftControlError("CONNECT_FAILED", "Craft control request could not be written completely."),
                   );
                 return;
               }
@@ -430,23 +337,15 @@ export async function callCraftControl(
               finish(
                 error instanceof CraftControlError
                   ? error
-                  : new CraftControlError(
-                      "INVALID_RESPONSE",
-                      "Craft control response could not be read.",
-                      undefined,
-                      { cause: error },
-                    ),
+                  : new CraftControlError("INVALID_RESPONSE", "Craft control response could not be read.", undefined, {
+                      cause: error,
+                    }),
               );
             }
           },
           error(_connected, error) {
             finish(
-              new CraftControlError(
-                "CONNECT_FAILED",
-                "Craft control connection failed.",
-                undefined,
-                { cause: error },
-              ),
+              new CraftControlError("CONNECT_FAILED", "Craft control connection failed.", undefined, { cause: error }),
             );
           },
           connectError(_connected, error) {
@@ -473,19 +372,16 @@ export async function callCraftControl(
           end(_connected) {
             if (!settled)
               finish(
-                new CraftControlError(
-                  "INVALID_RESPONSE",
-                  "Craft control ended before returning a complete reply.",
-                ),
+                new CraftControlError("INVALID_RESPONSE", "Craft control ended before returning a complete reply."),
               );
           },
         },
       })
-        .then((connected) => {
+        .then(connected => {
           socket = connected;
           if (settled) connected.close();
         })
-        .catch((error) => {
+        .catch(error => {
           finish(
             new CraftControlError(
               "CONNECT_FAILED",

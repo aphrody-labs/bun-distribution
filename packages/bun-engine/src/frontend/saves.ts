@@ -12,7 +12,11 @@ export const defaultProfile = "default";
 
 /** The folder name of a profile: its own letters and digits, anything else as `_`. Never empty, never hidden. */
 export function profileSlug(name: string | undefined | null): string {
-  const slug = (name ?? "").trim().replace(/[^\p{L}\p{N}._-]/gu, "_").replace(/^[._]+/, "").slice(0, 48);
+  const slug = (name ?? "")
+    .trim()
+    .replace(/[^\p{L}\p{N}._-]/gu, "_")
+    .replace(/^[._]+/, "")
+    .slice(0, 48);
   return slug || defaultProfile;
 }
 
@@ -67,7 +71,11 @@ function filesOf(dir: string, stem: string, states: boolean): string[] {
     for (const entry of readdirSync(path, { withFileTypes: true })) {
       const full = join(path, entry.name);
       if (entry.isDirectory()) walk(full);
-      else if ((entry.name.startsWith(`${stem}.`) || entry.name.startsWith(`${stem}-`)) && (states ? !entry.name.endsWith(".png") : entry.name.endsWith(".png"))) found.push(full);
+      else if (
+        (entry.name.startsWith(`${stem}.`) || entry.name.startsWith(`${stem}-`)) &&
+        (states ? !entry.name.endsWith(".png") : entry.name.endsWith(".png"))
+      )
+        found.push(full);
     }
   };
   walk(dir);

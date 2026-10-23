@@ -11,7 +11,12 @@ const walk = (dir: string) => {
       const text = readFileSync(p, "utf8");
       const title = /^#\s+(.+)$/m.exec(text)?.[1] ?? name;
       const summary = text.replace(/^#.*$/m, "").replace(/\s+/g, " ").trim().slice(0, 240);
-      out.push({ id: relative(root, p).replaceAll("\\", "/").replace(/\.md$/, ""), title, summary, content: text.slice(0, 60000) });
+      out.push({
+        id: relative(root, p).replaceAll("\\", "/").replace(/\.md$/, ""),
+        title,
+        summary,
+        content: text.slice(0, 60000),
+      });
     }
   }
 };

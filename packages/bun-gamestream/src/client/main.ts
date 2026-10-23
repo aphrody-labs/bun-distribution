@@ -140,7 +140,11 @@ async function pumpTrackProcessor(track: MediaStreamTrack, gpu: WebGpuPresenter)
   for (;;) {
     const { value: frame, done } = await reader.read();
     if (done || !frame) return;
-    if (halted) { frame.close(); await reader.cancel(); return; }
+    if (halted) {
+      frame.close();
+      await reader.cancel();
+      return;
+    }
     gpu.draw(frame);
     presented(frame.displayWidth, frame.displayHeight);
     lastFrame?.close();
@@ -159,10 +163,19 @@ function pumpVideoFrames(gpu: WebGpuPresenter): void {
 }
 
 function present(track: MediaStreamTrack, stream: MediaStream): void {
-  if (halted) { track.stop(); return; }
+  if (halted) {
+    track.stop();
+    return;
+  }
   state.phase = state.source === "test" ? "diagnostic" : "playing";
   status.textContent = state.source === "test" ? "Diagnostic test pattern · no game session" : "Live remote session";
-  track.addEventListener("ended", () => { if (state.source !== "test") unavailable("The remote video stream has stopped."); }, { once: true });
+  track.addEventListener(
+    "ended",
+    () => {
+      if (state.source !== "test") unavailable("The remote video stream has stopped.");
+    },
+    { once: true },
+  );
   if (!presenter) {
     state.path = "video-fallback";
     video.hidden = false;
@@ -173,7 +186,9 @@ function present(track: MediaStreamTrack, stream: MediaStream): void {
   }
   if (typeof MediaStreamTrackProcessor === "function" && query.get("source") !== "video") {
     state.path = "webgpu-trackprocessor";
-    void pumpTrackProcessor(track, presenter).catch(error => unavailable(`Remote frame presentation stopped: ${String(error)}`));
+    void pumpTrackProcessor(track, presenter).catch(error =>
+      unavailable(`Remote frame presentation stopped: ${String(error)}`),
+    );
   } else {
     state.path = "webgpu-videoframecallback";
     video.srcObject = stream;
@@ -219,7 +234,10 @@ const sendInput = (message: InputMessage) => {
 };
 
 pc.ontrack = event => {
-  if (halted) { event.track.stop(); return; }
+  if (halted) {
+    event.track.stop();
+    return;
+  }
   const receiver = event.receiver as RTCRtpReceiver & {
     jitterBufferTarget?: number;
     playoutDelayHint?: number;
@@ -258,7 +276,8 @@ pc.onicecandidate = event => {
 };
 pc.oniceconnectionstatechange = () => {
   state.ice = pc.iceConnectionState;
-  if (state.source !== "test" && ["failed", "disconnected"].includes(state.ice)) unavailable("The remote stream connection is unavailable. Reload to reconnect.");
+  if (state.source !== "test" && ["failed", "disconnected"].includes(state.ice))
+    unavailable("The remote stream connection is unavailable. Reload to reconnect.");
 };
 
 /** Local qualification without a streaming host: same presentation and input paths. */
@@ -290,49 +309,57 @@ function startTestSource(): void {
 
 socket.onmessage = async event => {
   try {
-  const message = JSON.parse(String(event.data)) as ServerMessage;
-  if (state.source === "test") return;
-  switch (message.type) {
-    case "hello":
-      state.sender = message.sender;
-      layout();
-      if (!message.sender) {
-        unavailable("No streaming sender is available. Start the game on the streaming host, then reload to connect.");
-        return;
+    const message = JSON.parse(String(event.data)) as ServerMessage;
+    if (state.source === "test") return;
+    switch (message.type) {
+      case "hello":
+        state.sender = message.sender;
+        layout();
+        if (!message.sender) {
+          unavailable(
+            "No streaming sender is available. Start the game on the streaming host, then reload to connect.",
+          );
+          return;
+        }
+        socket.send(JSON.stringify({ type: "start" }));
+        break;
+      case "offer": {
+        await pc.setRemoteDescription({ type: "offer", sdp: message.sdp });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
+        break;
       }
-      socket.send(JSON.stringify({ type: "start" }));
-      break;
-    case "offer": {
-      await pc.setRemoteDescription({ type: "offer", sdp: message.sdp });
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
-      break;
+      case "ice":
+        await pc.addIceCandidate({
+          candidate: message.candidate,
+          sdpMLineIndex: message.sdpMLineIndex,
+        });
+        break;
+      case "state":
+        if (["failed", "closed", "disconnected"].includes(message.ice))
+          unavailable("The streaming host has stopped this session.");
+        break;
+      case "stats": {
+        const { type: _type, ...stats } = message;
+        state.server = stats;
+        break;
+      }
+      case "error":
+        unavailable(message.message);
+        break;
     }
-    case "ice":
-      await pc.addIceCandidate({
-        candidate: message.candidate,
-        sdpMLineIndex: message.sdpMLineIndex,
-      });
-      break;
-    case "state":
-      if (["failed", "closed", "disconnected"].includes(message.ice)) unavailable("The streaming host has stopped this session.");
-      break;
-    case "stats": {
-      const { type: _type, ...stats } = message;
-      state.server = stats;
-      break;
-    }
-    case "error":
-      unavailable(message.message);
-      break;
+  } catch (error) {
+    unavailable(`Streaming negotiation failed: ${String(error)}`);
   }
-  } catch (error) { unavailable(`Streaming negotiation failed: ${String(error)}`); }
 };
 socket.onclose = event => {
-  if (state.source !== "test" && state.phase !== "unavailable") unavailable(`Streaming signalling closed (${event.code} ${event.reason}). Reload to reconnect.`);
+  if (state.source !== "test" && state.phase !== "unavailable")
+    unavailable(`Streaming signalling closed (${event.code} ${event.reason}). Reload to reconnect.`);
 };
-socket.onerror = () => { if (state.source !== "test") unavailable("The streaming signalling service is unavailable."); };
+socket.onerror = () => {
+  if (state.source !== "test") unavailable("The streaming signalling service is unavailable.");
+};
 if (query.get("source") === "test") startTestSource();
 stage.addEventListener("click", () => void audio.play().catch(() => undefined));
 

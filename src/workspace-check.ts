@@ -10,72 +10,46 @@ type Ledger = {
   lockfiles: Entry[];
 };
 
-const BUN_LOCKS = new Set([
-  "bun.lock",
-  "bun.lockb",
-  "package-lock.json",
-  "pnpm-lock.yaml",
-  "yarn.lock",
-]);
+const BUN_LOCKS = new Set(["bun.lock", "bun.lockb", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"]);
 /** Third-party payloads and toolchains keep their own locks. */
-const exempt = (path: string) =>
-  path.startsWith("vendor/") || path.startsWith("toolchains/");
+const exempt = (path: string) => path.startsWith("vendor/") || path.startsWith("toolchains/");
 const base = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 
 async function tracked(root: string, patterns: string[]) {
-  const proc = Bun.spawn(
-    ["git", "-c", "core.fsmonitor=false", "ls-files", "-z", "--", ...patterns],
-    {
-      cwd: root,
-      stdout: "pipe",
-      stderr: "pipe",
-      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
-    },
-  );
-  const [out, err, code] = await Promise.all([
-    proc.stdout.text(),
-    proc.stderr.text(),
-    proc.exited,
-  ]);
+  const proc = Bun.spawn(["git", "-c", "core.fsmonitor=false", "ls-files", "-z", "--", ...patterns], {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+  });
+  const [out, err, code] = await Promise.all([proc.stdout.text(), proc.stderr.text(), proc.exited]);
   if (code !== 0) throw new Error(`git ls-files failed: ${err}`);
   return out.split("\0").filter(Boolean).sort();
 }
 
 export async function checkWorkspaceInvariants(root: string) {
-  const ledger = (await Bun.file(
-    join(root, "docs/cargo-exceptions.json"),
-  ).json()) as Ledger;
+  const ledger = (await Bun.file(join(root, "docs/cargo-exceptions.json")).json()) as Ledger;
   const files = await tracked(root, [
     ":(glob)**/Cargo.lock",
     ":(glob)**/Cargo.toml",
-    ...[...BUN_LOCKS].map((name) => `:(glob)**/${name}`),
+    ...[...BUN_LOCKS].map(name => `:(glob)**/${name}`),
   ]);
   const workspaceManifests: string[] = [];
-  for (const path of files.filter(
-    (file) =>
-      base(file) === "Cargo.toml" && file !== "Cargo.toml" && !exempt(file),
-  )) {
+  for (const path of files.filter(file => base(file) === "Cargo.toml" && file !== "Cargo.toml" && !exempt(file))) {
     // Tracked but unmaterialized (sparse) manifests cannot be read; they are not declared roots.
     const file = Bun.file(join(root, path));
-    if ((await file.exists()) && /^\[workspace[.\]]/m.test(await file.text()))
-      workspaceManifests.push(path);
+    if ((await file.exists()) && /^\[workspace[.\]]/m.test(await file.text())) workspaceManifests.push(path);
   }
-  const cargoLocks = files.filter(
-    (file) =>
-      base(file) === "Cargo.lock" && file !== "Cargo.lock" && !exempt(file),
-  );
+  const cargoLocks = files.filter(file => base(file) === "Cargo.lock" && file !== "Cargo.lock" && !exempt(file));
   const violations: { kind: string; path: string; detail: string }[] = [];
-  for (const path of files.filter(
-    (file) => BUN_LOCKS.has(base(file)) && file !== "bun.lock" && !exempt(file),
-  ))
+  for (const path of files.filter(file => BUN_LOCKS.has(base(file)) && file !== "bun.lock" && !exempt(file)))
     violations.push({
       kind: "nested-bun-lock",
       path,
-      detail:
-        "Only the root bun.lock may exist outside vendor/ and toolchains/",
+      detail: "Only the root bun.lock may exist outside vendor/ and toolchains/",
     });
   const check = (kind: string, found: string[], entries: Entry[]) => {
-    const listed = new Map(entries.map((entry) => [entry.path, entry]));
+    const listed = new Map(entries.map(entry => [entry.path, entry]));
     for (const path of found) {
       const entry = listed.get(path);
       if (!entry)
@@ -102,8 +76,8 @@ export async function checkWorkspaceInvariants(root: string) {
   check("workspace", workspaceManifests, ledger.workspaces);
   check("cargo-lock", cargoLocks, ledger.lockfiles);
   const pendingMigrations = [...ledger.workspaces, ...ledger.lockfiles]
-    .filter((entry) => entry.class === "migrate")
-    .map((entry) => entry.path)
+    .filter(entry => entry.class === "migrate")
+    .map(entry => entry.path)
     .sort();
   return {
     ok: violations.length === 0,

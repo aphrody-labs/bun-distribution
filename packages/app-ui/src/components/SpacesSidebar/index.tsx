@@ -551,10 +551,20 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               </button>
             )}
             {platform.platform !== "tauri" && (
-              <button type="button" onClick={() => navigate(browserOnlyRoutes.games)} aria-current={isGamesActive ? "page" : undefined}
-                className={clsx("flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
-                  isGamesActive ? "bg-secondary-container text-on-secondary-container font-semibold" : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20")}>
-                <span aria-hidden="true" className="material-symbol text-title-medium">sports_esports</span>
+              <button
+                type="button"
+                onClick={() => navigate(browserOnlyRoutes.games)}
+                aria-current={isGamesActive ? "page" : undefined}
+                className={clsx(
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isGamesActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
+                )}
+              >
+                <span aria-hidden="true" className="material-symbol text-title-medium">
+                  sports_esports
+                </span>
                 <span className="truncate">{language === "fr" ? "Jeux" : "Games"}</span>
               </button>
             )}

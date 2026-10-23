@@ -33,40 +33,26 @@ const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 export function parseAppInfo(bytes: Uint8Array): AppInfoFile {
   const cur = new Cursor(bytes);
   const magic = cur.u32();
-  if (
-    magic !== APPINFO_MAGIC.v39 &&
-    magic !== APPINFO_MAGIC.v40 &&
-    magic !== APPINFO_MAGIC.v41
-  ) {
+  if (magic !== APPINFO_MAGIC.v39 && magic !== APPINFO_MAGIC.v40 && magic !== APPINFO_MAGIC.v41) {
     throw new Error(`appinfo.vdf: unknown magic 0x${magic.toString(16)}`);
   }
   const universe = cur.u32();
   let stringTable: string[] | null = null;
   if (magic === APPINFO_MAGIC.v41) {
     const offset = Number(cur.u64());
-    if (
-      !Number.isSafeInteger(offset) ||
-      offset < cur.pos ||
-      offset > bytes.byteLength - 4
-    ) {
+    if (!Number.isSafeInteger(offset) || offset < cur.pos || offset > bytes.byteLength - 4) {
       throw new Error("appinfo.vdf: invalid string-table offset");
     }
     const tc = new Cursor(bytes);
     tc.pos = offset;
     const count = tc.u32();
-    if (count > tc.remaining)
-      throw new Error("appinfo.vdf: invalid string-table count");
+    if (count > tc.remaining) throw new Error("appinfo.vdf: invalid string-table count");
     stringTable = [];
     for (let i = 0; i < count; i++) stringTable.push(tc.cstr());
   }
   const apps: AppInfoEntry[] = [];
   const end = stringTable
-    ? Number(
-        new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(
-          0,
-          true,
-        ),
-      )
+    ? Number(new DataView(bytes.buffer, bytes.byteOffset + 8, 8).getBigUint64(0, true))
     : bytes.length;
   while (cur.pos + 4 <= end) {
     let appid: number;
@@ -94,8 +80,7 @@ export function parseAppInfo(bytes: Uint8Array): AppInfoFile {
       const picsToken = entry.u64();
       const sha1 = hex(entry.take(20));
       const changeNumber = entry.u32();
-      const binarySha1 =
-        magic >= APPINFO_MAGIC.v40 ? hex(entry.take(20)) : null;
+      const binarySha1 = magic >= APPINFO_MAGIC.v40 ? hex(entry.take(20)) : null;
       const kv = parseBinaryKv(entry, stringTable);
       parsed = {
         infoState,

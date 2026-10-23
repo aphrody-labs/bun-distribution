@@ -18,7 +18,7 @@ export function productBuildContext(env: NodeJS.ProcessEnv = process.env, from?:
 export function canonicalBunInputs(checkout: string, revision: string) {
   if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
   const checkoutRoot = realpathSync(checkout);
-  const git =(...args: string[]) => {
+  const git = (...args: string[]) => {
     const result = Bun.spawnSync(["git", ...args], {
       cwd: checkoutRoot,
       stdout: "pipe",
@@ -38,7 +38,11 @@ export function canonicalBunInputs(checkout: string, revision: string) {
     const bytes = readFileSync(file);
     return { file, path, sha256: sha(bytes), gitBlob: sha(bytes) };
   };
-  const receiptInput = { file: join(checkoutRoot, "packages/app-ui/package.json"), path: "packages/app-ui/package.json", sha256: "" };
+  const receiptInput = {
+    file: join(checkoutRoot, "packages/app-ui/package.json"),
+    path: "packages/app-ui/package.json",
+    sha256: "",
+  };
   const entry = { destination: "packages/app-ui/package.json", sha256: "" };
   const receipt = { sourceCommit: revision };
   const docs = hashed("packages/app-ui/package.json");

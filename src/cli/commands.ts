@@ -1,16 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Every Bun OS command, defined once. package.json scripts are aliases of these; nothing else hard-codes a path.
 import { existsSync } from "node:fs";
-import {
-  abs,
-  define,
-  native,
-  script,
-  sequence,
-  spawn,
-  root,
-  type Command,
-} from "./registry.ts";
+import { abs, define, native, script, sequence, spawn, root, type Command } from "./registry.ts";
 
 const workspaceCli = "packages/bun-workspace/src/cli.ts";
 
@@ -29,47 +20,24 @@ const FORMAT_IGNORE = [
   "packages/iecode-scripts/**",
   "packages/iecode-docs/**",
   "packages/bun-tauri/crates/aphrody-tauri-cli/templates/**",
-].flatMap((p) => ["--ignore-pattern", p]);
-const FORMAT_PATHS = [
-  "src",
-  "container",
-  "factory",
-  "infra",
-  "packages",
-  "apps/desktop",
-  "scripts",
-];
-const LINT_PATHS = [
-  "src",
-  "container",
-  "factory",
-  "infra",
-  "packages",
-  "apps",
-  "scripts",
-];
+].flatMap(p => ["--ignore-pattern", p]);
+const FORMAT_PATHS = ["src", "container", "factory", "infra", "packages", "apps/desktop", "scripts"];
+const LINT_PATHS = ["src", "container", "factory", "infra", "packages", "apps", "scripts"];
 
 /** `node_modules/.bin/<name>` of the root install (turbo and similar unrelated tools). */
 function localBin(name: string): string {
   const base = abs(`node_modules/.bin/${name}`);
-  return process.platform === "win32" && existsSync(`${base}.exe`)
-    ? `${base}.exe`
-    : base;
+  return process.platform === "win32" && existsSync(`${base}.exe`) ? `${base}.exe` : base;
 }
 
-const viaFactory = (
-  verb: string,
-  ...fixed: string[]
-): Pick<Command, "target" | "run"> => ({
+const viaFactory = (verb: string, ...fixed: string[]): Pick<Command, "target" | "run"> => ({
   target: "src/cli/factory.ts",
-  run: async (args) =>
-    (await import("./factory.ts")).runFactoryCli([verb, ...fixed, ...args]),
+  run: async args => (await import("./factory.ts")).runFactoryCli([verb, ...fixed, ...args]),
 });
 
 const bunRun = (cwd: string, scriptName: string) => ({
   target: `${cwd}/package.json`,
-  run: (args: string[]) =>
-    spawn([process.execPath, "run", "--cwd", abs(cwd), scriptName, ...args]),
+  run: (args: string[]) => spawn([process.execPath, "run", "--cwd", abs(cwd), scriptName, ...args]),
 });
 
 define(
@@ -81,15 +49,16 @@ define(
     usage: "[native MCP arguments]",
     passthroughHelp: true,
     ...native("mcp"),
-    run: (args) => spawn([process.execPath, "mcp", ...args], {
-      env: {
-        BUN_MCP_SKILLS_PATH: [
-          abs("packages/m3-design/intelligence"),
-          abs("packages/replica-skills/skills"),
-          abs("vendor/rea/plugin/skills"),
-        ].join(process.platform === "win32" ? ";" : ":"),
-      },
-    }),
+    run: args =>
+      spawn([process.execPath, "mcp", ...args], {
+        env: {
+          BUN_MCP_SKILLS_PATH: [
+            abs("packages/m3-design/intelligence"),
+            abs("packages/replica-skills/skills"),
+            abs("vendor/rea/plugin/skills"),
+          ].join(process.platform === "win32" ? ";" : ":"),
+        },
+      }),
   },
   {
     group: "",
@@ -97,7 +66,7 @@ define(
     summary: "Search UI/UX guidance and generate M3 design systems",
     usage: "<query> [--stack m3] [options] | compile --prompt <brief> [--color <hex>] [--design-system <id>]",
     target: "packages/m3-design/src/cli.ts",
-    run: (args) => spawn([process.execPath, abs("packages/m3-design/src/cli.ts"), ...args]),
+    run: args => spawn([process.execPath, abs("packages/m3-design/src/cli.ts"), ...args]),
   },
   {
     group: "",
@@ -189,7 +158,7 @@ define(
     name: "format",
     summary: "Format the workspace (native bun fmt)",
     usage: "[--check]",
-    run: (args) =>
+    run: args =>
       spawn([
         process.execPath,
         "fmt",
@@ -250,15 +219,7 @@ define(
     group: "cargo",
     name: "nie",
     summary: "cargo check the NIE crates",
-    ...script(
-      "scripts/cargo.ts",
-      "exec",
-      "--",
-      "check",
-      "--locked",
-      "-p",
-      "aphrody-nie-*",
-    ),
+    ...script("scripts/cargo.ts", "exec", "--", "check", "--locked", "-p", "aphrody-nie-*"),
   },
   {
     group: "cargo",
@@ -412,30 +373,14 @@ define(
     name: "frontend-dev",
     summary: "Run the frontend source in development",
     target: "package.json",
-    run: (args) =>
-      spawn([
-        process.execPath,
-        "run",
-        "--filter",
-        "@frontend/source",
-        "dev",
-        ...args,
-      ]),
+    run: args => spawn([process.execPath, "run", "--filter", "@frontend/source", "dev", ...args]),
   },
   {
     group: "build",
     name: "frontend-install",
     summary: "Install the frontend source dependencies",
     target: "package.json",
-    run: (args) =>
-      spawn([
-        process.execPath,
-        "install",
-        "--filter",
-        "@frontend/source",
-        "--frozen-lockfile",
-        ...args,
-      ]),
+    run: args => spawn([process.execPath, "install", "--filter", "@frontend/source", "--frozen-lockfile", ...args]),
   },
   {
     group: "build",
@@ -468,16 +413,14 @@ define(
   {
     group: "build",
     name: "product",
-    summary:
-      "Prepare the pinned product workspace and frozen dependencies on the Linux factory",
+    summary: "Prepare the pinned product workspace and frozen dependencies on the Linux factory",
     usage: "--out DIR --runtime FILE --receipt FILE --config FILE",
     ...viaFactory("product"),
   },
   {
     group: "build",
     name: "product-qualify",
-    summary:
-      "Qualify product CLI discovery against its frozen payload on the Linux factory",
+    summary: "Qualify product CLI discovery against its frozen payload on the Linux factory",
     usage: "--product DIR --product-receipt FILE --runtime FILE --out FILE",
     ...viaFactory("product-qualify"),
   },
@@ -508,8 +451,7 @@ define(
     group: "factory",
     name: "arch",
     summary: "Arch/pacman factory: plan, host, resolve, rootfs",
-    usage:
-      "--action [plan|host|resolve|rootfs] --composition [server|desktop|gaming]",
+    usage: "--action [plan|host|resolve|rootfs] --composition [server|desktop|gaming]",
     ...viaFactory("factory"),
   },
   {
@@ -523,10 +465,9 @@ define(
     group: "factory",
     name: "images",
     summary: "bunos-gaming, bunos-alpine and bunos-ubuntu images",
-    usage:
-      "<plan|fetch|build|status> <image> [--target T] [--desktop-session cosmic|omarchy-hyprland]",
+    usage: "<plan|fetch|build|status> <image> [--target T] [--desktop-session cosmic|omarchy-hyprland]",
     target: "factory/images/build.ts",
-    run: async (args) => {
+    run: async args => {
       const { main } = await import("../../factory/images/build.ts");
       console.log(JSON.stringify(await main(args), null, 2));
       return 0;
@@ -536,10 +477,9 @@ define(
     group: "factory",
     name: "usr",
     summary: "Plan, fetch or build the usr tree",
-    usage:
-      "<plan|build|fetch> [--composition server|desktop|gaming] [--desktop-session cosmic|omarchy-hyprland]",
+    usage: "<plan|build|fetch> [--composition server|desktop|gaming] [--desktop-session cosmic|omarchy-hyprland]",
     target: "factory/usr/build.ts",
-    run: async (args) => {
+    run: async args => {
       const { main } = await import("../../factory/usr/build.ts");
       console.log(JSON.stringify(await main(args), null, 2));
       return 0;
@@ -565,17 +505,8 @@ define(
     summary: "Refresh the source portal inventory and format it",
     target: "scripts/source-portal.ts",
     ...sequence(
-      () =>
-        spawn([process.execPath, abs("scripts/source-portal.ts"), "refresh"]),
-      () =>
-        spawn([
-          process.execPath,
-          "fmt",
-          "--write",
-          "--config",
-          "bun-format.json",
-          "infra/source-portal.json",
-        ]),
+      () => spawn([process.execPath, abs("scripts/source-portal.ts"), "refresh"]),
+      () => spawn([process.execPath, "fmt", "--write", "--config", "bun-format.json", "infra/source-portal.json"]),
     ),
   },
   {
@@ -759,7 +690,7 @@ define(
     name: "build",
     summary: "Build and type check the NIE packages",
     target: "turbo.json",
-    run: (args) =>
+    run: args =>
       spawn([
         localBin("turbo"),
         "run",
@@ -778,28 +709,13 @@ define(
     name: "turbo-cargo-build",
     summary: "Run the NIE cargo build task through turbo",
     target: "turbo.json",
-    run: (args) =>
-      spawn([
-        localBin("turbo"),
-        "run",
-        "cargo:nie:build",
-        "--filter=//",
-        ...args,
-      ]),
+    run: args => spawn([localBin("turbo"), "run", "cargo:nie:build", "--filter=//", ...args]),
   },
   {
     group: "nie",
     name: "cargo",
     summary: "cargo check the NIE crates",
-    ...script(
-      "scripts/cargo.ts",
-      "exec",
-      "--",
-      "check",
-      "--locked",
-      "-p",
-      "aphrody-nie-*",
-    ),
+    ...script("scripts/cargo.ts", "exec", "--", "check", "--locked", "-p", "aphrody-nie-*"),
   },
   {
     group: "nie",
@@ -815,11 +731,9 @@ define(
     summary: "Hosts, services, deployment, probes and pipelines",
     usage: "<command> [args]",
     target: "packages/bun-workspace/src/automation/runtime.ts",
-    run: async (args) => {
-      const { runInfra } =
-        await import("../../packages/bun-workspace/src/automation/runtime.ts");
-      return (await runInfra({ args, stdout: "inherit", stderr: "inherit" }))
-        .exitCode;
+    run: async args => {
+      const { runInfra } = await import("../../packages/bun-workspace/src/automation/runtime.ts");
+      return (await runInfra({ args, stdout: "inherit", stderr: "inherit" })).exitCode;
     },
   },
   {
@@ -828,10 +742,7 @@ define(
     summary: "Workspace operations",
     usage: "<command> [args]",
     target: "packages/bun-workspace/src/automation/ops.ts",
-    run: async (args) =>
-      (
-        await import("../../packages/bun-workspace/src/automation/ops.ts")
-      ).runOps(args),
+    run: async args => (await import("../../packages/bun-workspace/src/automation/ops.ts")).runOps(args),
   },
   {
     group: "server",
@@ -839,10 +750,8 @@ define(
     summary: "Serve or verify the Bun OS product server",
     usage: "serve [ROOT] | verify [BINARY] [RECEIPT] | --version",
     target: "packages/bun-app-host/src/cli.ts",
-    run: async (args) => {
-      await (
-        await import("../../packages/bun-app-host/src/cli.ts")
-      ).runProductCLI(args);
+    run: async args => {
+      await (await import("../../packages/bun-app-host/src/cli.ts")).runProductCLI(args);
       return 0;
     },
   },

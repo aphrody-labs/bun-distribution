@@ -64,12 +64,12 @@ give the user the checklist and wait for answers.
 Every bug goes in `replica/bugs.md` in the `bug-report.md` format: an ID, a
 severity, exact steps, expected, actual, evidence. Severity:
 
-| | means |
-| --- | --- |
-| S1 | data loss, security hole, payments wrong, core flow blocked |
-| S2 | a feature broken, no workaround |
-| S3 | broken with a workaround, or visibly wrong |
-| S4 | cosmetic |
+|     | means                                                       |
+| --- | ----------------------------------------------------------- |
+| S1  | data loss, security hole, payments wrong, core flow blocked |
+| S2  | a feature broken, no workaround                             |
+| S3  | broken with a workaround, or visibly wrong                  |
+| S4  | cosmetic                                                    |
 
 Only report what you reproduced. "Might be an issue" goes in a separate
 "to check" list.

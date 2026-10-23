@@ -13,7 +13,15 @@
  */
 
 import { parseArgs } from "node:util";
-import { AVAILABLE_STACKS, CSV_CONFIG, MAX_RESULTS, UNTRUNCATED_COLS, search, searchStack, type SearchResult } from "./core.ts";
+import {
+  AVAILABLE_STACKS,
+  CSV_CONFIG,
+  MAX_RESULTS,
+  UNTRUNCATED_COLS,
+  search,
+  searchStack,
+  type SearchResult,
+} from "./core.ts";
 import { generateDesignSystem } from "./design-system.ts";
 
 const TRUNCATE_AT = 300;
@@ -117,12 +125,13 @@ function intInRange(name: string, value: string | undefined, lo: number, hi: num
 
 function choice(name: string, value: string | undefined, choices: readonly string[]): string | null {
   if (value === undefined) return null;
-  if (!choices.includes(value)) fail(`argument ${name}: invalid choice: '${value}' (choose from ${choices.map((c) => `'${c}'`).join(", ")})`);
+  if (!choices.includes(value))
+    fail(`argument ${name}: invalid choice: '${value}' (choose from ${choices.map(c => `'${c}'`).join(", ")})`);
   return value;
 }
 
 export async function main(argv: string[]): Promise<number> {
-  const args = argv.map((arg) => (arg === "-ds" ? "--design-system" : arg));
+  const args = argv.map(arg => (arg === "-ds" ? "--design-system" : arg));
   let parsed;
   try {
     parsed = parseArgs({
@@ -170,7 +179,9 @@ export async function main(argv: string[]): Promise<number> {
 
   if (values["design-system"]) {
     if (stack) {
-      console.error(`note: --stack ${stack} is ignored in --design-system mode; run a separate --stack query for stack-specific guidelines`);
+      console.error(
+        `note: --stack ${stack} is ignored in --design-system mode; run a separate --stack query for stack-specific guidelines`,
+      );
     }
     let result;
     try {

@@ -23,19 +23,19 @@ clone from memory of what an app does is how you miss half of it.
 Use what the user already knows if they have a stack. Otherwise the default,
 because every part is managed, documented and cheap at zero users:
 
-| layer | default | swap for |
-| --- | --- | --- |
-| web app | Next.js (App Router) + TypeScript | Remix, SvelteKit, Rails |
-| styling | Tailwind, tokens from replica-design | CSS modules |
-| mobile | Expo (React Native) | SwiftUI, Kotlin |
-| database | Postgres on Supabase or Neon | PlanetScale, SQLite (Turso) |
-| ORM | Drizzle or Prisma | raw SQL |
-| auth | Supabase Auth or Auth.js | Clerk |
-| payments | Stripe Checkout + Billing | Lemon Squeezy, Paddle |
-| email | Resend or Postmark | SES |
-| jobs | Vercel Cron, Inngest or Trigger.dev | a worker on Fly |
-| files | Supabase Storage or Cloudflare R2 | S3 |
-| hosting | Vercel | Netlify, Fly, Render |
+| layer    | default                              | swap for                    |
+| -------- | ------------------------------------ | --------------------------- |
+| web app  | Next.js (App Router) + TypeScript    | Remix, SvelteKit, Rails     |
+| styling  | Tailwind, tokens from replica-design | CSS modules                 |
+| mobile   | Expo (React Native)                  | SwiftUI, Kotlin             |
+| database | Postgres on Supabase or Neon         | PlanetScale, SQLite (Turso) |
+| ORM      | Drizzle or Prisma                    | raw SQL                     |
+| auth     | Supabase Auth or Auth.js             | Clerk                       |
+| payments | Stripe Checkout + Billing            | Lemon Squeezy, Paddle       |
+| email    | Resend or Postmark                   | SES                         |
+| jobs     | Vercel Cron, Inngest or Trigger.dev  | a worker on Fly             |
+| files    | Supabase Storage or Cloudflare R2    | S3                          |
+| hosting  | Vercel                               | Netlify, Fly, Render        |
 
 Write each choice with one line of why. One database. No microservices. The
 clone does not need the original's architecture, it needs the original's

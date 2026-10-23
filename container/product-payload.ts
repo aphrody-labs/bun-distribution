@@ -28,7 +28,12 @@ export interface ProductPayloadReceipt {
 }
 
 export function productPath(root: string, path: string): string {
-  if (!path || isAbsolute(path) || path.includes("\\") || path.split("/").some(part => !part || part === "." || part === ".."))
+  if (
+    !path ||
+    isAbsolute(path) ||
+    path.includes("\\") ||
+    path.split("/").some(part => !part || part === "." || part === "..")
+  )
     throw new Error(`Invalid product path: ${path}`);
   const absolute = resolve(root, path);
   const rel = relative(root, absolute);
@@ -58,7 +63,7 @@ export async function sourceEntries(root: string): Promise<SourceEntry[]> {
   const entries: SourceEntry[] = [];
   async function visit(prefix: string) {
     const children = await readdir(join(root, prefix), { withFileTypes: true });
-    children.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    children.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const child of children) {
       const path = prefix ? `${prefix}/${child.name}` : child.name;
       if (child.isDirectory()) {
@@ -79,11 +84,12 @@ export async function sourceEntries(root: string): Promise<SourceEntry[]> {
 export async function productModesSHA256(root: string): Promise<string> {
   const hash = new Bun.CryptoHasher("sha256");
   const rootStat = await lstat(root);
-  if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) throw new Error("Product modes require a real root directory");
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink())
+    throw new Error("Product modes require a real root directory");
   hash.update(JSON.stringify([".", "directory", rootStat.mode & 0o7777]) + "\n");
   async function visit(prefix: string) {
     const entries = await readdir(join(root, prefix), { withFileTypes: true });
-    entries.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const entry of entries) {
       const path = prefix ? `${prefix}/${entry.name}` : entry.name;
       const stat = await lstat(join(root, path));
@@ -114,8 +120,14 @@ export async function verifySourceEntries(root: string, entries: SourceEntry[]) 
     seen.add(entry[0]);
     const stat = await lstat(path);
     if (entry[1] === "directory" && entry.length === 2 && stat.isDirectory() && !stat.isSymbolicLink()) continue;
-    if (entry[1] === "symlink" && entry.length === 3 && stat.isSymbolicLink() && await readlink(path) === entry[2]) continue;
-    if (entry[1] === "file" && entry.length === 4 && sameProductIdentity(await productIdentity(path), { bytes: entry[2], sha256: entry[3] })) continue;
+    if (entry[1] === "symlink" && entry.length === 3 && stat.isSymbolicLink() && (await readlink(path)) === entry[2])
+      continue;
+    if (
+      entry[1] === "file" &&
+      entry.length === 4 &&
+      sameProductIdentity(await productIdentity(path), { bytes: entry[2], sha256: entry[3] })
+    )
+      continue;
     throw new Error(`Frozen product source changed: ${entry[0]}`);
   }
 }
@@ -149,10 +161,12 @@ export async function verifyLinks(root: string, sources: SourceEntry[]) {
 /** Frozen install can add dependency trees and explicitly prepared archives, never new source. */
 export async function verifyInstalledAdditions(root: string, sources: SourceEntry[], prepared: { path: string }[]) {
   const original = new Set(sources.map(entry => entry[0]));
-  const allowed = new Set(prepared.flatMap(input => {
-    const parts = input.path.split("/");
-    return parts.map((_, index) => parts.slice(0, index + 1).join("/"));
-  }));
+  const allowed = new Set(
+    prepared.flatMap(input => {
+      const parts = input.path.split("/");
+      return parts.map((_, index) => parts.slice(0, index + 1).join("/"));
+    }),
+  );
   async function visit(prefix: string) {
     for (const entry of await readdir(join(root, prefix), { withFileTypes: true })) {
       const path = prefix ? `${prefix}/${entry.name}` : entry.name;
@@ -170,16 +184,20 @@ export async function validatePreparedProductPath(root: string, path: string, so
   if (sources.some(entry => entry[0] === path)) throw new Error(`Prepared input replaces frozen source: ${path}`);
   if (/^build\/packages\/[A-Za-z0-9][A-Za-z0-9._-]*\.tgz$/.test(path)) return;
   const parts = path.split("/");
-  if (parts.length < 4 || parts[0] !== "packages" || !["dist", "wasm", "native"].includes(parts[2]!) ||
-    parts.some(part => !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part)))
+  if (
+    parts.length < 4 ||
+    parts[0] !== "packages" ||
+    !["dist", "wasm", "native"].includes(parts[2]!) ||
+    parts.some(part => !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(part))
+  )
     throw new Error(`Prepared input must be a package archive or workspace build sidecar: ${path}`);
   const member = parts.slice(0, 2).join("/");
   if (!sources.some(entry => entry[0] === `${member}/package.json` && entry[1] === "file"))
     throw new Error(`Prepared sidecar has no frozen workspace manifest: ${path}`);
-  const workspace = await Bun.file(join(root, "package.json")).json() as {
+  const workspace = (await Bun.file(join(root, "package.json")).json()) as {
     workspaces?: string[] | { packages?: string[] };
   };
-  const members = Array.isArray(workspace.workspaces) ? workspace.workspaces : workspace.workspaces?.packages ?? [];
+  const members = Array.isArray(workspace.workspaces) ? workspace.workspaces : (workspace.workspaces?.packages ?? []);
   if (!members.some(pattern => new Bun.Glob(pattern.replace(/\/$/, "")).match(member)))
     throw new Error(`Prepared sidecar does not belong to a declared root workspace member: ${path}`);
   if (parts[2] === "wasm") {
@@ -190,20 +208,29 @@ export async function validatePreparedProductPath(root: string, path: string, so
       "aphrody_command_wasm_bg.wasm.d.ts",
       "provenance.json",
     ]);
-    const manifest = await Bun.file(join(root, member, "package.json")).json() as {
+    const manifest = (await Bun.file(join(root, member, "package.json")).json()) as {
       name?: string;
       imports?: Record<string, string>;
     };
-    if (member !== "packages/cli-wasm" || manifest.name !== "@aphrody/cli-wasm" ||
+    if (
+      member !== "packages/cli-wasm" ||
+      manifest.name !== "@aphrody/cli-wasm" ||
       manifest.imports?.["#cli-wasm-glue"] !== "./wasm/aphrody_command_wasm.js" ||
-      parts.length !== 4 || !files.has(parts[3]!))
+      parts.length !== 4 ||
+      !files.has(parts[3]!)
+    )
       throw new Error(`Prepared WASM input is not a generated artifact of the declared CLI-WASM owner: ${path}`);
   }
   if (parts[2] === "native") {
-    const triple = target === "linux-x64" ? "x86_64-unknown-linux-gnu"
-      : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
-    if (member !== "packages/aphrody-bun" || !triple || parts.length !== 5 || parts[3] !== triple ||
-      !["libaphrody_ffi.so", "manifest.json"].includes(parts[4]!))
+    const triple =
+      target === "linux-x64" ? "x86_64-unknown-linux-gnu" : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
+    if (
+      member !== "packages/aphrody-bun" ||
+      !triple ||
+      parts.length !== 5 ||
+      parts[3] !== triple ||
+      !["libaphrody_ffi.so", "manifest.json"].includes(parts[4]!)
+    )
       throw new Error(`Prepared native input is not a product-target artifact of the @aphrody/bun owner: ${path}`);
   }
 }
@@ -222,15 +249,15 @@ const CLI_WASM_INPUTS = [
 ] as const;
 
 /** The frozen product must carry the complete generated module set for its CLI-WASM owner. */
-export async function validateProductWasmInputs(
-  root: string,
-  inputs: readonly { path: string }[],
-): Promise<void> {
-  const manifest = await Bun.file(join(root, "packages/cli-wasm/package.json")).json() as {
+export async function validateProductWasmInputs(root: string, inputs: readonly { path: string }[]): Promise<void> {
+  const manifest = (await Bun.file(join(root, "packages/cli-wasm/package.json")).json()) as {
     name?: string;
     imports?: Record<string, string>;
   };
-  if (manifest.name !== "@aphrody/cli-wasm" || manifest.imports?.["#cli-wasm-glue"] !== "./wasm/aphrody_command_wasm.js")
+  if (
+    manifest.name !== "@aphrody/cli-wasm" ||
+    manifest.imports?.["#cli-wasm-glue"] !== "./wasm/aphrody_command_wasm.js"
+  )
     throw new Error("Frozen product has an invalid CLI-WASM owner manifest");
   const paths = new Set(inputs.map(input => input.path));
   const missing = CLI_WASM_INPUTS.filter(path => !paths.has(path));
@@ -238,8 +265,8 @@ export async function validateProductWasmInputs(
 }
 
 const nativeFfiInputs = (target: string) => {
-  const triple = target === "linux-x64" ? "x86_64-unknown-linux-gnu"
-    : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
+  const triple =
+    target === "linux-x64" ? "x86_64-unknown-linux-gnu" : target === "linux-arm64" ? "aarch64-unknown-linux-gnu" : "";
   if (!triple) throw new Error(`Unsupported native FFI product target: ${target}`);
   const base = `packages/aphrody-bun/native/${triple}`;
   return { triple, artifact: `${base}/libaphrody_ffi.so`, manifest: `${base}/manifest.json` };
@@ -253,7 +280,10 @@ export async function validateProductNativeInputs(
   target: string,
   sourceRevision: string,
 ): Promise<void> {
-  const pkg = await Bun.file(join(root, "packages/aphrody-bun/package.json")).json() as { name?: string; version?: string };
+  const pkg = (await Bun.file(join(root, "packages/aphrody-bun/package.json")).json()) as {
+    name?: string;
+    version?: string;
+  };
   if (pkg.name !== "@aphrody/bun" || typeof pkg.version !== "string")
     throw new Error("Frozen product has an invalid native FFI owner manifest");
   const expected = nativeFfiInputs(target);
@@ -265,7 +295,11 @@ export async function validateProductNativeInputs(
   const artifactPath = productPath(root, expected.artifact);
   const nativeArtifact = await import(pathToFileURL(join(root, "packages/aphrody-bun/src/native-artifact.ts")).href);
   const manifest = nativeArtifact.parseNativeArtifactManifest(
-    await Bun.file(productPath(root, expected.manifest)).json(), artifactPath, pkg.version, expected.triple, false,
+    await Bun.file(productPath(root, expected.manifest)).json(),
+    artifactPath,
+    pkg.version,
+    expected.triple,
+    false,
   );
   const lock = await productIdentity(join(root, "Cargo.lock"));
   if (manifest.buildSourceHead !== sourceRevision || manifest.cargoLockSha256 !== lock.sha256)
@@ -282,30 +316,58 @@ export async function verifyProductPayload(
   expected: ProductPayloadExpected,
 ): Promise<ProductPayloadReceipt> {
   expected = structuredClone(expected);
-  if (!["linux-x64", "linux-arm64"].includes(expected.target) || expected.runtime?.abi !== "gnu" ||
-    !/^[a-f0-9]{40}$/.test(expected.runtime?.revision) || !/^[a-f0-9]{64}$/.test(expected.runtime?.sha256))
+  if (
+    !["linux-x64", "linux-arm64"].includes(expected.target) ||
+    expected.runtime?.abi !== "gnu" ||
+    !/^[a-f0-9]{40}$/.test(expected.runtime?.revision) ||
+    !/^[a-f0-9]{64}$/.test(expected.runtime?.sha256)
+  )
     throw new Error("Product verification requires an exact Linux target and runtime identity");
   const root = resolve(payloadRoot);
-  if (!(await lstat(root)).isDirectory() || await realpath(root) !== root)
+  if (!(await lstat(root)).isDirectory() || (await realpath(root)) !== root)
     throw new Error("Product root must be a real directory");
   await productIdentity(receiptPath);
   const receipt: ProductPayloadReceipt = await Bun.file(receiptPath).json();
-  if (receipt.schemaVersion !== 1 || receipt.kind !== "bun-os-product-payload" || receipt.root !== "sources/bun-os" ||
-    receipt.sourceRepository !== "aphrody-labs/bun-distribution" || !/^[a-f0-9]{40}$/.test(receipt.sourceRevision) ||
-    !["linux-x64", "linux-arm64"].includes(receipt.target) || receipt.target !== expected.target ||
-    receipt.runtime?.revision !== expected.runtime.revision || receipt.runtime.sha256 !== expected.runtime.sha256 ||
-    receipt.runtime.abi !== "gnu" || receipt.runtime.abi !== expected.runtime.abi || receipt.runtime.target !== receipt.target ||
-    !/^[a-f0-9]{40}$/.test(receipt.runtime.revision) || !/^[a-f0-9]{64}$/.test(receipt.runtime.sha256) ||
-    !Number.isSafeInteger(receipt.runtime.bytes) || receipt.runtime.bytes <= 0 ||
-    typeof receipt.runtime.version !== "string" || !receipt.runtime.version ||
-    !/^[a-f0-9]{64}$/.test(receipt.sourceTreeSHA256) || !/^[a-f0-9]{64}$/.test(receipt.installedTreeSHA256) ||
+  if (
+    receipt.schemaVersion !== 1 ||
+    receipt.kind !== "bun-os-product-payload" ||
+    receipt.root !== "sources/bun-os" ||
+    receipt.sourceRepository !== "aphrody-labs/bun-distribution" ||
+    !/^[a-f0-9]{40}$/.test(receipt.sourceRevision) ||
+    !["linux-x64", "linux-arm64"].includes(receipt.target) ||
+    receipt.target !== expected.target ||
+    receipt.runtime?.revision !== expected.runtime.revision ||
+    receipt.runtime.sha256 !== expected.runtime.sha256 ||
+    receipt.runtime.abi !== "gnu" ||
+    receipt.runtime.abi !== expected.runtime.abi ||
+    receipt.runtime.target !== receipt.target ||
+    !/^[a-f0-9]{40}$/.test(receipt.runtime.revision) ||
+    !/^[a-f0-9]{64}$/.test(receipt.runtime.sha256) ||
+    !Number.isSafeInteger(receipt.runtime.bytes) ||
+    receipt.runtime.bytes <= 0 ||
+    typeof receipt.runtime.version !== "string" ||
+    !receipt.runtime.version ||
+    !/^[a-f0-9]{64}$/.test(receipt.sourceTreeSHA256) ||
+    !/^[a-f0-9]{64}$/.test(receipt.installedTreeSHA256) ||
     !/^[a-f0-9]{64}$/.test(receipt.installedModesSHA256) ||
-    !/^[a-f0-9]{64}$/.test(receipt.lock?.sha256) || !Number.isSafeInteger(receipt.lock.bytes) || receipt.lock.bytes <= 0 ||
-    !/^[a-f0-9]{64}$/.test(receipt.sourceReceipt?.sha256) || !Number.isSafeInteger(receipt.sourceReceipt.bytes) || receipt.sourceReceipt.bytes <= 0 ||
-    receipt.install?.passed !== true || receipt.install.frozenLockfile !== true || receipt.install.lifecycleScripts !== false ||
-    receipt.qualification?.productCli !== false || receipt.qualification.nativeCommands !== false || receipt.qualification.fullProduct !== false ||
-    !Number.isSafeInteger(receipt.commands) || receipt.commands <= 0 || !Array.isArray(receipt.preparedInputs) ||
-    !Array.isArray(receipt.sourceEntries) || !receipt.sourceEntries.length)
+    !/^[a-f0-9]{64}$/.test(receipt.lock?.sha256) ||
+    !Number.isSafeInteger(receipt.lock.bytes) ||
+    receipt.lock.bytes <= 0 ||
+    !/^[a-f0-9]{64}$/.test(receipt.sourceReceipt?.sha256) ||
+    !Number.isSafeInteger(receipt.sourceReceipt.bytes) ||
+    receipt.sourceReceipt.bytes <= 0 ||
+    receipt.install?.passed !== true ||
+    receipt.install.frozenLockfile !== true ||
+    receipt.install.lifecycleScripts !== false ||
+    receipt.qualification?.productCli !== false ||
+    receipt.qualification.nativeCommands !== false ||
+    receipt.qualification.fullProduct !== false ||
+    !Number.isSafeInteger(receipt.commands) ||
+    receipt.commands <= 0 ||
+    !Array.isArray(receipt.preparedInputs) ||
+    !Array.isArray(receipt.sourceEntries) ||
+    !receipt.sourceEntries.length
+  )
     throw new Error("Invalid product payload receipt; installation does not qualify the CLI");
   if (!sameProductIdentity(receipt.lock, await productIdentity(join(root, "bun.lock"))))
     throw new Error("Frozen product lockfile changed");
@@ -315,13 +377,22 @@ export async function verifyProductPayload(
   const preparedPaths = new Set<string>();
   for (const input of receipt.preparedInputs) {
     await validatePreparedProductPath(root, input.path, receipt.sourceEntries, receipt.target);
-    if (preparedPaths.has(input.path) || input.sourceRevision !== receipt.sourceRevision ||
-      !sameProductIdentity(input, await productIdentity(productPath(root, input.path))))
+    if (
+      preparedPaths.has(input.path) ||
+      input.sourceRevision !== receipt.sourceRevision ||
+      !sameProductIdentity(input, await productIdentity(productPath(root, input.path)))
+    )
       throw new Error("Prepared product archive differs from its pinned inputs");
     preparedPaths.add(input.path);
   }
   await validateProductWasmInputs(root, receipt.preparedInputs);
-  await validateProductNativeInputs(root, receipt.preparedInputs, receipt.sourceEntries, receipt.target, receipt.sourceRevision);
+  await validateProductNativeInputs(
+    root,
+    receipt.preparedInputs,
+    receipt.sourceEntries,
+    receipt.target,
+    receipt.sourceRevision,
+  );
   await verifyLinks(root, receipt.sourceEntries);
   await verifyInstalledAdditions(root, receipt.sourceEntries, receipt.preparedInputs);
   for (const file of ["src/cli.ts", "src/cli/main.ts", "src/cli/commands.ts", "package.json"])
@@ -329,7 +400,7 @@ export async function verifyProductPayload(
   const installed = await sourceIntegrity(root);
   if (installed.lfsPointers.length || installed.treeSHA256 !== receipt.installedTreeSHA256)
     throw new Error("Installed product tree differs from its receipt");
-  if (await productModesSHA256(root) !== receipt.installedModesSHA256)
+  if ((await productModesSHA256(root)) !== receipt.installedModesSHA256)
     throw new Error("Installed product file or directory permissions differ from their receipt");
   return receipt;
 }

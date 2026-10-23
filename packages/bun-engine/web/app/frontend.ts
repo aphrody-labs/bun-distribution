@@ -431,11 +431,13 @@ async function showGamePage(id: number, push = true): Promise<void> {
   const system = state.systems.find(item => item.id === game.system);
   const systemName = system?.name ?? game.system;
   const plays = game.playCount;
-  const route = data.routes.find(item => item.id === (game.route ?? data.defaultRoute)) ?? data.routes.find(item => item.available);
+  const route =
+    data.routes.find(item => item.id === (game.route ?? data.defaultRoute)) ?? data.routes.find(item => item.available);
   const saves = data.saves;
-  const saveText = saves.states || saves.screenshots
-    ? `${saves.states} ${saves.states === 1 ? "save state" : "save states"} · ${saves.screenshots} ${saves.screenshots === 1 ? "screenshot" : "screenshots"}${saves.shared ? " (shared saves, copied in when this profile first plays)" : ""}`
-    : "No save states or screenshots yet";
+  const saveText =
+    saves.states || saves.screenshots
+      ? `${saves.states} ${saves.states === 1 ? "save state" : "save states"} · ${saves.screenshots} ${saves.screenshots === 1 ? "screenshot" : "screenshots"}${saves.shared ? " (shared saves, copied in when this profile first plays)" : ""}`
+      : "No save states or screenshots yet";
   view.innerHTML = `<section class="game-page" aria-label="${h(nameOf(game))}">
     <div class="page-head"><button data-nav data-action="back" class="ghost">${icon("arrow-left")} Back</button></div>
     <section class="hero game-hero" style="--tint:${tintOf(game.system)}">
@@ -554,7 +556,9 @@ function renderResults(query: string, games: Game[] = [], failed?: string): void
   state.games = games;
   note.textContent = `${games.length} ${games.length === 1 ? "result" : "results"} for “${query.trim()}”`;
   list.innerHTML = games.length
-    ? games.map(game => gameRow(game, state.systems.find(system => system.id === game.system)?.name ?? game.system)).join("")
+    ? games
+        .map(game => gameRow(game, state.systems.find(system => system.id === game.system)?.name ?? game.system))
+        .join("")
     : `<div class="empty">${icon("search", "icon big")}<h2>No games match</h2><p>Nothing in the library matches “${h(query.trim())}”. Check the spelling or try fewer words.</p></div>`;
 }
 
@@ -605,10 +609,30 @@ function typeKey(value: string, selector: string, button?: HTMLElement): void {
 type HostSection<T> = ({ available: true; source: string } & T) | { available: false; reason: string };
 
 interface HostData {
-  display: HostSection<{ outputs: Array<{ name: string; model: string | null; width: number; height: number; refresh: number | null; scale: number | null; on: boolean | null }> }>;
-  audio: HostSection<{ sinks: Array<{ id: string; name: string; default: boolean; volume: number | null; muted: boolean | null }> }>;
+  display: HostSection<{
+    outputs: Array<{
+      name: string;
+      model: string | null;
+      width: number;
+      height: number;
+      refresh: number | null;
+      scale: number | null;
+      on: boolean | null;
+    }>;
+  }>;
+  audio: HostSection<{
+    sinks: Array<{ id: string; name: string; default: boolean; volume: number | null; muted: boolean | null }>;
+  }>;
   network: HostSection<{
-    interfaces: Array<{ name: string; state: string; kind: string | null; connection: string | null; addresses: string[]; gateway: boolean; virtual: boolean }>;
+    interfaces: Array<{
+      name: string;
+      state: string;
+      kind: string | null;
+      connection: string | null;
+      addresses: string[];
+      gateway: boolean;
+      virtual: boolean;
+    }>;
     gateway: string | null;
   }>;
   storage: HostSection<{
@@ -671,9 +695,14 @@ function networkCard(host: HostData | undefined): string {
         item =>
           `<dt>${h(item.name)}${item.kind ? ` (${h(item.kind)})` : ""}</dt><dd><span class="badge ${item.state === "up" ? "present" : "missing"}">${h(item.state)}</span>${item.connection ? ` ${h(item.connection)}` : ""}${item.gateway ? " · default route" : ""}${item.addresses.length ? `<br/><span class="mono small">${item.addresses.map(h).join("<br/>")}</span>` : ""}</dd>`,
       )
-      .join("")}</dl>${real.length ? "" : '<p class="note">No hardware network interface.</p>'}<p class="note">${hidden ? `${hidden} virtual ${hidden === 1 ? "interface is" : "interfaces are"} hidden. ` : ""}From ${h(section.source)}.</p>`;
+      .join(
+        "",
+      )}</dl>${real.length ? "" : '<p class="note">No hardware network interface.</p>'}<p class="note">${hidden ? `${hidden} virtual ${hidden === 1 ? "interface is" : "interfaces are"} hidden. ` : ""}From ${h(section.source)}.</p>`;
   } else body = notAvailable(section?.reason ?? unreadable);
-  return infoCard("Network", `${body}<dl><dt>This page</dt><dd>${navigator.onLine ? "online" : "offline"} according to the browser</dd></dl>`);
+  return infoCard(
+    "Network",
+    `${body}<dl><dt>This page</dt><dd>${navigator.onLine ? "online" : "offline"} according to the browser</dd></dl>`,
+  );
 }
 
 function storageCard(host: HostData | undefined): string {
@@ -710,7 +739,10 @@ function controllersCard(): string {
               `<dt>Port ${pad.index + 1}</dt><dd>${h(pad.id)}<br/><span class="note">${pad.mapping ? `${h(pad.mapping)} mapping` : "no standard mapping"} · ${pad.buttons.length} buttons · ${pad.axes.length} axes</span></dd>`,
           )
           .join("")}</dl>`
-      : notAvailable("The browser lists a controller only after a button is pressed on it. Press any button.", "No controller reported"),
+      : notAvailable(
+          "The browser lists a controller only after a button is pressed on it. Press any button.",
+          "No controller reported",
+        ),
   );
 }
 
@@ -734,17 +766,33 @@ function measureRefresh(): void {
     deltas.sort((a, b) => a - b);
     const median = deltas[deltas.length >> 1]!;
     const cell = document.querySelector("#refresh-rate");
-    if (cell) cell.textContent = `${Math.round(1000 / median)} Hz (median of ${deltas.length} frames, measured by this page)`;
+    if (cell)
+      cell.textContent = `${Math.round(1000 / median)} Hz (median of ${deltas.length} frames, measured by this page)`;
   };
   requestAnimationFrame(step);
 }
 
-
 interface SettingsData {
   session: { gamescope: boolean; display: string | null; desktop: string | null; window: boolean; power: boolean };
-  library: { project: string; database: string; games: number; sources: Array<{ id: number; kind: string; path: string; system: string | null }> };
-  systems: Array<{ id: string; name: string; games: number; defaultRoute: string | null; routes: Array<{ id: string; kind: string; available: boolean; reason?: string }> }>;
-  cores: Array<{ id: string; installed: boolean; systems: string[]; bios: Array<{ file: string; status: string; optional: boolean }> }>;
+  library: {
+    project: string;
+    database: string;
+    games: number;
+    sources: Array<{ id: number; kind: string; path: string; system: string | null }>;
+  };
+  systems: Array<{
+    id: string;
+    name: string;
+    games: number;
+    defaultRoute: string | null;
+    routes: Array<{ id: string; kind: string; available: boolean; reason?: string }>;
+  }>;
+  cores: Array<{
+    id: string;
+    installed: boolean;
+    systems: string[];
+    bios: Array<{ file: string; status: string; optional: boolean }>;
+  }>;
   native: Array<{ system: string; machine: string; status: string; required: boolean }>;
   config: { store: string; values: Config };
   versions: { engine: string | null; bun: string; platform: string; libretroarch: string | null };
@@ -765,7 +813,8 @@ const soundWhy = (value: string) =>
 
 async function showSettings(): Promise<void> {
   const mine = enter("settings");
-  view.innerHTML = '<div class="skeleton-page" aria-busy="true"><span class="sk-line w20 tall"></span><span class="sk-line w60"></span><span class="sk-line w60"></span></div>';
+  view.innerHTML =
+    '<div class="skeleton-page" aria-busy="true"><span class="sk-line w20 tall"></span><span class="sk-line w60"></span><span class="sk-line w60"></span></div>';
   setHints([
     ["move", "Move"],
     ["select", "Change"],
@@ -787,7 +836,9 @@ async function showSettings(): Promise<void> {
   }
   if (mine !== navigation) return;
   const hud = data.config.values.hud === "1";
-  const biosMissing = data.cores.flatMap(core => core.bios.filter(bios => bios.status === "missing" && !bios.optional)).length;
+  const biosMissing = data.cores.flatMap(core =>
+    core.bios.filter(bios => bios.status === "missing" && !bios.optional),
+  ).length;
   view.innerHTML = `<section class="page settings">
     <h1>Settings</h1>
     <p class="lead">Everything here is read from this device when the page opens. Nothing is a placeholder.</p>
@@ -960,9 +1011,15 @@ const confirms = new WeakMap<HTMLElement, (answer: boolean) => void>();
 // -- power -----------------------------------------------------------------------------------------
 
 async function openPower(): Promise<void> {
-  const session = await api<{ window: boolean; power: boolean; sleep?: { available: boolean; mechanism?: string; reason?: string } }>("/api/session").catch(
-    () => ({ window: false, power: false, sleep: { available: false, mechanism: undefined, reason: "The service did not answer." } }),
-  );
+  const session = await api<{
+    window: boolean;
+    power: boolean;
+    sleep?: { available: boolean; mechanism?: string; reason?: string };
+  }>("/api/session").catch(() => ({
+    window: false,
+    power: false,
+    sleep: { available: false, mechanism: undefined, reason: "The service did not answer." },
+  }));
   const sleepable = session.sleep?.available === true;
   const root = openOverlay({
     kind: "power",
@@ -980,9 +1037,11 @@ async function openPower(): Promise<void> {
 // -- sleep: the display goes off through the host (Sway output power or X11 DPMS), the page keeps a black cover
 //    and wakes on the first key, click or pad button. If the host cannot do it the menu says why: no fake sleep.
 
-let sleeping: { returnTo: HTMLElement | null; watch: ReturnType<typeof setInterval>; held: boolean; waking: boolean } | undefined;
+let sleeping:
+  { returnTo: HTMLElement | null; watch: ReturnType<typeof setInterval>; held: boolean; waking: boolean } | undefined;
 
-const anyPadPressed = () => [...(navigator.getGamepads?.() ?? [])].some(pad => pad?.buttons.some(button => button.pressed));
+const anyPadPressed = () =>
+  [...(navigator.getGamepads?.() ?? [])].some(pad => pad?.buttons.some(button => button.pressed));
 
 async function sleepNow(unavailable: boolean, reason: string): Promise<void> {
   if (unavailable) {
@@ -1189,7 +1248,13 @@ let player: { frame: HTMLIFrameElement; pid?: number; returnTo: HTMLElement | nu
 
 async function openPlayer(url: string, game: Game, pid?: number): Promise<void> {
   for (let attempt = 0; attempt < 50; attempt++) {
-    if (await fetch(url, { mode: "no-cors" }).then(() => true, () => false)) break;
+    if (
+      await fetch(url, { mode: "no-cors" }).then(
+        () => true,
+        () => false,
+      )
+    )
+      break;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -1310,15 +1375,25 @@ async function quickAction(name: string): Promise<void> {
 }
 
 /** Messages from the game page: menu requests, verified pause state, and what each action wrote. */
-function onPlayerMessage(data: { type: string; paused?: boolean; ok?: boolean; text?: string; line?: string; value?: number }): void {
+function onPlayerMessage(data: {
+  type: string;
+  paused?: boolean;
+  ok?: boolean;
+  text?: string;
+  line?: string;
+  value?: number;
+}): void {
   if (data.type === "menu") {
     if (!overlayStack.length) openQuick();
   } else if (data.type === "paused") {
     const label = document.querySelector("#quick-state");
     if (label) label.textContent = data.paused ? "Paused" : "Running";
   } else if (data.type === "result") {
-    const what = { SAVE_STATE: "Save state", LOAD_STATE: "Load state", SCREENSHOT: "Screenshot" }[data.line ?? ""] ?? "Action";
-    const text = data.ok ? `${what}: ${data.line === "SAVE_STATE" ? "saved" : data.line === "LOAD_STATE" ? "loaded" : "saved as"} ${data.line === "SCREENSHOT" || data.line === "SAVE_STATE" ? (data.text ?? "") : ""}`.trim() : `${what} failed: ${data.text ?? "no answer"}`;
+    const what =
+      { SAVE_STATE: "Save state", LOAD_STATE: "Load state", SCREENSHOT: "Screenshot" }[data.line ?? ""] ?? "Action";
+    const text = data.ok
+      ? `${what}: ${data.line === "SAVE_STATE" ? "saved" : data.line === "LOAD_STATE" ? "loaded" : "saved as"} ${data.line === "SCREENSHOT" || data.line === "SAVE_STATE" ? (data.text ?? "") : ""}`.trim()
+      : `${what} failed: ${data.text ?? "no answer"}`;
     quickLog(text);
     if (!overlayStack.length) toast(text, data.ok ? "ok" : "error");
   }
@@ -1381,7 +1456,10 @@ async function activate(element: HTMLElement): Promise<void> {
   if (data.power) {
     if (data.power === "close") return closeOverlay();
     if (data.power === "sleep")
-      return sleepNow(element.getAttribute("aria-disabled") === "true", element.querySelector("small")?.textContent?.replace(/^Not available: /, "") ?? "unknown reason");
+      return sleepNow(
+        element.getAttribute("aria-disabled") === "true",
+        element.querySelector("small")?.textContent?.replace(/^Not available: /, "") ?? "unknown reason",
+      );
     return powerAction(data.power as "exit" | "restart", element.getAttribute("aria-disabled") === "true");
   }
   if (data.profile) {
@@ -1541,7 +1619,11 @@ async function pollJobs(): Promise<void> {
         job.status === "done" ? `Done: ${job.title}` : `Failed: ${job.title}: ${job.error}`,
         job.status === "done" ? "ok" : "error",
       );
-      if (job.title === "Scan library" && ["home", "systems", "sources", "settings"].includes(state.tab) && !overlayStack.length)
+      if (
+        job.title === "Scan library" &&
+        ["home", "systems", "sources", "settings"].includes(state.tab) &&
+        !overlayStack.length
+      )
         void show(state.tab);
       if (state.tab === "bios" && job.status === "done") void showBios();
     }
@@ -1580,7 +1662,12 @@ async function launchAppTile(id: string): Promise<void> {
     return;
   }
   if (app.pid) {
-    const yes = await confirmDialog({ title: `Stop ${app.title}?`, body: "The app closes. Anything unsaved in it is lost.", confirm: "Stop", danger: true });
+    const yes = await confirmDialog({
+      title: `Stop ${app.title}?`,
+      body: "The app closes. Anything unsaved in it is lost.",
+      confirm: "Stop",
+      danger: true,
+    });
     if (yes) {
       await api(`/api/running/${app.pid}`, { method: "DELETE" });
       await pollRunning();
@@ -1596,7 +1683,9 @@ async function launchAppTile(id: string): Promise<void> {
 function renderStatus(): void {
   const running = state.jobs.filter(job => job.status === "running").length;
   status.innerHTML = [
-    state.running.length ? `<span class="pill play">${icon("play", "icon fill")} ${state.running.length} running</span>` : "",
+    state.running.length
+      ? `<span class="pill play">${icon("play", "icon fill")} ${state.running.length} running</span>`
+      : "",
     running ? `<span class="pill busy">${icon("refresh-cw")} ${running} job${running > 1 ? "s" : ""}</span>` : "",
     `<span class="pill" id="pad" title="${state.pad === "none" ? "Keyboard" : "Controller connected"}">${icon(state.pad === "none" ? "keyboard" : "gamepad-2")} ${state.pad === "none" ? "Keyboard" : "Controller"}</span>`,
   ].join("");
@@ -1770,7 +1859,10 @@ document.addEventListener("keydown", event => {
     PageUp: () => cyclePage(-1),
     PageDown: () => cyclePage(1),
     c: () =>
-      !typing && state.tab === "games" && state.game && guarded(() => launch(state.game!, true, (document.activeElement as HTMLElement)?.dataset.route)),
+      !typing &&
+      state.tab === "games" &&
+      state.game &&
+      guarded(() => launch(state.game!, true, (document.activeElement as HTMLElement)?.dataset.route)),
     f: () => !typing && (state.tab === "games" || state.tab === "game") && guarded(toggleFavorite),
     d: () => !typing && state.tab === "games" && guarded(setDefault),
     r: () => !typing && guarded(scan),

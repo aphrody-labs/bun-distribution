@@ -53,27 +53,18 @@ export function planOmarchyCandidate(
   usr: UsrManifest,
   integration: OmarchyIntegration,
 ) {
-  const omarchy = integration.repositories.find(
-    (repository) => repository.name === "omarchy",
-  );
+  const omarchy = integration.repositories.find(repository => repository.name === "omarchy");
   if (!omarchy || !omarchy.servers.length || !omarchy.signingKey)
-    throw new Error(
-      "Omarchy candidate requires its declared signed repository.",
-    );
+    throw new Error("Omarchy candidate requires its declared signed repository.");
   const bootstrapImage = profile.bootstrapImage;
   if (typeof bootstrapImage !== "string" || bootstrapImage !== usr.builderImage)
-    throw new Error(
-      "Root profile bootstrapImage and /usr builderImage must match.",
-    );
+    throw new Error("Root profile bootstrapImage and /usr builderImage must match.");
 
-  const repositories = usr.repositories.filter(
-    (repository) => repository.name !== "bunos",
-  );
+  const repositories = usr.repositories.filter(repository => repository.name !== "bunos");
   const keys = [
-    ...repositories.flatMap((repository) =>
+    ...repositories.flatMap(repository =>
       (repository.keys ?? []).map(
-        (key) =>
-          `${key}@${(repository.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
+        key => `${key}@${(repository.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
       ),
     ),
     `${omarchy.signingKey}@keyserver.ubuntu.com`,
@@ -85,14 +76,10 @@ export function planOmarchyCandidate(
     "SigLevel = Required DatabaseOptional",
     "LocalFileSigLevel = Optional",
     "",
-    ...repositories.flatMap((repository) => [
-      `[${repository.name}]`,
-      `Server = ${repository.server}`,
-      "",
-    ]),
+    ...repositories.flatMap(repository => [`[${repository.name}]`, `Server = ${repository.server}`, ""]),
     `[${omarchy.name}]`,
     "SigLevel = Required DatabaseOptional",
-    ...omarchy.servers.map((server) => `Server = ${server}`),
+    ...omarchy.servers.map(server => `Server = ${server}`),
     "",
   ].join("\n");
 
@@ -111,10 +98,8 @@ export function planOmarchyCandidate(
     },
     qualification: {
       state: "unqualified",
-      source:
-        "omacom/omarchy stable 4.0.4; package recipe pin c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
-      packageResolution:
-        "signed repository resolution; build-time pacman -Q receipt, not an immutable closure",
+      source: "omacom/omarchy stable 4.0.4; package recipe pin c668141e9c42b13c80c9ca4ea108e11708c5e8a5",
+      packageResolution: "signed repository resolution; build-time pacman -Q receipt, not an immutable closure",
       releaseEligible: false,
     },
   };

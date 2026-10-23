@@ -36,9 +36,7 @@ type GuestInputs = {
 };
 
 const here = import.meta.dir;
-const inputs = (await Bun.file(
-  `${here}/guest-inputs.json`,
-).json()) as GuestInputs;
+const inputs = (await Bun.file(`${here}/guest-inputs.json`).json()) as GuestInputs;
 const mebibyte = 1024 * 1024;
 const gibibyte = 1024 * mebibyte;
 
@@ -64,13 +62,10 @@ async function canonicalDirectory(path: string) {
 }
 
 async function run(argv: string[], timeoutSeconds: number, capture = false) {
-  const proc = Bun.spawn(
-    ["timeout", "--signal=TERM", `${timeoutSeconds}s`, ...argv],
-    {
-      stdout: capture ? "pipe" : "inherit",
-      stderr: "inherit",
-    },
-  );
+  const proc = Bun.spawn(["timeout", "--signal=TERM", `${timeoutSeconds}s`, ...argv], {
+    stdout: capture ? "pipe" : "inherit",
+    stderr: "inherit",
+  });
   const output = capture ? await proc.stdout!.text() : "";
   const code = await proc.exited;
   if (code !== 0) throw new Error(`${argv[0]} failed with exit code ${code}`);
@@ -89,13 +84,8 @@ async function downloadAsset(asset: Asset, destination: string) {
     const file = Bun.file(finalPath);
     const stat = await file.stat();
     const actual = await sha256File(finalPath);
-    if (
-      (asset.sizeBytes !== undefined && stat.size !== asset.sizeBytes) ||
-      actual !== asset.sha256
-    )
-      throw new Error(
-        `Existing pinned source has wrong size or digest: ${finalPath}`,
-      );
+    if ((asset.sizeBytes !== undefined && stat.size !== asset.sizeBytes) || actual !== asset.sha256)
+      throw new Error(`Existing pinned source has wrong size or digest: ${finalPath}`);
     return {
       path: finalPath,
       sizeBytes: stat.size,
@@ -105,29 +95,21 @@ async function downloadAsset(asset: Asset, destination: string) {
   }
 
   const partPath = `${finalPath}.part`;
-  if (await Bun.file(partPath).exists())
-    throw new Error(
-      `Refusing to overwrite incomplete source state: ${partPath}`,
-    );
+  if (await Bun.file(partPath).exists()) throw new Error(`Refusing to overwrite incomplete source state: ${partPath}`);
   const url = new URL(asset.file, inputs.release.baseUrl).href;
   const response = await fetch(url, {
     redirect: "follow",
     signal: AbortSignal.timeout(inputs.limits.downloadTimeoutSeconds * 1000),
     headers: { Accept: "application/octet-stream" },
   });
-  if (!response.ok || !response.body)
-    throw new Error(`${url}: HTTP ${response.status}`);
+  if (!response.ok || !response.body) throw new Error(`${url}: HTTP ${response.status}`);
   const sourceHost = new URL(response.url).hostname;
-  if (
-    sourceHost !== "github.com" &&
-    sourceHost !== "release-assets.githubusercontent.com"
-  ) {
+  if (sourceHost !== "github.com" && sourceHost !== "release-assets.githubusercontent.com") {
     await response.body.cancel();
     throw new Error(`Unexpected release download host: ${sourceHost}`);
   }
   const byteLimit = asset.sizeBytes ?? asset.maxBytes;
-  if (!byteLimit)
-    throw new Error(`No download bound is declared for ${asset.file}`);
+  if (!byteLimit) throw new Error(`No download bound is declared for ${asset.file}`);
   const declaredLength = response.headers.get("content-length");
   if (declaredLength && Number(declaredLength) > byteLimit)
     throw new Error(`${asset.file} exceeds its declared download bound`);
@@ -136,10 +118,7 @@ async function downloadAsset(asset: Asset, destination: string) {
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         count += chunk.byteLength;
-        if (count > byteLimit)
-          throw new Error(
-            `${asset.file} exceeded its ${byteLimit}-byte download bound`,
-          );
+        if (count > byteLimit) throw new Error(`${asset.file} exceeded its ${byteLimit}-byte download bound`);
         controller.enqueue(chunk);
       },
     }),
@@ -148,13 +127,8 @@ async function downloadAsset(asset: Asset, destination: string) {
     await Bun.write(partPath, boundedBody);
     const actual = await sha256File(partPath);
     const sizeBytes = (await Bun.file(partPath).stat()).size;
-    if (
-      actual !== asset.sha256 ||
-      (asset.sizeBytes !== undefined && sizeBytes !== asset.sizeBytes)
-    )
-      throw new Error(
-        `${asset.file} failed integrity verification (size ${sizeBytes}, sha256 ${actual})`,
-      );
+    if (actual !== asset.sha256 || (asset.sizeBytes !== undefined && sizeBytes !== asset.sizeBytes))
+      throw new Error(`${asset.file} failed integrity verification (size ${sizeBytes}, sha256 ${actual})`);
     await run(["mv", "-T", "--", partPath, finalPath], 10);
     return { path: finalPath, sizeBytes, sha256: actual, cached: false };
   } catch (error) {
@@ -165,9 +139,8 @@ async function downloadAsset(asset: Asset, destination: string) {
 
 function assertNoExistingOutputs(paths: string[]) {
   return Promise.all(
-    paths.map(async (path) => {
-      if (await Bun.file(path).exists())
-        throw new Error(`Refusing to overwrite build output: ${path}`);
+    paths.map(async path => {
+      if (await Bun.file(path).exists()) throw new Error(`Refusing to overwrite build output: ${path}`);
     }),
   );
 }
@@ -177,10 +150,7 @@ async function ensureDiskSpace(path: string) {
   const lines = output.trim().split("\n");
   const fields = lines.at(-1)?.trim().split(/\s+/) ?? [];
   const availableKiB = Number(fields[3]);
-  const required =
-    3 * inputs.assets.rootfs.expandedSizeBytes! +
-    inputs.assets.rootfs.sizeBytes! +
-    gibibyte;
+  const required = 3 * inputs.assets.rootfs.expandedSizeBytes! + inputs.assets.rootfs.sizeBytes! + gibibyte;
   if (!Number.isFinite(availableKiB) || availableKiB * 1024 < required)
     throw new Error(
       `Insufficient free space: need at least ${required} bytes for verified rootfs expansion, tar, and Docker layer`,
@@ -211,41 +181,24 @@ function containerfile() {
 }
 
 /** Download, verify and safely archive the official guest into a fresh image context. */
-export async function prepareOmarchyRootfsImport(
-  workspaceInput: string,
-  allowedRootInput: string,
-) {
-  if (inputs.schemaVersion !== 1)
-    throw new Error("Unsupported guest input schema");
+export async function prepareOmarchyRootfsImport(workspaceInput: string, allowedRootInput: string) {
+  if (inputs.schemaVersion !== 1) throw new Error("Unsupported guest input schema");
   const allowedRoot = await canonicalDirectory(allowedRootInput);
   const workspace = await canonicalDirectory(workspaceInput);
   const rel = relative(allowedRoot, workspace);
-  if (
-    !rel ||
-    rel === "." ||
-    rel === ".." ||
-    rel.startsWith(`..${sep}`) ||
-    rel.includes(sep) ||
-    isAbsolute(rel)
-  )
-    throw new Error(
-      "Import workspace must be a direct child of the private factory build root",
-    );
+  if (!rel || rel === "." || rel === ".." || rel.startsWith(`..${sep}`) || rel.includes(sep) || isAbsolute(rel))
+    throw new Error("Import workspace must be a direct child of the private factory build root");
   if (basename(workspace).length < 8)
-    throw new Error(
-      "Import workspace does not look like a generated factory job directory",
-    );
+    throw new Error("Import workspace does not look like a generated factory job directory");
 
   const contextDir = resolve(workspace, "context");
   if (
     !(await Bun.file(contextDir)
       .stat()
-      .then((stat) => stat.isDirectory())
+      .then(stat => stat.isDirectory())
       .catch(() => false))
   )
-    throw new Error(
-      `Expected an existing Docker context directory: ${contextDir}`,
-    );
+    throw new Error(`Expected an existing Docker context directory: ${contextDir}`);
   const importDir = resolve(contextDir, "import");
   const sourceDir = resolve(workspace, "omarchy-source-v0.12.0");
   await run(["mkdir", "-p", "--", importDir], 10);
@@ -271,10 +224,7 @@ export async function prepareOmarchyRootfsImport(
   try {
     await ensureDiskSpace(workspace);
     const downloaded = {
-      guestManifest: await downloadAsset(
-        inputs.assets.guestManifest,
-        sourceDir,
-      ),
+      guestManifest: await downloadAsset(inputs.assets.guestManifest, sourceDir),
       packagesLock: await downloadAsset(inputs.assets.packagesLock, sourceDir),
       rootfs: await downloadAsset(inputs.assets.rootfs, sourceDir),
     };
@@ -283,15 +233,7 @@ export async function prepareOmarchyRootfsImport(
       throw new Error("Verified guest manifest is not a JSON object");
 
     await run(
-      [
-        "zstd",
-        "--decompress",
-        "--memory=512MB",
-        "--force",
-        "-o",
-        expanded,
-        downloaded.rootfs.path,
-      ],
+      ["zstd", "--decompress", "--memory=512MB", "--force", "-o", expanded, downloaded.rootfs.path],
       inputs.limits.decompressionTimeoutSeconds,
     );
     const expandedStat = await Bun.file(expanded).stat();
@@ -300,21 +242,10 @@ export async function prepareOmarchyRootfsImport(
       expandedStat.size !== inputs.assets.rootfs.expandedSizeBytes ||
       expandedDigest !== inputs.assets.rootfs.expandedSha256
     )
-      throw new Error(
-        `Expanded ext4 integrity mismatch (size ${expandedStat.size}, sha256 ${expandedDigest})`,
-      );
+      throw new Error(`Expanded ext4 integrity mismatch (size ${expandedStat.size}, sha256 ${expandedDigest})`);
 
     await run(
-      [
-        "sudo",
-        "-n",
-        "mount",
-        "-o",
-        "loop,ro,noload,nodev,nosuid",
-        "--",
-        expanded,
-        mountDir,
-      ],
+      ["sudo", "-n", "mount", "-o", "loop,ro,noload,nodev,nosuid", "--", expanded, mountDir],
       inputs.limits.mountTimeoutSeconds,
     );
     mounted = true;
@@ -342,8 +273,7 @@ export async function prepareOmarchyRootfsImport(
     mounted = false;
 
     const partialStat = await Bun.file(partialTar).stat();
-    if (partialStat.size === 0)
-      throw new Error("Imported rootfs archive is empty");
+    if (partialStat.size === 0) throw new Error("Imported rootfs archive is empty");
     const partialSha256 = await sha256File(partialTar);
     await run(["mv", "-T", "--", partialTar, outputTar], 10);
     await removeTemporary(expanded);
@@ -392,23 +322,11 @@ export async function prepareOmarchyRootfsImport(
         "read-only ext4 loop mount; GNU tar numeric owners, xattrs, ACLs, SELinux labels, sparse files and hard links",
       imageCommand: ["/bin/bash", "--login"],
     };
-    await Bun.write(
-      resolve(importDir, "guest-manifest.json"),
-      Bun.file(downloaded.guestManifest.path),
-    );
-    await Bun.write(
-      resolve(importDir, "packages.lock.txt"),
-      Bun.file(downloaded.packagesLock.path),
-    );
-    await Bun.write(
-      resolve(importDir, "NOTICES.md"),
-      Bun.file(`${here}/NOTICES.md`),
-    );
+    await Bun.write(resolve(importDir, "guest-manifest.json"), Bun.file(downloaded.guestManifest.path));
+    await Bun.write(resolve(importDir, "packages.lock.txt"), Bun.file(downloaded.packagesLock.path));
+    await Bun.write(resolve(importDir, "NOTICES.md"), Bun.file(`${here}/NOTICES.md`));
     await Bun.write(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-    await Bun.write(
-      resolve(contextDir, "import.Containerfile"),
-      containerfile(),
-    );
+    await Bun.write(resolve(contextDir, "import.Containerfile"), containerfile());
     result = {
       context: contextDir,
       containerfile: resolve(contextDir, "import.Containerfile"),
@@ -424,8 +342,7 @@ export async function prepareOmarchyRootfsImport(
       failures.push(error);
     }
   }
-  if (failures.length)
-    throw new AggregateError(failures, "Omarchy rootfs import failed");
+  if (failures.length) throw new AggregateError(failures, "Omarchy rootfs import failed");
   if (!result) throw new Error("Omarchy import did not produce a receipt");
   return result;
 }
@@ -433,14 +350,6 @@ export async function prepareOmarchyRootfsImport(
 if (import.meta.main) {
   const [action, workspace, allowedRoot] = Bun.argv.slice(2);
   if (action !== "prepare" || !workspace || !allowedRoot)
-    throw new Error(
-      "Usage: bun import.ts prepare <factory-job-dir> <private-factory-build-root>",
-    );
-  console.log(
-    JSON.stringify(
-      await prepareOmarchyRootfsImport(workspace, allowedRoot),
-      null,
-      2,
-    ),
-  );
+    throw new Error("Usage: bun import.ts prepare <factory-job-dir> <private-factory-build-root>");
+  console.log(JSON.stringify(await prepareOmarchyRootfsImport(workspace, allowedRoot), null, 2));
 }

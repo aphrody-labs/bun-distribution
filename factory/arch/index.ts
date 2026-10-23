@@ -20,42 +20,30 @@ export async function loadSelectedSourceCatalogs(
   selected: readonly string[],
   loaders: Record<string, () => Promise<unknown>>,
 ): Promise<Record<string, unknown>> {
-  if (new Set(selected).size !== selected.length)
-    throw new Error("Arch source catalog identifiers must be unique.");
+  if (new Set(selected).size !== selected.length) throw new Error("Arch source catalog identifiers must be unique.");
   for (const id of selected) {
     if (!Object.hasOwn(loaders, id) || typeof loaders[id] !== "function")
       throw new Error(`Unknown Arch source catalog: ${id}`);
   }
-  const entries = await Promise.all(
-    selected.map(async (id) => [id, await loaders[id]!()] as const),
-  );
+  const entries = await Promise.all(selected.map(async id => [id, await loaders[id]!()] as const));
   return Object.fromEntries(entries);
 }
 
 export function selectDesktopSession(
   composition: Composition,
   requested?: DesktopSession,
-  defaultSession: DesktopSession = profileContract.compositions.desktop
-    .defaultSession as DesktopSession,
+  defaultSession: DesktopSession = profileContract.compositions.desktop.defaultSession as DesktopSession,
 ): DesktopSession | null {
-  if (
-    requested !== undefined &&
-    requested !== "cosmic" &&
-    requested !== "omarchy-hyprland"
-  )
+  if (requested !== undefined && requested !== "cosmic" && requested !== "omarchy-hyprland")
     throw new Error("Unknown desktop session.");
   if (requested && composition !== "desktop")
-    throw new Error(
-      "A desktop session can only be selected for the desktop composition.",
-    );
+    throw new Error("A desktop session can only be selected for the desktop composition.");
   return composition === "desktop" ? (requested ?? defaultSession) : null;
 }
 
 /** Source catalogs are complete inputs, not a request to install conflicting sessions. */
 export async function planArchDistribution(options: ArchDistributionOptions) {
-  const profile = (await Bun.file(
-    join(import.meta.dir, "../profile.json"),
-  ).json()) as {
+  const profile = (await Bun.file(join(import.meta.dir, "../profile.json")).json()) as {
     compositions: Record<
       Composition,
       {
@@ -76,23 +64,16 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
     >;
     sourceCatalogs: string[];
   };
-  if (
-    !Array.isArray(profile.sourceCatalogs) ||
-    profile.sourceCatalogs.some((id) => typeof id !== "string")
-  )
+  if (!Array.isArray(profile.sourceCatalogs) || profile.sourceCatalogs.some(id => typeof id !== "string"))
     throw new Error("The root Arch profile must declare its source catalogs.");
   const loaders = {
     cachyos: async () => ({
       path: "factory/arch/cachyos",
       recipes: "catalog.json",
-      integration: await Bun.file(
-        join(import.meta.dir, "cachyos/integration.json"),
-      ).json(),
+      integration: await Bun.file(join(import.meta.dir, "cachyos/integration.json")).json(),
     }),
     chimeraos: async () => {
-      const source = (await Bun.file(
-        join(import.meta.dir, "chimeraos/sources.json"),
-      ).json()) as { sources: unknown };
+      const source = (await Bun.file(join(import.meta.dir, "chimeraos/sources.json")).json()) as { sources: unknown };
       return {
         path: "factory/arch/chimeraos",
         sources: source.sources,
@@ -106,9 +87,7 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
       path: "factory/arch/omarchy",
       recipes: "pkgbuilds.json",
       rust: "rust.json",
-      integration: await Bun.file(
-        join(import.meta.dir, "omarchy/integration.json"),
-      ).json(),
+      integration: await Bun.file(join(import.meta.dir, "omarchy/integration.json")).json(),
     }),
   };
   const [catalogs, forks] = await Promise.all([
@@ -116,8 +95,7 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
     Bun.file(join(import.meta.dir, "sources.json")).json(),
   ]);
   const selected = profile.compositions[options.composition];
-  if (!selected || !compositions.includes(options.composition))
-    throw new Error("Unknown Arch composition");
+  if (!selected || !compositions.includes(options.composition)) throw new Error("Unknown Arch composition");
   const effectiveDesktopSession = selectDesktopSession(
     options.composition,
     options.desktopSession,
@@ -125,19 +103,12 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
   );
   if (
     options.composition === "desktop" &&
-    (!effectiveDesktopSession ||
-      !profile.desktopSessions[effectiveDesktopSession])
+    (!effectiveDesktopSession || !profile.desktopSessions[effectiveDesktopSession])
   )
-    throw new Error(
-      "The desktop composition requires a known desktop session.",
-    );
-  const session = effectiveDesktopSession
-    ? profile.desktopSessions[effectiveDesktopSession]
-    : undefined;
+    throw new Error("The desktop composition requires a known desktop session.");
+  const session = effectiveDesktopSession ? profile.desktopSessions[effectiveDesktopSession] : undefined;
   const packages: string[] = [
-    ...(selected.extends
-      ? profile.compositions[selected.extends].packages
-      : []),
+    ...(selected.extends ? profile.compositions[selected.extends].packages : []),
     ...selected.packages,
     ...(session?.packages ?? []),
   ];
@@ -146,9 +117,7 @@ export async function planArchDistribution(options: ArchDistributionOptions) {
     "Kernel, SDK/library builds, boot and GPU/input/audio/update qualification need independent artifact receipts.",
   ];
   if (options.target !== "linux-x64")
-    blockers.push(
-      "The current Arch bootstrap and package closure target Linux x86_64/glibc only.",
-    );
+    blockers.push("The current Arch bootstrap and package closure target Linux x86_64/glibc only.");
   if (!options.snapshot || !/^\d{4}-\d{2}-\d{2}$/.test(options.snapshot))
     blockers.push("Select an absolute Arch archive date (YYYY-MM-DD).");
   if (session) blockers.push(...session.blockers);
@@ -213,18 +182,13 @@ export interface PacmanRepository {
   signingKey?: string;
 }
 
-const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map(
-  (name) => ({
-    name,
-    family: "archlinux",
-    arch: "x86_64",
-    isa: "x86-64",
-    servers: [
-      "https://geo.mirror.pkgbuild.com/$repo/os/$arch",
-      "https://mirrors.kernel.org/archlinux/$repo/os/$arch",
-    ],
-  }),
-);
+const archOfficial: PacmanRepository[] = ["core", "extra", "multilib"].map(name => ({
+  name,
+  family: "archlinux",
+  arch: "x86_64",
+  isa: "x86-64",
+  servers: ["https://geo.mirror.pkgbuild.com/$repo/os/$arch", "https://mirrors.kernel.org/archlinux/$repo/os/$arch"],
+}));
 
 /** Binary repositories available to the package index, in pacman.conf order. */
 export function pacmanRepositories(): PacmanRepository[] {
@@ -236,19 +200,11 @@ export function pacmanRepositories(): PacmanRepository[] {
     omarchyIntegration.executable === true
       ? (omarchyIntegration.repositories as PacmanRepository[])
       : [];
-  return [
-    ...(cachyosIntegration.repositories as PacmanRepository[]),
-    ...archOfficial,
-    ...omarchyRepositories,
-  ];
+  return [...(cachyosIntegration.repositories as PacmanRepository[]), ...archOfficial, ...omarchyRepositories];
 }
 
-export function repositoryUrls(
-  repository: PacmanRepository,
-  file: string,
-): string[] {
+export function repositoryUrls(repository: PacmanRepository, file: string): string[] {
   return repository.servers.map(
-    (server) =>
-      `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${file}`,
+    server => `${server.replaceAll("$repo", repository.name).replaceAll("$arch", repository.arch)}/${file}`,
   );
 }

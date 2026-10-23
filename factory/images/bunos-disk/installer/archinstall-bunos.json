@@ -7,9 +7,18 @@
   "network_config": { "type": "nm" },
   "parallel_downloads": 5,
   "swap": { "enabled": true, "algorithm": "zstd" },
-  "packages": ["base-devel", "git", "curl", "gawk", "snapper", "snap-pac", "btrfs-progs", "efibootmgr", "sudo", "networkmanager"],
+  "packages": [
+    "base-devel",
+    "git",
+    "curl",
+    "gawk",
+    "snapper",
+    "snap-pac",
+    "btrfs-progs",
+    "efibootmgr",
+    "sudo",
+    "networkmanager"
+  ],
   "services": ["NetworkManager"],
-  "custom_commands": [
-    "bunos-installer-post"
-  ]
+  "custom_commands": ["bunos-installer-post"]
 }

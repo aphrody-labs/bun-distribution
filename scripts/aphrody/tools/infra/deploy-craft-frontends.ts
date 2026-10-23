@@ -105,14 +105,12 @@ const APPS: App[] = [
 
 const args = Bun.argv.slice(2);
 const flag = (name: string) => args.includes(name);
-const value = (name: string, fallback: string) =>
-  flag(name) ? args[args.indexOf(name) + 1]! : fallback;
+const value = (name: string, fallback: string) => (flag(name) ? args[args.indexOf(name) + 1]! : fallback);
 const host = value("--host", "vps");
 const only = value("--only", "").split(",").filter(Boolean);
 const repo = resolve(import.meta.dir, "..", "..", "..", "..");
-const apps = APPS.filter((a) => only.length === 0 || only.includes(a.path));
-if (apps.length === 0)
-  throw new Error(`No Craft apps selected by --only ${only.join(",")}`);
+const apps = APPS.filter(a => only.length === 0 || only.includes(a.path));
+if (apps.length === 0) throw new Error(`No Craft apps selected by --only ${only.join(",")}`);
 
 // Remote builder, piped to bash on the VPS: build-one.sh <pkg> <bin|--lib> <out-dir> [features].
 const REMOTE_BUILDER = String.raw`set -eu
@@ -159,7 +157,7 @@ async function buildRemote(app: App) {
     const lines = `${r.err}\n${r.out}`.split("\n");
     const tail =
       lines
-        .filter((l) => l.startsWith("error"))
+        .filter(l => l.startsWith("error"))
         .slice(-6)
         .join("\n") || lines.slice(-8).join("\n");
     failures.push({ app, reason: tail });
@@ -171,19 +169,14 @@ async function buildRemote(app: App) {
 
 async function buildRemoteShell() {
   const shellOut = `${REMOTE_OUT}/m3-shell`;
-  const targets = apps.map((app) => `"${REMOTE_OUT}/${app.path}"`).join(" ");
+  const targets = apps.map(app => `"${REMOTE_OUT}/${app.path}"`).join(" ");
   const cmd = `cd "$HOME/src/bun-os" && bun scripts/craft-web-shell.ts cadcraft-web "${shellOut}" && for out in ${targets}; do mkdir -p "$out"; cp "${shellOut}/theme.css" "$out/theme.css"; cp "${shellOut}/aphrody-icon.png" "$out/aphrody-icon.png"; done`;
-  console.log(
-    `prepare shared M3 shell for ${apps.length} Craft apps on ${host}`,
-  );
+  console.log(`prepare shared M3 shell for ${apps.length} Craft apps on ${host}`);
   const r = await sh(cmd);
   if (r.code !== 0) {
     const detail = `${r.err}\n${r.out}`.trim() || `exit ${r.code}`;
-    for (const app of apps)
-      failures.push({ app, reason: `M3 shell preparation failed: ${detail}` });
-    console.error(
-      `SKIP Craft frontends: M3 shell preparation failed\n${detail}`,
-    );
+    for (const app of apps) failures.push({ app, reason: `M3 shell preparation failed: ${detail}` });
+    console.error(`SKIP Craft frontends: M3 shell preparation failed\n${detail}`);
     return false;
   }
   return true;
@@ -199,7 +192,7 @@ try {
   // Fetch every artifact set that exists on the VPS.
   const fetched = join(staging, "fetched");
   await mkdir(fetched, { recursive: true });
-  const names = apps.map((a) => a.path).join(" ");
+  const names = apps.map(a => a.path).join(" ");
   await $`ssh ${host} ${`cd ${REMOTE_OUT} 2>/dev/null && for d in ${names}; do [ -d "$d" ] && printf '%s\n' "$d"; done | xargs -r tar -cf - `} > ${join(staging, "fetched.tar")}`.quiet();
   await $`tar -xf fetched.tar -C fetched`.cwd(staging);
 
@@ -207,14 +200,13 @@ try {
   await mkdir(site, { recursive: true });
   const built: App[] = [];
   for (const app of apps) {
-    if (failures.some((f) => f.app === app)) continue;
+    if (failures.some(f => f.app === app)) continue;
     const src = join(fetched, app.path);
     let files: string[];
     try {
       files = await readdir(src);
     } catch {
-      if (!failures.some((f) => f.app === app))
-        failures.push({ app, reason: "no build output on the VPS" });
+      if (!failures.some(f => f.app === app)) failures.push({ app, reason: "no build output on the VPS" });
       continue;
     }
     const dest = join(site, app.path);
@@ -231,13 +223,13 @@ try {
       }
       await copyFile(join(src, asset), join(dest, asset));
     }
-    if (failures.some((f) => f.app === app)) continue;
+    if (failures.some(f => f.app === app)) continue;
     if (app.kind === "lib") {
       for (const f of files) await copyFile(join(src, f), join(dest, f));
       await copyFile(join(appDir, "worker.js"), join(dest, "worker.js"));
     } else {
-      const js = files.find((f) => f.endsWith(".js") && !f.endsWith("_bg.js"));
-      const wasm = files.find((f) => f.endsWith("_bg.wasm"));
+      const js = files.find(f => f.endsWith(".js") && !f.endsWith("_bg.js"));
+      const wasm = files.find(f => f.endsWith("_bg.wasm"));
       if (!js || !wasm) {
         failures.push({ app, reason: "wasm-bindgen output is incomplete" });
         continue;
@@ -261,15 +253,9 @@ try {
             `<script type="module">\n      import init from "./${jsName}";\n      init({ module_or_path: "./${wasmName}" }).catch((e) => {\n        console.error(e);\n        const el = document.querySelector('[id$="_loading"]');\n        if (el) el.textContent = "Failed to load: " + e;\n      });\n    </script>`,
           );
         } else if (rel === "css") {
-          html = html.replace(
-            tag,
-            '<link rel="stylesheet" href="./theme.css" />',
-          );
+          html = html.replace(tag, '<link rel="stylesheet" href="./theme.css" />');
         } else if (rel === "icon") {
-          html = html.replace(
-            tag,
-            '<link rel="icon" href="./aphrody-icon.png" />',
-          );
+          html = html.replace(tag, '<link rel="icon" href="./aphrody-icon.png" />');
         } else if (rel === "copy-file") {
           html = html.replace(tag, "");
         } else {
@@ -287,9 +273,7 @@ try {
 
   await $`tar --mode=u=rwX,go=rX -czf craft-web.tgz -C site .`.cwd(staging);
   await $`scp -q craft-web.tgz ${host}:/tmp/`.cwd(staging);
-  await $`scp -q infra/config/host/nginx/craft/craft.aphrody.app.conf ${host}:/tmp/`.cwd(
-    repo,
-  );
+  await $`scp -q infra/config/host/nginx/craft/craft.aphrody.app.conf ${host}:/tmp/`.cwd(repo);
 
   const remote = String.raw`
 set -eu
@@ -318,9 +302,7 @@ rm -f /tmp/craft.aphrody.app.conf
 `;
   await $`ssh ${host} ${remote}`;
   if (!flag("--skip-vhost")) await $`ssh ${host} ${vhost}`;
-  console.log(
-    `deployed ${built.map((a) => a.path).join(", ")} to https://craft.aphrody.app/`,
-  );
+  console.log(`deployed ${built.map(a => a.path).join(", ")} to https://craft.aphrody.app/`);
   for (const f of failures) console.log(`skipped ${f.app.path}: ${f.reason}`);
 } finally {
   await rm(staging, { recursive: true, force: true });
@@ -329,7 +311,7 @@ rm -f /tmp/craft.aphrody.app.conf
 function landing(list: App[]): string {
   const cards = list
     .map(
-      (a) => `      <a class="card" href="/${a.path}/">
+      a => `      <a class="card" href="/${a.path}/">
         <span class="mark" aria-hidden="true">${a.title[0]}</span>
         <span class="name">${a.title}</span>
         <span class="desc">${a.summary}</span>

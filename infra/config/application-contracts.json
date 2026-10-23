@@ -19,12 +19,7 @@
       "sourceRepository": "https://github.com/aphrody-labs/rosegriffon",
       "binaryWorkflow": "https://github.com/aphrody-labs/rosegriffon/blob/main/.github/workflows/binaries.yml",
       "releases": "https://github.com/aphrody-labs/rosegriffon/releases",
-      "libraries": [
-        "@rosegriffon/assets",
-        "@rosegriffon/config",
-        "@rosegriffon/db",
-        "@rosegriffon/i18n"
-      ]
+      "libraries": ["@rosegriffon/assets", "@rosegriffon/config", "@rosegriffon/db", "@rosegriffon/i18n"]
     },
     "shenron": {
       "role": "external-product",

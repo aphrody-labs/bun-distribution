@@ -233,8 +233,7 @@ export const overlayStack: HTMLElement[] = [];
 
 export function focusFirst(selector: string): void {
   const scope: ParentNode = overlayStack.at(-1) ?? document;
-  const element =
-    scope.querySelector<HTMLElement>(selector) ?? focusable().find(item => !item.closest("#top"));
+  const element = scope.querySelector<HTMLElement>(selector) ?? focusable().find(item => !item.closest("#top"));
   element?.focus({ preventScroll: true });
   if (element) reveal(element);
 }

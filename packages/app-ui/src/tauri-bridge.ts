@@ -27,7 +27,6 @@ export interface OsInfo {
   osType: string;
 }
 
-
 /** The web build has no native shell: always false. Kept so callers can test it without a branch. */
 export function isTauri(): boolean {
   return false;
@@ -42,7 +41,6 @@ export async function tauriInvoke<T>(_cmd: string, _args: Record<string, unknown
 export function usesBrowserBackend(): boolean {
   return !isTauri() && typeof window !== "undefined" && !wantsHttpBackend(window.location.search);
 }
-
 
 export interface LocalAiAnswer {
   answer: string;
@@ -103,7 +101,10 @@ export async function appReady(): Promise<void> {}
 // Dialogs (browser)
 // ==========================================
 
-export async function pickDirectory(_title = "Select Working Directory", _defaultPath?: string): Promise<string | null> {
+export async function pickDirectory(
+  _title = "Select Working Directory",
+  _defaultPath?: string,
+): Promise<string | null> {
   return null;
 }
 
@@ -111,7 +112,11 @@ export async function pickFile(_title = "Select File", _defaultPath?: string): P
   return null;
 }
 
-export async function saveFileDialog(_options: { title?: string; defaultPath?: string; filters?: unknown[] }): Promise<string | null> {
+export async function saveFileDialog(_options: {
+  title?: string;
+  defaultPath?: string;
+  filters?: unknown[];
+}): Promise<string | null> {
   return null;
 }
 

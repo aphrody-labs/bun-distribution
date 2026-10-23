@@ -6,9 +6,9 @@ Date: {{YYYY-MM-DD}}
 
 ## Sources
 
-| # | source | URL | notes |
-| --- | --- | --- | --- |
-| 1 | help center | | |
+| #   | source      | URL | notes |
+| --- | ----------- | --- | ----- |
+| 1   | help center |     |       |
 
 ## Core loop
 
@@ -16,9 +16,9 @@ Date: {{YYYY-MM-DD}}
 
 ## Screens
 
-| ID | screen | route / how to reach | purpose | key components | states seen |
-| --- | --- | --- | --- | --- | --- |
-| S01 | | | | | empty, filled, error |
+| ID  | screen | route / how to reach | purpose | key components | states seen          |
+| --- | ------ | -------------------- | ------- | -------------- | -------------------- |
+| S01 |        |                      |         |                | empty, filled, error |
 
 ## Flows
 
@@ -31,9 +31,9 @@ F01 {{goal}}
 
 ## Components
 
-| component | variants | states | used on |
-| --- | --- | --- | --- |
-| Button | primary, secondary, ghost, danger | default, hover, focus, disabled, loading | all |
+| component | variants                          | states                                   | used on |
+| --------- | --------------------------------- | ---------------------------------------- | ------- |
+| Button    | primary, secondary, ghost, danger | default, hover, focus, disabled, loading | all     |
 
 ## Inferred data model
 

@@ -126,7 +126,8 @@ async function fixture() {
         path: source,
         remote: "origin",
         url,
-        repositoryName: repository, branch: "main",
+        repositoryName: repository,
+        branch: "main",
         owners: ["aphrody-labs"],
       },
       { initializeSubmodules: false },
@@ -271,7 +272,9 @@ test.skipIf(process.platform !== "linux")(
       const inode = (await stat(lease.lock)).ino;
       await until("verification queued on its source lock", async () => {
         const locks = await Bun.file("/proc/locks").text();
-        return locks.split("\n").some(line => /->\s+FLOCK\s/.test(line) && line.split(/\s+/).some(field => field.endsWith(":" + inode)));
+        return locks
+          .split("\n")
+          .some(line => /->\s+FLOCK\s/.test(line) && line.split(/\s+/).some(field => field.endsWith(":" + inode)));
       });
       expect(pending.child.exitCode).toBeNull();
       expect((await lease.release()).code).toBe(0);

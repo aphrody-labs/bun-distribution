@@ -12,7 +12,5 @@ test("mutable or injected base names are rejected", () => {
 test("changing the base cannot reuse a binary-only immutable tag", () => {
   expect(toolboxTag(digest)).toBe("toolbox-aaaaaaaaaaaa");
   expect(toolboxTag(digest, base)).not.toBe(toolboxTag(digest));
-  expect(toolboxTag(digest, base)).not.toBe(
-    toolboxTag(digest, base.replaceAll("b", "c")),
-  );
+  expect(toolboxTag(digest, base)).not.toBe(toolboxTag(digest, base.replaceAll("b", "c")));
 });

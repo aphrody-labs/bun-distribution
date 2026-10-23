@@ -24,8 +24,7 @@ test("session identity uses initialized Rust account/read and retains no provide
 });
 test("unidentified sessions remain unidentified and malformed responses fail", () => {
   expect(sessionIdentity({ authMode: null })).toEqual({ authMode: null });
-  for (const value of [null, [], {}, { authMode: "connected" }])
-    expect(() => sessionIdentity(value)).toThrow();
+  for (const value of [null, [], {}, { authMode: "connected" }]) expect(() => sessionIdentity(value)).toThrow();
 });
 test("initialization failure prevents account requests", async () => {
   let requested = false;

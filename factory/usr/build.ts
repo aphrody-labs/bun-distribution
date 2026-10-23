@@ -81,9 +81,7 @@ export interface UsrLock {
 /** Standalone copy of the multicall crate: workspace-inherited keys resolved from the root Cargo.toml. */
 export async function stageMulticall(manifest: UsrManifest, dir: string) {
   const crate = join(workspace, manifest.multicall.crate);
-  const root = Bun.TOML.parse(
-    await Bun.file(join(workspace, "Cargo.toml")).text(),
-  ) as {
+  const root = Bun.TOML.parse(await Bun.file(join(workspace, "Cargo.toml")).text()) as {
     workspace: {
       package: Record<string, unknown>;
       dependencies: Record<string, unknown>;
@@ -92,54 +90,35 @@ export async function stageMulticall(manifest: UsrManifest, dir: string) {
   const toml = (await Bun.file(join(crate, "Cargo.toml")).text())
     .replace(
       /^([\w-]+)\.workspace = true$/gm,
-      (_, key: string) =>
-        `${key} = ${JSON.stringify(root.workspace.package[key])}`,
+      (_, key: string) => `${key} = ${JSON.stringify(root.workspace.package[key])}`,
     )
-    .replace(
-      /^([\w-]+) = \{ workspace = true(.*)\}$/gm,
-      (_, name: string, rest: string) => {
-        const dep = root.workspace.dependencies[name];
-        const base =
-          typeof dep === "string"
-            ? { version: dep }
-            : (dep as Record<string, unknown>);
-        const fields = Object.entries(base)
-          .filter(([key]) => key !== "features")
-          .map(
-            ([key, value]) =>
-              `${JSON.stringify(key)} = ${JSON.stringify(value)}`,
-          );
-        const features = [
-          ...((base.features as string[] | undefined) ?? []),
-          ...[...rest.matchAll(/"([^"]+)"/g)].map((m) => m[1]!),
-        ];
-        const optional = rest.includes("optional = true")
-          ? ", optional = true"
-          : "";
-        return `${name} = { ${fields.join(", ")}, features = ${JSON.stringify(features)}${optional} }`;
-      },
-    )
+    .replace(/^([\w-]+) = \{ workspace = true(.*)\}$/gm, (_, name: string, rest: string) => {
+      const dep = root.workspace.dependencies[name];
+      const base = typeof dep === "string" ? { version: dep } : (dep as Record<string, unknown>);
+      const fields = Object.entries(base)
+        .filter(([key]) => key !== "features")
+        .map(([key, value]) => `${JSON.stringify(key)} = ${JSON.stringify(value)}`);
+      const features = [
+        ...((base.features as string[] | undefined) ?? []),
+        ...[...rest.matchAll(/"([^"]+)"/g)].map(m => m[1]!),
+      ];
+      const optional = rest.includes("optional = true") ? ", optional = true" : "";
+      return `${name} = { ${fields.join(", ")}, features = ${JSON.stringify(features)}${optional} }`;
+    })
     .replace(/^rust-version = .*\n/m, "")
     .replace(/\n\[lints\]\nworkspace = true\n?/, "\n");
   // Same relative layout as the checkout so `path = "../../vendor/..."` dependencies resolve.
   const out = join(dir, manifest.multicall.crate);
   await cp(join(crate, "src"), join(out, "src"), { recursive: true });
   await Bun.write(join(out, "Cargo.toml"), `${toml}\n[workspace]\n`);
-  await Bun.write(
-    join(out, "Cargo.lock"),
-    Bun.file(join(workspace, "Cargo.lock")),
-  );
+  await Bun.write(join(out, "Cargo.lock"), Bun.file(join(workspace, "Cargo.lock")));
   await Bun.write(join(dir, "features"), manifest.multicall.features.join(","));
   await Bun.write(join(dir, "crate"), manifest.multicall.crate);
-  const vendored = new Set(
-    [...toml.matchAll(/path = "\.\.\/\.\.\/(vendor\/[^/"]+\/[^/"]+)/g)].map(
-      (m) => m[1]!,
-    ),
-  );
+  const vendored = new Set([...toml.matchAll(/path = "\.\.\/\.\.\/(vendor\/[^/"]+\/[^/"]+)/g)].map(m => m[1]!));
   for (const tree of vendored)
     await cp(join(workspace, tree), join(dir, tree), {
       recursive: true,
-      filter: (source) => !/[/\\](\.git|target)$/.test(source),
+      filter: source => !/[/\\](\.git|target)$/.test(source),
     });
 }
 
@@ -148,14 +127,9 @@ export async function planUsr(
   snapshot?: string,
   requestedDesktopSession?: DesktopSession,
 ) {
-  if (snapshot && !/^\d{4}-\d{2}-\d{2}$/.test(snapshot))
-    throw new Error("Expected --snapshot YYYY-MM-DD");
-  const manifest: UsrManifest = await Bun.file(
-    join(here, "manifest.json"),
-  ).json();
-  const profile = await Bun.file(
-    join(workspace, "factory/profile.json"),
-  ).json();
+  if (snapshot && !/^\d{4}-\d{2}-\d{2}$/.test(snapshot)) throw new Error("Expected --snapshot YYYY-MM-DD");
+  const manifest: UsrManifest = await Bun.file(join(here, "manifest.json")).json();
+  const profile = await Bun.file(join(workspace, "factory/profile.json")).json();
   const selected = manifest.compositions[composition];
   if (!selected) throw new Error(`Unknown usr composition: ${composition}`);
   if (
@@ -165,53 +139,32 @@ export async function planUsr(
   )
     throw new Error("Unknown desktop session.");
   if (requestedDesktopSession && composition !== "desktop")
-    throw new Error(
-      "A desktop session can only be selected for the desktop composition.",
-    );
-  const defaultDesktopSession = profile.compositions.desktop
-    .defaultSession as DesktopSession;
-  const desktopSession =
-    composition === "desktop"
-      ? (requestedDesktopSession ?? defaultDesktopSession)
-      : null;
-  const session = desktopSession
-    ? profile.desktopSessions[desktopSession]
-    : undefined;
+    throw new Error("A desktop session can only be selected for the desktop composition.");
+  const defaultDesktopSession = profile.compositions.desktop.defaultSession as DesktopSession;
+  const desktopSession = composition === "desktop" ? (requestedDesktopSession ?? defaultDesktopSession) : null;
+  const session = desktopSession ? profile.desktopSessions[desktopSession] : undefined;
   if (composition === "desktop" && !session)
-    throw new Error(
-      "The desktop composition requires a known desktop session.",
-    );
+    throw new Error("The desktop composition requires a known desktop session.");
   if (session?.state === "blocked")
-    throw new Error(
-      `Desktop session ${desktopSession} is blocked: ${session.blockers.join(" ")}`,
-    );
-  const components = await Bun.file(
-    join(workspace, manifest.bunos.manifest),
-  ).json();
-  const bunosComposition: string[] = (
-    components.compositionPackages?.[composition] ?? []
-  ).filter((name: string) => !manifest.bunos.unpublished?.[name]);
+    throw new Error(`Desktop session ${desktopSession} is blocked: ${session.blockers.join(" ")}`);
+  const components = await Bun.file(join(workspace, manifest.bunos.manifest)).json();
+  const bunosComposition: string[] = (components.compositionPackages?.[composition] ?? []).filter(
+    (name: string) => !manifest.bunos.unpublished?.[name],
+  );
   const chain: string[] = [];
-  for (
-    let id: string | undefined = selected.profile;
-    id;
-    id = profile.compositions[id]?.extends
-  )
-    chain.unshift(id);
+  for (let id: string | undefined = selected.profile; id; id = profile.compositions[id]?.extends) chain.unshift(id);
   const packages = [
     ...new Set([
       ...manifest.basePackages,
-      ...chain.flatMap((id) => profile.compositions[id].packages as string[]),
+      ...chain.flatMap(id => profile.compositions[id].packages as string[]),
       ...selected.packages,
       ...(session?.packages ?? []),
       ...bunosComposition,
     ]),
   ];
-  const ownPackages = [
-    ...new Glob("*/PKGBUILD").scanSync(
-      join(workspace, manifest.localRepository.packages),
-    ),
-  ].map((path) => path.split(/[/\\]/)[0]!);
+  const ownPackages = [...new Glob("*/PKGBUILD").scanSync(join(workspace, manifest.localRepository.packages))].map(
+    path => path.split(/[/\\]/)[0]!,
+  );
   const localPackages = [...new Set([...ownPackages, ...bunosComposition])];
   const pacmanConf = [
     "[options]",
@@ -225,15 +178,9 @@ export async function planUsr(
     "SigLevel = Optional TrustAll",
     `Server = file:///job/repo`,
     "",
-    ...manifest.repositories.flatMap((repo) => {
-      const archived =
-        snapshot && manifest.archive.repositories.includes(repo.name);
-      const server = archived
-        ? manifest.archive.server.replace(
-            "{date}",
-            snapshot.replaceAll("-", "/"),
-          )
-        : repo.server;
+    ...manifest.repositories.flatMap(repo => {
+      const archived = snapshot && manifest.archive.repositories.includes(repo.name);
+      const server = archived ? manifest.archive.server.replace("{date}", snapshot.replaceAll("-", "/")) : repo.server;
       return [`[${repo.name}]`, `Server = ${server}`, ""];
     }),
   ].join("\n");
@@ -255,12 +202,7 @@ function pairs(map: Record<string, string>) {
     .join(" ");
 }
 
-async function run(
-  argv: string[],
-  timeoutMs: number,
-  _quiet = false,
-  cwd?: string,
-) {
+async function run(argv: string[], timeoutMs: number, _quiet = false, cwd?: string) {
   const proc = Bun.spawn(argv, {
     cwd,
     stdio: ["ignore", "inherit", "inherit"],
@@ -270,43 +212,21 @@ async function run(
   if (code !== 0) throw new Error(`${argv[0]} exited with ${code}`);
 }
 
-function localArtifacts(
-  manifest: UsrManifest,
-  composition: string,
-  job: string,
-) {
-  return join(
-    manifest.localArtifacts.replace(/^~/, homedir()),
-    composition,
-    job,
-  );
+function localArtifacts(manifest: UsrManifest, composition: string, job: string) {
+  return join(manifest.localArtifacts.replace(/^~/, homedir()), composition, job);
 }
 
-async function fetchArtifacts(
-  manifest: UsrManifest,
-  host: string,
-  composition: string,
-  job: string,
-) {
+async function fetchArtifacts(manifest: UsrManifest, host: string, composition: string, job: string) {
   const local = localArtifacts(manifest, composition, job);
   await mkdir(local, { recursive: true });
   const out = `${manifest.remoteRoot}/${job}/out`;
-  const listing = Bun.spawn(
-    [
-      "ssh",
-      ...sshOptions,
-      host,
-      `cd ${out} && find . -type f -printf '%s %P\n'`,
-    ],
-    {
-      stdout: "pipe",
-      stderr: "inherit",
-      timeout: 30_000,
-    },
-  );
+  const listing = Bun.spawn(["ssh", ...sshOptions, host, `cd ${out} && find . -type f -printf '%s %P\n'`], {
+    stdout: "pipe",
+    stderr: "inherit",
+    timeout: 30_000,
+  });
   const text = await new Response(listing.stdout).text();
-  if ((await listing.exited) !== 0)
-    throw new Error("Cannot list remote artifacts");
+  if ((await listing.exited) !== 0) throw new Error("Cannot list remote artifacts");
   // Per-file copies with size checks make an interrupted fetch resumable.
   for (const line of text.trim().split("\n")) {
     const [size, name] = line.split(" ", 2) as [string, string];
@@ -314,16 +234,13 @@ async function fetchArtifacts(
     await mkdir(dirname(target), { recursive: true });
     for (
       let attempt = 1;
-      (await Bun.file(target).exists())
-        ? Bun.file(target).size !== Number(size)
-        : true;
+      (await Bun.file(target).exists()) ? Bun.file(target).size !== Number(size) : true;
       attempt++
     ) {
       if (attempt > 3) throw new Error(`Cannot fetch ${name}`);
-      await run(
-        ["scp", ...sshOptions, `${host}:${out}/${name}`, target],
-        manifest.remoteTimeoutSeconds * 1000,
-      ).catch((error) => console.error(String(error)));
+      await run(["scp", ...sshOptions, `${host}:${out}/${name}`, target], manifest.remoteTimeoutSeconds * 1000).catch(
+        error => console.error(String(error)),
+      );
     }
   }
   return local;
@@ -347,13 +264,9 @@ async function writeLock(
   local: string,
   snapshot?: string,
 ) {
-  const rows = (await Bun.file(join(local, "lock.tsv")).text())
-    .trim()
-    .split("\n");
-  const packages = rows.map((row) => {
-    const [repository, name, version, file, url, sha256, bytes] = row.split(
-      "\t",
-    ) as string[];
+  const rows = (await Bun.file(join(local, "lock.tsv")).text()).trim().split("\n");
+  const packages = rows.map(row => {
+    const [repository, name, version, file, url, sha256, bytes] = row.split("\t") as string[];
     return {
       repository,
       name,
@@ -377,10 +290,7 @@ async function writeLock(
     job,
     packages,
   };
-  const lockName =
-    composition === "desktop"
-      ? `desktop-${desktopSession}.json`
-      : `${composition}.json`;
+  const lockName = composition === "desktop" ? `desktop-${desktopSession}.json` : `${composition}.json`;
   const path = join(workspace, manifest.lockDirectory, lockName);
   await mkdir(dirname(path), { recursive: true });
   await Bun.write(
@@ -391,27 +301,14 @@ async function writeLock(
   return path;
 }
 
-async function build(
-  composition: UsrComposition,
-  host: string,
-  options: BuildOptions,
-) {
+async function build(composition: UsrComposition, host: string, options: BuildOptions) {
   if (options.boot)
     throw new Error(
       "Bootable /usr builds are blocked: select and qualify an explicit kernel composition before enabling boot qualification",
     );
-  const snapshot = options.lock
-    ? (options.lock.snapshot ?? undefined)
-    : options.snapshot;
-  const {
-    manifest,
-    packages,
-    localPackages,
-    pacmanConf,
-    desktopSession,
-    desktopSessionOwner,
-    desktopSessionState,
-  } = await planUsr(composition, snapshot, options.desktopSession);
+  const snapshot = options.lock ? (options.lock.snapshot ?? undefined) : options.snapshot;
+  const { manifest, packages, localPackages, pacmanConf, desktopSession, desktopSessionOwner, desktopSessionState } =
+    await planUsr(composition, snapshot, options.desktopSession);
   if (options.lock) {
     if (
       options.lock.schemaVersion !== 3 ||
@@ -420,37 +317,25 @@ async function build(
       options.lock.desktopSession !== desktopSession ||
       options.lock.desktopSessionOwner !== desktopSessionOwner ||
       options.lock.desktopSessionState !== desktopSessionState ||
-      options.lock.kernelSelection?.source !==
-        manifest.kernelSelection.source ||
+      options.lock.kernelSelection?.source !== manifest.kernelSelection.source ||
       options.lock.kernelSelection?.state !== manifest.kernelSelection.state
     )
-      throw new Error(
-        "USR lock does not match the current composition and kernel-selection contract.",
-      );
-    if (!Array.isArray(options.lock.packages))
-      throw new Error("USR lock has no package inventory.");
+      throw new Error("USR lock does not match the current composition and kernel-selection contract.");
+    if (!Array.isArray(options.lock.packages)) throw new Error("USR lock has no package inventory.");
     if (
       manifest.kernelSelection.state !== "qualified" &&
-      options.lock.packages.some((pkg) =>
-        [
-          "linux-cachyos",
-          "linux-cachyos-headers",
-          "linux-cachyos-nvidia-open",
-        ].includes(pkg.name),
+      options.lock.packages.some(pkg =>
+        ["linux-cachyos", "linux-cachyos-headers", "linux-cachyos-nvidia-open"].includes(pkg.name),
       )
     )
-      throw new Error(
-        "USR lock contains CachyOS kernel packages without a qualified kernel selection.",
-      );
+      throw new Error("USR lock contains CachyOS kernel packages without a qualified kernel selection.");
   }
   const job = `${composition}-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
   const remote = `${manifest.remoteRoot}/${job}`;
   const stage = await mkdtemp(join(tmpdir(), "bun-os-usr-"));
   try {
-    const keys = manifest.repositories.flatMap((repo) => repo.keys ?? []);
-    const keyserver =
-      manifest.repositories.find((repo) => repo.keyserver)?.keyserver ??
-      "hkps://keyserver.ubuntu.com";
+    const keys = manifest.repositories.flatMap(repo => repo.keys ?? []);
+    const keyserver = manifest.repositories.find(repo => repo.keyserver)?.keyserver ?? "hkps://keyserver.ubuntu.com";
     const env = {
       KEYS: keys.join(" "),
       KEYSERVER: keyserver,
@@ -477,26 +362,15 @@ async function build(
     );
     await Bun.write(join(stage, "pacman.conf"), pacmanConf);
     await Bun.write(join(stage, "packages.txt"), packages.join("\n") + "\n");
-    await Bun.write(
-      join(stage, "builder.sh"),
-      Bun.file(join(here, "builder.sh")),
-    );
+    await Bun.write(join(stage, "builder.sh"), Bun.file(join(here, "builder.sh")));
     const uploads = ["env", "pacman.conf", "packages.txt", "builder.sh"];
     if (localPackages.includes("bunos-utils")) {
       await stageMulticall(manifest, join(stage, "bunos-utils-src"));
       uploads.push("bunos-utils-src");
     }
     if (options.lock) {
-      const rows = options.lock.packages.map((p) =>
-        [
-          p.repository,
-          p.name,
-          p.version,
-          p.file,
-          p.url,
-          p.sha256,
-          p.bytes,
-        ].join("\t"),
+      const rows = options.lock.packages.map(p =>
+        [p.repository, p.name, p.version, p.file, p.url, p.sha256, p.bytes].join("\t"),
       );
       await Bun.write(join(stage, "lock.tsv"), rows.join("\n") + "\n");
       uploads.push("lock.tsv");
@@ -513,25 +387,9 @@ async function build(
         recursive: true,
       });
     await run(["tar", "-czf", "../job.tgz", "."], 300_000, false, stage);
-    await run(
-      [
-        "scp",
-        ...sshOptions,
-        join(stage, "../job.tgz"),
-        `${host}:${remote}/job.tgz`,
-      ],
-      900_000,
-    );
+    await run(["scp", ...sshOptions, join(stage, "../job.tgz"), `${host}:${remote}/job.tgz`], 900_000);
     await rm(join(stage, "../job.tgz"), { force: true });
-    await run(
-      [
-        "ssh",
-        ...sshOptions,
-        host,
-        `cd ${remote} && tar -xzf job.tgz && rm job.tgz`,
-      ],
-      120_000,
-    );
+    await run(["ssh", ...sshOptions, host, `cd ${remote} && tar -xzf job.tgz && rm job.tgz`], 120_000);
     const seconds = manifest.remoteTimeoutSeconds;
     const script = [
       `set -e; mkdir -p ${manifest.remoteRoot}/pkgcache; cd ${remote}`,
@@ -600,8 +458,7 @@ export async function main(args: string[]) {
   const composition = values.composition as UsrComposition;
   if (!["server", "desktop", "gaming"].includes(composition))
     throw new Error("Expected --composition server|desktop|gaming");
-  const desktopSession = values["desktop-session"] as
-    DesktopSession | undefined;
+  const desktopSession = values["desktop-session"] as DesktopSession | undefined;
   const action = positionals[0] ?? "plan";
   const plan = await planUsr(composition, values.snapshot, desktopSession);
   const host = values.host ?? plan.manifest.host;
@@ -622,9 +479,7 @@ export async function main(args: string[]) {
       boot: !values["no-boot"],
       desktopSession,
       snapshot: values.snapshot,
-      lock: values.lock
-        ? await Bun.file(resolve(values.lock)).json()
-        : undefined,
+      lock: values.lock ? await Bun.file(resolve(values.lock)).json() : undefined,
     });
   if (action === "fetch") {
     if (!values.job) throw new Error("Missing --job");
@@ -635,5 +490,4 @@ export async function main(args: string[]) {
   throw new Error("Expected usr plan|build|fetch");
 }
 
-if (import.meta.main)
-  console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));
+if (import.meta.main) console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));

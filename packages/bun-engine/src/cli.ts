@@ -38,7 +38,13 @@ async function serveRetroArchCli(args: string[]): Promise<void> {
     let frames = 0;
     for (; frames < Number(values.frames) && ra.iterate(); frames++);
     const frame = ra.frame();
-    console.log(JSON.stringify({ frames, status: ra.status(), frame: frame && { ...frame, data: undefined, serial: String(frame.serial) } }));
+    console.log(
+      JSON.stringify({
+        frames,
+        status: ra.status(),
+        frame: frame && { ...frame, data: undefined, serial: String(frame.serial) },
+      }),
+    );
     process.exitCode = frames ? 0 : 1;
     return;
   }

@@ -57,16 +57,16 @@ Ask three things, or propose answers and get a yes:
 
 Build a sources table first, with a URL on every row. In order of value:
 
-| source | what it gives you |
-| --- | --- |
-| help center / docs | the most complete feature list there is, and the settings |
-| pricing page | which features matter (they gate them) |
-| changelog | what was added recently, what the team thinks is important |
-| app store listing | screenshots of every key screen, the pitch, ratings |
-| public walkthrough videos | real flows, click by click |
-| marketing site | positioning, the core loop in their words |
-| the user's own account | the real thing, every state, driven by the user |
-| public API docs | the data model, almost for free |
+| source                    | what it gives you                                          |
+| ------------------------- | ---------------------------------------------------------- |
+| help center / docs        | the most complete feature list there is, and the settings  |
+| pricing page              | which features matter (they gate them)                     |
+| changelog                 | what was added recently, what the team thinks is important |
+| app store listing         | screenshots of every key screen, the pitch, ratings        |
+| public walkthrough videos | real flows, click by click                                 |
+| marketing site            | positioning, the core loop in their words                  |
+| the user's own account    | the real thing, every state, driven by the user            |
+| public API docs           | the data model, almost for free                            |
 
 ## Step 3: screen inventory
 

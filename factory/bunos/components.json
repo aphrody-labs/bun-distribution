@@ -25,13 +25,7 @@
   ],
   "compositionPackages": {
     "server": ["aphrody"],
-    "desktop": [
-      "aphrody",
-      "bun-video-native",
-      "bun-os-fonts",
-      "material-design-icons-bunos",
-      "bun-os-webapps"
-    ],
+    "desktop": ["aphrody", "bun-video-native", "bun-os-fonts", "material-design-icons-bunos", "bun-os-webapps"],
     "gaming": ["aphrody", "bun-video-native", "bun-os-fonts", "bun-engine"]
   },
   "components": [

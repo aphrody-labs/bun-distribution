@@ -115,26 +115,41 @@ export async function verifyPayload(root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os",
   if (contents.treeSHA256 !== sourceReceipt.treeSHA256)
     throw new Error("Image sources differ from their exported content checksum");
   if (!receipt.product) throw new Error("The image requires the qualified distribution CLI workspace");
-  const product = await verifyQualifiedProduct(`${root}/product`, `${root}/product.receipt.json`,
-    `${root}/product.qualification.json`, { target: runtime.target, runtime });
-  const digest = async (path: string) => new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
+  const product = await verifyQualifiedProduct(
+    `${root}/product`,
+    `${root}/product.receipt.json`,
+    `${root}/product.qualification.json`,
+    { target: runtime.target, runtime },
+  );
+  const digest = async (path: string) =>
+    new Bun.CryptoHasher("sha256").update(await Bun.file(path).arrayBuffer()).digest("hex");
   if (
     product.receipt.sourceRevision !== receipt.product.sourceRevision ||
     product.receipt.installedTreeSHA256 !== receipt.product.installedTreeSHA256 ||
     product.receipt.installedModesSHA256 !== receipt.product.installedModesSHA256 ||
-    await digest(`${root}/product.receipt.json`) !== receipt.product.receiptSHA256 ||
-    await digest(`${root}/product.qualification.json`) !== receipt.product.qualificationSHA256
-  ) throw new Error("Product payload receipts differ from the staged distribution identity");
+    (await digest(`${root}/product.receipt.json`)) !== receipt.product.receiptSHA256 ||
+    (await digest(`${root}/product.qualification.json`)) !== receipt.product.qualificationSHA256
+  )
+    throw new Error("Product payload receipts differ from the staged distribution identity");
   if (requireImageQualification) {
-    const proof = await Bun.file(`${root}/image.qualification.json`).json() as NonNullable<typeof receipt.imageQualification>;
+    const proof = (await Bun.file(`${root}/image.qualification.json`).json()) as NonNullable<
+      typeof receipt.imageQualification
+    >;
     const requiredGates = ["product-cli", "cli-wasm", "ffi", "agent-plugin", "mcp"];
-    if (proof.schemaVersion !== 1 || proof.kind !== "bun-os-image-surface-qualification" || proof.passed !== true ||
-      proof.target !== receipt.runtime.target || proof.sourceRevision !== receipt.product.sourceRevision ||
+    if (
+      proof.schemaVersion !== 1 ||
+      proof.kind !== "bun-os-image-surface-qualification" ||
+      proof.passed !== true ||
+      proof.target !== receipt.runtime.target ||
+      proof.sourceRevision !== receipt.product.sourceRevision ||
       proof.installedTreeSHA256 !== receipt.product.installedTreeSHA256 ||
       proof.installedModesSHA256 !== receipt.product.installedModesSHA256 ||
-      proof.runtimeRevision !== receipt.runtime.revision || proof.runtimeSHA256 !== receipt.runtime.sha256 ||
-      proof.productQualificationSHA256 !== await digest(`${root}/product.qualification.json`) ||
-      !Array.isArray(proof.gates) || !requiredGates.every(gate => proof.gates.includes(gate)))
+      proof.runtimeRevision !== receipt.runtime.revision ||
+      proof.runtimeSHA256 !== receipt.runtime.sha256 ||
+      proof.productQualificationSHA256 !== (await digest(`${root}/product.qualification.json`)) ||
+      !Array.isArray(proof.gates) ||
+      !requiredGates.every(gate => proof.gates.includes(gate))
+    )
       throw new Error("Container surface qualification does not match the staged runtime and product receipts");
     receipt.imageQualification = proof;
   }
@@ -143,6 +158,12 @@ export async function verifyPayload(root = Bun.env.BUN_OS_ROOT ?? "/opt/bun-os",
 
 if (import.meta.main) {
   const receipt = await verifyPayload();
-  console.log(JSON.stringify({ name: receipt.name, revision: receipt.runtime.revision, runtime: "verified",
-    imageQualification: receipt.imageQualification }));
+  console.log(
+    JSON.stringify({
+      name: receipt.name,
+      revision: receipt.runtime.revision,
+      runtime: "verified",
+      imageQualification: receipt.imageQualification,
+    }),
+  );
 }

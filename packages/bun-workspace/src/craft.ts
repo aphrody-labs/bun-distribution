@@ -9,19 +9,8 @@
  */
 import { resolve } from "node:path";
 import { appCapabilities, type AppCapability } from "./capabilities.ts";
-import {
-  findModule,
-  repositoryRoot,
-  resolveModuleBinary,
-  type Config,
-  type Module,
-} from "./index.ts";
-import {
-  ProcessError,
-  runProcess,
-  type ProcessErrorCode,
-  type ProcessResult,
-} from "./process.ts";
+import { findModule, repositoryRoot, resolveModuleBinary, type Config, type Module } from "./index.ts";
+import { ProcessError, runProcess, type ProcessErrorCode, type ProcessResult } from "./process.ts";
 
 export type LibraryProtocol = "cli" | "cli-json" | "jsonl" | "mcp-stdio";
 
@@ -36,11 +25,7 @@ export interface Library {
   binary: string;
 }
 
-export type LibraryErrorCode =
-  | "UNKNOWN_CAPABILITY"
-  | "INVALID_ENGINE_CONFIG"
-  | "BINARY_UNAVAILABLE"
-  | ProcessErrorCode;
+export type LibraryErrorCode = "UNKNOWN_CAPABILITY" | "INVALID_ENGINE_CONFIG" | "BINARY_UNAVAILABLE" | ProcessErrorCode;
 
 export class LibraryError extends Error {
   constructor(
@@ -78,12 +63,7 @@ export type CraftResolutionOptions = LibraryResolutionOptions;
 export type CraftRunOptions = LibraryRunOptions;
 export { LibraryError as CraftLibraryError };
 
-const protocols = new Set<LibraryProtocol>([
-  "cli",
-  "cli-json",
-  "jsonl",
-  "mcp-stdio",
-]);
+const protocols = new Set<LibraryProtocol>(["cli", "cli-json", "jsonl", "mcp-stdio"]);
 const DEFAULT_TIMEOUT_MS = 120_000;
 const MAX_TIMEOUT_MS = 43_200_000;
 const DEFAULT_OUTPUT_BYTES = 8 * 1024 * 1024;
@@ -91,10 +71,7 @@ const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
 function configuredCapabilities(config: Config): AppCapability[] {
   if (!config || typeof config !== "object" || !Array.isArray(config.modules)) {
-    throw new LibraryError(
-      "INVALID_ENGINE_CONFIG",
-      "A loaded Aphrody configuration with a modules list is required.",
-    );
+    throw new LibraryError("INVALID_ENGINE_CONFIG", "A loaded Aphrody configuration with a modules list is required.");
   }
   try {
     return appCapabilities(config);
@@ -110,14 +87,8 @@ function configuredCapabilities(config: Config): AppCapability[] {
 }
 
 function capabilityForLibrary(config: Config, id: string): AppCapability {
-  const capability = configuredCapabilities(config).find(
-    (entry) => entry.libraryId === id,
-  );
-  if (!capability)
-    throw new LibraryError(
-      "UNKNOWN_CAPABILITY",
-      `No Aphrody capability is configured for ${id}.`,
-    );
+  const capability = configuredCapabilities(config).find(entry => entry.libraryId === id);
+  if (!capability) throw new LibraryError("UNKNOWN_CAPABILITY", `No Aphrody capability is configured for ${id}.`);
   return capability;
 }
 
@@ -130,11 +101,7 @@ function configuredEngine(
   try {
     module = findModule(config, id);
   } catch (cause) {
-    throw new LibraryError(
-      "INVALID_ENGINE_CONFIG",
-      `Craft capability ${id} has no configured module.`,
-      { cause },
-    );
+    throw new LibraryError("INVALID_ENGINE_CONFIG", `Craft capability ${id} has no configured module.`, { cause });
   }
   if (
     module.role !== "engine" ||
@@ -153,7 +120,7 @@ function configuredEngine(
 
 /** Product libraries selected by the canonical Aphrody module configuration. */
 export function listLibraries(config: Config): Array<Omit<Library, "binary">> {
-  return configuredCapabilities(config).map((capability) => {
+  return configuredCapabilities(config).map(capability => {
     const engine = configuredEngine(config, capability.libraryId);
     return {
       id: engine.module.id,
@@ -200,32 +167,12 @@ export async function runLibrary(
   const library = await resolveLibrary(config, id, options);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_OUTPUT_BYTES;
-  if (
-    !Number.isSafeInteger(timeoutMs) ||
-    timeoutMs < 1 ||
-    timeoutMs > MAX_TIMEOUT_MS
-  )
-    throw new LibraryError(
-      "INVALID_OPTIONS",
-      "Library CLI timeout must be between 1 ms and 12 hours.",
-    );
-  if (
-    !Number.isSafeInteger(maxOutputBytes) ||
-    maxOutputBytes < 1 ||
-    maxOutputBytes > MAX_OUTPUT_BYTES
-  )
-    throw new LibraryError(
-      "INVALID_OPTIONS",
-      "Library CLI output limit must be between 1 byte and 64 MiB.",
-    );
-  if (
-    !Array.isArray(args) ||
-    args.some((arg) => typeof arg !== "string" || arg.includes("\0"))
-  )
-    throw new LibraryError(
-      "INVALID_OPTIONS",
-      "Library CLI arguments must be NUL-free strings.",
-    );
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS)
+    throw new LibraryError("INVALID_OPTIONS", "Library CLI timeout must be between 1 ms and 12 hours.");
+  if (!Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > MAX_OUTPUT_BYTES)
+    throw new LibraryError("INVALID_OPTIONS", "Library CLI output limit must be between 1 byte and 64 MiB.");
+  if (!Array.isArray(args) || args.some(arg => typeof arg !== "string" || arg.includes("\0")))
+    throw new LibraryError("INVALID_OPTIONS", "Library CLI arguments must be NUL-free strings.");
   const cwd = resolve(options.root ?? repositoryRoot, library.module.path);
   try {
     const result = await runProcess([library.binary, ...args], cwd, {

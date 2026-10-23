@@ -74,13 +74,7 @@
       "usrComposition": "gaming",
       "agentTooling": {
         "note": "Claude Code and Codex skills and MCP servers for Omarchy/Arch; installed into /etc/skel/.claude and /etc/skel/.codex.",
-        "packages": [
-          "arch-wiki-docs",
-          "namcap",
-          "expac",
-          "pacman-contrib",
-          "devtools"
-        ],
+        "packages": ["arch-wiki-docs", "namcap", "expac", "pacman-contrib", "devtools"],
         "skills": [
           {
             "name": "arch-linux",

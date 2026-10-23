@@ -1,11 +1,6 @@
 import { join, resolve } from "node:path";
 import { serveForTauri } from "@aphrody/tauri/server";
-import {
-  assertRuntime,
-  findWorkspace,
-  listModuleStatus,
-  loadConfig,
-} from "@aphrody/bun-workspace";
+import { assertRuntime, findWorkspace, listModuleStatus, loadConfig } from "@aphrody/bun-workspace";
 import { listLibraries, runLibrary } from "@aphrody/bun-workspace/libraries";
 import type { Catalog, Inspection } from "./shared.ts";
 import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
@@ -15,9 +10,7 @@ const config = await loadConfig(root);
 assertRuntime(config);
 const session = crypto.randomUUID();
 const inspections = new Map<string, Inspection>();
-const staticRoot = Bun.env.APHRODY_WEB_ROOT
-  ? resolve(Bun.env.APHRODY_WEB_ROOT)
-  : join(import.meta.dir, "web");
+const staticRoot = Bun.env.APHRODY_WEB_ROOT ? resolve(Bun.env.APHRODY_WEB_ROOT) : join(import.meta.dir, "web");
 const headers = {
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
@@ -39,7 +32,7 @@ async function catalog(): Promise<Catalog> {
     },
     video: { nativeAvailable: nativeVideoCapabilities().available },
     libraries: listLibraries(config).map(({ id, capability, module }) => {
-      const status = statuses.find((item) => item.id === id);
+      const status = statuses.find(item => item.id === id);
       return {
         id,
         priority: config.priorities?.includes(id) ?? false,
@@ -48,9 +41,7 @@ async function catalog(): Promise<Catalog> {
         license: module.license,
         initialized: status?.initialized ?? false,
         inspectable: status?.launchable ?? false,
-        inspectReason: status?.launchable
-          ? undefined
-          : "No headless CLI is configured.",
+        inspectReason: status?.launchable ? undefined : "No headless CLI is configured.",
       };
     }),
     inspections: [...inspections.values()],
@@ -64,19 +55,13 @@ const server = serveForTauri({
   async fetch(request) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
-    if (
-      (origin && origin !== url.origin) ||
-      request.headers.get("Sec-Fetch-Site") === "cross-site"
-    )
+    if ((origin && origin !== url.origin) || request.headers.get("Sec-Fetch-Site") === "cross-site")
       return json({ error: "Origin denied." }, 403);
-    if (request.method === "OPTIONS")
-      return json({ error: "Origin denied." }, 403);
+    if (request.method === "OPTIONS") return json({ error: "Origin denied." }, 403);
     try {
-      if (url.pathname === "/api/catalog" && request.method === "GET")
-        return json(await catalog());
+      if (url.pathname === "/api/catalog" && request.method === "GET") return json(await catalog());
       if (url.pathname === "/api/inspect" && request.method === "POST") {
-        if (request.headers.get("X-Aphrody-Session") !== session)
-          return json({ error: "Invalid session." }, 403);
+        if (request.headers.get("X-Aphrody-Session") !== session) return json({ error: "Invalid session." }, 403);
         const payload: unknown = await request.json();
         if (
           !payload ||
@@ -86,15 +71,9 @@ const server = serveForTauri({
           typeof payload.id !== "string"
         )
           return json({ error: "A catalog identifier is required." }, 400);
-        const module = config.modules.find(
-          (item) => item.id === payload.id && item.kind === "library",
-        );
+        const module = config.modules.find(item => item.id === payload.id && item.kind === "library");
         if (!module) return json({ error: "Unknown library." }, 404);
-        if (
-          [...inspections.values()].some(
-            (item) => item.libraryId === module.id && item.state === "running",
-          )
-        )
+        if ([...inspections.values()].some(item => item.libraryId === module.id && item.state === "running"))
           return json({ error: "CLI inspection is already running." }, 409);
         // Reserve before status discovery so concurrent requests cannot start duplicate jobs.
         const inspection: Inspection = {
@@ -105,9 +84,7 @@ const server = serveForTauri({
         };
         inspections.set(inspection.id, inspection);
         try {
-          const library = (await catalog()).libraries.find(
-            (item) => item.id === module.id,
-          );
+          const library = (await catalog()).libraries.find(item => item.id === module.id);
           if (!library?.inspectable) {
             inspections.delete(inspection.id);
             return json({ error: "No headless CLI is available." }, 409);
@@ -137,13 +114,10 @@ const server = serveForTauri({
         }
         return json(inspection, 202);
       }
-      if (url.pathname.startsWith("/api/"))
-        return json({ error: "Unknown route." }, 404);
-      if (request.method !== "GET" && request.method !== "HEAD")
-        return new Response(null, { status: 405, headers });
+      if (url.pathname.startsWith("/api/")) return json({ error: "Unknown route." }, 404);
+      if (request.method !== "GET" && request.method !== "HEAD") return new Response(null, { status: 405, headers });
       const name = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-      if (!["index.html", "app.js", "style.css"].includes(name))
-        return new Response(null, { status: 404, headers });
+      if (!["index.html", "app.js", "style.css"].includes(name)) return new Response(null, { status: 404, headers });
       const file = Bun.file(join(staticRoot, name));
       if (!(await file.exists()))
         return new Response("Frontend unavailable. Run bun run build.", {

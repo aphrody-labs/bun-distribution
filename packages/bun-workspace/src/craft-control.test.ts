@@ -24,12 +24,7 @@ test("rejects an incomplete UTF-8 sequence after the JSON-lines frame", async ()
 
   try {
     await expect(
-      callCraftControl(
-        { libraryId: "cadcraft", port: server.port },
-        "list",
-        {},
-        { timeoutMs: 1_000 },
-      ),
+      callCraftControl({ libraryId: "cadcraft", port: server.port }, "list", {}, { timeoutMs: 1_000 }),
     ).rejects.toMatchObject({
       name: "CraftControlError",
       code: "INVALID_RESPONSE",

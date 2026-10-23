@@ -87,12 +87,7 @@ export class RetroArchPresenter {
     if (frame.serial === this.#serial) return false;
     const { width, height, pitch, format } = frame;
     const texture = this.#texture;
-    if (
-      !texture ||
-      texture.width !== width ||
-      texture.height !== height ||
-      format !== this.#format
-    ) {
+    if (!texture || texture.width !== width || texture.height !== height || format !== this.#format) {
       texture?.destroy();
       const packed = format !== XRGB8888;
       this.#texture = this.device.createTexture({
@@ -101,17 +96,9 @@ export class RetroArchPresenter {
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
       });
       this.#format = format;
-      if (packed)
-        this.device.queue.writeBuffer(
-          this.#uniform,
-          0,
-          new Uint32Array([format, 0, 0, 0]),
-        );
-      const entries: GPUBindGroupEntry[] = [
-        { binding: 0, resource: this.#texture.createView() },
-      ];
-      if (packed)
-        entries.push({ binding: 1, resource: { buffer: this.#uniform } });
+      if (packed) this.device.queue.writeBuffer(this.#uniform, 0, new Uint32Array([format, 0, 0, 0]));
+      const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: this.#texture.createView() }];
+      if (packed) entries.push({ binding: 1, resource: { buffer: this.#uniform } });
       this.#group = this.device.createBindGroup({
         layout: (packed ? this.#packed : this.#rgba).getBindGroupLayout(0),
         entries,
@@ -129,12 +116,7 @@ export class RetroArchPresenter {
   }
 
   /** Draws the last uploaded frame into `view`, letterboxed to keep the frame's aspect. */
-  draw(
-    encoder: GPUCommandEncoder,
-    view: GPUTextureView,
-    width: number,
-    height: number,
-  ): void {
+  draw(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number): void {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -181,20 +163,13 @@ export class RetroArchPresenter {
     });
     const encoder = this.device.createCommandEncoder();
     this.draw(encoder, texture.createView(), width, height);
-    encoder.copyTextureToBuffer(
-      { texture },
-      { buffer, bytesPerRow },
-      { width, height },
-    );
+    encoder.copyTextureToBuffer({ texture }, { buffer, bytesPerRow }, { width, height });
     this.device.queue.submit([encoder.finish()]);
     await buffer.mapAsync(GPUMapMode.READ);
     const mapped = new Uint8Array(buffer.getMappedRange());
     const out = new Uint8Array(width * height * 4);
     for (let y = 0; y < height; y++)
-      out.set(
-        mapped.subarray(y * bytesPerRow, y * bytesPerRow + width * 4),
-        y * width * 4,
-      );
+      out.set(mapped.subarray(y * bytesPerRow, y * bytesPerRow + width * 4), y * width * 4);
     buffer.unmap();
     buffer.destroy();
     if (this.target.startsWith("bgra8"))

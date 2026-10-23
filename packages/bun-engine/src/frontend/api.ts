@@ -105,7 +105,9 @@ export async function systemsOverview(): Promise<unknown[]> {
 /** The cores of `wanted` present in usr/lib/libretro (a symlinked core counts; a glob would skip it). */
 function installedCoreIds(wanted: string[]): Set<string> {
   const dir = join(pm.cacheDirectories().usr, "lib", "libretro");
-  return new Set(wanted.filter(id => ["dll", "so", "dylib"].some(ext => existsSync(join(dir, `${id}_libretro.${ext}`)))));
+  return new Set(
+    wanted.filter(id => ["dll", "so", "dylib"].some(ext => existsSync(join(dir, `${id}_libretro.${ext}`)))),
+  );
 }
 
 /** Native machine BIOS plus the libretro core BIOS report (Recalbox-style). */
@@ -152,7 +154,13 @@ export async function biosOverview(): Promise<unknown> {
 export async function settingsOverview(): Promise<unknown> {
   const [systems, bios, { systems: definitions }] = await Promise.all([
     systemsOverview() as Promise<
-      Array<{ id: string; name: string; games: number; routes: Array<{ id: string; kind: string; available: boolean; reason?: string }>; defaultRoute: string | null }>
+      Array<{
+        id: string;
+        name: string;
+        games: number;
+        routes: Array<{ id: string; kind: string; available: boolean; reason?: string }>;
+        defaultRoute: string | null;
+      }>
     >,
     biosOverview() as Promise<{
       native: Array<{ system: string; machine: string; status: string; required: boolean }>;
@@ -165,10 +173,14 @@ export async function settingsOverview(): Promise<unknown> {
     id,
     installed: installedCores.has(id),
     systems: definitions.filter(system => system.libretro.includes(id)).map(system => system.id),
-    bios: bios.libretro.filter(row => row.core === id).map(row => ({ file: row.file, status: row.status, optional: row.optional })),
+    bios: bios.libretro
+      .filter(row => row.core === id)
+      .map(row => ({ file: row.file, status: row.status, optional: row.optional })),
   }));
   const hooks = sessionHooks();
-  const packageJson = (await Bun.file(join(import.meta.dir, "..", "..", "package.json")).json().catch(() => ({}))) as {
+  const packageJson = (await Bun.file(join(import.meta.dir, "..", "..", "package.json"))
+    .json()
+    .catch(() => ({}))) as {
     version?: string;
   };
   return {
@@ -190,7 +202,12 @@ export async function settingsOverview(): Promise<unknown> {
       name: system.name,
       games: system.games,
       defaultRoute: system.defaultRoute,
-      routes: system.routes.map(route => ({ id: route.id, kind: route.kind, available: route.available, reason: route.reason })),
+      routes: system.routes.map(route => ({
+        id: route.id,
+        kind: route.kind,
+        available: route.available,
+        reason: route.reason,
+      })),
     })),
     cores,
     native: bios.native,
@@ -323,7 +340,9 @@ export function frontendRoutes() {
           routes: await routesFor(game.system),
           defaultRoute: defaultRoute(game.system),
           sameSystem: relatedGames(game),
-          recent: recentGames(profile, 13).filter(item => item.id !== game.id).slice(0, 12),
+          recent: recentGames(profile, 13)
+            .filter(item => item.id !== game.id)
+            .slice(0, 12),
           saves: saveSummary(profile, stem),
           running: runningGames().find(item => item.game === game.id) ?? null,
         });
@@ -369,7 +388,9 @@ export function frontendRoutes() {
     "/api/recent": {
       GET: guard(request => {
         const url = new URL(request.url);
-        return json(recentGames(url.searchParams.get("profile") ?? "default", Number(url.searchParams.get("limit") ?? 12)));
+        return json(
+          recentGames(url.searchParams.get("profile") ?? "default", Number(url.searchParams.get("limit") ?? 12)),
+        );
       }),
     },
     "/api/search": {

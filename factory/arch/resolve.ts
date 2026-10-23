@@ -1,20 +1,8 @@
 // SPDX-License-Identifier: MIT
-import {
-  chmod,
-  copyFile,
-  lstat,
-  mkdir,
-  open,
-  realpath,
-  statfs,
-  unlink,
-} from "node:fs/promises";
+import { chmod, copyFile, lstat, mkdir, open, realpath, statfs, unlink } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import {
-  hashContent,
-  hashFile,
-} from "../../packages/bun-workspace/src/hash.ts";
+import { hashContent, hashFile } from "../../packages/bun-workspace/src/hash.ts";
 import { runProcess } from "../../packages/bun-workspace/src/process.ts";
 import { trustedPacmanSigners } from "./signatures.ts";
 import {
@@ -51,10 +39,7 @@ interface ResolveProfile {
   minimumFreeBytes: number;
   commandTimeoutSeconds: number;
   jobDeadlineSeconds: number;
-  desktopSessions: Record<
-    DesktopSession,
-    { state: "blocked" | "unqualified"; blockers: string[] }
-  >;
+  desktopSessions: Record<DesktopSession, { state: "blocked" | "unqualified"; blockers: string[] }>;
 }
 
 interface Selection {
@@ -70,8 +55,7 @@ const imagePattern = /^archlinux(?::base-devel)?@sha256:[a-f0-9]{64}$/;
 const namePattern = /^[a-z0-9][a-z0-9@._+-]{0,199}$/;
 
 function positive(value: number, maximum: number): number {
-  if (!Number.isSafeInteger(value) || value < 1 || value > maximum)
-    throw new Error("Invalid Arch resolution limit.");
+  if (!Number.isSafeInteger(value) || value < 1 || value > maximum) throw new Error("Invalid Arch resolution limit.");
   return value;
 }
 
@@ -93,26 +77,17 @@ async function directory(root: string, path: string): Promise<void> {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     }
     const state = await lstat(current);
-    if (
-      !state.isDirectory() ||
-      state.isSymbolicLink() ||
-      (await realpath(current)) !== current
-    )
+    if (!state.isDirectory() || state.isSymbolicLink() || (await realpath(current)) !== current)
       throw new Error("Arch resolver requires owned physical directories.");
   }
 }
 
-function parseSelection(
-  text: string,
-  snapshot: string,
-  repositories: string[],
-): Selection[] {
+function parseSelection(text: string, snapshot: string, repositories: string[]): Selection[] {
   const names = new Set<string>();
   const prefix = `https://archive.archlinux.org/repos/${snapshot.replaceAll("-", "/")}/`;
   const rows = text.trim().split(/\r?\n/);
-  if (!rows.length || rows.length > 10000)
-    throw new Error("Invalid Arch package closure size.");
-  return rows.map((line) => {
+  if (!rows.length || rows.length > 10000) throw new Error("Invalid Arch package closure size.");
+  return rows.map(line => {
     const match = /^([^/]+)\/([^/]+)\/(https:\/\/.+)\/(\d+)$/.exec(line);
     if (!match || !namePattern.test(match[1]!) || names.has(match[1]!))
       throw new Error("Invalid or duplicate resolved Arch package.");
@@ -122,22 +97,16 @@ function parseSelection(
     const filename = url.pathname.split("/").at(-1)!;
     if (
       !address!.startsWith(prefix) ||
-      !repositories.some((repository) =>
-        suffix.startsWith(`${repository}/os/x86_64/`),
-      ) ||
+      !repositories.some(repository => suffix.startsWith(`${repository}/os/x86_64/`)) ||
       url.href !== address ||
       url.username ||
       url.password ||
       url.search ||
       url.hash ||
-      !/^[a-zA-Z0-9][a-zA-Z0-9@._+~%:-]*\.pkg\.tar\.(?:zst|xz|gz)$/.test(
-        filename,
-      ) ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9@._+~%:-]*\.pkg\.tar\.(?:zst|xz|gz)$/.test(filename) ||
       !/^[a-zA-Z0-9][a-zA-Z0-9.:_+~-]{0,199}$/.test(version!)
     )
-      throw new Error(
-        "Resolved package is outside the selected official Arch archive snapshot.",
-      );
+      throw new Error("Resolved package is outside the selected official Arch archive snapshot.");
     names.add(name!);
     return {
       name: name!,
@@ -149,13 +118,7 @@ function parseSelection(
   });
 }
 
-function resolverScript(
-  packages: string[],
-  prefix: string,
-  commandSeconds: number,
-  uid: number,
-  gid: number,
-): string {
+function resolverScript(packages: string[], prefix: string, commandSeconds: number, uid: number, gid: number): string {
   return `#!/bin/bash
 set -euo pipefail
 export LC_ALL=C HOME=/job/home GNUPGHOME=/job/gnupg SYSTEMD_OFFLINE=1
@@ -202,13 +165,9 @@ gpg --version > /job/gpg-version.txt
 }
 
 /** Resolve/download in a disposable container; no host packages or PKGBUILDs are executed. */
-export async function resolveArchLock(
-  options: ResolveArchLockOptions,
-): Promise<ResolvedArchLock> {
+export async function resolveArchLock(options: ResolveArchLockOptions): Promise<ResolvedArchLock> {
   if (process.platform !== "linux")
-    throw new Error(
-      "Arch resolution requires the selected Linux Docker factory; no WSL is started.",
-    );
+    throw new Error("Arch resolution requires the selected Linux Docker factory; no WSL is started.");
   if (!isAbsolute(options.root) || options.root.includes("\0"))
     throw new Error("An absolute existing factory root is required.");
   const requestedRoot = resolve(options.root);
@@ -218,9 +177,7 @@ export async function resolveArchLock(
       requestedRoot,
     )
   )
-    throw new Error(
-      "The resolver root must remain outside protected stores and filesystem roots.",
-    );
+    throw new Error("The resolver root must remain outside protected stores and filesystem roots.");
   const rootState = await lstat(requestedRoot);
   if (!rootState.isDirectory() || rootState.isSymbolicLink())
     throw new Error("The factory root must be a physical directory.");
@@ -235,26 +192,16 @@ export async function resolveArchLock(
     uid < 0 ||
     gid < 0
   )
-    throw new Error(
-      "The native Linux factory user and group must be available for artifact handoff.",
-    );
-  if (root !== requestedRoot)
-    throw new Error(
-      "Resolve the canonical factory root before package acquisition.",
-    );
-  const profile = (await Bun.file(
-    resolve(import.meta.dir, "../profile.json"),
-  ).json()) as ResolveProfile;
+    throw new Error("The native Linux factory user and group must be available for artifact handoff.");
+  if (root !== requestedRoot) throw new Error("Resolve the canonical factory root before package acquisition.");
+  const profile = (await Bun.file(resolve(import.meta.dir, "../profile.json")).json()) as ResolveProfile;
   const selectedImage = options.image ?? profile.bootstrapImage;
   if (
     !imagePattern.test(selectedImage) ||
     !imagePattern.test(profile.bootstrapImage) ||
-    selectedImage.split("@sha256:")[1] !==
-      profile.bootstrapImage.split("@sha256:")[1]
+    selectedImage.split("@sha256:")[1] !== profile.bootstrapImage.split("@sha256:")[1]
   )
-    throw new Error(
-      "The resolver requires the configured official Arch bootstrap image digest.",
-    );
+    throw new Error("The resolver requires the configured official Arch bootstrap image digest.");
   const date = new Date(options.snapshot + "T00:00:00Z");
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(options.snapshot) ||
@@ -262,40 +209,28 @@ export async function resolveArchLock(
     date.toISOString().slice(0, 10) !== options.snapshot
   )
     throw new Error("An immutable YYYY-MM-DD archive snapshot is required.");
-  if (!["server", "desktop", "gaming"].includes(options.composition))
-    throw new Error("Unknown Arch composition.");
+  if (!["server", "desktop", "gaming"].includes(options.composition)) throw new Error("Unknown Arch composition.");
   if (
     (options.desktopSession !== null &&
       options.desktopSession !== "cosmic" &&
       options.desktopSession !== "omarchy-hyprland") ||
     (options.composition === "desktop") !== (options.desktopSession !== null)
   )
-    throw new Error(
-      "Desktop session must be selected only for the desktop composition.",
-    );
-  const session = options.desktopSession
-    ? profile.desktopSessions[options.desktopSession]
-    : undefined;
+    throw new Error("Desktop session must be selected only for the desktop composition.");
+  const session = options.desktopSession ? profile.desktopSessions[options.desktopSession] : undefined;
   if (options.desktopSession && !session)
-    throw new Error(
-      "The selected desktop session is absent from the Arch profile contract.",
-    );
+    throw new Error("The selected desktop session is absent from the Arch profile contract.");
   if (session?.state === "blocked")
-    throw new Error(
-      `The selected desktop session is blocked: ${session.blockers.join(" ")}`,
-    );
+    throw new Error(`The selected desktop session is blocked: ${session.blockers.join(" ")}`);
   if (
     !Array.isArray(options.packages) ||
     !options.packages.length ||
     options.packages.length > 1000 ||
-    options.packages.some((name) => !namePattern.test(name))
+    options.packages.some(name => !namePattern.test(name))
   )
     throw new Error("Select explicit Arch package or group names.");
   const packages = [...new Set(options.packages)];
-  const timeoutMs = positive(
-    options.timeoutMs ?? profile.jobDeadlineSeconds * 1000,
-    43_200_000,
-  );
+  const timeoutMs = positive(options.timeoutMs ?? profile.jobDeadlineSeconds * 1000, 43_200_000);
   const commandSeconds = positive(profile.commandTimeoutSeconds, 43_200);
   positive(profile.minimumFreeBytes, Number.MAX_SAFE_INTEGER);
   if (
@@ -303,15 +238,11 @@ export async function resolveArchLock(
     isAbsolute(profile.sharedHeavyLockRelative) ||
     profile.sharedHeavyLockRelative.includes("\0")
   )
-    throw new Error(
-      "The shared heavy lock must be configured relative to the factory root.",
-    );
+    throw new Error("The shared heavy lock must be configured relative to the factory root.");
   const heavyPath = resolve(root, profile.sharedHeavyLockRelative);
   const heavyDirectory = await lstat(dirname(heavyPath));
   if (!heavyDirectory.isDirectory() || heavyDirectory.isSymbolicLink())
-    throw new Error(
-      "The existing shared heavy-lock directory must be provisioned.",
-    );
+    throw new Error("The existing shared heavy-lock directory must be provisioned.");
   const space = await statfs(root, { bigint: true });
   if (space.bavail * space.bsize < BigInt(profile.minimumFreeBytes))
     throw new Error("Insufficient factory storage for Arch resolution.");
@@ -343,28 +274,13 @@ export async function resolveArchLock(
     await directory(root, jobs);
     const cache = join(root, "cache", "arch-packages");
     await directory(root, cache);
-    job = inside(
-      root,
-      join(jobs, startedAt.replace(/[:.]/g, "") + "-" + token),
-    );
+    job = inside(root, join(jobs, startedAt.replace(/[:.]/g, "") + "-" + token));
     await mkdir(job, { mode: 0o700 });
     const selectedJob = job;
-    for (const child of [
-      "home",
-      "tmp",
-      "logs",
-      "db",
-      "packages",
-      "signatures",
-      "docker-config",
-    ])
+    for (const child of ["home", "tmp", "logs", "db", "packages", "signatures", "docker-config"])
       await mkdir(join(job, child), { mode: 0o700 });
-    if (job.includes(","))
-      throw new Error("Factory paths cannot contain Docker mount separators.");
-    const repositories =
-      options.composition === "gaming"
-        ? ["core", "extra", "multilib"]
-        : ["core", "extra"];
+    if (job.includes(",")) throw new Error("Factory paths cannot contain Docker mount separators.");
+    const repositories = options.composition === "gaming" ? ["core", "extra", "multilib"] : ["core", "extra"];
     const prefix = `https://archive.archlinux.org/repos/${options.snapshot.replaceAll("-", "/")}/`;
     await Bun.write(
       join(job, "pacman.conf"),
@@ -374,17 +290,11 @@ export async function resolveArchLock(
         "SigLevel = Required DatabaseOptional TrustedOnly",
         "LocalFileSigLevel = Required TrustedOnly",
         "GPGDir = /job/gnupg",
-        ...repositories.flatMap((repository) => [
-          `[${repository}]`,
-          `Server = ${prefix}$repo/os/$arch`,
-        ]),
+        ...repositories.flatMap(repository => [`[${repository}]`, `Server = ${prefix}$repo/os/$arch`]),
         "",
       ].join("\n"),
     );
-    await Bun.write(
-      join(job, "resolve.sh"),
-      resolverScript(packages, prefix, commandSeconds, uid, gid),
-    );
+    await Bun.write(join(job, "resolve.sh"), resolverScript(packages, prefix, commandSeconds, uid, gid));
     const environment = {
       PATH: Bun.env.PATH,
       LANG: "C",
@@ -415,12 +325,11 @@ export async function resolveArchLock(
             let offset = 0;
             while (offset < bytes.length) {
               const written = await log.write(bytes.subarray(offset));
-              if (!written.bytesWritten)
-                throw new Error("Resolver log write made no progress.");
+              if (!written.bytesWritten) throw new Error("Resolver log write made no progress.");
               offset += written.bytesWritten;
             }
           },
-          onStart: async (pid) => {
+          onStart: async pid => {
             await Bun.write(
               join(selectedJob, "status.json"),
               JSON.stringify({
@@ -434,9 +343,7 @@ export async function resolveArchLock(
           },
         });
         if (result.code !== 0)
-          throw new Error(
-            `Arch resolver ${step} failed (${result.code}); inspect its owned logs.`,
-          );
+          throw new Error(`Arch resolver ${step} failed (${result.code}); inspect its owned logs.`);
         return result;
       } finally {
         await Promise.all([out.close(), err.close()]);
@@ -444,16 +351,7 @@ export async function resolveArchLock(
     };
     networkMayExist = true;
     await execute(
-      [
-        "docker",
-        "network",
-        "create",
-        "--driver",
-        "bridge",
-        "--label",
-        `bun-os.arch-owner=${token}`,
-        network,
-      ],
+      ["docker", "network", "create", "--driver", "bridge", "--label", `bun-os.arch-owner=${token}`, network],
       "network-create",
       signal,
       Math.min(commandSeconds * 1000, deadline - Date.now()),
@@ -501,11 +399,7 @@ export async function resolveArchLock(
     const selectionFile = Bun.file(join(job, "selection.txt"));
     if (!(await selectionFile.exists()) || selectionFile.size > 8 * 1024 ** 2)
       throw new Error("Resolved package metadata exceeds its bound.");
-    const selections = parseSelection(
-      await selectionFile.text(),
-      options.snapshot,
-      repositories,
-    );
+    const selections = parseSelection(await selectionFile.text(), options.snapshot, repositories);
     const approved = new Set<string>();
     const closure: ArchPackage[] = [];
     for (const selection of selections) {
@@ -516,15 +410,11 @@ export async function resolveArchLock(
       for (const path of [archive, signature, statusFile]) {
         const metadata = await lstat(path);
         if (!metadata.isFile() || metadata.isSymbolicLink())
-          throw new Error(
-            "Expected a regular acquired package/signature record.",
-          );
+          throw new Error("Expected a regular acquired package/signature record.");
       }
       const status = Bun.file(statusFile);
-      if (status.size > 65536)
-        throw new Error("Signature status exceeds its metadata bound.");
-      for (const signer of trustedPacmanSigners(await status.text()))
-        approved.add(signer);
+      if (status.size > 65536) throw new Error("Signature status exceeds its metadata bound.");
+      for (const signer of trustedPacmanSigners(await status.text())) approved.add(signer);
       const sha256 = await hashFile(archive, {
         signal,
         expectedBytes: selection.bytes,
@@ -554,9 +444,7 @@ export async function resolveArchLock(
             maxBytes: object.maximum,
           })) !== object.sha256
         )
-          throw new Error(
-            "Existing canonical Arch cache object differs from its identity; preserved.",
-          );
+          throw new Error("Existing canonical Arch cache object differs from its identity; preserved.");
       }
       closure.push({
         name: selection.name,
@@ -618,8 +506,7 @@ export async function resolveArchLock(
     );
     await Bun.write(
       join(job, "status.json"),
-      JSON.stringify({ status: "complete", token, lockPath, receiptPath }) +
-        "\n",
+      JSON.stringify({ status: "complete", token, lockPath, receiptPath }) + "\n",
     );
     return { lock, lockPath, job, receiptPath };
   } catch (error) {
@@ -630,8 +517,7 @@ export async function resolveArchLock(
           status: "failed",
           token,
           receipt: false,
-          error:
-            error instanceof Error ? error.message : "Arch resolution failed",
+          error: error instanceof Error ? error.message : "Arch resolution failed",
         }) + "\n",
       );
     throw error;
@@ -644,33 +530,20 @@ export async function resolveArchLock(
       cleanupConfirmed = false;
       try {
         const inspect = await runProcess(
-          [
-            "docker",
-            "inspect",
-            "--format",
-            '{{ index .Config.Labels "bun-os.arch-owner" }}',
-            container,
-          ],
+          ["docker", "inspect", "--format", '{{ index .Config.Labels "bun-os.arch-owner" }}', container],
           job,
           { timeoutMs: 15000, maxOutputBytes: 1048576, env: dockerEnvironment },
         );
         if (inspect.code === 0) {
-          if (inspect.stdout.trim() !== token)
-            throw new Error("Resolver container ownership changed.");
-          const removed = await runProcess(
-            ["docker", "rm", "--force", container],
-            job,
-            {
-              timeoutMs: 15000,
-              maxOutputBytes: 1048576,
-              env: dockerEnvironment,
-            },
-          );
-          if (removed.code !== 0)
-            throw new Error("Owned resolver container cleanup failed.");
+          if (inspect.stdout.trim() !== token) throw new Error("Resolver container ownership changed.");
+          const removed = await runProcess(["docker", "rm", "--force", container], job, {
+            timeoutMs: 15000,
+            maxOutputBytes: 1048576,
+            env: dockerEnvironment,
+          });
+          if (removed.code !== 0) throw new Error("Owned resolver container cleanup failed.");
           cleanupConfirmed = true;
-        } else if (/No such (?:object|container)/i.test(inspect.stderr))
-          cleanupConfirmed = true;
+        } else if (/No such (?:object|container)/i.test(inspect.stderr)) cleanupConfirmed = true;
       } catch {
         // Uncertain ownership retains both admission locks and the complete job.
       }
@@ -679,32 +552,18 @@ export async function resolveArchLock(
       cleanupConfirmed = false;
       try {
         const inspect = await runProcess(
-          [
-            "docker",
-            "network",
-            "inspect",
-            "--format",
-            '{{ index .Labels "bun-os.arch-owner" }}',
-            network,
-          ],
+          ["docker", "network", "inspect", "--format", '{{ index .Labels "bun-os.arch-owner" }}', network],
           job,
           { timeoutMs: 15000, maxOutputBytes: 1048576, env: dockerEnvironment },
         );
         if (inspect.code === 0 && inspect.stdout.trim() === token) {
-          const removed = await runProcess(
-            ["docker", "network", "rm", network],
-            job,
-            {
-              timeoutMs: 15000,
-              maxOutputBytes: 1048576,
-              env: dockerEnvironment,
-            },
-          );
+          const removed = await runProcess(["docker", "network", "rm", network], job, {
+            timeoutMs: 15000,
+            maxOutputBytes: 1048576,
+            env: dockerEnvironment,
+          });
           cleanupConfirmed = removed.code === 0;
-        } else if (
-          inspect.code !== 0 &&
-          /No such network|network .+ not found/i.test(inspect.stderr)
-        )
+        } else if (inspect.code !== 0 && /No such network|network .+ not found/i.test(inspect.stderr))
           cleanupConfirmed = true;
       } catch {
         // Keep both admission locks when this owned bridge cannot be accounted for.
@@ -714,21 +573,13 @@ export async function resolveArchLock(
       await heavy?.release();
       await factoryLock.close();
       const current: unknown = await Bun.file(factoryLockPath).json();
-      if (
-        current &&
-        typeof current === "object" &&
-        "token" in current &&
-        current.token === token
-      )
+      if (current && typeof current === "object" && "token" in current && current.token === token)
         await unlink(factoryLockPath);
-      else
-        throw new Error("Resolver factory lock ownership changed; preserved.");
+      else throw new Error("Resolver factory lock ownership changed; preserved.");
     } else {
       heavy?.retain();
       await factoryLock.close();
-      throw new Error(
-        "Resolver container/network cleanup is unconfirmed; both admission locks and job were retained.",
-      );
+      throw new Error("Resolver container/network cleanup is unconfirmed; both admission locks and job were retained.");
     }
   }
 }

@@ -55,28 +55,20 @@ interface ImagesManifest {
   images: Record<string, ImageSpec>;
 }
 
-const manifest: ImagesManifest = await Bun.file(
-  join(here, "manifest.json"),
-).json();
+const manifest: ImagesManifest = await Bun.file(join(here, "manifest.json")).json();
 const archProfile = (await Bun.file(join(here, "../profile.json")).json()) as {
   bootstrapImage: string;
 };
 const sourcesDir = manifest.sources.replace(/^~/, homedir());
 const factoryConfig = (await Bun.file(
-  Bun.env.APHRODY_FACTORY_CONFIG ??
-    join(here, "../../tools/aphrody/config/build-factory.json"),
+  Bun.env.APHRODY_FACTORY_CONFIG ?? join(here, "../../tools/aphrody/config/build-factory.json"),
 ).json()) as { lockPath: string };
 if (!/^\/[A-Za-z0-9/_.-]+$/.test(factoryConfig.lockPath))
-  throw new Error(
-    "The image factory requires an absolute VPS factory lock path.",
-  );
+  throw new Error("The image factory requires an absolute VPS factory lock path.");
 
 function spec(name: string) {
   const image = manifest.images[name];
-  if (!image)
-    throw new Error(
-      `Unknown image ${name}; expected ${Object.keys(manifest.images).join("|")}`,
-    );
+  if (!image) throw new Error(`Unknown image ${name}; expected ${Object.keys(manifest.images).join("|")}`);
   return image;
 }
 
@@ -94,8 +86,7 @@ function buildArgs(name: string): Record<string, string> {
     return { ALPINE_VERSION: pins.alpine.version };
   }
   if (name === "bunos-ubuntu") {
-    const kernel = pins["ubuntu-kernel"] as Pin &
-      Record<"image" | "modules", { file: string; sha256: string }>;
+    const kernel = pins["ubuntu-kernel"] as Pin & Record<"image" | "modules", { file: string; sha256: string }>;
     return {
       ...common,
       BUN_URL: bun.url!,
@@ -116,10 +107,7 @@ function buildArgs(name: string): Record<string, string> {
 }
 
 /** Generated inputs reused from the /usr factory: its pacman.conf, keys and composition package set. */
-async function generated(
-  name: string,
-  requestedDesktopSession?: DesktopSession,
-) {
+async function generated(name: string, requestedDesktopSession?: DesktopSession) {
   const image = spec(name);
   if (image.prepare === "omarchy-rootfs")
     return {
@@ -128,10 +116,7 @@ async function generated(
       desktopSessionState: "unqualified",
     };
   if (name === "bunos-omarchy") {
-    if (
-      requestedDesktopSession &&
-      requestedDesktopSession !== "omarchy-hyprland"
-    )
+    if (requestedDesktopSession && requestedDesktopSession !== "omarchy-hyprland")
       throw new Error("The Omarchy candidate requires its Hyprland session.");
     return {
       repo: undefined,
@@ -146,25 +131,15 @@ async function generated(
   const composition = image.usrComposition;
   if (!composition) {
     if (requestedDesktopSession)
-      throw new Error(
-        "A desktop session requires an image with a desktop /usr composition.",
-      );
+      throw new Error("A desktop session requires an image with a desktop /usr composition.");
     return {};
   }
-  if (
-    image.desktopSession &&
-    requestedDesktopSession &&
-    image.desktopSession !== requestedDesktopSession
-  )
-    throw new Error(
-      `Image ${name} fixes desktop session ${image.desktopSession}.`,
-    );
+  if (image.desktopSession && requestedDesktopSession && image.desktopSession !== requestedDesktopSession)
+    throw new Error(`Image ${name} fixes desktop session ${image.desktopSession}.`);
   const selectedSession = requestedDesktopSession ?? image.desktopSession;
   const initialUsr = await planUsr(composition, undefined, selectedSession);
   const lockName =
-    composition === "desktop"
-      ? `desktop-${selectedSession ?? initialUsr.desktopSession}.json`
-      : `${composition}.json`;
+    composition === "desktop" ? `desktop-${selectedSession ?? initialUsr.desktopSession}.json` : `${composition}.json`;
   const lockPath = join(workspace, initialUsr.manifest.lockDirectory, lockName);
   if (!(await Bun.file(lockPath).exists()))
     return {
@@ -184,44 +159,23 @@ async function generated(
     throw new Error(
       `The ${composition} /usr package lock does not match the current factory profile. Rebuild and qualify /usr.`,
     );
-  const usr =
-    usrLock.snapshot === null
-      ? initialUsr
-      : await planUsr(composition, usrLock.snapshot, selectedSession);
-  const bootOnly = new Set(
-    ["linux-cachyos", "linux-firmware", usr.manifest.kernelFallback].filter(
-      Boolean,
-    ),
-  );
-  const keys = usr.manifest.repositories.flatMap((repo) =>
-    (repo.keys ?? []).map(
-      (key) =>
-        `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`,
-    ),
+  const usr = usrLock.snapshot === null ? initialUsr : await planUsr(composition, usrLock.snapshot, selectedSession);
+  const bootOnly = new Set(["linux-cachyos", "linux-firmware", usr.manifest.kernelFallback].filter(Boolean));
+  const keys = usr.manifest.repositories.flatMap(repo =>
+    (repo.keys ?? []).map(key => `${key}@${(repo.keyserver ?? "keyserver.ubuntu.com").replace(/^hkps:\/\//, "")}`),
   );
   // The source-bound /usr lock selects the exact local package artifact job.
   const artifactRoot = usr.manifest.localArtifacts.replace(/^~/, homedir());
   const artifacts = join(artifactRoot, composition, usrLock.job);
   const repo = join(artifacts, "repo");
-  const localPackages = usrLock.packages.filter(
-    (pkg) => pkg.repository === usr.manifest.localRepository.name,
-  );
-  if (!localPackages.length)
-    throw new Error(
-      `The ${composition} /usr lock has no local Bun OS packages.`,
-    );
+  const localPackages = usrLock.packages.filter(pkg => pkg.repository === usr.manifest.localRepository.name);
+  if (!localPackages.length) throw new Error(`The ${composition} /usr lock has no local Bun OS packages.`);
   for (const pkg of localPackages) {
     if (!/^[A-Za-z0-9@._+-]+\.pkg\.tar\.zst$/.test(pkg.file))
-      throw new Error(
-        `Invalid local package filename in /usr lock: ${pkg.file}`,
-      );
+      throw new Error(`Invalid local package filename in /usr lock: ${pkg.file}`);
     const path = join(repo, pkg.file);
     const file = Bun.file(path);
-    if (
-      !(await file.exists()) ||
-      file.size !== pkg.bytes ||
-      (await sha256(path)) !== pkg.sha256
-    )
+    if (!(await file.exists()) || file.size !== pkg.bytes || (await sha256(path)) !== pkg.sha256)
       throw new Error(
         `Local package ${pkg.name} does not match the ${composition} /usr lock; rebuild and qualify /usr.`,
       );
@@ -229,12 +183,8 @@ async function generated(
   return {
     repo,
     files: {
-      "pacman.conf": usr.pacmanConf.replace(
-        "file:///job/repo",
-        "file:///var/lib/bun-os/repo",
-      ),
-      "usr.packages":
-        usr.packages.filter((pkg) => !bootOnly.has(pkg)).join("\n") + "\n",
+      "pacman.conf": usr.pacmanConf.replace("file:///job/repo", "file:///var/lib/bun-os/repo"),
+      "usr.packages": usr.packages.filter(pkg => !bootOnly.has(pkg)).join("\n") + "\n",
     },
     args: { PACMAN_KEYS: keys.join(" ") },
     desktopSession: usr.desktopSession,
@@ -292,11 +242,9 @@ async function stageAgentTooling(dir: string, tooling: AgentTooling) {
     if (server.source) {
       await cp(join(workspace, server.source), join(dir, server.name), {
         recursive: true,
-        filter: (src) => !/node_modules/.test(src),
+        filter: src => !/node_modules/.test(src),
       });
-      script.push(
-        `cp -a "$a/${server.name}" /usr/share/bun-os/${server.source.split("/").pop()}`,
-      );
+      script.push(`cp -a "$a/${server.name}" /usr/share/bun-os/${server.source.split("/").pop()}`);
     }
   const mcpServers = Object.fromEntries(
     tooling.mcpServers.map(({ name, command: [command, ...args], env }) => [
@@ -304,31 +252,23 @@ async function stageAgentTooling(dir: string, tooling: AgentTooling) {
       { command, args, ...(env ? { env } : {}) },
     ]),
   );
-  await Bun.write(
-    join(dir, "claude.json"),
-    JSON.stringify({ mcpServers }, null, 2) + "\n",
-  );
+  await Bun.write(join(dir, "claude.json"), JSON.stringify({ mcpServers }, null, 2) + "\n");
   const toml = (value: string) => JSON.stringify(value);
-  const codex = tooling.mcpServers.flatMap(
-    ({ name, command: [command, ...args], env }) => [
-      `[mcp_servers.${toml(name)}]`,
-      `command = ${toml(command!)}`,
-      `args = [${args.map(toml).join(", ")}]`,
-      ...(env
-        ? [
-            `env = { ${Object.entries(env)
-              .map(([k, v]) => `${k} = ${toml(v)}`)
-              .join(", ")} }`,
-          ]
-        : []),
-      "",
-    ],
-  );
+  const codex = tooling.mcpServers.flatMap(({ name, command: [command, ...args], env }) => [
+    `[mcp_servers.${toml(name)}]`,
+    `command = ${toml(command!)}`,
+    `args = [${args.map(toml).join(", ")}]`,
+    ...(env
+      ? [
+          `env = { ${Object.entries(env)
+            .map(([k, v]) => `${k} = ${toml(v)}`)
+            .join(", ")} }`,
+        ]
+      : []),
+    "",
+  ]);
   await Bun.write(join(dir, "codex.toml"), codex.join("\n"));
-  await Bun.write(
-    join(dir, "agent.packages"),
-    tooling.packages.join("\n") + "\nuv\n",
-  );
+  await Bun.write(join(dir, "agent.packages"), tooling.packages.join("\n") + "\nuv\n");
   script.push(
     'bunos-install-packages "$a/agent.packages"',
     "install -d /etc/skel/.claude /etc/skel/.codex",
@@ -350,21 +290,13 @@ export async function fetchSources() {
   const results: Record<string, string> = {};
   for (const [id, pin] of Object.entries(manifest.pins)) {
     const entries: [string, string, string][] = [];
-    if (pin.file && pin.url && pin.sha256)
-      entries.push([pin.file, pin.url, pin.sha256]);
+    if (pin.file && pin.url && pin.sha256) entries.push([pin.file, pin.url, pin.sha256]);
     for (const part of ["image", "modules"] as const) {
       const deb = pin[part] as { file: string; sha256: string } | undefined;
-      if (deb)
-        entries.push([deb.file, `${pin.baseUrl}/${deb.file}`, deb.sha256]);
+      if (deb) entries.push([deb.file, `${pin.baseUrl}/${deb.file}`, deb.sha256]);
     }
-    for (const [asset, digest] of Object.entries(
-      (pin.assets as Record<string, string>) ?? {},
-    ))
-      entries.push([
-        `bun-${pin.version}-${asset}`,
-        `${pin.url}${asset}`,
-        digest,
-      ]);
+    for (const [asset, digest] of Object.entries((pin.assets as Record<string, string>) ?? {}))
+      entries.push([`bun-${pin.version}-${asset}`, `${pin.url}${asset}`, digest]);
     for (const [file, url, digest] of entries) {
       const path = join(sourcesDir, file);
       if (!(await Bun.file(path).exists())) {
@@ -375,39 +307,25 @@ export async function fetchSources() {
         await Bun.write(path, response);
       }
       const actual = await sha256(path);
-      if (actual !== digest)
-        throw new Error(`${id} ${file}: sha256 ${actual} != ${digest}`);
+      if (actual !== digest) throw new Error(`${id} ${file}: sha256 ${actual} != ${digest}`);
       results[file] = digest;
     }
   }
   return { sources: sourcesDir, verified: results };
 }
 
-async function run(
-  argv: string[],
-  timeoutMs: number,
-  capture = false,
-  cwd?: string,
-) {
+async function run(argv: string[], timeoutMs: number, capture = false, cwd?: string) {
   const proc = Bun.spawn(argv, {
     cwd,
     stdio: ["ignore", capture ? "pipe" : "inherit", "inherit"],
     timeout: timeoutMs,
   });
-  const out = capture
-    ? await new Response(proc.stdout as ReadableStream).text()
-    : "";
-  if ((await proc.exited) !== 0)
-    throw new Error(`${argv[0]} exited with ${proc.exitCode}`);
+  const out = capture ? await new Response(proc.stdout as ReadableStream).text() : "";
+  if ((await proc.exited) !== 0) throw new Error(`${argv[0]} exited with ${proc.exitCode}`);
   return out;
 }
 
-function remoteScript(
-  name: string,
-  image: ImageSpec,
-  targets: string[],
-  args: Record<string, string>,
-) {
+function remoteScript(name: string, image: ImageSpec, targets: string[], args: Record<string, string>) {
   const flags = Object.entries(args)
     .map(([key, value]) => `--build-arg ${key}='${value.replaceAll("'", "")}'`)
     .join(" ");
@@ -421,13 +339,8 @@ function remoteScript(
     ": >status",
   ];
   if (image.prepare === "omarchy-rootfs")
-    lines.push(
-      `bun context/import.ts prepare "$PWD" '${manifest.remoteRoot}' || exit $?`,
-    );
-  const containerfile =
-    image.prepare === "omarchy-rootfs"
-      ? "context/import.Containerfile"
-      : "context/Containerfile";
+    lines.push(`bun context/import.ts prepare "$PWD" '${manifest.remoteRoot}' || exit $?`);
+  const containerfile = image.prepare === "omarchy-rootfs" ? "context/import.Containerfile" : "context/Containerfile";
   for (const target of targets) {
     const tag = `${name}:${target}`;
     const base = `docker buildx build --progress=plain --platform ${image.platforms.join(",")} --target ${target} ${flags} -f ${containerfile} context`;
@@ -441,9 +354,7 @@ function remoteScript(
     );
   }
   lines.push(
-    "docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep '^" +
-      name +
-      ":' >>status",
+    "docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep '^" + name + ":' >>status",
     "echo done >>status",
   );
   return lines.join("\n") + "\n";
@@ -459,31 +370,16 @@ async function build(
 ) {
   const declared = spec(name);
   const platforms = platform ? platform.split(",") : declared.platforms;
-  if (
-    !platforms.length ||
-    platforms.some((value) => !declared.platforms.includes(value))
-  )
-    throw new Error(
-      "Image platform must be one of the declared target platforms",
-    );
+  if (!platforms.length || platforms.some(value => !declared.platforms.includes(value)))
+    throw new Error("Image platform must be one of the declared target platforms");
   const image = { ...declared, platforms };
   if (name === "bunos-alpine" && !runtimes)
-    throw new Error(
-      "Alpine requires --runtimes JSON with qualified Aphrody fork musl binaries; no upstream fallback",
-    );
-  const targets = only
-    ? [only]
-    : Object.keys(image.targets).filter(
-        (target) => !image.blockedTargets?.[target],
-      );
-  for (const target of targets)
-    if (!image.targets[target])
-      throw new Error(`Unknown target ${target} for ${name}`);
+    throw new Error("Alpine requires --runtimes JSON with qualified Aphrody fork musl binaries; no upstream fallback");
+  const targets = only ? [only] : Object.keys(image.targets).filter(target => !image.blockedTargets?.[target]);
+  for (const target of targets) if (!image.targets[target]) throw new Error(`Unknown target ${target} for ${name}`);
   for (const target of targets)
     if (image.blockedTargets?.[target])
-      throw new Error(
-        `${name}:${target} is blocked: ${image.blockedTargets[target]}`,
-      );
+      throw new Error(`${name}:${target} is blocked: ${image.blockedTargets[target]}`);
   const extra = await generated(name, desktopSession);
   const args = { ...buildArgs(name), ...extra.args };
   const job = `${name}-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
@@ -497,8 +393,7 @@ async function build(
         schemaVersion: number;
         runtimes: Record<string, { binary: string; receipt: string }>;
       };
-      if (inputs.schemaVersion !== 1 || !inputs.runtimes)
-        throw new Error("Invalid Alpine runtime inputs");
+      if (inputs.schemaVersion !== 1 || !inputs.runtimes) throw new Error("Invalid Alpine runtime inputs");
       const pin = manifest.pins["bun-musl"]!;
       const expected: RuntimePin = {
         repository: String(pin.repository),
@@ -508,14 +403,8 @@ async function build(
       for (const target of platforms) {
         const architecture = target === "linux/amd64" ? "amd64" : "arm64";
         const input = inputs.runtimes[architecture];
-        if (
-          !input ||
-          typeof input.binary !== "string" ||
-          typeof input.receipt !== "string"
-        )
-          throw new Error(
-            `Missing qualified Alpine runtime for ${architecture}`,
-          );
+        if (!input || typeof input.binary !== "string" || typeof input.receipt !== "string")
+          throw new Error(`Missing qualified Alpine runtime for ${architecture}`);
         await stageAlpineRuntime(
           join(stage, "context"),
           architecture,
@@ -525,11 +414,7 @@ async function build(
         );
       }
     }
-    if (image.agentTooling)
-      await stageAgentTooling(
-        join(stage, "context", "agent"),
-        image.agentTooling,
-      );
+    if (image.agentTooling) await stageAgentTooling(join(stage, "context", "agent"), image.agentTooling);
     if (extra.missingRepo) throw new Error(extra.missingRepo);
     if (extra.repo)
       await cp(extra.repo, join(stage, "context", "bunos-repo"), {
@@ -537,17 +422,9 @@ async function build(
       });
     for (const [file, content] of Object.entries(extra.files ?? {}))
       await Bun.write(join(stage, "context", file), content);
-    await Bun.write(
-      join(stage, "build.sh"),
-      remoteScript(name, image, targets, args),
-    );
+    await Bun.write(join(stage, "build.sh"), remoteScript(name, image, targets, args));
     await run(["ssh", ...sshOptions, host, `mkdir -p ${remote}`], 30_000);
-    await run(
-      ["scp", ...sshOptions, "-r", "context", "build.sh", `${host}:${remote}/`],
-      120_000,
-      false,
-      stage,
-    );
+    await run(["scp", ...sshOptions, "-r", "context", "build.sh", `${host}:${remote}/`], 120_000, false, stage);
     const seconds = manifest.remoteTimeoutSeconds;
     await run(
       [
@@ -577,12 +454,7 @@ async function build(
 async function status(host: string, job: string) {
   const remote = `${manifest.remoteRoot}/${job}`;
   const out = await run(
-    [
-      "ssh",
-      ...sshOptions,
-      host,
-      `cd ${remote} && cat status; echo ---; tail -15 build.log; ls -la out`,
-    ],
+    ["ssh", ...sshOptions, host, `cd ${remote} && cat status; echo ---; tail -15 build.log; ls -la out`],
     30_000,
     true,
   );
@@ -605,22 +477,10 @@ export async function main(args: string[]) {
   const [action = "plan", name] = positionals;
   const host = values.host ?? manifest.host;
   if (action === "fetch") return fetchSources();
-  if (!name)
-    throw new Error(
-      `Expected image name: ${Object.keys(manifest.images).join("|")}`,
-    );
-  const desktopSession = values["desktop-session"] as
-    DesktopSession | undefined;
+  if (!name) throw new Error(`Expected image name: ${Object.keys(manifest.images).join("|")}`);
+  const desktopSession = values["desktop-session"] as DesktopSession | undefined;
   if (action === "plan") return planImage(name, desktopSession);
-  if (action === "build")
-    return build(
-      name,
-      host,
-      values.target,
-      values.runtimes,
-      values.platform,
-      desktopSession,
-    );
+  if (action === "build") return build(name, host, values.target, values.runtimes, values.platform, desktopSession);
   if (action === "status") {
     if (!values.job) throw new Error("Missing --job");
     return status(host, values.job);
@@ -628,5 +488,4 @@ export async function main(args: string[]) {
   throw new Error("Expected image plan|fetch|build|status");
 }
 
-if (import.meta.main)
-  console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));
+if (import.meta.main) console.log(JSON.stringify(await main(Bun.argv.slice(2)), null, 2));

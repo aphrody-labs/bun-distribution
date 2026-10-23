@@ -25,13 +25,22 @@ const config: BuildFactoryConfig = {
 const revision = "a".repeat(40);
 
 test("declared source names and branches drive canonical OS and runtime verification", () => {
-  const declared = { ...config, repositories: { "bun-os": "/home/ubuntu/src/bun-os", "bun-runtime": "/home/ubuntu/src/bun" } };
+  const declared = {
+    ...config,
+    repositories: { "bun-os": "/home/ubuntu/src/bun-os", "bun-runtime": "/home/ubuntu/src/bun" },
+  };
   for (const [id, repositoryName, branch, remote] of [
     ["bun-os", "bun-distribution", "os", "github"],
     ["bun-runtime", "bun", "main", "origin"],
   ] as const) {
-    const source = { path: `/source/${id}`, repositoryName, branch, remote,
-      url: `git@github-dev:aphrody-labs/${repositoryName}.git`, owners: ["aphrody-labs"] };
+    const source = {
+      path: `/source/${id}`,
+      repositoryName,
+      branch,
+      remote,
+      url: `git@github-dev:aphrody-labs/${repositoryName}.git`,
+      owners: ["aphrody-labs"],
+    };
     const plan = buildFactoryPreparePlan(declared, id, revision, source);
     expect(plan.workspace).toBe(declared.repositories[id]);
     expect(plan.source.branch).toBe(branch);
@@ -42,10 +51,16 @@ test("declared source names and branches drive canonical OS and runtime verifica
       expect(plan.transport[5]).not.toContain(mutation);
     expect(plan.initializesSubmodules).toBe(false);
     expect(() => buildFactoryPreparePlan(declared, id, revision, { ...source, branch: "../bad" })).toThrow("branch");
-    expect(() => buildFactoryPreparePlan(declared, id, revision, { ...source, url: "https://github.com/unowned/bun.git" })).toThrow("declared private");
+    expect(() =>
+      buildFactoryPreparePlan(declared, id, revision, { ...source, url: "https://github.com/unowned/bun.git" }),
+    ).toThrow("declared private");
     expect(() => buildFactoryPreparePlan(declared, id, "main", source)).toThrow("pinned");
   }
-  for (const url of ["git@wrong-alias:aphrody-labs/bun.git", "https://fixture:secret@github.com/aphrody-labs/bun.git", "https://github.com/unowned/bun.git"])
+  for (const url of [
+    "git@wrong-alias:aphrody-labs/bun.git",
+    "https://fixture:secret@github.com/aphrody-labs/bun.git",
+    "https://github.com/unowned/bun.git",
+  ])
     expect(() => factoryRemoteUrl(url, "bun", ["aphrody-labs"])).toThrow("declared private");
 });
 async function preparationFixture() {
@@ -105,7 +120,8 @@ async function preparationFixture() {
     path: source,
     remote: "origin",
     url: remoteUrl,
-    repositoryName: "yolo", branch: "main",
+    repositoryName: "yolo",
+    branch: "main",
     owners: ["aphrody-labs"],
   };
   await git(root, "clone", "--quiet", remoteUrl, checkout);
@@ -586,7 +602,8 @@ test("source preparations use disjoint locks and builds also protect their pinne
     path: "/source/aphrody",
     remote: "workspace",
     url: "git@github-dev:aphrody-labs/aphrody.git",
-    repositoryName: "aphrody", branch: "main",
+    repositoryName: "aphrody",
+    branch: "main",
     owners: ["aphrody-labs"],
   };
   const first = buildFactoryPreparePlan(config, "aphrody", revision, source, {
@@ -607,7 +624,8 @@ test("source preparations use disjoint locks and builds also protect their pinne
     path: "/source/yolo",
     remote: "origin",
     url: "git@github-dev:aphrody-labs/yolo.git",
-    repositoryName: "yolo", branch: "main",
+    repositoryName: "yolo",
+    branch: "main",
   });
   expect(other.lockPath).not.toBe(first.lockPath);
   expect(other.initializesSubmodules).toBe(false);

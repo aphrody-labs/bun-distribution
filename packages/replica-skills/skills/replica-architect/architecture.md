@@ -2,15 +2,15 @@
 
 ## Stack
 
-| layer | choice | why |
-| --- | --- | --- |
-| web | | |
-| database | | |
-| auth | | |
-| payments | | |
-| email | | |
-| jobs | | |
-| hosting | | |
+| layer    | choice | why |
+| -------- | ------ | --- |
+| web      |        |     |
+| database |        |     |
+| auth     |        |     |
+| payments |        |     |
+| email    |        |     |
+| jobs     |        |     |
+| hosting  |        |     |
 
 ## Schema
 
@@ -23,9 +23,9 @@ Tables: {{n}}. Access rules: {{RLS | data-layer checks}}.
 ## API
 
 | method path | does | who | input | output | flow |
-| --- | --- | --- | --- | --- | --- |
+| ----------- | ---- | --- | ----- | ------ | ---- |
 
-Webhooks in: {{...}}  Webhooks out: {{...}}
+Webhooks in: {{...}} Webhooks out: {{...}}
 Jobs: {{name, schedule, what it does}}
 
 ## The parts that bite

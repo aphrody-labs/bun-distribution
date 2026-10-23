@@ -59,7 +59,9 @@ body {
   grid-template-rows: auto 1fr auto;
   min-height: 100vh;
   overflow: hidden;
-  background: radial-gradient(90rem 40rem at 10% -10%, color-mix(in srgb, var(--focus) 7%, var(--bg)) 0%, transparent 60%), var(--bg);
+  background:
+    radial-gradient(90rem 40rem at 10% -10%, color-mix(in srgb, var(--focus) 7%, var(--bg)) 0%, transparent 60%),
+    var(--bg);
 }
 button,
 input,
@@ -403,7 +405,12 @@ button.big {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 88%, transparent) 0%, color-mix(in srgb, var(--bg) 62%, transparent) 55%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bg) 88%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 62%, transparent) 55%,
+    transparent 100%
+  );
 }
 .hero-body,
 .hero-cover {

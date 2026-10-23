@@ -29,16 +29,33 @@
       "id": "inazuma-eleven-2-tempete-de-glace-fr",
       "title": "Inazuma Eleven 2 - Tempete de Glace (France)",
       "system": "nds",
-      "rights": { "classification": "proprietary-owner-authorized", "declaration": "owner-level5-2026-10-20", "license": null, "endUserTerms": null },
+      "rights": {
+        "classification": "proprietary-owner-authorized",
+        "declaration": "owner-level5-2026-10-20",
+        "license": null,
+        "endUserTerms": null
+      },
       "status": "input-pinned-awaiting-vps-preparation",
-      "archive": { "path": "usr/share/rom/Inazuma_Eleven_2_-_Tempete_de_Glace_(France).zip", "sha256": "cac4e2031602a26dcdfdf1ed118f9282b666afb7a656a9286cbf71b1e45870be" },
-      "member": { "path": "Inazuma Eleven 2 - Tempete de Glace (France).nds", "sha256": "6f2ac5530b11acd25e0bf2405b3c04cbf777cfaef696e18adc841cb0d4573f81", "bytes": 268435456 },
+      "archive": {
+        "path": "usr/share/rom/Inazuma_Eleven_2_-_Tempete_de_Glace_(France).zip",
+        "sha256": "cac4e2031602a26dcdfdf1ed118f9282b666afb7a656a9286cbf71b1e45870be"
+      },
+      "member": {
+        "path": "Inazuma Eleven 2 - Tempete de Glace (France).nds",
+        "sha256": "6f2ac5530b11acd25e0bf2405b3c04cbf777cfaef696e18adc841cb0d4573f81",
+        "bytes": 268435456
+      },
       "output": "inazuma-eleven-2-tempete-de-glace-fr.nds"
     },
     {
       "id": "dragon-ball-xenoverse-2",
       "title": "Dragon Ball Xenoverse 2",
-      "rights": { "classification": "proprietary-owner-authorized", "declaration": "owner-bandai-namco-2026-10-20", "license": null, "endUserTerms": null },
+      "rights": {
+        "classification": "proprietary-owner-authorized",
+        "declaration": "owner-bandai-namco-2026-10-20",
+        "license": null,
+        "endUserTerms": null
+      },
       "status": "no-artifact-supplied",
       "archive": null,
       "member": null,

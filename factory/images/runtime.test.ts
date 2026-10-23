@@ -7,7 +7,9 @@ import { inspectLinuxABI } from "../../src/elf.ts";
 import { stageAlpineRuntime } from "./runtime.ts";
 
 const roots: string[] = [];
-afterEach(async () => { await Promise.all(roots.splice(0).map(path => rm(path, { recursive: true, force: true }))); });
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map(path => rm(path, { recursive: true, force: true })));
+});
 
 function elf(loader: string, machine = 62) {
   const bytes = new Uint8Array(256);
@@ -35,7 +37,11 @@ async function fixture(loader = "/lib/ld-musl-x86_64.so.1") {
   const receipt = {
     target: "bun-linux-x64-musl",
     sha256: hashContent(bytes),
-    facts: { ...expected, sourceUrl: "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.6/bun-linux-x64-musl.zip", executable: binary },
+    facts: {
+      ...expected,
+      sourceUrl: "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.6/bun-linux-x64-musl.zip",
+      executable: binary,
+    },
     qualification: { host: "fixture", mode: "docker", observedAt: "2026-10-19T00:00:00Z" },
   };
   const receiptPath = join(root, "receipt.json");
@@ -65,10 +71,16 @@ test("Alpine staging rejects upstream provenance, altered bytes and GNU artifact
   const value = await fixture();
   value.receipt.facts.sourceUrl = "https://github.com/oven-sh/bun/releases/download/bun-v1.4.6/bun-linux-x64-musl.zip";
   await Bun.write(value.receiptPath, JSON.stringify(value.receipt));
-  await expect(stageAlpineRuntime(join(value.root, "bad"), "amd64", value.binary, value.receiptPath, value.expected)).rejects.toThrow("provenance invalid");
+  await expect(
+    stageAlpineRuntime(join(value.root, "bad"), "amd64", value.binary, value.receiptPath, value.expected),
+  ).rejects.toThrow("provenance invalid");
   const altered = await fixture();
   await Bun.write(altered.binary, elf("/lib/ld-musl-x86_64.so.2"));
-  await expect(stageAlpineRuntime(join(altered.root, "bad"), "amd64", altered.binary, altered.receiptPath, altered.expected)).rejects.toThrow("digest");
+  await expect(
+    stageAlpineRuntime(join(altered.root, "bad"), "amd64", altered.binary, altered.receiptPath, altered.expected),
+  ).rejects.toThrow("digest");
   const gnu = await fixture("/lib64/ld-linux-x86-64.so.2");
-  await expect(stageAlpineRuntime(join(gnu.root, "bad"), "amd64", gnu.binary, gnu.receiptPath, gnu.expected)).rejects.toThrow("musl target");
+  await expect(
+    stageAlpineRuntime(join(gnu.root, "bad"), "amd64", gnu.binary, gnu.receiptPath, gnu.expected),
+  ).rejects.toThrow("musl target");
 });

@@ -15,7 +15,7 @@ const result = await factory.qualifyProductPayload(
   join(root, "runtime/bun"),
   qualificationPath,
 );
-const qualification = await Bun.file(qualificationPath).json() as {
+const qualification = (await Bun.file(qualificationPath).json()) as {
   schemaVersion: number;
   passed: boolean;
   target: string;
@@ -26,13 +26,16 @@ const qualification = await Bun.file(qualificationPath).json() as {
   gates: string[];
 };
 const requiredGates = ["product-cli", "cli-wasm", "ffi", "agent-plugin", "mcp"];
-if (result.passed !== true || qualification.passed !== true ||
+if (
+  result.passed !== true ||
+  qualification.passed !== true ||
   !requiredGates.every(gate => qualification.gates.includes(gate)) ||
   qualification.target !== receipt.runtime.target ||
   qualification.sourceRevision !== receipt.product.sourceRevision ||
   qualification.installedTreeSHA256 !== receipt.product.installedTreeSHA256 ||
   qualification.installedModesSHA256 !== receipt.product.installedModesSHA256 ||
-  qualification.runtimeSHA256 !== receipt.runtime.sha256)
+  qualification.runtimeSHA256 !== receipt.runtime.sha256
+)
   throw new Error("Image product surfaces did not qualify against the staged runtime and product receipts");
 
 const proof = {

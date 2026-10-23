@@ -64,11 +64,12 @@ export async function inspectLinuxABI(
       throw new Error("Invalid ELF interpreter name");
     interpreter = new TextDecoder().decode(value.subarray(0, -1));
   }
-  const expected = abi === "musl"
-    ? [architecture === "x64" ? "/lib/ld-musl-x86_64.so.1" : "/lib/ld-musl-aarch64.so.1"]
-    : architecture === "x64"
-      ? ["/lib64/ld-linux-x86-64.so.2", "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]
-      : ["/lib/ld-linux-aarch64.so.1", "/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"];
+  const expected =
+    abi === "musl"
+      ? [architecture === "x64" ? "/lib/ld-musl-x86_64.so.1" : "/lib/ld-musl-aarch64.so.1"]
+      : architecture === "x64"
+        ? ["/lib64/ld-linux-x86-64.so.2", "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]
+        : ["/lib/ld-linux-aarch64.so.1", "/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"];
   if (!interpreter || !expected.includes(interpreter))
     throw new Error(
       `The selected ${abi} target requires its own ELF loader; incompatible or static artifacts need separate qualification`,

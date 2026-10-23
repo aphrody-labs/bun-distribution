@@ -24,7 +24,8 @@ export async function stageAlpineRuntime(
     !["native", "ssh", "docker"].includes(receipt.qualification.mode) ||
     !/^[A-Za-z0-9._-]{1,128}$/.test(receipt.qualification.host) ||
     !Number.isFinite(Date.parse(receipt.qualification.observedAt))
-  ) throw new Error("Alpine requires an actual musl target qualification receipt");
+  )
+    throw new Error("Alpine requires an actual musl target qualification receipt");
   assertRuntimeFacts(expected, receipt.facts);
   const digest = await hashFile(binary, { maxBytes: 200 * 1024 * 1024 });
   if (receipt.sha256 !== digest) throw new Error("Alpine runtime digest differs from its qualification receipt");
@@ -33,7 +34,7 @@ export async function stageAlpineRuntime(
   await mkdir(directory, { recursive: true });
   const staged = join(directory, "bun");
   await copyFile(binary, staged);
-  if (await hashFile(staged, { maxBytes: 200 * 1024 * 1024 }) !== digest)
+  if ((await hashFile(staged, { maxBytes: 200 * 1024 * 1024 })) !== digest)
     throw new Error("Alpine runtime changed during staging");
   await Bun.write(join(directory, "receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
   return { architecture, sha256: digest, revision: expected.revision };

@@ -13,7 +13,14 @@ import {
 import { runProcess } from "./process.ts";
 import { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 
-export { allAppCapabilities, appCapabilities, appCapabilityFor, appHostname, capabilityFor, type AppCapability } from "./capabilities.ts";
+export {
+  allAppCapabilities,
+  appCapabilities,
+  appCapabilityFor,
+  appHostname,
+  capabilityFor,
+  type AppCapability,
+} from "./capabilities.ts";
 export { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 export { hashContent, hashFile, hashStream, type FileHashOptions } from "./hash.ts";
 export {
@@ -943,11 +950,16 @@ export async function inspectCargoWorkspace(
   if (!object(versionExceptions)) throw new Error("Invalid workspace version exceptions.");
   for (const [path, exception] of Object.entries(versionExceptions)) {
     if (
-      !/^vendor\/[\w.-]+$/.test(path) || !object(exception) ||
-      typeof exception.name !== "string" || !exception.name ||
-      typeof exception.version !== "string" || !exception.version ||
-      typeof exception.revision !== "string" || !/^[a-f0-9]{40}$/.test(exception.revision)
-    ) throw new Error(`Invalid independent workspace version: ${path}`);
+      !/^vendor\/[\w.-]+$/.test(path) ||
+      !object(exception) ||
+      typeof exception.name !== "string" ||
+      !exception.name ||
+      typeof exception.version !== "string" ||
+      !exception.version ||
+      typeof exception.revision !== "string" ||
+      !/^[a-f0-9]{40}$/.test(exception.revision)
+    )
+      throw new Error(`Invalid independent workspace version: ${path}`);
     const pin = await command(["git", "ls-files", "--stage", "--", path], root);
     if (pin.code !== 0 || pin.stdout.trim() !== `160000 ${exception.revision} 0\t${path}`)
       throw new Error(`Independent workspace version requires its declared Git pin: ${path}`);
@@ -974,9 +986,12 @@ export async function inspectCargoWorkspace(
     };
     const directory = relative(root, dirname(path)).replaceAll("\\", "/");
     const independent = versionExceptions[directory];
-    if (!entry.name || (independent
-      ? entry.name !== independent.name || entry.version !== independent.version
-      : entry.version !== product.version))
+    if (
+      !entry.name ||
+      (independent
+        ? entry.name !== independent.name || entry.version !== independent.version
+        : entry.version !== product.version)
+    )
       throw new Error(`Bun workspace package version differs: ${relative(root, path)}`);
     if (bunPackageNames.includes(entry.name))
       throw new Error(`Duplicate Bun workspace package identity: ${entry.name}`);

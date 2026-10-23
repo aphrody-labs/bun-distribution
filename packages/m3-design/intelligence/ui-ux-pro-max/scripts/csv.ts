@@ -92,19 +92,21 @@ const NEEDS_QUOTES = /[",\r\n]/;
 
 /** Minimal quoting, like csv.writer(QUOTE_MINIMAL). */
 export function formatCsv(rows: readonly (readonly string[])[], lineEnding = "\n"): string {
-  return rows
-    .map((row) =>
-      row
-        .map((value) => {
-          const text = String(value ?? "");
-          return NEEDS_QUOTES.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-        })
-        .join(","),
-    )
-    .join(lineEnding) + (rows.length ? lineEnding : "");
+  return (
+    rows
+      .map(row =>
+        row
+          .map(value => {
+            const text = String(value ?? "");
+            return NEEDS_QUOTES.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+          })
+          .join(","),
+      )
+      .join(lineEnding) + (rows.length ? lineEnding : "")
+  );
 }
 
 /** Format records with an explicit header order. */
 export function formatCsvRecords(header: readonly string[], records: readonly Row[], lineEnding = "\n"): string {
-  return formatCsv([header, ...records.map((record) => header.map((name) => record[name] ?? ""))], lineEnding);
+  return formatCsv([header, ...records.map(record => header.map(name => record[name] ?? ""))], lineEnding);
 }

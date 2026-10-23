@@ -1,16 +1,7 @@
 // RetroArch driven in process through bun:ffi: the aphrody-labs/retroarch fork builds
 // libretroarch (./configure --enable-libretroarch), whose "host" drivers hand frames, audio and
 // pads to this module instead of a window. Every call stays on the thread that opened it.
-import {
-  CString,
-  dlopen,
-  FFIType,
-  ptr,
-  read,
-  suffix,
-  toArrayBuffer,
-  type Pointer,
-} from "bun:ffi";
+import { CString, dlopen, FFIType, ptr, read, suffix, toArrayBuffer, type Pointer } from "bun:ffi";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { repoRoot, usrRoot } from "./usr";
@@ -109,7 +100,7 @@ export function libretroarchLibrary(): string | undefined {
     join(repoRoot, "vendor", "retroarch", name),
     // the bun-engine package installs it system-wide
     ...(process.platform === "win32" ? [] : [join("/usr/lib", name)]),
-  ].find((path) => path && existsSync(path));
+  ].find(path => path && existsSync(path));
 }
 
 function cfgValue(value: string | number | boolean): string {
@@ -137,12 +128,7 @@ function lut(format: PixelFormat.RGB565 | PixelFormat.RGBA4444): Uint32Array {
       b = ((p >> 4) & 0xf) * 17;
       a = (p & 0xf) * 17;
     }
-    table[p] =
-      ((a << 24) |
-        (Math.round(b) << 16) |
-        (Math.round(g) << 8) |
-        Math.round(r)) >>>
-      0;
+    table[p] = ((a << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | Math.round(r)) >>> 0;
   }
   if (format === PixelFormat.RGB565) rgb565 = table;
   else rgba4444 = table;
@@ -156,37 +142,21 @@ function lut(format: PixelFormat.RGB565 | PixelFormat.RGBA4444): Uint32Array {
  */
 export function toRGBA(frame: Frame, out?: Uint8Array): Uint8Array {
   const { width, height, pitch, format, data } = frame;
-  const target =
-    out && out.byteLength >= width * height * 4
-      ? out
-      : new Uint8Array(width * height * 4);
+  const target = out && out.byteLength >= width * height * 4 ? out : new Uint8Array(width * height * 4);
   const dst = new Uint32Array(target.buffer, target.byteOffset, width * height);
   if (format === PixelFormat.XRGB8888) {
     for (let y = 0; y < height; y++) {
-      const row = new Uint32Array(
-        data.buffer,
-        data.byteOffset + y * pitch,
-        width,
-      );
+      const row = new Uint32Array(data.buffer, data.byteOffset + y * pitch, width);
       for (let x = 0; x < width; x++) {
         const p = row[x]!;
-        dst[y * width + x] =
-          (0xff000000 |
-            ((p & 0xff) << 16) |
-            (p & 0xff00) |
-            ((p >> 16) & 0xff)) >>>
-          0;
+        dst[y * width + x] = (0xff000000 | ((p & 0xff) << 16) | (p & 0xff00) | ((p >> 16) & 0xff)) >>> 0;
       }
     }
     return target;
   }
   const table = lut(format);
   for (let y = 0; y < height; y++) {
-    const row = new Uint16Array(
-      data.buffer,
-      data.byteOffset + y * pitch,
-      width,
-    );
+    const row = new Uint16Array(data.buffer, data.byteOffset + y * pitch, width);
     for (let x = 0; x < width; x++) dst[y * width + x] = table[row[x]!]!;
   }
   return target;
@@ -210,9 +180,7 @@ export class RetroArch implements Disposable {
   static open(options: OpenOptions = {}): RetroArch {
     const path = options.library ?? libretroarchLibrary();
     if (!path)
-      throw new Error(
-        "libretroarch is not built: ./configure --enable-libretroarch && make in vendor/retroarch",
-      );
+      throw new Error("libretroarch is not built: ./configure --enable-libretroarch && make in vendor/retroarch");
     const lib = dlopen(path, symbols);
     const abi = lib.symbols.libretroarch_api_version();
     if (abi !== ABI_VERSION) {
@@ -220,8 +188,7 @@ export class RetroArch implements Disposable {
       throw new Error(`libretroarch ABI ${abi}, expected ${ABI_VERSION}`);
     }
 
-    const home =
-      options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
+    const home = options.home ?? join(usrRoot(), "var", "lib", "bep", "libretroarch");
     mkdirSync(home, { recursive: true });
     const cfg = join(home, "retroarch.cfg");
     // every directory RetroArch writes to stays under home
@@ -286,7 +253,7 @@ export class RetroArch implements Disposable {
     if (options.content) argv.push(options.content);
     else if (!options.core) argv.push("--menu");
 
-    const strings = argv.map((arg) => Buffer.from(`${arg}\0`));
+    const strings = argv.map(arg => Buffer.from(`${arg}\0`));
     const pointers = new BigUint64Array(strings.length + 1);
     strings.forEach((bytes, i) => (pointers[i] = BigInt(ptr(bytes))));
     if (lib.symbols.libretroarch_init(argv.length, ptr(pointers)) !== 0) {
@@ -313,9 +280,7 @@ export class RetroArch implements Disposable {
       height,
       pitch,
       format: read.u32(at, 28) as PixelFormat,
-      data: new Uint8Array(
-        toArrayBuffer(read.ptr(at, 8) as Pointer, 0, pitch * height),
-      ),
+      data: new Uint8Array(toArrayBuffer(read.ptr(at, 8) as Pointer, 0, pitch * height)),
     };
   }
 
@@ -336,12 +301,7 @@ export class RetroArch implements Disposable {
 
   /** Interleaved stereo float frames at {@link Status.audioRate}, as an AudioWorklet takes them. */
   audio(out = new Float32Array(8192)): Float32Array {
-    const frames = Number(
-      this.#lib.symbols.libretroarch_audio_read(
-        ptr(out),
-        BigInt(out.length >> 1),
-      ),
-    );
+    const frames = Number(this.#lib.symbols.libretroarch_audio_read(ptr(out), BigInt(out.length >> 1)));
     return out.subarray(0, frames * 2);
   }
 
@@ -349,14 +309,8 @@ export class RetroArch implements Disposable {
   joypad(port: number, buttons: number, axes: ArrayLike<number> = []): void {
     const values = this.#axes;
     values.fill(0);
-    for (let i = 0; i < Math.min(axes.length, values.length); i++)
-      values[i] = axes[i]!;
-    this.#lib.symbols.libretroarch_joypad(
-      port,
-      buttons >>> 0,
-      ptr(values),
-      values.length,
-    );
+    for (let i = 0; i < Math.min(axes.length, values.length); i++) values[i] = axes[i]!;
+    this.#lib.symbols.libretroarch_joypad(port, buttons >>> 0, ptr(values), values.length);
   }
 
   /** A RetroArch network command ("PAUSE_TOGGLE", "SAVE_STATE", "READ_CORE_MEMORY 0x100 16"). */
@@ -368,12 +322,7 @@ export class RetroArch implements Disposable {
   /** Replies to earlier commands, as they came. */
   replies(): string {
     const at = ptr(this.#reply);
-    const length = Number(
-      this.#lib.symbols.libretroarch_command_reply(
-        at,
-        BigInt(this.#reply.length),
-      ),
-    );
+    const length = Number(this.#lib.symbols.libretroarch_command_reply(at, BigInt(this.#reply.length)));
     return length ? new CString(at, 0, length).toString() : "";
   }
 

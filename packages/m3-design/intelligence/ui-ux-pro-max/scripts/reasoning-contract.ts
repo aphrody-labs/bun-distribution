@@ -56,7 +56,7 @@ export function phrasePattern(phrase: string, flags = "u"): RegExp {
 const CONDITION_PATTERNS = new Map<string, RegExp[]>(
   Object.entries(CONDITION_SIGNALS).map(([condition, signals]) => [
     condition,
-    signals.map((signal) => phrasePattern(signal)),
+    signals.map(signal => phrasePattern(signal)),
   ]),
 );
 
@@ -191,7 +191,16 @@ class StrictJsonParser {
       }
       if (ch === "\\") {
         const escape = this.text[this.index + 1];
-        const simple: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+        const simple: Record<string, string> = {
+          '"': '"',
+          "\\": "\\",
+          "/": "/",
+          b: "\b",
+          f: "\f",
+          n: "\n",
+          r: "\r",
+          t: "\t",
+        };
         if (escape !== undefined && escape in simple) {
           out += simple[escape];
           this.index += 2;
@@ -263,7 +272,7 @@ export function applyDecisionRules(rules: DecisionRules, query: string | null | 
   const result: AppliedRules = { activated: [], style_ids: [], constraints: [], pattern: null, mode: null };
   for (const [condition, actions] of rules) {
     const active =
-      condition === "must_have" || (CONDITION_PATTERNS.get(condition) ?? []).some((pattern) => pattern.test(normalized));
+      condition === "must_have" || (CONDITION_PATTERNS.get(condition) ?? []).some(pattern => pattern.test(normalized));
     if (!active) continue;
     result.activated.push({ condition, actions: [...actions] });
     for (const action of actions) {

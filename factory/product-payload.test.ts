@@ -44,22 +44,25 @@ test.skipIf(process.platform !== "linux").each(["file", "directory", "root"])(
   },
 );
 
-test.skipIf(process.platform !== "linux")("original source fixture links remain literal, including dangling external targets", async () => {
-  const root = await tempDir();
-  const absentTarget = join(await tempDir(), "not-present");
-  await symlink(absentTarget, join(root, "tracked-fixture"));
-  const original = await sourceEntries(root);
-  expect(original).toContainEqual(["tracked-fixture", "symlink", absentTarget]);
+test.skipIf(process.platform !== "linux")(
+  "original source fixture links remain literal, including dangling external targets",
+  async () => {
+    const root = await tempDir();
+    const absentTarget = join(await tempDir(), "not-present");
+    await symlink(absentTarget, join(root, "tracked-fixture"));
+    const original = await sourceEntries(root);
+    expect(original).toContainEqual(["tracked-fixture", "symlink", absentTarget]);
 
-  await verifyLinks(root, original);
-  await verifySourceEntries(root, original);
-  expect((await lstat(join(root, "tracked-fixture"))).isSymbolicLink()).toBe(true);
-  expect(await readlink(join(root, "tracked-fixture"))).toBe(absentTarget);
+    await verifyLinks(root, original);
+    await verifySourceEntries(root, original);
+    expect((await lstat(join(root, "tracked-fixture"))).isSymbolicLink()).toBe(true);
+    expect(await readlink(join(root, "tracked-fixture"))).toBe(absentTarget);
 
-  await rm(join(root, "tracked-fixture"));
-  await symlink("different-missing-target", join(root, "tracked-fixture"));
-  await expect(verifyLinks(root, original)).rejects.toThrow("Frozen source symlink changed");
-});
+    await rm(join(root, "tracked-fixture"));
+    await symlink("different-missing-target", join(root, "tracked-fixture"));
+    await expect(verifyLinks(root, original)).rejects.toThrow("Frozen source symlink changed");
+  },
+);
 
 test.skipIf(process.platform !== "linux").each(["escaping", "absolute", "dangling"])(
   "new installed %s dependency links are rejected",
@@ -71,35 +74,38 @@ test.skipIf(process.platform !== "linux").each(["escaping", "absolute", "danglin
     await Bun.write(join(sandbox, "outside.js"), "export {};\n");
     await Bun.write(join(root, "inside.js"), "export {};\n");
     await mkdir(join(root, "node_modules"));
-    const target = kind === "escaping" ? "../../outside.js"
-      : kind === "absolute" ? join(root, "inside.js") : "missing.js";
+    const target =
+      kind === "escaping" ? "../../outside.js" : kind === "absolute" ? join(root, "inside.js") : "missing.js";
     await symlink(target, join(root, "node_modules/dependency"));
 
     await expect(verifyLinks(root, original)).rejects.toThrow();
   },
 );
 
-test.skipIf(process.platform !== "linux")("relative installed dependencies remain valid when the product tree is relocated", async () => {
-  const sandbox = await tempDir();
-  const originalRoot = join(sandbox, "original");
-  await mkdir(join(originalRoot, "packages/library"), { recursive: true });
-  await Bun.write(join(originalRoot, "packages/library/index.js"), "export const value = 42;\n");
-  const original = await sourceEntries(originalRoot);
-  await mkdir(join(originalRoot, "node_modules"));
-  await symlink("../packages/library", join(originalRoot, "node_modules/library"));
-  await verifyLinks(originalRoot, original);
-  await verifyInstalledAdditions(originalRoot, original, []);
+test.skipIf(process.platform !== "linux")(
+  "relative installed dependencies remain valid when the product tree is relocated",
+  async () => {
+    const sandbox = await tempDir();
+    const originalRoot = join(sandbox, "original");
+    await mkdir(join(originalRoot, "packages/library"), { recursive: true });
+    await Bun.write(join(originalRoot, "packages/library/index.js"), "export const value = 42;\n");
+    const original = await sourceEntries(originalRoot);
+    await mkdir(join(originalRoot, "node_modules"));
+    await symlink("../packages/library", join(originalRoot, "node_modules/library"));
+    await verifyLinks(originalRoot, original);
+    await verifyInstalledAdditions(originalRoot, original, []);
 
-  const relocated = join(sandbox, "relocated");
-  await cp(originalRoot, relocated, { recursive: true, dereference: false, verbatimSymlinks: true });
-  await rm(originalRoot, { recursive: true });
+    const relocated = join(sandbox, "relocated");
+    await cp(originalRoot, relocated, { recursive: true, dereference: false, verbatimSymlinks: true });
+    await rm(originalRoot, { recursive: true });
 
-  await verifyLinks(relocated, original);
-  await verifySourceEntries(relocated, original);
-  await verifyInstalledAdditions(relocated, original, []);
-  expect(await readlink(join(relocated, "node_modules/library"))).toBe("../packages/library");
-  expect(await Bun.file(join(relocated, "node_modules/library/index.js")).text()).toContain("value = 42");
-});
+    await verifyLinks(relocated, original);
+    await verifySourceEntries(relocated, original);
+    await verifyInstalledAdditions(relocated, original, []);
+    expect(await readlink(join(relocated, "node_modules/library"))).toBe("../packages/library");
+    expect(await Bun.file(join(relocated, "node_modules/library/index.js")).text()).toContain("value = 42");
+  },
+);
 
 test("prepared build inputs require a declared root member and cannot overwrite frozen source", async () => {
   const root = await tempDir();
@@ -109,25 +115,33 @@ test("prepared build inputs require a declared root member and cannot overwrite 
     await Bun.write(join(root, "packages", name, "package.json"), JSON.stringify({ name }));
   }
   await mkdir(join(root, "packages/cli-wasm/wasm"), { recursive: true });
-  await Bun.write(join(root, "packages/cli-wasm/package.json"), JSON.stringify({
-    name: "@aphrody/cli-wasm",
-    imports: { "#cli-wasm-glue": "./wasm/aphrody_command_wasm.js" },
-  }));
+  await Bun.write(
+    join(root, "packages/cli-wasm/package.json"),
+    JSON.stringify({
+      name: "@aphrody/cli-wasm",
+      imports: { "#cli-wasm-glue": "./wasm/aphrody_command_wasm.js" },
+    }),
+  );
   await Bun.write(join(root, "packages/declared/dist/tracked.js"), "export const tracked = true;\n");
   const original = await sourceEntries(root);
 
   await validatePreparedProductPath(root, "packages/declared/dist/generated.js", original);
-  await expect(validatePreparedProductPath(root, "packages/undeclared/dist/generated.js", original))
-    .rejects.toThrow("declared root workspace member");
-  await expect(validatePreparedProductPath(root, "packages/absent/dist/generated.js", original))
-    .rejects.toThrow("no frozen workspace manifest");
-  await expect(validatePreparedProductPath(root, "packages/declared/dist/tracked.js", original))
-    .rejects.toThrow("replaces frozen source");
+  await expect(validatePreparedProductPath(root, "packages/undeclared/dist/generated.js", original)).rejects.toThrow(
+    "declared root workspace member",
+  );
+  await expect(validatePreparedProductPath(root, "packages/absent/dist/generated.js", original)).rejects.toThrow(
+    "no frozen workspace manifest",
+  );
+  await expect(validatePreparedProductPath(root, "packages/declared/dist/tracked.js", original)).rejects.toThrow(
+    "replaces frozen source",
+  );
   await validatePreparedProductPath(root, "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm", original);
-  await expect(validatePreparedProductPath(root, "packages/declared/wasm/unowned.wasm", original))
-    .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
-  await expect(validatePreparedProductPath(root, "packages/cli-wasm/wasm/unlisted.wasm", original))
-    .rejects.toThrow("generated artifact of the declared CLI-WASM owner");
+  await expect(validatePreparedProductPath(root, "packages/declared/wasm/unowned.wasm", original)).rejects.toThrow(
+    "generated artifact of the declared CLI-WASM owner",
+  );
+  await expect(validatePreparedProductPath(root, "packages/cli-wasm/wasm/unlisted.wasm", original)).rejects.toThrow(
+    "generated artifact of the declared CLI-WASM owner",
+  );
   const wasmInputs = [
     "packages/cli-wasm/wasm/aphrody_command_wasm.js",
     "packages/cli-wasm/wasm/aphrody_command_wasm.d.ts",
@@ -135,8 +149,9 @@ test("prepared build inputs require a declared root member and cannot overwrite 
     "packages/cli-wasm/wasm/aphrody_command_wasm_bg.wasm.d.ts",
     "packages/cli-wasm/wasm/provenance.json",
   ].map(path => ({ path }));
-  await expect(validateProductWasmInputs(root, wasmInputs.slice(0, -1)))
-    .rejects.toThrow("missing required CLI-WASM inputs");
+  await expect(validateProductWasmInputs(root, wasmInputs.slice(0, -1))).rejects.toThrow(
+    "missing required CLI-WASM inputs",
+  );
   await validateProductWasmInputs(root, wasmInputs);
   expect(await Bun.file(join(root, "packages/declared/dist/tracked.js")).text()).toBe("export const tracked = true;\n");
 
@@ -156,9 +171,15 @@ test.skipIf(process.platform !== "linux" || !["x64", "arm64"].includes(process.a
     await mkdir(directory, { recursive: true });
     const helperDirectory = join(root, "packages/aphrody-bun/src");
     await mkdir(helperDirectory, { recursive: true });
-    await Bun.write(join(helperDirectory, "native-artifact.ts"), await Bun.file(join(import.meta.dir, "../packages/aphrody-bun/src/native-artifact.ts")).bytes());
+    await Bun.write(
+      join(helperDirectory, "native-artifact.ts"),
+      await Bun.file(join(import.meta.dir, "../packages/aphrody-bun/src/native-artifact.ts")).bytes(),
+    );
     await Bun.write(join(root, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
-    await Bun.write(join(root, "packages/aphrody-bun/package.json"), JSON.stringify({ name: "@aphrody/bun", version: "1.4.4" }));
+    await Bun.write(
+      join(root, "packages/aphrody-bun/package.json"),
+      JSON.stringify({ name: "@aphrody/bun", version: "1.4.4" }),
+    );
     const cargoLock = "# test lockfile\n";
     await Bun.write(join(root, "Cargo.lock"), cargoLock);
     const cargoLockSha256 = new Bun.CryptoHasher("sha256").update(cargoLock).digest("hex");
@@ -200,12 +221,15 @@ test.skipIf(process.platform !== "linux" || !["x64", "arm64"].includes(process.a
     ];
     const otherTarget = target === "linux-x64" ? "linux-arm64" : "linux-x64";
     await validateProductNativeInputs(root, inputs, original, target, "a".repeat(40));
-    await expect(validateProductNativeInputs(root, inputs, original, otherTarget, "a".repeat(40)))
-      .rejects.toThrow("missing required native FFI input");
-    await expect(validateProductNativeInputs(root, inputs, original, target, "c".repeat(40)))
-      .rejects.toThrow("provenance does not match");
+    await expect(validateProductNativeInputs(root, inputs, original, otherTarget, "a".repeat(40))).rejects.toThrow(
+      "missing required native FFI input",
+    );
+    await expect(validateProductNativeInputs(root, inputs, original, target, "c".repeat(40))).rejects.toThrow(
+      "provenance does not match",
+    );
     await Bun.write(join(directory, "libaphrody_ffi.so"), new Uint8Array([9]));
-    await expect(validateProductNativeInputs(root, inputs, original, target, "a".repeat(40)))
-      .rejects.toThrow("artifact does not match its release manifest");
+    await expect(validateProductNativeInputs(root, inputs, original, target, "a".repeat(40))).rejects.toThrow(
+      "artifact does not match its release manifest",
+    );
   },
 );

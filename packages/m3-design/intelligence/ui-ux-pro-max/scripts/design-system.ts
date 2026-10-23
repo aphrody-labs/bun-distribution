@@ -61,7 +61,14 @@ type DialName = "variance" | "motion" | "density";
  */
 export const DIAL_TIERS: Record<DialName, [number, number, DialInfo][]> = {
   variance: [
-    [1, 3, { label: "Centered / Minimal", style_keywords: ["Minimalism", "Exaggerated Minimalism", "centered", "symmetric", "grid-based"] }],
+    [
+      1,
+      3,
+      {
+        label: "Centered / Minimal",
+        style_keywords: ["Minimalism", "Exaggerated Minimalism", "centered", "symmetric", "grid-based"],
+      },
+    ],
     [4, 7, { label: "Balanced / Modern", style_keywords: ["modern", "structured", "balanced"] }],
     [8, 10, { label: "Bold / Asymmetric", style_keywords: ["Brutalism", "Bento Grids", "asymmetric", "experimental"] }],
   ],
@@ -71,9 +78,30 @@ export const DIAL_TIERS: Record<DialName, [number, number, DialInfo][]> = {
     [8, 10, { label: "Complex", tier: "Complex" }],
   ],
   density: [
-    [1, 3, { label: "Spacious", spacing: { xs: "4px", sm: "8px", md: "24px", lg: "32px", xl: "48px", "2xl": "64px", "3xl": "96px" } }],
-    [4, 7, { label: "Standard", spacing: { xs: "4px", sm: "8px", md: "16px", lg: "24px", xl: "32px", "2xl": "48px", "3xl": "64px" } }],
-    [8, 10, { label: "Dense / Dashboard", spacing: { xs: "2px", sm: "4px", md: "8px", lg: "12px", xl: "16px", "2xl": "24px", "3xl": "32px" } }],
+    [
+      1,
+      3,
+      {
+        label: "Spacious",
+        spacing: { xs: "4px", sm: "8px", md: "24px", lg: "32px", xl: "48px", "2xl": "64px", "3xl": "96px" },
+      },
+    ],
+    [
+      4,
+      7,
+      {
+        label: "Standard",
+        spacing: { xs: "4px", sm: "8px", md: "16px", lg: "24px", xl: "32px", "2xl": "48px", "3xl": "64px" },
+      },
+    ],
+    [
+      8,
+      10,
+      {
+        label: "Dense / Dashboard",
+        spacing: { xs: "2px", sm: "4px", md: "8px", lg: "12px", xl: "16px", "2xl": "24px", "3xl": "32px" },
+      },
+    ],
   ],
 };
 
@@ -90,12 +118,27 @@ export function resolveDial(dial: DialName, value: number | null | undefined): (
 // ============ COLOR MODE RESOLUTION ============
 /** Phrases in styles.csv mode columns that mark a style as dark-first. */
 const DARK_PRIMARY_MARKERS = [
-  "dark mode primary", "dark primary", "dark-only", "dark only",
-  "dark preferred", "dark focused", "dark-first", "dark rich",
+  "dark mode primary",
+  "dark primary",
+  "dark-only",
+  "dark only",
+  "dark preferred",
+  "dark focused",
+  "dark-first",
+  "dark rich",
   "light mode only as exception",
 ];
 /** Query phrases that are an explicit request for a dark theme. */
-const DARK_QUERY_MARKERS = ["dark mode", "dark theme", "dark ui", "dark-mode", "darkmode", "night mode", "midnight", "oled"];
+const DARK_QUERY_MARKERS = [
+  "dark mode",
+  "dark theme",
+  "dark ui",
+  "dark-mode",
+  "darkmode",
+  "night mode",
+  "midnight",
+  "oled",
+];
 /** Anti-pattern clauses that contradict a resolved dark mode. */
 const DARK_ANTI_PATTERN_MARKERS = ["dark mode", "dark modes", "dark theme"];
 /** Relative luminance below which a Background counts as a dark surface. */
@@ -105,10 +148,10 @@ const DARK_BACKGROUND_MAX_LUMINANCE = 0.18;
 export function relativeLuminance(hexColor: string | null | undefined): number | null {
   if (!hexColor) return null;
   let value = hexColor.trim().replace(/^#+/, "");
-  if (value.length === 3) value = [...value].map((c) => c + c).join("");
+  if (value.length === 3) value = [...value].map(c => c + c).join("");
   if (value.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(value)) return null;
-  const channels = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
-  const linear = channels.map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  const channels = [0, 2, 4].map(i => parseInt(value.slice(i, i + 2), 16) / 255);
+  const linear = channels.map(c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   return 0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;
 }
 
@@ -133,12 +176,12 @@ export function styleIsDarkPrimary(style: Row | null | undefined): boolean {
   if (preferred === "dark" || preferred === "light") return preferred === "dark";
   if (style["Light Mode ✓"] === "not-recommended" && style["Dark Mode ✓"] === "supported") return true;
   const declared = `${style["Light Mode ✓"] ?? ""} ${style["Dark Mode ✓"] ?? ""}`.toLowerCase();
-  return DARK_PRIMARY_MARKERS.some((marker) => declared.includes(marker));
+  return DARK_PRIMARY_MARKERS.some(marker => declared.includes(marker));
 }
 
 export function queryWantsDark(query: string): boolean {
   const lowered = (query || "").toLowerCase();
-  return DARK_QUERY_MARKERS.some((marker) => lowered.includes(marker));
+  return DARK_QUERY_MARKERS.some(marker => lowered.includes(marker));
 }
 
 /** Resolve the mode the rest of the output has to agree with. */
@@ -150,7 +193,7 @@ export function resolveColorMode(query: string, style: Row): "dark" | "light" {
 function deriveDarkPalette(palette: Row): Row {
   const background = "#0F172A";
   const candidates = [palette["Ring"], palette["Accent"], palette["Primary"], "#60A5FA"];
-  const ring = candidates.find((candidate) => (contrastRatio(candidate, background) ?? 0) >= 3) ?? "#60A5FA";
+  const ring = candidates.find(candidate => (contrastRatio(candidate, background) ?? 0) >= 3) ?? "#60A5FA";
   return {
     ...palette,
     Background: background,
@@ -171,13 +214,13 @@ function deriveDarkPalette(palette: Row): Row {
  */
 export function selectPaletteForMode(palettes: Row[], mode: string, category: string | null = null): Row {
   if (palettes.length === 0) return {};
-  const categoryPalette = palettes.find((palette) => palette["Product Type"] === category);
+  const categoryPalette = palettes.find(palette => palette["Product Type"] === category);
   if (categoryPalette) {
     if (mode === "dark" && !paletteIsDark(categoryPalette)) return deriveDarkPalette(categoryPalette);
     return categoryPalette;
   }
   if (mode === "dark") {
-    const dark = palettes.find((palette) => paletteIsDark(palette));
+    const dark = palettes.find(palette => paletteIsDark(palette));
     if (dark) return dark;
   }
   return palettes[0]!;
@@ -188,8 +231,8 @@ export function filterAntiPatternsForMode(antiPatterns: string, mode: string): s
   if (mode !== "dark" || !antiPatterns) return antiPatterns;
   return antiPatterns
     .split("+")
-    .filter((clause) => !DARK_ANTI_PATTERN_MARKERS.some((marker) => clause.toLowerCase().includes(marker)))
-    .map((clause) => clause.trim())
+    .filter(clause => !DARK_ANTI_PATTERN_MARKERS.some(marker => clause.toLowerCase().includes(marker)))
+    .map(clause => clause.trim())
     .filter(Boolean)
     .join(" + ");
 }
@@ -198,7 +241,7 @@ export function filterAntiPatternsForMode(antiPatterns: string, mode: string): s
 export function modeSupportLabels(style: DesignSystem["style"], antiPatterns: string): [string, string] {
   const light = style.light_mode ?? "";
   let dark = style.dark_mode ?? "";
-  const avoidsDark = DARK_ANTI_PATTERN_MARKERS.some((marker) => (antiPatterns || "").toLowerCase().includes(marker));
+  const avoidsDark = DARK_ANTI_PATTERN_MARKERS.some(marker => (antiPatterns || "").toLowerCase().includes(marker));
   if (dark && dark !== "not-recommended" && avoidsDark) dark = `${dark}, but avoid for this product`;
   return [light, dark];
 }
@@ -232,14 +275,37 @@ export interface DesignSystem {
   category: string;
   pattern: { name: string; sections: string; cta_placement: string; color_strategy: string; conversion: string };
   style: {
-    id: string; name: string; type: string; effects: string; keywords: string; best_for: string;
-    performance: string; accessibility: string; light_mode: string; dark_mode: string;
+    id: string;
+    name: string;
+    type: string;
+    effects: string;
+    keywords: string;
+    best_for: string;
+    performance: string;
+    accessibility: string;
+    light_mode: string;
+    dark_mode: string;
   };
   colors: Record<string, string>;
-  typography: { heading: string; body: string; mood: string; best_for: string; google_fonts_url: string; css_import: string; mono?: string };
+  typography: {
+    heading: string;
+    body: string;
+    mood: string;
+    best_for: string;
+    google_fonts_url: string;
+    css_import: string;
+    mono?: string;
+  };
   brand: null | {
-    id: string; name: string; theme: string; package: string; source_file: string; selector: string;
-    color_scheme: string; radius: string; notes: string;
+    id: string;
+    name: string;
+    theme: string;
+    package: string;
+    source_file: string;
+    selector: string;
+    color_scheme: string;
+    radius: string;
+    notes: string;
   };
   color_mode: string;
   key_effects: string;
@@ -252,9 +318,12 @@ export interface DesignSystem {
   source_derivations: Record<string, string | null>;
   severity: string;
   dials: {
-    variance: number | null; variance_label: string | null;
-    motion: number | null; motion_label: string | null;
-    density: number | null; density_label: string | null;
+    variance: number | null;
+    variance_label: string | null;
+    motion: number | null;
+    motion_label: string | null;
+    density: number | null;
+    density_label: string | null;
   };
   motion_snippet: Row;
   spacing_scale: Spacing | null;
@@ -288,7 +357,11 @@ export class DesignSystemGenerator {
     const landing = await read("landing.csv");
     const landingLookup = new Map<string, Row>();
     for (const row of landing) {
-      for (const identity of [row["Pattern ID"] ?? "", row["Pattern Name"] ?? "", ...(row["Aliases"] ?? "").split("|")]) {
+      for (const identity of [
+        row["Pattern ID"] ?? "",
+        row["Pattern Name"] ?? "",
+        ...(row["Aliases"] ?? "").split("|"),
+      ]) {
         if (identity.trim()) landingLookup.set(identity.trim().toLowerCase(), row);
       }
     }
@@ -298,7 +371,11 @@ export class DesignSystemGenerator {
   static buildStyleLookup(styles: Row[]): Map<string, Row> {
     const lookup = new Map<string, Row>();
     for (const style of styles) {
-      for (const key of [style["Style ID"] ?? "", style["Style Category"] ?? "", ...(style["Aliases"] ?? "").split("|")]) {
+      for (const key of [
+        style["Style ID"] ?? "",
+        style["Style Category"] ?? "",
+        ...(style["Aliases"] ?? "").split("|"),
+      ]) {
         if (key.trim()) lookup.set(key.trim().toLowerCase(), style);
       }
     }
@@ -306,7 +383,12 @@ export class DesignSystemGenerator {
   }
 
   resolveStyle(reference: string | null | undefined): Row {
-    let style = this.styleLookup.get(String(reference ?? "").trim().toLowerCase()) ?? {};
+    let style =
+      this.styleLookup.get(
+        String(reference ?? "")
+          .trim()
+          .toLowerCase(),
+      ) ?? {};
     const seen = new Set<string>();
     while (Object.keys(style).length && (style["Status"] ?? "active") === "deprecated") {
       const styleId = style["Style ID"] ?? "";
@@ -319,13 +401,22 @@ export class DesignSystemGenerator {
   }
 
   /** Execute searches across multiple domains. */
-  async multiDomainSearch(query: string, category: string, reasoning: Reasoning, stylePriority: string[] | null): Promise<Record<string, SearchResult>> {
+  async multiDomainSearch(
+    query: string,
+    category: string,
+    reasoning: Reasoning,
+    stylePriority: string[] | null,
+  ): Promise<Record<string, SearchResult>> {
     const results: Record<string, SearchResult> = {};
-    const constraints = reasoning.constraints.map((item) => item.replaceAll("-", " ")).join(" ");
+    const constraints = reasoning.constraints.map(item => item.replaceAll("-", " ")).join(" ");
     const resolvedQuery = [query, category, constraints].filter(Boolean).join(" ");
     for (const [domain, config] of Object.entries(SEARCH_CONFIG)) {
       if (domain === "style" && stylePriority?.length) {
-        results[domain] = await search(`${resolvedQuery} ${stylePriority.slice(0, 2).join(" ")}`, domain, config.maxResults);
+        results[domain] = await search(
+          `${resolvedQuery} ${stylePriority.slice(0, 2).join(" ")}`,
+          domain,
+          config.maxResults,
+        );
       } else if (domain === "color") {
         results[domain] = await search(`${reasoning.color_mood} ${resolvedQuery}`, domain, config.maxResults);
       } else if (domain === "landing") {
@@ -346,7 +437,7 @@ export class DesignSystemGenerator {
 
   findReasoningRule(category: string): Row {
     const lowered = category.trim().toLowerCase();
-    return this.reasoningData.find((rule) => (rule["UI_Category"] ?? "").trim().toLowerCase() === lowered) ?? {};
+    return this.reasoningData.find(rule => (rule["UI_Category"] ?? "").trim().toLowerCase() === lowered) ?? {};
   }
 
   /** Apply reasoning rules for a category. */
@@ -370,8 +461,8 @@ export class DesignSystemGenerator {
     }
     const decisionRules = parseDecisionRules(rule["Decision_Rules"] ?? "{}");
     const applied = applyDecisionRules(decisionRules, query);
-    const stylePriority = (rule["Style_Priority"] ?? "").split("+").map((style) => style.trim());
-    const appliedStyleNames = applied.style_ids.map((id) => this.resolveStyle(id)["Style Category"] ?? id);
+    const stylePriority = (rule["Style_Priority"] ?? "").split("+").map(style => style.trim());
+    const appliedStyleNames = applied.style_ids.map(id => this.resolveStyle(id)["Style Category"] ?? id);
     return {
       pattern: applied.pattern || rule["Recommended_Pattern"] || "",
       style_priority: [...appliedStyleNames, ...stylePriority],
@@ -398,16 +489,16 @@ export class DesignSystemGenerator {
       if (Object.keys(resolved).length && (resolved["Status"] ?? "active") !== "deprecated") return { ...resolved };
     }
     const tokens = (text: string) => new Set(text.toLowerCase().match(/[a-z0-9]+/g) ?? []);
-    const scored = results.map((result) => {
+    const scored = results.map(result => {
       const resultStr = pythonDictRepr(result).toLowerCase();
       let score = 0;
       for (const keyword of priorityKeywords) {
         const keywordTokens = tokens(keyword);
         const nameTokens = tokens(result["Style Category"] ?? "");
         const keywordList = [...keywordTokens];
-        if (keywordTokens.size && keywordList.every((token) => nameTokens.has(token))) score += 10;
-        else if (keywordList.some((token) => tokens(result["Keywords"] ?? "").has(token))) score += 3;
-        else if (keywordList.some((token) => resultStr.includes(token))) score += 1;
+        if (keywordTokens.size && keywordList.every(token => nameTokens.has(token))) score += 10;
+        else if (keywordList.some(token => tokens(result["Keywords"] ?? "").has(token))) score += 3;
+        else if (keywordList.some(token => resultStr.includes(token))) score += 1;
       }
       return [score, result] as const;
     });
@@ -425,7 +516,7 @@ export class DesignSystemGenerator {
     if (options.brand) {
       brand = await findBrand(options.brand);
       if (!brand) {
-        const known = (await loadBrands()).map((row) => row["Brand ID"]).filter(Boolean);
+        const known = (await loadBrands()).map(row => row["Brand ID"]).filter(Boolean);
         throw new Error(`Unknown brand: ${options.brand}. Available: ${known.join(", ") || "(brands.csv missing)"}`);
       }
     }
@@ -459,13 +550,14 @@ export class DesignSystemGenerator {
     const bestColor = brand ? brandPalette(brand) : selectPaletteForMode(colorResults, colorMode, category);
     const bestTypography: Row = brand ? brandTypography(brand) : (typographyResults[0] ?? {});
     const bestLanding =
-      landingResults.find((row) => row["Pattern Name"] === reasoning.pattern) ?? landingResults[0] ?? {};
+      landingResults.find(row => row["Pattern Name"] === reasoning.pattern) ?? landingResults[0] ?? {};
 
     // MOTION_INTENSITY dial: pull a matching GSAP skeleton from motion.csv.
     let motionSnippet: Row = {};
     if (motionInfo) {
       const motionMatches = (await search(`${query} ${motionInfo.tier}`, "gsap", 5)).results ?? [];
-      motionSnippet = motionMatches.find((match) => match["Intensity Tier"] === motionInfo.tier) ?? motionMatches[0] ?? {};
+      motionSnippet =
+        motionMatches.find(match => match["Intensity Tier"] === motionInfo.tier) ?? motionMatches[0] ?? {};
     }
 
     // Step 5: build the final recommendation.
@@ -577,14 +669,34 @@ export class DesignSystemGenerator {
 /** colors.csv-shaped palette from a brands.csv row (real CSS tokens). */
 function brandPalette(brand: Row): Row {
   const palette: Row = { "Product Type": brand["Brand ID"] ?? "", Notes: brand["Notes"] ?? "" };
-  for (const column of ["Primary", "On Primary", "Secondary", "On Secondary", "Accent", "On Accent", "Background", "Foreground", "Card", "Card Foreground", "Muted", "Muted Foreground", "Border", "Destructive", "On Destructive", "Ring"]) {
+  for (const column of [
+    "Primary",
+    "On Primary",
+    "Secondary",
+    "On Secondary",
+    "Accent",
+    "On Accent",
+    "Background",
+    "Foreground",
+    "Card",
+    "Card Foreground",
+    "Muted",
+    "Muted Foreground",
+    "Border",
+    "Destructive",
+    "On Destructive",
+    "Ring",
+  ]) {
     if (brand[column]) palette[column] = brand[column]!;
   }
   return palette;
 }
 
 function brandTypography(brand: Row): Row {
-  const typography: Row = { "Font Pairing Name": `${brand["Brand"] ?? ""} ${brand["Theme"] ?? ""}`.trim(), "Mood/Style Keywords": brand["Keywords"] ?? "" };
+  const typography: Row = {
+    "Font Pairing Name": `${brand["Brand"] ?? ""} ${brand["Theme"] ?? ""}`.trim(),
+    "Mood/Style Keywords": brand["Keywords"] ?? "",
+  };
   if (brand["Heading Font"]) typography["Heading Font"] = brand["Heading Font"];
   if (brand["Body Font"]) typography["Body Font"] = brand["Body Font"];
   return typography;
@@ -592,8 +704,13 @@ function brandTypography(brand: Row): Row {
 
 /** Approximation of Python's str(dict) used for loose keyword scoring. */
 function pythonDictRepr(row: Row): string {
-  const quote = (value: string) => (value.includes("'") && !value.includes('"') ? `"${value}"` : `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`);
-  return `{${Object.entries(row).map(([key, value]) => `${quote(key)}: ${quote(value)}`).join(", ")}}`;
+  const quote = (value: string) =>
+    value.includes("'") && !value.includes('"')
+      ? `"${value}"`
+      : `'${value.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'`;
+  return `{${Object.entries(row)
+    .map(([key, value]) => `${quote(key)}: ${quote(value)}`)
+    .join(", ")}}`;
 }
 
 // ============ OUTPUT FORMATTERS ============
@@ -616,7 +733,7 @@ function hexToAnsi(hexColor: string): string {
   if (colorterm !== "truecolor" && colorterm !== "24bit") return "";
   const hex = hexColor.replace(/^#+/, "");
   if (hex.length !== 6) return "";
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16));
   return `\x1b[38;2;${r};${g};${b}m██\x1b[0m `;
 }
 
@@ -641,7 +758,7 @@ const CHECKLIST_ITEMS = [
   "Focus visible in forced-colors mode (outline-color: CanvasText)",
   "prefers-reduced-motion respected",
   "color-scheme declared for light/dark",
-  "LCP image: fetchPriority=\"high\" + loading=\"eager\"",
+  'LCP image: fetchPriority="high" + loading="eager"',
   "Responsive: 375px, 768px, 1024px, 1440px",
 ];
 
@@ -685,7 +802,10 @@ export function formatAsciiBox(designSystem: DesignSystem): string {
   };
   const row = (text: string) => lines.push(ljust(text, BOX_WIDTH) + "│");
 
-  const sections = pattern.sections.split(" > ").map((section) => section.trim()).filter(Boolean);
+  const sections = pattern.sections
+    .split(" > ")
+    .map(section => section.trim())
+    .filter(Boolean);
 
   lines.push("╔" + "═".repeat(w) + "╗");
   lines.push(ansiLjust(`║  TARGET: ${project} - RECOMMENDED DESIGN SYSTEM`, BOX_WIDTH) + "║");
@@ -722,13 +842,16 @@ export function formatAsciiBox(designSystem: DesignSystem): string {
   if (light || dark) addWrapped(`Mode Support: Light ${light} | Dark ${dark}`);
   if (style.keywords) addWrapped(`Keywords: ${style.keywords}`);
   if (style.best_for) addWrapped(`Best For: ${style.best_for}`);
-  if (style.performance || style.accessibility) addWrapped(`Performance: ${style.performance} | Accessibility: ${style.accessibility}`);
+  if (style.performance || style.accessibility)
+    addWrapped(`Performance: ${style.performance} | Accessibility: ${style.accessibility}`);
 
   lines.push(sectionHeader("COLORS", BOX_WIDTH));
   for (const [label, key, cssVar] of SEMANTIC_COLOR_ENTRIES) {
     const hex = colors[key] ?? "";
     if (!hex) continue;
-    lines.push(ansiLjust(`│     ${hexToAnsi(hex)}${ljust(label + ":", 18)} ${ljust(hex, 10)} (${cssVar})`, BOX_WIDTH) + "│");
+    lines.push(
+      ansiLjust(`│     ${hexToAnsi(hex)}${ljust(label + ":", 18)} ${ljust(hex, 10)} (${cssVar})`, BOX_WIDTH) + "│",
+    );
   }
   if (colors["notes"]) {
     for (const line of wrapText(`Notes: ${colors["notes"]}`, "│     ", BOX_WIDTH)) row(line);
@@ -750,7 +873,9 @@ export function formatAsciiBox(designSystem: DesignSystem): string {
   if (Object.keys(motionSnippet).length) {
     lines.push(sectionHeader("MOTION", BOX_WIDTH));
     addWrapped(`${motionSnippet["Category"] ?? ""} (${motionSnippet["Intensity Tier"] ?? ""})`, "│  ");
-    addWrapped(`Trigger: ${motionSnippet["Trigger"] ?? ""} | Duration: ${motionSnippet["Duration"] ?? ""} | Easing: ${motionSnippet["Easing"] ?? ""}`);
+    addWrapped(
+      `Trigger: ${motionSnippet["Trigger"] ?? ""} | Duration: ${motionSnippet["Duration"] ?? ""} | Easing: ${motionSnippet["Easing"] ?? ""}`,
+    );
     for (const line of wrapText(`GSAP: ${motionSnippet["GSAP Snippet"] ?? ""}`, "│     ", BOX_WIDTH)) row(line);
     if (motionSnippet["Framework Notes"]) {
       for (const line of wrapText(`Framework: ${motionSnippet["Framework Notes"]}`, "│     ", BOX_WIDTH)) row(line);
@@ -797,7 +922,8 @@ export function formatMarkdown(designSystem: DesignSystem): string {
   if (light || dark) lines.push(`- **Mode Support:** Light ${light} | Dark ${dark}`);
   if (style.keywords) lines.push(`- **Keywords:** ${style.keywords}`);
   if (style.best_for) lines.push(`- **Best For:** ${style.best_for}`);
-  if (style.performance || style.accessibility) lines.push(`- **Performance:** ${style.performance} | **Accessibility:** ${style.accessibility}`);
+  if (style.performance || style.accessibility)
+    lines.push(`- **Performance:** ${style.performance} | **Accessibility:** ${style.accessibility}`);
   lines.push("");
 
   lines.push("### Colors", "| Role | Hex | CSS Variable |", "|------|-----|--------------|");
@@ -833,7 +959,7 @@ export function formatMarkdown(designSystem: DesignSystem): string {
 
   if (antiPatterns) lines.push("### Avoid (Anti-patterns)", `- ${antiPatterns.replaceAll(" + ", "\n- ")}`, "");
 
-  lines.push("### Pre-Delivery Checklist", ...CHECKLIST_ITEMS.map((item) => `- [ ] ${item}`), "");
+  lines.push("### Pre-Delivery Checklist", ...CHECKLIST_ITEMS.map(item => `- [ ] ${item}`), "");
   return lines.join("\n");
 }
 
@@ -843,7 +969,10 @@ function brandMarkdown(brand: NonNullable<DesignSystem["brand"]>): string[] {
   if (brand.selector) lines.push(`- **Selector:** \`${brand.selector}\``);
   if (brand.color_scheme) lines.push(`- **Color scheme:** ${brand.color_scheme}`);
   if (brand.radius) lines.push(`- **Radius:** \`${brand.radius}\``);
-  if (brand.source_file) lines.push(`- **Source:** \`${brand.source_file}\` (tokens extracted verbatim; use the CSS custom properties, not raw hex)`);
+  if (brand.source_file)
+    lines.push(
+      `- **Source:** \`${brand.source_file}\` (tokens extracted verbatim; use the CSS custom properties, not raw hex)`,
+    );
   return lines;
 }
 
@@ -872,7 +1001,13 @@ export async function generateDesignSystem(
   const generator = await DesignSystemGenerator.create();
   const designSystem = await generator.generate(query, options);
   const persistence = options.persist
-    ? await persistDesignSystem(designSystem, options.page ?? null, options.outputDir ?? null, query, options.force ?? false)
+    ? await persistDesignSystem(
+        designSystem,
+        options.page ?? null,
+        options.outputDir ?? null,
+        query,
+        options.force ?? false,
+      )
     : null;
   const text = options.format === "markdown" ? formatMarkdown(designSystem) : formatAsciiBox(designSystem);
   return { text, design_system: designSystem, persistence };
@@ -884,7 +1019,10 @@ export async function generateDesignSystem(
  * so project/page names can never traverse out of their parent directory.
  */
 export function safeSlug(name: unknown, fallback = "default"): string {
-  const slug = String(name).toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
+  const slug = String(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return slug || fallback;
 }
 
@@ -964,7 +1102,12 @@ export async function persistDesignSystem(
       }
     }
   }
-  return { status: "success", design_system_dir: designSystemDir, master_file: masterFile, created_files: createdFiles };
+  return {
+    status: "success",
+    design_system_dir: designSystemDir,
+    master_file: masterFile,
+    created_files: createdFiles,
+  };
 }
 
 function timestamp(): string {
@@ -1010,18 +1153,29 @@ export function formatMasterMd(designSystem: DesignSystem): string {
   lines.push("");
   if (colors["notes"]) lines.push(`**Color Notes:** ${colors["notes"]}`, "");
 
-  lines.push("### Typography", "", `- **Heading Font:** ${typography.heading || "Inter"}`, `- **Body Font:** ${typography.body || "Inter"}`);
+  lines.push(
+    "### Typography",
+    "",
+    `- **Heading Font:** ${typography.heading || "Inter"}`,
+    `- **Body Font:** ${typography.body || "Inter"}`,
+  );
   if (typography.mono) lines.push(`- **Mono Font:** ${typography.mono}`);
   if (typography.mood) lines.push(`- **Mood:** ${typography.mood}`);
-  if (typography.google_fonts_url) lines.push(`- **Google Fonts:** [${typography.heading} + ${typography.body}](${typography.google_fonts_url})`);
+  if (typography.google_fonts_url)
+    lines.push(`- **Google Fonts:** [${typography.heading} + ${typography.body}](${typography.google_fonts_url})`);
   lines.push("");
   if (typography.css_import) lines.push("**CSS Import:**", "```css", typography.css_import, "```", "");
 
   // Spacing variables (overridden by the VISUAL_DENSITY dial when set).
   const scale = spacingScale ?? DIAL_TIERS.density[1]![2].spacing!;
   const spacingUsage: Spacing = {
-    xs: "Tight gaps", sm: "Icon gaps, inline spacing", md: "Standard padding",
-    lg: "Section padding", xl: "Large gaps", "2xl": "Section margins", "3xl": "Hero padding",
+    xs: "Tight gaps",
+    sm: "Icon gaps, inline spacing",
+    md: "Standard padding",
+    lg: "Section padding",
+    xl: "Large gaps",
+    "2xl": "Section margins",
+    "3xl": "Hero padding",
   };
   lines.push("### Spacing Variables", "");
   if (spacingScale) lines.push(`*Density: ${dials.density}/10 — ${dials.density_label}*`, "");
@@ -1033,7 +1187,8 @@ export function formatMasterMd(designSystem: DesignSystem): string {
   lines.push("");
 
   lines.push(
-    "### Shadow Depths", "",
+    "### Shadow Depths",
+    "",
     "| Level | Value | Usage |",
     "|-------|-------|-------|",
     "| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |",
@@ -1045,8 +1200,13 @@ export function formatMasterMd(designSystem: DesignSystem): string {
 
   const primary = colors["primary"] || "#2563EB";
   lines.push(
-    "---", "", "## Component Specs", "",
-    "### Buttons", "", "```css",
+    "---",
+    "",
+    "## Component Specs",
+    "",
+    "### Buttons",
+    "",
+    "```css",
     "/* Primary Button */",
     ".btn-primary {",
     `  background: ${colors["cta"] || "#F97316"};`,
@@ -1087,7 +1247,9 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "}",
     "```",
     "",
-    "### Cards", "", "```css",
+    "### Cards",
+    "",
+    "```css",
     ".card {",
     `  background: ${colors["background"] || "#FFFFFF"};`,
     "  border-radius: 12px;",
@@ -1103,7 +1265,9 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "}",
     "```",
     "",
-    "### Inputs", "", "```css",
+    "### Inputs",
+    "",
+    "```css",
     ".input {",
     "  padding: 12px 16px;",
     "  border: 1px solid #E2E8F0;",
@@ -1119,7 +1283,9 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "}",
     "```",
     "",
-    "### Modals", "", "```css",
+    "### Modals",
+    "",
+    "```css",
     ".modal-overlay {",
     "  background: rgba(0, 0, 0, 0.5);",
     "  backdrop-filter: blur(4px);",
@@ -1135,7 +1301,9 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "}",
     "```",
     "",
-    "### Motion and Color Scheme", "", "```css",
+    "### Motion and Color Scheme",
+    "",
+    "```css",
     ":root {",
     `  color-scheme: ${designSystem.color_mode === "dark" ? "dark" : "light dark"};`,
     "}",
@@ -1163,9 +1331,16 @@ export function formatMasterMd(designSystem: DesignSystem): string {
 
   if (Object.keys(motionSnippet).length) {
     lines.push(
-      "---", "", "## Motion", "",
+      "---",
+      "",
+      "## Motion",
+      "",
       `**${motionSnippet["Category"] ?? ""}** (${motionSnippet["Intensity Tier"] ?? ""}) — Trigger: ${motionSnippet["Trigger"] ?? ""} | Duration: ${motionSnippet["Duration"] ?? ""} | Easing: \`${motionSnippet["Easing"] ?? ""}\``,
-      "", "```js", motionSnippet["GSAP Snippet"] ?? "", "```", "",
+      "",
+      "```js",
+      motionSnippet["GSAP Snippet"] ?? "",
+      "```",
+      "",
     );
     if (motionSnippet["Framework Notes"]) lines.push(`**Framework notes:** ${motionSnippet["Framework Notes"]}`, "");
     if (motionSnippet["Do"]) lines.push(`- ✅ ${motionSnippet["Do"]}`);
@@ -1176,7 +1351,7 @@ export function formatMasterMd(designSystem: DesignSystem): string {
 
   lines.push("---", "", "## Anti-Patterns (Do NOT Use)", "");
   if (antiPatterns) {
-    for (const anti of antiPatterns.split("+").map((item) => item.trim())) if (anti) lines.push(`- ❌ ${anti}`);
+    for (const anti of antiPatterns.split("+").map(item => item.trim())) if (anti) lines.push(`- ❌ ${anti}`);
   }
   lines.push(
     "",
@@ -1188,7 +1363,7 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio",
     "- ❌ **Instant state changes** — Always use transitions (150-300ms)",
     "- ❌ **Invisible focus states** — Focus states must be visible for a11y, including forced-colors mode",
-    "- ❌ **Lazy-loaded LCP image** — The LCP image gets `fetchPriority=\"high\"` and `loading=\"eager\"`",
+    '- ❌ **Lazy-loaded LCP image** — The LCP image gets `fetchPriority="high"` and `loading="eager"`',
     "",
     "---",
     "",
@@ -1205,7 +1380,7 @@ export function formatMasterMd(designSystem: DesignSystem): string {
     "- [ ] Focus visible in `forced-colors: active` (`outline-color: CanvasText`)",
     "- [ ] `prefers-reduced-motion` respected",
     "- [ ] `color-scheme` declared for light/dark",
-    "- [ ] LCP image uses `fetchPriority=\"high\"` and `loading=\"eager\"`",
+    '- [ ] LCP image uses `fetchPriority="high"` and `loading="eager"`',
     "- [ ] Features limited to Baseline widely available (or progressively enhanced)",
     "- [ ] Responsive: 375px, 768px, 1024px, 1440px",
     "- [ ] No content hidden behind fixed navbars",
@@ -1228,7 +1403,11 @@ function titleCase(text: string): string {
 }
 
 /** Format a page-specific override file. */
-export async function formatPageOverrideMd(designSystem: DesignSystem, pageName: string, pageQuery: string | null = null): Promise<string> {
+export async function formatPageOverrideMd(
+  designSystem: DesignSystem,
+  pageName: string,
+  pageQuery: string | null = null,
+): Promise<string> {
   const pageTitle = titleCase(pageName.replaceAll("-", " ").replaceAll("_", " "));
   const overrides = await generateIntelligentOverrides(pageName, pageQuery, designSystem);
   const lines: string[] = [
@@ -1281,7 +1460,11 @@ interface PageOverrides {
 }
 
 /** Page overrides from layered style/UX/landing searches. */
-async function generateIntelligentOverrides(pageName: string, pageQuery: string | null, _designSystem: DesignSystem): Promise<PageOverrides> {
+async function generateIntelligentOverrides(
+  pageName: string,
+  pageQuery: string | null,
+  _designSystem: DesignSystem,
+): Promise<PageOverrides> {
   const combined = `${pageName.toLowerCase()} ${(pageQuery ?? "").toLowerCase()}`;
   const styleResults = (await search(combined, "style", 1)).results ?? [];
   const uxResults = (await search(combined, "ux", 3)).results ?? [];
@@ -1297,11 +1480,11 @@ async function generateIntelligentOverrides(pageName: string, pageQuery: string 
   if (style) {
     const keywords = (style["Keywords"] ?? "").toLowerCase();
     const effects = style["Effects & Animation"] ?? "";
-    if (["data", "dense", "dashboard", "grid"].some((kw) => keywords.includes(kw))) {
+    if (["data", "dense", "dashboard", "grid"].some(kw => keywords.includes(kw))) {
       layout["Max Width"] = "1400px or full-width";
       layout["Grid"] = "12-column grid for data flexibility";
       spacing["Content Density"] = "High — optimize for information display";
-    } else if (["minimal", "simple", "clean", "single"].some((kw) => keywords.includes(kw))) {
+    } else if (["minimal", "simple", "clean", "single"].some(kw => keywords.includes(kw))) {
       layout["Max Width"] = "800px (narrow, focused)";
       layout["Layout"] = "Single column, centered";
       spacing["Content Density"] = "Low — focus on clarity";
@@ -1328,7 +1511,16 @@ async function generateIntelligentOverrides(pageName: string, pageQuery: string 
   if (recommendations.length === 0) {
     recommendations = ["Refer to MASTER.md for all design rules", "Add specific overrides as needed for this page"];
   }
-  return { page_type: pageType, layout, spacing, typography: {}, colors, components, unique_components: [], recommendations };
+  return {
+    page_type: pageType,
+    layout,
+    spacing,
+    typography: {},
+    colors,
+    components,
+    unique_components: [],
+    recommendations,
+  };
 }
 
 /** Detect the page type from context and search results. */
@@ -1347,7 +1539,7 @@ export function detectPageType(context: string, styleResults: Row[]): string {
     [["empty", "404", "error", "not found", "zero"], "Empty State"],
   ];
   for (const [keywords, pageType] of patterns) {
-    if (keywords.some((kw) => lowered.includes(kw))) return pageType;
+    if (keywords.some(kw => lowered.includes(kw))) return pageType;
   }
   const first = styleResults[0];
   if (first) {

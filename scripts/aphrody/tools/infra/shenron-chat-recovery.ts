@@ -20,18 +20,10 @@ export interface ChatRecoveryOptions {
 }
 
 export function chatRecoveryCompose(options: ChatRecoveryOptions) {
-  if (!/^aphrody:toolbox-[a-f0-9]{12}$/.test(options.image))
-    throw new Error("An immutable toolbox image is required");
-  for (const path of [
-    options.root,
-    options.runtime,
-    options.base,
-    options.adapter,
-  ]) {
+  if (!/^aphrody:toolbox-[a-f0-9]{12}$/.test(options.image)) throw new Error("An immutable toolbox image is required");
+  for (const path of [options.root, options.runtime, options.base, options.adapter]) {
     if (!path.startsWith("/") || /[\n\r:]/.test(path))
-      throw new Error(
-        "Absolute Linux paths without mount separators are required",
-      );
+      throw new Error("Absolute Linux paths without mount separators are required");
   }
   return {
     name: "aphrody",
@@ -98,8 +90,7 @@ async function digest(path: string) {
 
 async function run(args: string[]) {
   const child = Bun.spawn(args, { stdout: "inherit", stderr: "inherit" });
-  if (await child.exited)
-    throw new Error(`Chat recovery command failed: ${args[0]}`);
+  if (await child.exited) throw new Error(`Chat recovery command failed: ${args[0]}`);
 }
 
 async function main() {
@@ -134,44 +125,21 @@ async function main() {
     ),
   );
   if (!args.includes("--apply")) return;
-  if (process.getuid?.() !== 0)
-    throw new Error("Apply requires the Infra root execution path");
-  if (availableParallelism() < 6)
-    throw new Error(
-      "Chat requires six host CPUs to reserve one for product services",
-    );
+  if (process.getuid?.() !== 0) throw new Error("Apply requires the Infra root execution path");
+  if (availableParallelism() < 6) throw new Error("Chat requires six host CPUs to reserve one for product services");
   for (const [kind, path] of [
     ["base", options.base],
     ["adapter", options.adapter],
     ["server", join(options.runtime, "llama-server")],
   ] as const) {
-    if ((await digest(path)) !== CHAT_DIGESTS[kind])
-      throw new Error(`Pinned ${kind} digest mismatch`);
+    if ((await digest(path)) !== CHAT_DIGESTS[kind]) throw new Error(`Pinned ${kind} digest mismatch`);
   }
-  await run([
-    "docker",
-    "image",
-    "inspect",
-    "--format",
-    "{{.Id}}",
-    options.image,
-  ]);
+  await run(["docker", "image", "inspect", "--format", "{{.Id}}", options.image]);
   mkdirSync(options.root, { recursive: true, mode: 0o700 });
   await Bun.write(manifest, JSON.stringify(compose, null, 2) + "\n");
   chmodSync(manifest, 0o600);
   await run(["docker", "compose", "-f", manifest, "config", "--quiet"]);
-  await run([
-    "docker",
-    "compose",
-    "-f",
-    manifest,
-    "up",
-    "-d",
-    "--wait",
-    "--wait-timeout",
-    "180",
-    "shenron-chat",
-  ]);
+  await run(["docker", "compose", "-f", manifest, "up", "-d", "--wait", "--wait-timeout", "180", "shenron-chat"]);
 }
 
 if (import.meta.main) await main();

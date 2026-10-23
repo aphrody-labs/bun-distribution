@@ -25,67 +25,254 @@ export const CSV_CONFIG = {
   style: {
     file: "styles.csv",
     searchCols: ["Style ID", "Style Category", "Aliases", "Keywords", "Best For", "Type", "AI Prompt Keywords"],
-    outputCols: ["Style ID", "Style Category", "Aliases", "Status", "Parent Style ID", "Preferred Mode", "Type", "Keywords", "Primary Colors", "Effects & Animation", "Best For", "Light Mode ✓", "Dark Mode ✓", "Performance", "Accessibility", "Framework Compatibility", "Complexity", "AI Prompt Keywords", "CSS/Technical Keywords", "Implementation Checklist", "Design System Variables"],
+    outputCols: [
+      "Style ID",
+      "Style Category",
+      "Aliases",
+      "Status",
+      "Parent Style ID",
+      "Preferred Mode",
+      "Type",
+      "Keywords",
+      "Primary Colors",
+      "Effects & Animation",
+      "Best For",
+      "Light Mode ✓",
+      "Dark Mode ✓",
+      "Performance",
+      "Accessibility",
+      "Framework Compatibility",
+      "Complexity",
+      "AI Prompt Keywords",
+      "CSS/Technical Keywords",
+      "Implementation Checklist",
+      "Design System Variables",
+    ],
   },
   color: {
     file: "colors.csv",
     searchCols: ["Product Type", "Notes"],
-    outputCols: ["Product Type", "Primary", "On Primary", "Secondary", "On Secondary", "Accent", "On Accent", "Background", "Foreground", "Card", "Card Foreground", "Muted", "Muted Foreground", "Border", "Destructive", "On Destructive", "Ring", "Notes"],
+    outputCols: [
+      "Product Type",
+      "Primary",
+      "On Primary",
+      "Secondary",
+      "On Secondary",
+      "Accent",
+      "On Accent",
+      "Background",
+      "Foreground",
+      "Card",
+      "Card Foreground",
+      "Muted",
+      "Muted Foreground",
+      "Border",
+      "Destructive",
+      "On Destructive",
+      "Ring",
+      "Notes",
+    ],
   },
   chart: {
     file: "charts.csv",
     searchCols: ["Data Type", "Keywords", "Best Chart Type", "When to Use", "When NOT to Use", "Accessibility Notes"],
-    outputCols: ["Data Type", "Keywords", "Best Chart Type", "Secondary Options", "When to Use", "When NOT to Use", "Data Volume Threshold", "Color Guidance", "Accessibility Grade", "Accessibility Risk", "Accessibility Notes", "A11y Fallback", "Library Recommendation", "Interactive Level"],
+    outputCols: [
+      "Data Type",
+      "Keywords",
+      "Best Chart Type",
+      "Secondary Options",
+      "When to Use",
+      "When NOT to Use",
+      "Data Volume Threshold",
+      "Color Guidance",
+      "Accessibility Grade",
+      "Accessibility Risk",
+      "Accessibility Notes",
+      "A11y Fallback",
+      "Library Recommendation",
+      "Interactive Level",
+    ],
   },
   landing: {
     file: "landing.csv",
     searchCols: ["Pattern ID", "Pattern Name", "Aliases", "Keywords", "Conversion Optimization", "Section Order"],
-    outputCols: ["Pattern ID", "Pattern Name", "Aliases", "Keywords", "Section Order", "Primary CTA Placement", "Color Strategy", "Conversion Optimization"],
+    outputCols: [
+      "Pattern ID",
+      "Pattern Name",
+      "Aliases",
+      "Keywords",
+      "Section Order",
+      "Primary CTA Placement",
+      "Color Strategy",
+      "Conversion Optimization",
+    ],
   },
   product: {
     file: "products.csv",
     searchCols: ["Product Type", "Keywords", "Primary Style Recommendation", "Key Considerations"],
-    outputCols: ["Product Type", "Keywords", "Primary Style Recommendation", "Secondary Styles", "Landing Page Pattern", "Dashboard Style (if applicable)", "Color Palette Focus"],
+    outputCols: [
+      "Product Type",
+      "Keywords",
+      "Primary Style Recommendation",
+      "Secondary Styles",
+      "Landing Page Pattern",
+      "Dashboard Style (if applicable)",
+      "Color Palette Focus",
+    ],
   },
   ux: {
     file: "ux-guidelines.csv",
     searchCols: ["Category", "Issue", "Description", "Platform"],
-    outputCols: ["Category", "Issue", "Platform", "Description", "Do", "Don't", "Code Example Good", "Code Example Bad", "Severity"],
+    outputCols: [
+      "Category",
+      "Issue",
+      "Platform",
+      "Description",
+      "Do",
+      "Don't",
+      "Code Example Good",
+      "Code Example Bad",
+      "Severity",
+    ],
   },
   typography: {
     file: "typography.csv",
     searchCols: ["Font Pairing Name", "Category", "Mood/Style Keywords", "Best For", "Heading Font", "Body Font"],
-    outputCols: ["Font Pairing Name", "Category", "Heading Font", "Body Font", "Mood/Style Keywords", "Best For", "Google Fonts URL", "CSS Import", "Tailwind Config", "Notes"],
+    outputCols: [
+      "Font Pairing Name",
+      "Category",
+      "Heading Font",
+      "Body Font",
+      "Mood/Style Keywords",
+      "Best For",
+      "Google Fonts URL",
+      "CSS Import",
+      "Tailwind Config",
+      "Notes",
+    ],
   },
   icons: {
     file: "icons.csv",
     searchCols: ["Category", "Icon Name", "Keywords", "Best For", "Library"],
-    outputCols: ["Category", "Icon Name", "Keywords", "Library", "Import Code", "Usage", "Best For", "Style", "Semantic Role", "Allowed Contexts"],
+    outputCols: [
+      "Category",
+      "Icon Name",
+      "Keywords",
+      "Library",
+      "Import Code",
+      "Usage",
+      "Best For",
+      "Style",
+      "Semantic Role",
+      "Allowed Contexts",
+    ],
   },
   gsap: {
     file: "motion.csv",
     searchCols: ["Category", "Intensity Tier", "Keywords", "Trigger"],
-    outputCols: ["Category", "Intensity Tier", "Trigger", "Duration", "Easing", "GSAP Snippet", "Framework Notes", "Do", "Don't", "Performance Notes"],
+    outputCols: [
+      "Category",
+      "Intensity Tier",
+      "Trigger",
+      "Duration",
+      "Easing",
+      "GSAP Snippet",
+      "Framework Notes",
+      "Do",
+      "Don't",
+      "Performance Notes",
+    ],
   },
   react: {
     file: "react-performance.csv",
     searchCols: ["Category", "Issue", "Keywords", "Description"],
-    outputCols: ["Category", "Issue", "Platform", "Description", "Do", "Don't", "Code Example Good", "Code Example Bad", "Severity"],
+    outputCols: [
+      "Category",
+      "Issue",
+      "Platform",
+      "Description",
+      "Do",
+      "Don't",
+      "Code Example Good",
+      "Code Example Bad",
+      "Severity",
+    ],
   },
   web: {
     file: "app-interface.csv",
     searchCols: ["Category", "Issue", "Keywords", "Description"],
-    outputCols: ["Category", "Issue", "Platform", "Description", "Do", "Don't", "Code Example Good", "Code Example Bad", "Severity"],
+    outputCols: [
+      "Category",
+      "Issue",
+      "Platform",
+      "Description",
+      "Do",
+      "Don't",
+      "Code Example Good",
+      "Code Example Bad",
+      "Severity",
+    ],
   },
   "google-fonts": {
     file: "google-fonts.csv",
     searchCols: ["Family", "Category", "Stroke", "Classifications", "Keywords", "Subsets", "Designers"],
-    outputCols: ["Family", "Category", "Stroke", "Classifications", "Styles", "Variable Axes", "Subsets", "Designers", "Popularity Rank", "Google Fonts URL"],
+    outputCols: [
+      "Family",
+      "Category",
+      "Stroke",
+      "Classifications",
+      "Styles",
+      "Variable Axes",
+      "Subsets",
+      "Designers",
+      "Popularity Rank",
+      "Google Fonts URL",
+    ],
   },
   brand: {
     file: "brands.csv",
-    searchCols: ["Brand ID", "Brand", "Theme", "Package", "Selector", "Color Scheme", "Heading Font", "Body Font", "Keywords"],
-    outputCols: ["Brand ID", "Brand", "Theme", "Package", "Source File", "Selector", "Color Scheme", "Primary", "On Primary", "Secondary", "On Secondary", "Accent", "On Accent", "Background", "Foreground", "Card", "Card Foreground", "Muted", "Muted Foreground", "Border", "Destructive", "On Destructive", "Ring", "Radius", "Heading Font", "Body Font", "Mono Font", "Keywords", "Notes"],
+    searchCols: [
+      "Brand ID",
+      "Brand",
+      "Theme",
+      "Package",
+      "Selector",
+      "Color Scheme",
+      "Heading Font",
+      "Body Font",
+      "Keywords",
+    ],
+    outputCols: [
+      "Brand ID",
+      "Brand",
+      "Theme",
+      "Package",
+      "Source File",
+      "Selector",
+      "Color Scheme",
+      "Primary",
+      "On Primary",
+      "Secondary",
+      "On Secondary",
+      "Accent",
+      "On Accent",
+      "Background",
+      "Foreground",
+      "Card",
+      "Card Foreground",
+      "Muted",
+      "Muted Foreground",
+      "Border",
+      "Destructive",
+      "On Destructive",
+      "Ring",
+      "Radius",
+      "Heading Font",
+      "Body Font",
+      "Mono Font",
+      "Keywords",
+      "Notes",
+    ],
   },
 } as const satisfies Record<string, DomainConfig>;
 
@@ -97,9 +284,15 @@ export const DOMAINS = Object.keys(CSV_CONFIG) as Domain[];
  * hard-truncated for display: truncating mid-snippet destroys the value.
  */
 export const UNTRUNCATED_COLS: ReadonlySet<string> = new Set([
-  "Code Example Good", "Code Example Bad", "Code Good", "Code Bad",
-  "Implementation Checklist", "Design System Variables", "CSS Import",
-  "Tailwind Config", "GSAP Snippet",
+  "Code Example Good",
+  "Code Example Bad",
+  "Code Good",
+  "Code Bad",
+  "Implementation Checklist",
+  "Design System Variables",
+  "CSS Import",
+  "Tailwind Config",
+  "GSAP Snippet",
 ]);
 
 export const STACK_CONFIG: Readonly<Record<string, { file: string }>> = {
@@ -132,7 +325,20 @@ export const STACK_CONFIG: Readonly<Record<string, { file: string }>> = {
 /** Common columns for all stacks. */
 export const STACK_COLS = {
   searchCols: ["Category", "Guideline", "Description", "Do", "Don't", "Code Good", "Code Bad"],
-  outputCols: ["Category", "Guideline", "Description", "Do", "Don't", "Code Good", "Code Bad", "Severity", "Docs URL", "Applies To", "Status", "Verified At"],
+  outputCols: [
+    "Category",
+    "Guideline",
+    "Description",
+    "Do",
+    "Don't",
+    "Code Good",
+    "Code Bad",
+    "Severity",
+    "Docs URL",
+    "Applies To",
+    "Status",
+    "Verified At",
+  ],
 } as const;
 
 export const WEB_STACK_CURRENT_MAJORS: Readonly<Record<string, number>> = {
@@ -146,7 +352,12 @@ export const WEB_STACK_CURRENT_MAJORS: Readonly<Record<string, number>> = {
   nuxtjs: 4,
   "nuxt-ui": 4,
 };
-export const WEB_STACKS: ReadonlySet<string> = new Set([...Object.keys(WEB_STACK_CURRENT_MAJORS), "shadcn", "m3", "rg-ui"]);
+export const WEB_STACKS: ReadonlySet<string> = new Set([
+  ...Object.keys(WEB_STACK_CURRENT_MAJORS),
+  "shadcn",
+  "m3",
+  "rg-ui",
+]);
 
 export const STACK_CURRENT_VERSIONS: Readonly<Record<string, readonly number[]>> = {
   ...Object.fromEntries(Object.entries(WEB_STACK_CURRENT_MAJORS).map(([stack, major]) => [stack, [major]])),
@@ -229,10 +440,14 @@ export interface Threshold {
  * domain-specific because corpora vary greatly in size and document length.
  */
 const DOMAIN_SCORE_FLOORS: Partial<Record<Domain, number>> = {
-  style: 4.3, landing: 4.0, product: 6.0, icons: 5.8, react: 3.3,
+  style: 4.3,
+  landing: 4.0,
+  product: 6.0,
+  icons: 5.8,
+  react: 3.3,
 };
 export const SEARCH_THRESHOLDS = Object.fromEntries(
-  DOMAINS.map((domain) => [
+  DOMAINS.map(domain => [
     domain,
     { min_score: DOMAIN_SCORE_FLOORS[domain] ?? 0, min_margin: 0, min_coverage: domain === "landing" ? 0.5 : 0 },
   ]),
@@ -244,7 +459,10 @@ const LANDING_IDENTITY_FIELDS = ["Pattern ID", "Pattern Name", "Aliases"];
 const BRAND_IDENTITY_FIELDS = ["Brand ID", "Brand", "Theme", "Aliases"];
 export const DOMAIN_QUERY_REWRITES: Partial<Record<Domain, Record<string, string | null>>> = {
   color: Object.fromEntries(
-    ["color", "palette", "hex", "rgb", "token", "semantic", "destructive", "muted", "foreground"].map((term) => [term, null]),
+    ["color", "palette", "hex", "rgb", "token", "semantic", "destructive", "muted", "foreground"].map(term => [
+      term,
+      null,
+    ]),
   ),
   landing: { testimonial: "testimonials" },
   style: { css: null, implementation: null, variable: null, checklist: null, tailwind: null },
@@ -268,8 +486,28 @@ const B_END = `(?!${WORD})`;
  * tokens such as ui, ux, ai, css, 3d, js, os, md and gsap stay searchable.
  */
 const STOPWORDS = new Set([
-  "to", "in", "on", "at", "is", "of", "by", "or", "an", "if", "no", "so",
-  "do", "be", "we", "it", "as", "the", "and", "for", "are", "was",
+  "to",
+  "in",
+  "on",
+  "at",
+  "is",
+  "of",
+  "by",
+  "or",
+  "an",
+  "if",
+  "no",
+  "so",
+  "do",
+  "be",
+  "we",
+  "it",
+  "as",
+  "the",
+  "and",
+  "for",
+  "are",
+  "was",
 ]);
 
 /** Query/corpus normalization so common spelling variants match each other. */
@@ -331,14 +569,14 @@ export class BM25 {
   /** Lowercase, normalize synonyms, split, remove punctuation, filter stopwords. */
   tokenize(text: unknown): string[] {
     const cleaned = normalize(String(text).toLowerCase()).replace(NON_WORD, " ");
-    return cleaned.split(/\s+/).filter((word) => word && pyLength(word) >= 2 && !STOPWORDS.has(word));
+    return cleaned.split(/\s+/).filter(word => word && pyLength(word) >= 2 && !STOPWORDS.has(word));
   }
 
   fit(documents: readonly string[]): void {
-    this.corpus = documents.map((doc) => this.tokenize(doc));
+    this.corpus = documents.map(doc => this.tokenize(doc));
     this.N = this.corpus.length;
     if (this.N === 0) return;
-    this.docLengths = this.corpus.map((doc) => doc.length);
+    this.docLengths = this.corpus.map(doc => doc.length);
     this.avgdl = this.docLengths.reduce((sum, length) => sum + length, 0) / this.N || 1;
     this.termFreqs = [];
     for (const doc of this.corpus) {
@@ -422,7 +660,7 @@ async function getBm25(
   const key = JSON.stringify([path, searchCols, INDEX_VERSION, cacheVariant]);
   const cached = bm25Cache.get(key);
   if (cached && cached.signature === signature) return cached.index;
-  const documents = data.map((row) => searchCols.map((column) => String(row[column] ?? "")).join(" "));
+  const documents = data.map(row => searchCols.map(column => String(row[column] ?? "")).join(" "));
   const index = new BM25();
   index.fit(documents);
   bm25Cache.set(key, { signature, index });
@@ -495,7 +733,11 @@ export async function searchCsvDetailed(
     ({ rows: data, signature } = await loadCsvSnapshot(path));
   } catch {
     const name = path.split(/[\\/]/).pop();
-    return { results: [], index: null, diagnostic: { reason: "read-error", error: `Unable to read search data: ${name}` } };
+    return {
+      results: [],
+      index: null,
+      diagnostic: { reason: "read-error", error: `Unable to read search data: ${name}` },
+    };
   }
   if (data.length === 0) return { results: [], index: null, diagnostic: { reason: "empty-data" } };
   if (rowFilter) {
@@ -564,7 +806,12 @@ function compareTuples(a: readonly (number | string)[], b: readonly (number | st
  * Nearest known vocabulary terms for a query that returned 0 hits, so the
  * caller can retry instead of silently reporting nothing.
  */
-export function suggestTerms(bm25: BM25 | null, query: string, limit = 6, threshold: Threshold | null = null): string[] {
+export function suggestTerms(
+  bm25: BM25 | null,
+  query: string,
+  limit = 6,
+  threshold: Threshold | null = null,
+): string[] {
   if (!bm25) return [];
   const queryTokens = new Set(bm25.tokenize(query));
   if (queryTokens.size === 0) return [];
@@ -577,7 +824,10 @@ export function suggestTerms(bm25: BM25 | null, query: string, limit = 6, thresh
       candidates.push([-similarity, -(bm25.docFreqs.get(term) ?? 0), term]);
     }
   }
-  return candidates.sort(compareTuples).slice(0, limit).map(([, , term]) => term);
+  return candidates
+    .sort(compareTuples)
+    .slice(0, limit)
+    .map(([, , term]) => term);
 }
 
 /** Suggest complete public identities so a retry can bypass score thresholds. */
@@ -601,7 +851,10 @@ function suggestIdentities(rows: readonly Row[], query: string, fields: readonly
       }
     }
   }
-  return [...candidates.values()].sort(compareTuples).slice(0, limit).map(([, , identity]) => identity);
+  return [...candidates.values()]
+    .sort(compareTuples)
+    .slice(0, limit)
+    .map(([, , identity]) => identity);
 }
 
 /** Return non-empty public identities from ordinary and alias fields. */
@@ -620,10 +873,27 @@ function rowIdentities(row: Row, fields: readonly string[]): string[] {
  */
 async function loadProductKeywords(): Promise<string[]> {
   const seed = [
-    "saas", "ecommerce", "fintech", "healthcare", "gaming", "portfolio",
-    "crypto", "fitness", "marketplace", "banking", "cybersecurity",
-    "education", "travel", "restaurant", "real estate", "social media",
-    "beauty", "spa", "salon", "wellness", "booking",
+    "saas",
+    "ecommerce",
+    "fintech",
+    "healthcare",
+    "gaming",
+    "portfolio",
+    "crypto",
+    "fitness",
+    "marketplace",
+    "banking",
+    "cybersecurity",
+    "education",
+    "travel",
+    "restaurant",
+    "real estate",
+    "social media",
+    "beauty",
+    "spa",
+    "salon",
+    "wellness",
+    "booking",
   ];
   const path = join(DATA_DIR, CSV_CONFIG.product.file);
   if (!(await Bun.file(path).exists())) return seed;
@@ -635,7 +905,10 @@ async function loadProductKeywords(): Promise<string[]> {
   }
   const keywords = new Set(seed);
   for (const row of rows) {
-    const label = (row["Product Type"] ?? "").replace(/\([^)]*\)/g, "").trim().toLowerCase();
+    const label = (row["Product Type"] ?? "")
+      .replace(/\([^)]*\)/g, "")
+      .trim()
+      .toLowerCase();
     if (pyLength(label) >= 4) keywords.add(label);
   }
   return [...keywords].sort((a, b) => pyLength(b) - pyLength(a));
@@ -649,18 +922,136 @@ export async function domainKeywords(): Promise<Record<Domain, string[]>> {
   if (domainKeywordsCache && domainKeywordsCache.signature === signature) return domainKeywordsCache.keywords;
   const keywords: Record<Domain, string[]> = {
     color: ["color", "palette", "hex", "rgb", "token", "semantic", "accent", "destructive", "muted", "foreground"],
-    chart: ["time series", "chart", "graph", "visualization", "trend", "bar chart", "pie", "scatter", "heatmap", "funnel", "forecast"],
+    chart: [
+      "time series",
+      "chart",
+      "graph",
+      "visualization",
+      "trend",
+      "bar chart",
+      "pie",
+      "scatter",
+      "heatmap",
+      "funnel",
+      "forecast",
+    ],
     landing: ["landing", "page", "cta", "conversion", "hero", "testimonial", "pricing", "section"],
     product: await loadProductKeywords(),
-    style: ["style", "design", "ui", "minimalism", "glassmorphism", "neumorphism", "brutalism", "dark mode", "flat", "aurora", "css", "implementation", "variable", "checklist", "tailwind"],
-    ux: ["ux", "usability", "accessibility", "wcag", "touch", "scroll", "animation", "keyboard", "navigation", "mobile"],
+    style: [
+      "style",
+      "design",
+      "ui",
+      "minimalism",
+      "glassmorphism",
+      "neumorphism",
+      "brutalism",
+      "dark mode",
+      "flat",
+      "aurora",
+      "css",
+      "implementation",
+      "variable",
+      "checklist",
+      "tailwind",
+    ],
+    ux: [
+      "ux",
+      "usability",
+      "accessibility",
+      "wcag",
+      "touch",
+      "scroll",
+      "animation",
+      "keyboard",
+      "navigation",
+      "mobile",
+    ],
     typography: ["font pairing", "typography pairing", "heading font", "body font"],
-    "google-fonts": ["google font", "font family", "font weight", "font style", "variable font", "noto", "font for", "find font", "font subset", "font language", "monospace font", "serif font", "sans serif font", "display font", "handwriting font", "font", "typography", "serif", "sans"],
+    "google-fonts": [
+      "google font",
+      "font family",
+      "font weight",
+      "font style",
+      "variable font",
+      "noto",
+      "font for",
+      "find font",
+      "font subset",
+      "font language",
+      "monospace font",
+      "serif font",
+      "sans serif font",
+      "display font",
+      "handwriting font",
+      "font",
+      "typography",
+      "serif",
+      "sans",
+    ],
     icons: ["icon", "icons", "lucide", "phosphor", "heroicons", "symbol", "glyph", "pictogram", "svg icon"],
-    gsap: ["gsap", "quickto", "scrolltrigger", "stagger", "magnetic cursor", "parallax", "page transition", "scroll reveal", "scroll-triggered", "scrollytelling", "flip plugin", "splittext", "shimmer", "skeleton loader"],
-    react: ["react", "next.js", "nextjs", "suspense", "memo", "usecallback", "useeffect", "rerender", "bundle", "waterfall", "barrel", "dynamic import", "rsc", "server component"],
-    web: ["aria", "focus", "outline", "semantic", "virtualize", "autocomplete", "form", "input type", "preconnect", "drag reorder", "single pointer", "touch target", "native accessibility"],
-    brand: ["brand theme", "brand palette", "brand tokens", "rose griffon", "rosegriffon", "azalee", "azalée", "achillea", "achilléa", "gaelle", "gaëlle", "rg-ui theme", "bun os brand", "aphrody brand"],
+    gsap: [
+      "gsap",
+      "quickto",
+      "scrolltrigger",
+      "stagger",
+      "magnetic cursor",
+      "parallax",
+      "page transition",
+      "scroll reveal",
+      "scroll-triggered",
+      "scrollytelling",
+      "flip plugin",
+      "splittext",
+      "shimmer",
+      "skeleton loader",
+    ],
+    react: [
+      "react",
+      "next.js",
+      "nextjs",
+      "suspense",
+      "memo",
+      "usecallback",
+      "useeffect",
+      "rerender",
+      "bundle",
+      "waterfall",
+      "barrel",
+      "dynamic import",
+      "rsc",
+      "server component",
+    ],
+    web: [
+      "aria",
+      "focus",
+      "outline",
+      "semantic",
+      "virtualize",
+      "autocomplete",
+      "form",
+      "input type",
+      "preconnect",
+      "drag reorder",
+      "single pointer",
+      "touch target",
+      "native accessibility",
+    ],
+    brand: [
+      "brand theme",
+      "brand palette",
+      "brand tokens",
+      "rose griffon",
+      "rosegriffon",
+      "azalee",
+      "azalée",
+      "achillea",
+      "achilléa",
+      "gaelle",
+      "gaëlle",
+      "rg-ui theme",
+      "bun os brand",
+      "aphrody brand",
+    ],
   };
   domainKeywordsCache = { signature, keywords };
   return keywords;
@@ -680,7 +1071,7 @@ async function rewriteQueryForDomain(query: string, domain: Domain | null, index
   const replacementTerms: string[] = [];
   for (const keyword of keywordsByDomain[domain]) {
     if (!containsPhrase(normalized, keyword)) continue;
-    if (index.tokenize(keyword).some((token) => index.idf.has(token))) continue;
+    if (index.tokenize(keyword).some(token => index.idf.has(token))) continue;
     const replacement = DOMAIN_QUERY_REWRITES[domain]?.[keyword];
     if (replacement) {
       rewrites.push(`${keyword}->${replacement}`);
@@ -697,8 +1088,19 @@ async function rewriteQueryForDomain(query: string, domain: Domain | null, index
  * deterministic instead of depending on object ordering.
  */
 const DOMAIN_TIEBREAK_ORDER: Domain[] = [
-  "ux", "product", "style", "color", "typography", "google-fonts",
-  "chart", "landing", "icons", "gsap", "react", "web", "brand",
+  "ux",
+  "product",
+  "style",
+  "color",
+  "typography",
+  "google-fonts",
+  "chart",
+  "landing",
+  "icons",
+  "gsap",
+  "react",
+  "web",
+  "brand",
 ];
 
 /**
@@ -749,18 +1151,24 @@ function isSubset<T>(subset: Set<T>, superset: Set<T>): boolean {
 
 /** Resolve an explicit style identity without opening generic variant ranking. */
 function styleIdentity(rows: readonly Row[], query: string, allowContained = true): Row | null {
-  const folded = String(query ?? "").trim().toLowerCase();
+  const folded = String(query ?? "")
+    .trim()
+    .toLowerCase();
   const queryTokens = wordSet(normalize(folded));
   const genericTokens = new Set(["app", "design", "interface", "style", "system", "ui"]);
   const candidates: [number, number, number, Row][] = [];
   for (const row of rows) {
     const identities = rowIdentities(row, STYLE_IDENTITY_FIELDS);
-    if (identities.some((identity) => identity.toLowerCase() === folded)) return row;
+    if (identities.some(identity => identity.toLowerCase() === folded)) return row;
     if (!allowContained) continue;
     for (const identity of identities) {
       const identityTokens = wordSet(normalize(identity.toLowerCase()));
-      if (identityTokens.size && isSubset(identityTokens, queryTokens) && [...identityTokens].some((token) => pyLength(token) >= 4)) {
-        const distinctive = [...identityTokens].filter((token) => !genericTokens.has(token)).length;
+      if (
+        identityTokens.size &&
+        isSubset(identityTokens, queryTokens) &&
+        [...identityTokens].some(token => pyLength(token) >= 4)
+      ) {
+        const distinctive = [...identityTokens].filter(token => !genericTokens.has(token)).length;
         candidates.push([distinctive, identityTokens.size, pyLength(identity), row]);
       }
     }
@@ -779,8 +1187,10 @@ function styleIdentity(rows: readonly Row[], query: string, allowContained = tru
 
 /** Return one row whose stable public identity exactly matches the query. */
 function exactRowIdentity(rows: readonly Row[], query: string, fields: readonly string[]): Row | null {
-  const folded = String(query ?? "").trim().toLowerCase();
-  const matches = rows.filter((row) => rowIdentities(row, fields).some((identity) => identity.toLowerCase() === folded));
+  const folded = String(query ?? "")
+    .trim()
+    .toLowerCase();
+  const matches = rows.filter(row => rowIdentities(row, fields).some(identity => identity.toLowerCase() === folded));
   return matches.length === 1 ? matches[0]! : null;
 }
 
@@ -814,13 +1224,16 @@ function exactMatchDiagnostic(query: string, reason: string): Diagnostic {
 }
 
 /** Resolve a deprecated in-domain alias, or expose a cross-domain redirect. */
-function styleSearchDestination(rows: readonly Row[], matched: Row | null): [Row | null, { domain: string; id: string } | null] {
+function styleSearchDestination(
+  rows: readonly Row[],
+  matched: Row | null,
+): [Row | null, { domain: string; id: string } | null] {
   if (!matched || (matched["Status"] ?? "active") !== "deprecated") return [matched, null];
   const parentId = (matched["Parent Style ID"] ?? "").trim();
-  if (parentId) return [rows.find((row) => row["Style ID"] === parentId) ?? null, null];
+  if (parentId) return [rows.find(row => row["Style ID"] === parentId) ?? null, null];
   const domain = (matched["Replacement Domain"] ?? "").trim();
   const replacementId = (matched["Replacement ID"] ?? "").trim();
-  if (domain === "style" && replacementId) return [rows.find((row) => row["Style ID"] === replacementId) ?? null, null];
+  if (domain === "style" && replacementId) return [rows.find(row => row["Style ID"] === replacementId) ?? null, null];
   if (domain && replacementId) return [null, { domain, id: replacementId }];
   return [null, null];
 }
@@ -888,7 +1301,11 @@ export async function search(
       reason: "cross-domain-redirect",
     };
   } else {
-    ({ results, index: bm25, diagnostic } = await searchCsvDetailed(
+    ({
+      results,
+      index: bm25,
+      diagnostic,
+    } = await searchCsvDetailed(
       path,
       config.searchCols,
       config.outputCols,
@@ -896,7 +1313,7 @@ export async function search(
       maxResults,
       SEARCH_THRESHOLDS[searchDomain],
       searchDomain,
-      searchDomain === "style" ? (row) => (row["Status"] ?? "active") === "active" : null,
+      searchDomain === "style" ? row => (row["Status"] ?? "active") === "active" : null,
       searchDomain === "style" ? "active-only" : "",
     ));
   }
@@ -915,14 +1332,18 @@ export async function search(
   if (diagnostic.error) out.error = diagnostic.error;
   if (results.length === 0) {
     if (searchDomain === "landing") out.suggestions = suggestIdentities(landingRows, query, LANDING_IDENTITY_FIELDS);
-    else if (searchDomain === "brand" && !bm25) out.suggestions = suggestIdentities(brandRows, query, BRAND_IDENTITY_FIELDS);
+    else if (searchDomain === "brand" && !bm25)
+      out.suggestions = suggestIdentities(brandRows, query, BRAND_IDENTITY_FIELDS);
     else out.suggestions = suggestTerms(bm25, query, 6, SEARCH_THRESHOLDS[searchDomain]);
   }
   if (diagnostics) out.diagnostics = diagnostic;
   return out;
 }
 
-const MIGRATION_INTENT = new RegExp(`${B_START}(?:migrat${WORD}*|upgrad${WORD}*|replac${WORD}*|instead|modern|current)${B_END}`, "u");
+const MIGRATION_INTENT = new RegExp(
+  `${B_START}(?:migrat${WORD}*|upgrad${WORD}*|replac${WORD}*|instead|modern|current)${B_END}`,
+  "u",
+);
 
 /** Whether a stack query explicitly targets an older framework generation. */
 function stackQueryRequestsLegacy(query: string, stack: string): boolean {
@@ -937,17 +1358,26 @@ function stackQueryRequestsLegacy(query: string, stack: string): boolean {
     );
     const requested: number[][] = [];
     for (const match of normalized.matchAll(pattern)) {
-      requested.push(match.slice(1).filter((value) => value !== undefined).map(Number));
+      requested.push(
+        match
+          .slice(1)
+          .filter(value => value !== undefined)
+          .map(Number),
+      );
     }
     if (stack === "threejs") {
-      for (const match of normalized.matchAll(new RegExp(`${B_START}r(\\d+)${B_END}`, "gu"))) requested.push([0, Number(match[1])]);
+      for (const match of normalized.matchAll(new RegExp(`${B_START}r(\\d+)${B_END}`, "gu")))
+        requested.push([0, Number(match[1])]);
     }
     const migrationIntent = MIGRATION_INTENT.test(normalized);
     if (requested.length) {
-      if (migrationIntent && requested.some((version) => compareTuples(version, currentVersion.slice(0, version.length)) >= 0)) {
+      if (
+        migrationIntent &&
+        requested.some(version => compareTuples(version, currentVersion.slice(0, version.length)) >= 0)
+      ) {
         return false;
       }
-      return requested.every((version) => compareTuples(version, currentVersion.slice(0, version.length)) < 0);
+      return requested.every(version => compareTuples(version, currentVersion.slice(0, version.length)) < 0);
     }
   }
   if (MIGRATION_INTENT.test(normalized)) return false;
@@ -956,21 +1386,21 @@ function stackQueryRequestsLegacy(query: string, stack: string): boolean {
 
 /** Choose one coherent applicability generation for stack retrieval. */
 function stackRowFilter(rows: readonly Row[], query: string, stack: string): [RowFilter, string] {
-  const statuses = new Set(rows.map((row) => row["Status"] ?? "unverified"));
+  const statuses = new Set(rows.map(row => row["Status"] ?? "unverified"));
   const hasLegacy = statuses.has("deprecated");
   const requestsLegacy = stackQueryRequestsLegacy(query, stack);
   let statusFilter: RowFilter;
   let variant: string;
   if (hasLegacy && requestsLegacy) {
-    statusFilter = (row) => row["Status"] === "deprecated";
+    statusFilter = row => row["Status"] === "deprecated";
     variant = "legacy-only";
   } else if (requestsLegacy && stack in STACK_CURRENT_VERSIONS) {
     return [() => false, "legacy-unavailable"];
   } else if (statuses.has("active")) {
-    statusFilter = (row) => row["Status"] === "active";
+    statusFilter = row => row["Status"] === "active";
     variant = "current-only";
   } else {
-    statusFilter = (row) => (row["Status"] ?? "unverified") !== "deprecated";
+    statusFilter = row => (row["Status"] ?? "unverified") !== "deprecated";
     variant = "non-legacy";
   }
 
@@ -982,13 +1412,13 @@ function stackRowFilter(rows: readonly Row[], query: string, stack: string): [Ro
   else if (normalized.includes("radix") || normalized.includes("aschild")) requestedBase = "radix";
   else return [statusFilter, variant];
 
-  const matchesBase: RowFilter = (row) => {
+  const matchesBase: RowFilter = row => {
     const match = /\bbase=([^;]+)/.exec((row["Applies To"] ?? "").toLowerCase());
     const bases = match ? match[1]!.split("|") : [];
     return statusFilter(row) && bases.includes(requestedBase);
   };
   // rg-ui is Base UI only: never filter its rows away for a base it does not tag.
-  if (stack === "rg-ui" && !rows.some((row) => /\bbase=/.test((row["Applies To"] ?? "").toLowerCase()))) {
+  if (stack === "rg-ui" && !rows.some(row => /\bbase=/.test((row["Applies To"] ?? "").toLowerCase()))) {
     return [statusFilter, variant];
   }
   return [matchesBase, `${variant};base=${requestedBase}`];
@@ -1000,19 +1430,27 @@ function exactStackIdentifier(rows: readonly Row[], query: string, rowFilter: Ro
   if (pyLength(identifier) < 6 || /\s/.test(identifier)) return null;
   const pattern = new RegExp(`(?<![A-Za-z0-9_])${escapeRegExp(identifier)}(?![A-Za-z0-9_])`, "iu");
   const fields = ["Guideline", "Description", "Do", "Don't", "Code Good", "Code Bad"];
-  const matches = rows.filter((row) => rowFilter(row) && fields.some((field) => pattern.test(row[field] ?? "")));
+  const matches = rows.filter(row => rowFilter(row) && fields.some(field => pattern.test(row[field] ?? "")));
   return matches.length === 1 ? matches[0]! : null;
 }
 
 /** Prefer the explicit successor row for a brand-new app on legacy-only stacks. */
 function legacySuccessorGuidance(rows: readonly Row[], query: string, stack: string, rowFilter: RowFilter): Row | null {
   const normalized = normalize(String(query ?? "").toLowerCase());
-  if (!LEGACY_ONLY_STACKS.has(stack) || !new RegExp(`${B_START}(?:brand new|new)\\s+(?:app|application|project)${B_END}`, "u").test(normalized)) {
+  if (
+    !LEGACY_ONLY_STACKS.has(stack) ||
+    !new RegExp(`${B_START}(?:brand new|new)\\s+(?:app|application|project)${B_END}`, "u").test(normalized)
+  ) {
     return null;
   }
-  const successor = new RegExp(`${B_START}(?:prefer|choose|use)${B_END}.*${B_START}new (?:apps?|projects?)${B_END}`, "u");
+  const successor = new RegExp(
+    `${B_START}(?:prefer|choose|use)${B_END}.*${B_START}new (?:apps?|projects?)${B_END}`,
+    "u",
+  );
   const matches = rows.filter(
-    (row) => rowFilter(row) && successor.test([row["Guideline"] ?? "", row["Description"] ?? "", row["Do"] ?? ""].join(" ").toLowerCase()),
+    row =>
+      rowFilter(row) &&
+      successor.test([row["Guideline"] ?? "", row["Description"] ?? "", row["Do"] ?? ""].join(" ").toLowerCase()),
   );
   return matches.length === 1 ? matches[0]! : null;
 }
@@ -1041,7 +1479,11 @@ export async function searchStack(
     results = [project(exact, STACK_COLS.outputCols)];
     diagnostic = exactMatchDiagnostic(query, "exact-identifier");
   } else {
-    ({ results, index: bm25, diagnostic } = await searchCsvDetailed(
+    ({
+      results,
+      index: bm25,
+      diagnostic,
+    } = await searchCsvDetailed(
       path,
       STACK_COLS.searchCols,
       STACK_COLS.outputCols,
@@ -1068,5 +1510,7 @@ export async function loadBrands(): Promise<Row[]> {
 /** Resolve a brand row by Brand ID, Brand or Theme (case-insensitive). */
 export async function findBrand(reference: string): Promise<Row | null> {
   const rows = await loadBrands();
-  return exactRowIdentity(rows, reference, BRAND_IDENTITY_FIELDS) ?? rows.find((row) => row["Brand ID"] === reference) ?? null;
+  return (
+    exactRowIdentity(rows, reference, BRAND_IDENTITY_FIELDS) ?? rows.find(row => row["Brand ID"] === reference) ?? null
+  );
 }

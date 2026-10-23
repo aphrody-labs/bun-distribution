@@ -9,10 +9,7 @@
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "../../..");
-const output = resolve(
-  root,
-  "factory/usr/overlay/usr/share/licenses/bun-os/LICENSE",
-);
+const output = resolve(root, "factory/usr/overlay/usr/share/licenses/bun-os/LICENSE");
 const listing = Bun.spawnSync(["rg", "--files", "-i"], {
   cwd: root,
   stdout: "pipe",
@@ -27,9 +24,7 @@ const isLicenseMaterial = (path: string) => {
   const normalized = path.replaceAll("\\", "/");
   const basename = normalized.slice(normalized.lastIndexOf("/") + 1);
   return (
-    /^(?:license|licence|copying|notice|copyright|authors|patents)(?:[-_.].*|$)/i.test(
-      basename,
-    ) ||
+    /^(?:license|licence|copying|notice|copyright|authors|patents)(?:[-_.].*|$)/i.test(basename) ||
     /^third[._ -]?party.*(?:license|licen[cs]e|notice)/i.test(basename) ||
     /^attribution(?:[-_.].*|$)/i.test(basename)
   );
@@ -38,10 +33,10 @@ const isLicenseMaterial = (path: string) => {
 const paths = new TextDecoder()
   .decode(listing.stdout)
   .split(/\r?\n/)
-  .map((path) => path.trim())
-  .filter((path) => path && path.replaceAll("\\", "/") !== outputRelative)
+  .map(path => path.trim())
+  .filter(path => path && path.replaceAll("\\", "/") !== outputRelative)
   .filter(isLicenseMaterial)
-  .map((path) => path.replaceAll("\\", "/"))
+  .map(path => path.replaceAll("\\", "/"))
   .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 
 const entries = new Map<string, { paths: string[]; body: string }>();
@@ -60,9 +55,7 @@ for (const path of paths) {
     }
     body = `Base64-encoded non-UTF-8 source file follows:\n${btoa(binary)}`;
   }
-  const digest = new Bun.CryptoHasher("sha256")
-    .update(digestBytes)
-    .digest("hex");
+  const digest = new Bun.CryptoHasher("sha256").update(digestBytes).digest("hex");
   const entry = entries.get(digest);
   if (entry) entry.paths.push(path);
   else entries.set(digest, { paths: [path], body });
@@ -86,7 +79,7 @@ sections.push("", "TEXTS: unique license and notice contents", "");
 for (const [digest, entry] of entries) {
   const indentedBody = entry.body
     .split("\n")
-    .map((line) => `    ${line}`)
+    .map(line => `    ${line}`)
     .join("\n");
   sections.push(
     `--------------------------------------------------------------------------------\nSHA256: ${digest}\n--------------------------------------------------------------------------------\n${indentedBody}`,

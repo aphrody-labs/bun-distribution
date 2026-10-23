@@ -37,9 +37,11 @@ function open() {
 export function listAppEntries(): AppEntry[] {
   const db = open();
   try {
-    return (db.query("SELECT id, title, command, icon, position FROM apps ORDER BY position, title COLLATE NOCASE").all() as Array<Omit<AppEntry, "command"> & { command: string }>).map(
-      row => ({ ...row, command: JSON.parse(row.command) as string[] }),
-    );
+    return (
+      db
+        .query("SELECT id, title, command, icon, position FROM apps ORDER BY position, title COLLATE NOCASE")
+        .all() as Array<Omit<AppEntry, "command"> & { command: string }>
+    ).map(row => ({ ...row, command: JSON.parse(row.command) as string[] }));
   } finally {
     db.close();
   }
@@ -51,7 +53,8 @@ function resolveProgram(program: string): string | undefined {
 }
 
 export function addApp(id: string, title: string, command: string[], icon = "app-window"): AppEntry {
-  if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(id)) throw new Error("an app id is 1 to 32 lowercase letters, digits, dots, dashes or underscores");
+  if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(id))
+    throw new Error("an app id is 1 to 32 lowercase letters, digits, dots, dashes or underscores");
   if (!title.trim()) throw new Error("an app needs a title");
   if (!command.length || !command[0]) throw new Error("an app needs a command");
   const db = open();
@@ -89,7 +92,10 @@ export function listApps(running: Array<{ pid: number; app?: string }>): AppRow[
 }
 
 /** Launches a declared app through the tracked spawn used for games. */
-export function launchApp(id: string, running: Array<{ pid: number; app?: string }>): { ok: true; app: string; pid: number; command: string[] } {
+export function launchApp(
+  id: string,
+  running: Array<{ pid: number; app?: string }>,
+): { ok: true; app: string; pid: number; command: string[] } {
   const app = listAppEntries().find(item => item.id === id);
   if (!app) throw new Error(`no app ${id}`);
   const program = resolveProgram(app.command[0]!);

@@ -248,16 +248,23 @@ export function buildFactoryPreparePlan(
   }
   if (!source.path || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.remote) || source.remote === "legacy-aphrody")
     throw new Error("Invalid declared factory source path or remote");
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.repositoryName) ||
-      !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(source.branch) || source.branch.includes("..") ||
-      source.branch.endsWith("/") || source.branch.includes("//"))
+  if (
+    !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(source.repositoryName) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._/-]*$/u.test(source.branch) ||
+    source.branch.includes("..") ||
+    source.branch.endsWith("/") ||
+    source.branch.includes("//")
+  )
     throw new Error("Invalid declared factory repository name or branch");
   const remote = factoryRemoteUrl(source.url, source.repositoryName, source.owners);
-  const normalizedExisting = [remote, remote.replace(/\.git$/, ""),
+  const normalizedExisting = [
+    remote,
+    remote.replace(/\.git$/, ""),
     remote.replace("https://github.com/", "git@github-dev:"),
     remote.replace("https://github.com/", "git@github.com:"),
     remote.replace("https://github.com/", "ssh://git@github-dev/"),
-    remote.replace("https://github.com/", "ssh://git@github.com/")];
+    remote.replace("https://github.com/", "ssh://git@github.com/"),
+  ];
   const clean = `test -z "$(git status --porcelain --untracked-files=all --ignore-submodules=none)" || { echo 'Factory source checkout is dirty; preserved' >&2; exit 2; }`;
   const pinnedChild = `${clean}\ntest "$(git rev-parse HEAD)" = "$sha1" || { echo 'Factory submodule revision differs from its gitlink; preserved' >&2; exit 2; }`;
   const remoteRef = `refs/remotes/${source.remote}/${source.branch}`;
@@ -274,16 +281,22 @@ export function buildFactoryPreparePlan(
     `case "$origin" in ${normalizedExisting.map(shellQuote).join("|")}) ;; *) echo 'Existing factory origin differs from the declared private repository; preserved' >&2; exit 2 ;; esac`,
     `test "$(git symbolic-ref --quiet --short HEAD)" = ${shellQuote(source.branch)} || { echo 'Canonical factory branch differs from its declaration; preserved' >&2; exit 2; }`,
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)} || { echo 'Canonical factory HEAD differs from requested pin; synchronize its owner first; preserved' >&2; exit 2; }`,
-    ...(sourceScope.kind === "gitlinks" ? [...selectedSourceSetup(sourceScope, revision), ...selectedSourceClean()] : [clean]),
+    ...(sourceScope.kind === "gitlinks"
+      ? [...selectedSourceSetup(sourceScope, revision), ...selectedSourceClean()]
+      : [clean]),
     `git fetch --prune --tags --filter=blob:none ${shellQuote(source.remote)} ${shellQuote(`refs/heads/${source.branch}:${remoteRef}`)}`,
     `git merge-base --is-ancestor ${shellQuote(revision)} ${shellQuote(remoteRef)} || { echo 'Requested source revision is not on the declared remote branch history' >&2; exit 2; }`,
-    ...(sourceScope.kind === "gitlinks" ? selectedSourceVerify() : [
-      `git submodule foreach --quiet --recursive ${shellQuote(pinnedChild)}`,
-      'factory_module_status=$(git submodule status --recursive)',
-      ...(options.initializeSubmodules === false ? [] : [
-        'while IFS= read -r line; do case "$line" in [-+U]*) echo "Factory closure contains an uninitialized or mismatched submodule; preserved" >&2; exit 2 ;; esac; done <<< "$factory_module_status"',
-      ]),
-    ]),
+    ...(sourceScope.kind === "gitlinks"
+      ? selectedSourceVerify()
+      : [
+          `git submodule foreach --quiet --recursive ${shellQuote(pinnedChild)}`,
+          "factory_module_status=$(git submodule status --recursive)",
+          ...(options.initializeSubmodules === false
+            ? []
+            : [
+                'while IFS= read -r line; do case "$line" in [-+U]*) echo "Factory closure contains an uninitialized or mismatched submodule; preserved" >&2; exit 2 ;; esac; done <<< "$factory_module_status"',
+              ]),
+        ]),
     `test "$(git rev-parse HEAD)" = ${shellQuote(revision)}`,
     `test "$(git symbolic-ref --quiet --short HEAD)" = ${shellQuote(source.branch)}`,
     ...(sourceScope.kind === "gitlinks" ? selectedSourceClean() : [clean]),
@@ -294,10 +307,21 @@ export function buildFactoryPreparePlan(
   return {
     operation: "prepare" as const,
     initializesSubmodules: false,
-    sourceScope, lockPath, repository, revision, target: validation.target,
+    sourceScope,
+    lockPath,
+    repository,
+    revision,
+    target: validation.target,
     workspace: validation.workspace,
-    source: { path: resolve(source.path), remote: source.remote, url: remote, repositoryName: source.repositoryName, branch: source.branch },
-    serialized: true, commandTimeoutSeconds: validation.commandTimeoutSeconds,
+    source: {
+      path: resolve(source.path),
+      remote: source.remote,
+      url: remote,
+      repositoryName: source.repositoryName,
+      branch: source.branch,
+    },
+    serialized: true,
+    commandTimeoutSeconds: validation.commandTimeoutSeconds,
     transport: ["ssh", "exec", "--host", validation.target, "--cmd", remoteCommand],
   };
 }

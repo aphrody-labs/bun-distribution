@@ -1,11 +1,7 @@
 import { expect, test } from "bun:test";
 import { BASE_PROBE_MODEL, baseProbeArgs } from "./shenron-chat-base-probe";
 test("base probe has an explicit identity, loopback port, read-only base and one CPU", () => {
-  const args = baseProbeArgs(
-    "aphrody:toolbox-f1346b77156f",
-    "/runtime",
-    "/base.gguf",
-  );
+  const args = baseProbeArgs("aphrody:toolbox-f1346b77156f", "/runtime", "/base.gguf");
   expect(args).toContain(BASE_PROBE_MODEL);
   expect(args).toContain("127.0.0.1");
   expect(args).toContain("8800");
@@ -16,7 +12,5 @@ test("base probe has an explicit identity, loopback port, read-only base and one
 });
 test("mutable images and mount separators are rejected", () => {
   expect(() => baseProbeArgs("latest", "/runtime", "/base")).toThrow();
-  expect(() =>
-    baseProbeArgs("aphrody:toolbox-f1346b77156f", "/runtime:rw", "/base"),
-  ).toThrow();
+  expect(() => baseProbeArgs("aphrody:toolbox-f1346b77156f", "/runtime:rw", "/base")).toThrow();
 });

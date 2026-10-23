@@ -236,7 +236,11 @@ export function runningGames(): RunningGame[] {
 }
 
 /** Starts a long-running process and tracks it with the running games (the "N running" pill, Stop). */
-export function spawnTracked(command: string[], cwd: string, entry: { game: number; app?: string; route: string }): number {
+export function spawnTracked(
+  command: string[],
+  cwd: string,
+  entry: { game: number; app?: string; route: string },
+): number {
   const child = Bun.spawn(command, { cwd, stdin: "ignore", stdout: "ignore", stderr: "ignore" });
   running.set(child.pid, { pid: child.pid, startedAt: new Date().toISOString(), ...entry, process: child });
   void child.exited.then(() => running.delete(child.pid));
@@ -296,7 +300,8 @@ export async function launchGame(
     player = `http://127.0.0.1:${port}/`;
   }
   // the profile that plays keeps its own save states and screenshots (saves.ts); an unknown name plays as default
-  const profile = options.profile && listPlayers().some(player => player.name === options.profile) ? options.profile : undefined;
+  const profile =
+    options.profile && listPlayers().some(player => player.name === options.profile) ? options.profile : undefined;
   const command = await commandFor(route, game, Boolean(options.check), options.frames ?? 120, port, profile);
   const cwd = dirname(command[0]!);
   if (!options.check) {

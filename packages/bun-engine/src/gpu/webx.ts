@@ -25,8 +25,7 @@ export interface WebXShaderFailure {
 }
 
 export type WebXShaderModuleResult =
-  | { ok: true; module: GPUShaderModule; wgsl: string }
-  | { ok: false; error: WebXShaderFailure };
+  { ok: true; module: GPUShaderModule; wgsl: string } | { ok: false; error: WebXShaderFailure };
 
 export type WebXShaderTranslator = (
   device: GPUDevice,
@@ -35,11 +34,8 @@ export type WebXShaderTranslator = (
 ) => Promise<WebXShaderModuleResult>;
 
 /** Bind the actual wasm export to the WebX plugin's injected translator slot. */
-export function createWebXShaderTranslator(
-  binding: SpirvWasmBinding,
-): WebXShaderTranslator {
-  return (device, words, label) =>
-    createWebXShaderModule(device, binding, words, label);
+export function createWebXShaderTranslator(binding: SpirvWasmBinding): WebXShaderTranslator {
+  return (device, words, label) => createWebXShaderModule(device, binding, words, label);
 }
 
 /**
@@ -59,8 +55,7 @@ export async function createWebXShaderModule(
       ok: false,
       error: {
         code: "invalid_spirv_input",
-        message:
-          "SPIR-V input must be a Uint32Array containing a complete module header.",
+        message: "SPIR-V input must be a Uint32Array containing a complete module header.",
       },
     };
   }
@@ -73,10 +68,7 @@ export async function createWebXShaderModule(
       ok: false,
       error: {
         code: "spirv_translation_failed",
-        message: structuredErrorMessage(
-          cause,
-          "SPIR-V to WGSL translation failed.",
-        ),
+        message: structuredErrorMessage(cause, "SPIR-V to WGSL translation failed."),
         cause,
       },
     };
@@ -98,10 +90,7 @@ export async function createWebXShaderModule(
       ok: false,
       error: {
         code: "webgpu_error_scope_failed",
-        message: structuredErrorMessage(
-          cause,
-          "WebGPU validation error scope could not be opened.",
-        ),
+        message: structuredErrorMessage(cause, "WebGPU validation error scope could not be opened."),
         cause,
       },
     };
@@ -119,10 +108,7 @@ export async function createWebXShaderModule(
         ok: false,
         error: {
           code: "webgpu_error_scope_failed",
-          message: structuredErrorMessage(
-            scopeCause,
-            "WebGPU validation error scope could not be closed.",
-          ),
+          message: structuredErrorMessage(scopeCause, "WebGPU validation error scope could not be closed."),
           cause: { creationError: cause, scopeError: scopeCause },
         },
       };
@@ -131,12 +117,7 @@ export async function createWebXShaderModule(
       ok: false,
       error: {
         code: "webgpu_shader_creation_failed",
-        message:
-          scopeError?.message ??
-          structuredErrorMessage(
-            cause,
-            "WebGPU rejected shader-module creation.",
-          ),
+        message: scopeError?.message ?? structuredErrorMessage(cause, "WebGPU rejected shader-module creation."),
         cause: scopeError ?? cause,
       },
     };
@@ -144,19 +125,13 @@ export async function createWebXShaderModule(
 
   const compilation = Promise.resolve().then(() => module.getCompilationInfo());
   const errorScope = Promise.resolve().then(() => device.popErrorScope());
-  const [compilationResult, scopeResult] = await Promise.allSettled([
-    compilation,
-    errorScope,
-  ]);
+  const [compilationResult, scopeResult] = await Promise.allSettled([compilation, errorScope]);
   if (scopeResult.status === "rejected") {
     return {
       ok: false,
       error: {
         code: "webgpu_error_scope_failed",
-        message: structuredErrorMessage(
-          scopeResult.reason,
-          "WebGPU validation error scope could not be closed.",
-        ),
+        message: structuredErrorMessage(scopeResult.reason, "WebGPU validation error scope could not be closed."),
         cause: scopeResult.reason,
       },
     };
@@ -179,16 +154,14 @@ export async function createWebXShaderModule(
   const scopeError = scopeResult.value;
 
   const diagnostics = info.messages
-    .filter((message) => message.type === "error")
+    .filter(message => message.type === "error")
     .map(({ message, lineNum, linePos }) => ({ message, lineNum, linePos }));
   if (scopeError || diagnostics.length > 0) {
     return {
       ok: false,
       error: {
         code: "wgsl_compilation_failed",
-        message:
-          scopeError?.message ??
-          diagnostics.map((item) => item.message).join("\n"),
+        message: scopeError?.message ?? diagnostics.map(item => item.message).join("\n"),
         diagnostics,
         cause: scopeError ?? undefined,
       },
