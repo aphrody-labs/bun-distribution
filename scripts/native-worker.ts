@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { statfsSync } from "node:fs";
+import { existsSync, statfsSync } from "node:fs";
 import os from "node:os";
+import { dirname } from "node:path";
 import { runProcess } from "@aphrody/bun-workspace/process";
 
 /** The platform wrapper owns admission only; this shared owner controls child lifetime. */
@@ -21,7 +22,10 @@ async function main(): Promise<number> {
     throw new Error("Invalid native build arguments.");
   // Refuse to start a native build that would fill the volume holding its target directory.
   const minimumFreeBytes = Number(Bun.env.APHRODY_NATIVE_MIN_FREE_GB ?? 15) * 1024 ** 3;
-  const volume = statfsSync(Bun.env.CARGO_TARGET_DIR ?? cwd);
+  // The target directory may not exist yet (a fresh CI checkout): measure its nearest existing parent.
+  let measured = Bun.env.CARGO_TARGET_DIR ?? cwd;
+  while (!existsSync(measured) && dirname(measured) !== measured) measured = dirname(measured);
+  const volume = statfsSync(measured);
   const freeBytes = volume.bavail * volume.bsize;
   if (freeBytes < minimumFreeBytes)
     throw new Error(
