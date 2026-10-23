@@ -1,15 +1,23 @@
 #!/bin/sh
 # SPDX-License-Identifier: MIT
-# First-boot hand-over of /boot/limine.conf to the upstream Omarchy/CachyOS tooling: limine-install
-# (EFI binary + boot entry), limine-mkinitcpio (initramfs and entries for every installed kernel) and
-# limine-snapper-sync (one boot entry per snapper snapshot). Needs the ESP mounted on /boot, as fstab does.
-# Best effort: the bootstrap limine.conf written by assemble-inner.sh stays valid if a step fails.
+# First-boot hand-over of /boot/limine.conf to the upstream Omarchy/CachyOS tooling, the same sequence as
+# Omarchy's omarchy-refresh-limine: limine-install (EFI binary), reset limine.conf to a header-only template,
+# limine-update (limine-entry-tool: initramfs and a "/+Bun OS" entry per installed kernel, kept in sync by its
+# pacman hooks), then limine-snapper-sync (one boot entry per snapper snapshot). TARGET_OS_NAME is set in
+# /etc/default/limine. If limine-update fails, the bootstrap limine.conf written by assemble-inner.sh is restored.
 log=/var/log/bunos-boot-setup.log
 exec >>"$log" 2>&1
 echo "== $(date -u) bunos-boot-setup"
 mountpoint -q /boot || { echo "/boot is not a mount point"; exit 0; }
-snapper -c root create -d "bunos first boot" -c number || true
 limine-install || true
-limine-mkinitcpio || true
+cp /boot/limine.conf /boot/limine.conf.bootstrap
+install -m 0644 /usr/share/bun-os/limine.conf /boot/limine.conf
+if limine-update && grep -q 'protocol: linux' /boot/limine.conf; then
+  echo "limine-update: entries generated"
+else
+  echo "limine-update failed: restoring the bootstrap limine.conf"
+  cp /boot/limine.conf.bootstrap /boot/limine.conf
+fi
+snapper -c root create -d "bunos first boot" -c number || true
 limine-snapper-sync || true
 install -d /var/lib/bunos; date -u >/var/lib/bunos/boot-setup.done

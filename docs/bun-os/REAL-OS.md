@@ -40,7 +40,7 @@ only the plumbing exists; `missing` = no implementation (an upstream catalog ent
 | 11 | Handheld support: hhd, InputPlumber, TDP | Bazzite, ChimeraOS | partial | `handheld.packages`: `hhd`, `inputplumber`, `steamos-manager`, `power-profiles-daemon`; `inputplumber.service` enabled, `hhd@` disabled and conflicting with it; ChimeraOS `device-quirks` via gamescope-session-plus. Not tested on handheld hardware |
 | 12 | Controller udev rules | Bazzite, CachyOS (`game-devices-udev`) | partial | `steam-devices` (Valve rules), the rules shipped by `inputplumber` and `hhd`, and three reviewed Bazzite rules (backlight, ROG Ally X wake-up, Valve wake-up). `game-devices-udev` is not in the repositories |
 | 13 | Decky-like plugin loader | Bazzite | missing | named in `BAZZITE-FORKS.md` only |
-| 14 | Atomic or rollback updates | Bazzite (ostree), Omarchy (snapper + limine) | partial | Omarchy's stack: `snap-pac` (pre/post snapshot per pacman transaction), snapper `root` config from Omarchy's own `snapper.sh`, `limine-snapper-sync` (boot entry per snapshot), Limine on the ESP at `/boot`. Booting a snapshot entry was not exercised. Verity `/usr` design: `factory/usr/boot/repart.d` (not used) |
+| 14 | Atomic or rollback updates | Bazzite (ostree), Omarchy (snapper + limine) | partial | Omarchy's stack: `snap-pac` (pre/post snapshot per pacman transaction), snapper `root` config from Omarchy's own `snapper.sh`, `limine-snapper-sync` (boot entry per snapshot), Limine on the ESP at `/boot`. In QEMU a `pacman -S linux-cachyos` produced snapshots 2/3 that appeared as Limine entries; booting a snapshot entry was not exercised. Verity `/usr` design: `factory/usr/boot/repart.d` (not used) |
 | 15 | First-boot setup | Bazzite (yafti), Omarchy installer | partial | `bunos-firstboot.service` (hostname, home seed); no wizard, locale, user or network prompt |
 | 16 | GPU drivers: AMD/Intel Mesa, NVIDIA, supergfxctl | all three | partial | Mesa + `vulkan-swrast`/`vulkan-virtio` in the image; NVIDIA and `supergfxctl` only listed in `gaming.packages` |
 | 17 | Flatpak | Bazzite | partial | `flatpak` in `gaming.packages`, installed in the disk image; no remotes configured |
@@ -136,28 +136,37 @@ Verified on the VPS (`ssh vps`, work dir `~/absorb`, nothing touched in `~/src/b
 - The upstream `gamescope-session-plus` wrapper ran through its systemd user unit with the Bun OS session definition,
   gamescope failed (no GPU, as in the first image) and the selector fell back to the desktop session after two failures.
 
-Not verified, or failed:
+Second pass (same day, final `Containerfile` rebuilt as `bunos-disk:absorb2`, reduced disk now with Python):
 
-- `limine-mkinitcpio` (the upstream tool that should own `/boot/limine.conf` and follow kernel installs) failed on first boot:
-  the UKI build ("Unified kernel image generation FAILED", `ukify`) and then "Target OS name 'Arch Linux' not found in
-  /boot/limine.conf, or TARGET_OS_NAME is missing". The bootstrap `limine.conf` written at image build kept working, so the
-  system boots, but **the pacman-kernel-update to boot-entry path is not proven**. UKI mode was switched off afterwards
-  (`omarchy-uki.conf` is no longer installed); the TARGET_OS_NAME mismatch is open.
-- The boot test used a reduced disk: Steam, Wine, `lib32`, firmware, browsers, locale, fonts and Python were left out of the btrfs
-  image (the full 12 GB rootfs could not be assembled in tmpfs without pushing the shared VPS into swap), the filesystem was
-  not compressed, and the Python exclusion broke `uwsm`, so the desktop session restarted in a loop in that test only. The full
-  rootfs was never booted. `nvidia-cdi-refresh` failed on first boot (no NVIDIA GPU); `nvidia-container-toolkit` was removed from
-  `gaming.packages` afterwards, which was not rebuilt.
-- Not exercised: Steam, Proton, Heroic, gamescope on a GPU, hhd or InputPlumber on handheld hardware, snapshot rollback from a
-  Limine entry, `snap-pac` during a real `pacman -Syu`, `archinstall` on a disk, KVM (still TCG).
-- The `Containerfile` was rebuilt once; later edits (removal of the inert Bazzite `limits` file, installing only `omarchy-defaults.conf`,
-  growing the filesystem to the partition in `bunos-firstboot`, entry title) were not rebuilt.
+- Limine hand-over fixed. The failure was twofold: the UKI build (`omarchy-uki.conf`, now not installed) and
+  `limine-snapper-sync` reading `TARGET_OS_NAME` from `/etc/default/limine` only (it defaulted to "Arch Linux").
+  `TARGET_OS_NAME="Bun OS"` is now in `/etc/default/limine`, and `bunos-boot-setup` follows Omarchy's
+  `omarchy-refresh-limine` sequence: `limine-install`, reset `/boot/limine.conf` to a header-only template
+  (`/usr/share/bun-os/limine.conf`, `default_entry: 2` like Omarchy), `limine-update`, `limine-snapper-sync`.
+- Seen in QEMU (persistent disk, two boots): first boot generated `/+Bun OS` > `//linux-cachyos` with the kernel and
+  initramfs under `/boot/<machine-id>/linux-cachyos/` (b2sum-pinned in `limine.conf`) and `//Snapshots` > `///1`
+  ("bunos first boot"). The second boot loaded that tool-generated entry.
+- `pacman -S --noconfirm linux-cachyos` (exit 0) ran snap-pac (pre snapshot 2, post snapshot 3), Limine's
+  `limine-mkinitcpio-install` hook (initramfs rebuilt, "Updated: /boot/limine.conf") and the watcher
+  (`limine-snapper-watcher`: "CREATE,ISDIR -> 3", "Updated: /boot/limine.conf"); the boot menu then listed snapshots
+  3, 2 and 1, each with its own `linux-cachyos` entry. Same package version, so the ESP kernel and initramfs files kept their
+  hashes and were not re-copied; a version change (new hash) was not exercised.
+- No failed units on that boot (`nvidia-container-toolkit` is gone).
+
+Still not verified:
+
+- The reduced disk leaves out Steam, Wine, `lib32`, firmware, browsers, locale and fonts and is not compressed; the full
+  12 GB rootfs was not assembled or booted (tmpfs assembly pushed the shared VPS into swap). The desktop session was not
+  rechecked with Python present.
+- Booting a snapshot entry (rollback), a kernel version upgrade, Steam, Proton, Heroic, gamescope on a GPU, hhd or
+  InputPlumber on handheld hardware, `archinstall` on a disk, KVM (still TCG).
+- Omarchy's `omarchy-defaults.conf` appends `quiet splash loglevel=0` after the Bun OS flags in the generated command line,
+  so the boot log is quiet on the generated entry.
 
 ## Next steps
 
 1. Boot on a real GPU (KVM + virtio-gpu GL or a GPU host) to qualify gamescope and the Bun Engine library session, then
    Steam and a Proton title; package `bun-engine` properly instead of the bundled CLI.
-2. Make `limine-mkinitcpio` work in the image (the TARGET_OS_NAME entry it expects in `limine.conf`, then the UKI build), and prove a
-   `pacman -S linux-cachyos` re-install updates the ESP and a snapshot appears as a boot entry.
-3. Rebuild the image with the final `Containerfile` and assemble the full-size disk on a host with enough RAM or fast disk.
+2. Boot a Limine snapshot entry (rollback) and a kernel version upgrade; decide UKI and Secure Boot.
+3. Assemble and boot the full-size disk on a host with enough RAM or fast disk.
 4. Installer ISO (archiso with `bunos-installer-post`), published signed `[bunos]` repository, first-boot wizard, Secure Boot.

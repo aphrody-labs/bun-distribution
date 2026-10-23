@@ -63,6 +63,7 @@ RUN rm -f /etc/systemd/system/multi-user.target.wants/try-omarchy-* /etc/systemd
 RUN OMARCHY_SNAPPER_CONFIGURE_TEST=1 OMARCHY_SNAPPER_TEMPLATE=/usr/share/bun-os/upstream/omarchy/snapper-root \
       bash /usr/share/bun-os/upstream/omarchy/snapper.sh \
  && sed 's|@@CMDLINE@@|root=LABEL=bunos-root rootflags=subvol=@ rw|' /usr/share/bun-os/upstream/omarchy/limine-default.conf >/etc/default/limine \
+ && echo 'TARGET_OS_NAME="Bun OS"' >>/etc/default/limine \
  && kver=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) \
  && install -Dm644 /usr/lib/modules/$kver/vmlinuz /boot/vmlinuz-linux-cachyos \
  && /usr/bin/mkinitcpio -k "$kver" -g /boot/initramfs-linux-cachyos.img 2>&1 | tail -5; ls -la /boot
