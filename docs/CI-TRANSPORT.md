@@ -69,3 +69,47 @@ then invokes the shared-install owner `scripts/node-modules.ts`. Bare frozen
 installation requires that archive to have already been assembled. Native builds
 remain limited to an explicit dispatch with `build=true`, after host admission.
 This preparation does not qualify a complete job or a native build.
+
+## Submodule mirrors
+
+`builtin:checkout` runs `git submodule update --init --force` inside each job
+container, in a fresh `gitea-work/<task>` workspace. Without a local source it
+re-cloned every submodule from the network on each job, and it could not read
+the private `aphrody-labs` submodules over HTTPS.
+
+The VPS host keeps bare mirrors of every submodule URL of `aphrody-dev/bun-os`
+`os` (nested submodules included) under `/home/ubuntu/build/git-mirrors/<host>/<path>.git`.
+`infra/config/host/apps/vps/gitea-runner/git-mirrors.sh` (installed as
+`~/apps/gitea-runner/git-mirrors.sh`) creates and refreshes them; the user
+units `infra/config/host/systemd/aphrody/aphrody-git-mirrors.{service,timer}`
+run it five minutes after each pass ends. It reads `.gitmodules` and the gitlinks
+directly from Gitea's bare repository, seeds new mirrors with reflink copies of
+existing clones (`~/src/bun-os/.git/modules`, finished job workspaces), keeps
+complete mirrors for ordinary entries and depth-1 mirrors for `shallow = true`
+and nested entries, and pins every referenced commit under `refs/pinned/`.
+
+The host GitHub credential (`gh auth git-credential`) is passed on the command
+line of the refresh process only. It is not stored in a mirror and never
+reaches a job container.
+
+The runner mounts the mirror root read-only into jobs at the same path and sets
+`GIT_CONFIG_SYSTEM` to `/home/ubuntu/build/git-mirrors/jobs.gitconfig`, which the
+refresh regenerates:
+
+- one `url."file://<mirror>".insteadOf <url>` rule per mirrored URL;
+- `protocol.file.allow = always` (submodule clones refuse local transports
+  otherwise) and `safe.directory = *` (the mirrors belong to `ubuntu`, jobs run
+  as root);
+- `init.templateDir` pointing at a template whose `objects/info/alternates`
+  names the empty bare repository `.reference`, plus
+  `submodule.alternateLocation = superproject`. Every submodule clone then
+  passes `--reference .reference/modules/<name>`, a link to its complete
+  mirror: the clone transfers and copies no objects, which stay in the
+  read-only mirror. Job workspaces therefore depend on the mount; do not ship a
+  job's `.git` to another machine or image.
+
+Depth-1 mirrors (`shallow = true` entries, nested submodules) cannot be
+references; they are served through upload-pack, and each one's `HEAD` is the
+newest pinned commit so `clone --depth=1` receives exactly that commit. A URL
+without a mirror keeps its network URL; a new private submodule is served once
+the next refresh has mirrored it.
