@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-baseui",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Base UI with Material 3 styling: every Base UI primitive wrapped with M3 token classes; pinned upstream sources in vendor/base-ui, consumer uses the root catalog package.",
   "license": "Apache-2.0",
   "repository": {

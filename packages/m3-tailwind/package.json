@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-tailwind",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
   "license": "Apache-2.0",
   "repository": {

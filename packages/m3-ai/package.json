@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-ai",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",

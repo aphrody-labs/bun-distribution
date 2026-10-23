@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-motion",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
   "repository": {
     "type": "git",
