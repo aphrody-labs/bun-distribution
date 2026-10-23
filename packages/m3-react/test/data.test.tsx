@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { DataTable, dataColumns, VirtualList } from "../data/index.ts";
+import { DataTable, dataColumns, VirtualList } from "../src/data/index.ts";
 
 interface Person {
   id: string;

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { BREAKPOINTS, classifyWidth, minWidthQuery, useWindowSizeClass } from "../adaptive/index.js";
+import { BREAKPOINTS, classifyWidth, minWidthQuery, useWindowSizeClass } from "../src/adaptive/index.js";
 
 describe("classifyWidth — canonical M3 boundaries (600/840/1200/1600)", () => {
   test.each([

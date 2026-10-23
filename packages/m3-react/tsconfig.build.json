@@ -2,19 +2,8 @@
   "extends": ["./tsconfig.json", "@aphrody/m3-config/tsconfig.build.json"],
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": "src"
   },
-  "include": [
-    "index.ts",
-    "wrappers/**/*.ts",
-    "transitions/**/*.ts",
-    "transitions/**/*.tsx",
-    "adaptive/**/*.ts",
-    "state/**/*.ts",
-    "adapters/**/*.ts",
-    "data/**/*.ts",
-    "data/**/*.tsx",
-    "material-web-shims.d.ts"
-  ],
-  "exclude": ["node_modules", "generate.ts", "dist"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
 }

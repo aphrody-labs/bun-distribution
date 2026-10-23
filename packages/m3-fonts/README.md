@@ -1,8 +1,22 @@
+<!-- SPDX-License-Identifier: Apache-2.0 AND OFL-1.1 -->
+
 # @aphrody/m3-fonts
 
-The Aphrody M3 typefaces as `@font-face` CSS and a typed manifest: Google Sans Flex (brand), Google
-Sans Code, Roboto Flex, Roboto Mono and Material Symbols (outlined, rounded, sharp), with Japanese
-fallbacks (Noto Sans JP, M PLUS 1 Code).
+The Aphrody M3 typefaces as `@font-face` CSS and a typed manifest: Google Sans Flex, Google Sans Code, Roboto Flex,
+Roboto Mono and Material Symbols, with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code).
+
+```sh
+bun add @aphrody/m3-fonts
+```
+
+```ts
+import "@aphrody/m3-fonts/fonts.css"; // Latin core faces
+import { FONT_STACKS } from "@aphrody/m3-fonts";
+
+document.body.style.fontFamily = FONT_STACKS.brand;
+```
+
+License: Apache-2.0 AND OFL-1.1 (`LICENSE` for the code, `fonts/*-OFL.txt` for the typefaces). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 | Import                                | Contents                                                                                                        |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |

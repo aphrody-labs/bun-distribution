@@ -11,7 +11,7 @@ import {
   useTextFieldState,
   WebTextFieldState,
   type SelectionCapableElement,
-} from "../state/use-text-field-state.js";
+} from "../src/state/use-text-field-state.js";
 
 describe("WebTextFieldState (pure logic)", () => {
   it("constructs with defaults", () => {

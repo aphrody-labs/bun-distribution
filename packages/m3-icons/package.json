@@ -3,12 +3,16 @@
   "version": "1.4.4",
   "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
   "license": "Apache-2.0",
-  "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
     "directory": "packages/m3-icons"
   },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-icons#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
+  "author": "aphrody-code",
   "files": [
     "dist",
     "src"
@@ -50,7 +54,8 @@
   "scripts": {
     "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-icons",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "test": "APHRODY_FFI_DEV=1 bun test"
+    "test": "APHRODY_FFI_DEV=1 bun test",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0"
@@ -73,6 +78,6 @@
     }
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

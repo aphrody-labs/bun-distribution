@@ -1,182 +1,112 @@
-# Codemods — MUI React → `@aphrody/m3-react`
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-Transforms automatisés pour migrer du code **MUI React** (`@mui/material`) vers les
-wrappers **`@aphrody/m3-react`** (web components `<md-*>` du fork material-web).
+# @aphrody/m3-codemods
 
-> Contrat de référence : `../00-CONVENTIONS.md`.
-> Tout ce kit respecte §2 (nommage des wrappers), §3 (mapping canonique) et §4
-> (règles props/events). **bun uniquement** (§7.1). Aucun élément `md-*` inventé (§7.2).
+Codemods and ast-grep rules that migrate MUI React (`@mui/material`, `@mui/icons-material`) to `@aphrody/m3-react` and Material Symbols.
 
-Deux outils complémentaires :
-
-| Outil                          | Rôle                                                                   | Force                                        |
-| ------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------- |
-| **transforms** (`transforms/`) | réécriture profonde : imports + JSX + props + slots, **variant-aware** | transformation complète, idempotente, testée |
-| **ast-grep** (`rules/`)        | détection/rapport des occurrences + quelques fix triviaux              | inventaire rapide, zéro setup Node           |
-
----
-
-## Installation
-
-Aucune dépendance runtime : le moteur tourne sous Bun seul.
-
-```bash
-# ast-grep : pas d'install nécessaire, lancé via bunx @ast-grep/cli (binaire runtime)
+```sh
+bun add -d @aphrody/m3-codemods
 ```
 
----
+```ts
+import { transformSource } from "@aphrody/m3-codemods";
+
+const { source, diagnostics } =
+  transformSource(`import { Button } from "@mui/material";
+export const Save = () => <Button variant="outlined">Save</Button>;`);
+console.log(source); // MdOutlinedButton from @aphrody/m3-react
+console.log(diagnostics); // MIGRATION-TODO notes left for manual work
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+No runtime dependency: the engine runs on Bun alone. `m3-bun migrate` runs these transforms over a project.
+
+## Two tools
+
+| Tool                       | Role                                                                    |
+| -------------------------- | ----------------------------------------------------------------------- |
+| transforms (`transforms/`) | Full rewrite: imports, JSX, props, slots; variant-aware and idempotent. |
+| ast-grep rules (`rules/`)  | Inventory of what is left to migrate, plus a few trivial fixes.         |
 
 ## Transforms
 
-Les transforms partagent le moteur `lib/engine.ts` (table de mapping `lib/mapping.ts`,
-helpers JSX `lib/jsx-helpers.ts`). Le source est lu par un scanner TSX (`lib/tsx-scan.ts` :
-imports, prologue de directives, arbre JSX), modifié par éditions de texte positionnées
-(`lib/edits.ts`) : le code non touché garde sa mise en forme. L'entrée doit être un TSX
-valide pour `Bun.Transpiler` (sinon `SyntaxError`, fichier laissé intact).
+All transforms share `lib/engine.ts` (mapping table `lib/mapping.ts`, JSX helpers `lib/jsx-helpers.ts`). Sources are read
+by a TSX scanner (`lib/tsx-scan.ts`) and changed by positioned text edits (`lib/edits.ts`), so untouched code keeps its
+formatting. Input must be TSX that `Bun.Transpiler` accepts; otherwise the file is left unchanged with a `SyntaxError`.
 
-| Transform                    | Périmètre                                                               | Usage                                                |
-| ---------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------- |
-| `transforms/orchestrator.ts` | **tout** le mapping (recommandé pour migration de masse)                | `bun scripts/codemod.ts orchestrator 'src/**/*.tsx'` |
-| `transforms/mui-imports.ts`  | identique à l'orchestrateur (alias sémantique « imports génériques »)   | `bun scripts/codemod.ts mui-imports <fichiers>`      |
-| `transforms/button.ts`       | **dédié** `Button` / `IconButton` / `Fab` (variant-aware)               | `bun scripts/codemod.ts button <fichiers>`           |
-| `transforms/fields.ts`       | **dédié** `TextField` / `Select` / `NativeSelect` (+ `MenuItem`)        | `bun scripts/codemod.ts fields <fichiers>`           |
-| `transforms/icons.ts`        | **dédié** `@mui/icons-material` → `<md-icon>` (Material Symbols, ~96 %) | `bun scripts/codemod.ts icons <fichiers>`            |
+| Transform                    | Scope                                                          |
+| ---------------------------- | -------------------------------------------------------------- |
+| `transforms/orchestrator.ts` | The whole mapping (recommended for bulk migration).            |
+| `transforms/mui-imports.ts`  | Same as the orchestrator (semantic alias).                     |
+| `transforms/button.ts`       | `Button`, `IconButton`, `Fab` only (variant-aware).            |
+| `transforms/fields.ts`       | `TextField`, `Select`, `NativeSelect` (+ `MenuItem`) only.     |
+| `transforms/icons.ts`        | `@mui/icons-material` to `<md-icon>` (Material Symbols names). |
 
-`--dry` liste les fichiers qui changeraient sans les écrire. Chaque transform exporte
-`default (file: { path?, source }, api?, options?) => string`.
+From a checkout of this package:
 
-Le transform `icons.ts` est **séparé** (l'orchestrateur ne touche pas `@mui/icons-material`) : convertit `<CloseIcon/>` → `<md-icon>close</md-icon>` via `lib/icon-names.ts` (PascalCase → snake_case, validé contre les **4253 glyphes** officiels `data/material-symbols-names.json`). Logos de marque (GitHub, X…) gardés + TODO ; voir `../11-material-symbols.md`. Le mapping consolidé (composants + icônes) est exporté en `../mui-m3-map.json` (`bun run scripts/export-map-json.ts`).
-
-Les transforms ciblés (`button`, `fields`) ne touchent **que** leurs composants ; les
-autres imports/JSX MUI sont laissés intacts (migration par lots).
-
-### Ce qui est AUTOMATISÉ
-
-- **Imports** (§2/§3) — réécriture `@mui/material` → `@aphrody/m3-react` :
-  - imports nommés `import { Button } from '@mui/material'`
-  - imports default sous-chemin `import Button from '@mui/material/Button'`
-  - **alias** `import { Button as Btn } from '@mui/material'`
-  - regroupe les wrappers en un seul `import { ... } from '@aphrody/m3-react'` (trié)
-  - ajoute l'import d'effet de bord `@aphrody/material-web/icon/icon.js` si un `<md-icon>` est généré
-- **Choix du wrapper variant-aware** (§3) :
-  - `Button variant="contained"|absent` → `MdFilledButton`,
-    `"outlined"` → `MdOutlinedButton`, `"text"` → `MdTextButton`,
-    `"elevated"` → `MdElevatedButton`, `"tonal"` → `MdFilledTonalButton`
-  - `TextField variant="filled"|absent` → `MdFilledTextField`, `"outlined"` → `MdOutlinedTextField`
-  - `Select` filled/outlined → `MdFilledSelect` / `MdOutlinedSelect`
-  - la prop `variant` est **consommée** (retirée) pour ces composants
-- **Renommage JSX** des composants 1:1 (§3) : `Checkbox`→`MdCheckbox`, `Switch`→`MdSwitch`,
-  `Dialog`→`MdDialog`, `MenuItem`→`MdMenuItem`, `Divider`→`MdDivider`, `Typography`→`MdType`, etc.
-- **Icônes** (§4) : `startIcon={<X/>}` / `endIcon={<X/>}` → `<md-icon slot="icon">{<X/>}</md-icon>`
-  injecté en premier enfant (+ TODO pour `endIcon`, le slot trailing étant à repositionner).
-- **Sous-composants slottés** (§4) : `DialogTitle`/`DialogContent`/`DialogActions`,
-  `CardContent`/`CardHeader`/`CardMedia` → `<div slot="headline|content|actions|media">` (+ TODO).
-- **Layout** (§3/§6) : `Box`/`Container`/`Stack`/`Grid`/`Paper` → `<div>` (+ TODO Tailwind).
-- **Marqueurs `MIGRATION-TODO`** pour tout le non-automatisable, **toujours en JSX valide**
-  (`{/* ... */}` entre enfants, commentaire de bloc ailleurs).
-
-### Ce qui reste MANUEL (signalé par `MIGRATION-TODO`)
-
-- **`sx`** — retirée : à convertir en classes Tailwind (host/layout) + tokens `--md-sys-*`.
-  Le shadow DOM des `md-*` n'est **pas** atteignable par Tailwind (§6).
-- **`onChange(e, value)`** — material-web émet des events natifs `input`/`change` :
-  lire `e.target.value` (le 2ᵉ paramètre disparaît, §4). Le corps du handler **n'est pas**
-  réécrit automatiquement (risqué) — TODO posé quand une signature à 2 args est détectée.
-- **Props sans équivalent** retirées + TODO : `color`, `size`, `fullWidth`,
-  `disableElevation`, `disableRipple` (à gérer via tokens/density/thème).
-- **Composants « gap »** (§3 / `05-gap-analysis.md`) : `Avatar`, `Alert`, `Breadcrumbs`,
-  `Rating`, `Skeleton`, `Backdrop`, `Modal`/`Popover`/`Popper`, `Link`, transitions
-  (`Collapse`/`Fade`/…), `CssBaseline`… **NON transformés** : le JSX et **son import MUI
-  sont conservés** (pas de référence orpheline), un TODO signale le shim à écrire.
-- **Imbrication des slots** Dialog/Card : vérifier que les `<div slot>` sont enfants
-  **directs** du parent `md-*`.
-
-### Limites connues
-
-- Le moteur ne réécrit **pas** le corps des handlers ni la logique d'état (controlled).
-- Les composants en notation membre (`<Foo.Bar/>`) ne sont pas traités.
-- Pas de résolution de re-exports indirects (`import { Button } from './ui'`).
-- Le renommage `Tab`→`MdPrimaryTab` ne distingue pas primary/secondary (choix par défaut).
-- Les enfants d'un élément renommé sont réimprimés sans les blancs JSX à saut de ligne
-  (cosmétique — passer `oxfmt` après coup).
-- Un `startIcon`/`endIcon` sur un élément auto-fermant est retiré sans `<md-icon>` (TODO posé).
-
----
-
-## ast-grep — règles (`rules/` + `sgconfig.yml`)
-
-Complément léger pour **inventorier** ce qui reste à migrer et appliquer des fix triviaux.
-
-```bash
-@ast-grep/cli scan                      # rapport sur tout le projet (depuis ce dossier)
-@ast-grep/cli scan src/                  # rapport ciblé
-@ast-grep/cli scan --filter '^fix-divider$' --update-all   # applique le fix Divider
+```sh
+bun scripts/codemod.ts orchestrator 'src/**/*.tsx' --dry   # list the files that would change
+bun scripts/codemod.ts icons src/App.tsx                   # write the change
 ```
 
-| Règle                   | Type              | Effet                                                                            |
-| ----------------------- | ----------------- | -------------------------------------------------------------------------------- |
-| `detect-mui-imports`    | rapport (warning) | signale tout `import … from '@mui/material'` (racine **et** sous-chemins)        |
-| `detect-gap-components` | rapport (error)   | signale les composants « gap » sans équivalent md (migration manuelle)           |
-| `detect-sx-prop`        | rapport (warning) | signale les props `sx` à convertir (Tailwind + tokens)                           |
-| `fix-divider`           | **fixable**       | `<Divider …/>` → `<md-divider …>` (mapping 1:1 trivial ; l'import reste à gérer) |
+Each transform exports `default (file: { path?, source }, api?, options?) => string`. `icons.ts` is separate (the
+orchestrator does not touch `@mui/icons-material`): `<CloseIcon/>` becomes `<md-icon>close</md-icon>` through
+`lib/icon-names.ts` (PascalCase to snake_case, checked against the 4253 official glyphs in
+`data/material-symbols-names.json`); brand logos are kept with a TODO. The consolidated component and icon mapping is
+`mui-m3-map.json` (`bun scripts/export-map-json.ts`). Targeted transforms (`button`, `fields`) touch only their components.
 
-> ast-grep ne fait **pas** le choix variant-aware ni la gestion d'imports propre :
-> pour une vraie migration, utiliser les transforms. Les règles servent surtout au **rapport**.
+### Automated
 
----
+- Imports: `@mui/material` named, default sub-path and aliased imports become one sorted
+  `import { ... } from "@aphrody/m3-react"`; the side-effect import `@aphrody/material-web/icon/icon.js` is added when an
+  `<md-icon>` is generated.
+- Variant-aware wrappers: `Button` contained (or none) / outlined / text / elevated / tonal become `MdFilledButton`,
+  `MdOutlinedButton`, `MdTextButton`, `MdElevatedButton`, `MdFilledTonalButton`; `TextField` and `Select` filled or
+  outlined become the matching `MdFilled*` / `MdOutlined*`. The `variant` prop is consumed.
+- One-to-one renames: `Checkbox` to `MdCheckbox`, `Switch` to `MdSwitch`, `Dialog` to `MdDialog`, `MenuItem` to
+  `MdMenuItem`, `Divider` to `MdDivider`, `Typography` to `MdType`, and so on.
+- Icons: `startIcon` / `endIcon` become `<md-icon slot="icon">` as the first child (TODO for `endIcon`).
+- Slotted parts: `DialogTitle` / `DialogContent` / `DialogActions` and `CardContent` / `CardHeader` / `CardMedia` become
+  `<div slot="headline|content|actions|media">` (with a TODO).
+- Layout: `Box`, `Container`, `Stack`, `Grid`, `Paper` become `<div>` (TODO for Tailwind classes).
+- Everything else gets a `MIGRATION-TODO` marker that is always valid JSX.
 
-## Tests / vérification
+### Manual (marked `MIGRATION-TODO`)
 
-Fixtures avant/après dans `__testfixtures__/` (préfixe `icons-` → transform `icons`,
-sinon orchestrateur ; découverte automatique) :
+- `sx`: removed; convert to Tailwind classes and `--md-sys-*` tokens. Tailwind cannot reach the shadow DOM of `md-*`.
+- `onChange(e, value)`: material-web emits native `input` / `change` events; read `e.target.value`. Handler bodies are not
+  rewritten.
+- Props without an equivalent (`color`, `size`, `fullWidth`, `disableElevation`, `disableRipple`) are removed.
+- Gap components (`Avatar`, `Alert`, `Breadcrumbs`, `Rating`, `Skeleton`, `Backdrop`, `Modal`, `Popover`, `Popper`, `Link`,
+  transitions, `CssBaseline`, ...) are not transformed; their JSX and MUI import stay.
+- Dialog and Card slots: check that each `<div slot>` is a direct child of the `md-*` parent.
 
-```bash
-bun test ./test                            # sortie TSX valide, idempotence, égalité `bun fmt` avec *.output.tsx
-bun run scripts/run-fixtures.ts            # même comparaison, en PASS/FAIL
-bun run scripts/run-fixtures.ts --update   # régénère les attendus (après modif volontaire d'un transform)
+### Known limits
+
+- Handler bodies and controlled-state logic are not rewritten.
+- Member-expression components (`<Foo.Bar/>`) and indirect re-exports (`import { Button } from "./ui"`) are not handled.
+- `Tab` always becomes `MdPrimaryTab`.
+- Children of a renamed element lose line-break JSX whitespace (cosmetic; run `bun fmt` afterwards).
+- `startIcon` / `endIcon` on a self-closing element is removed without an `<md-icon>` (TODO added).
+
+## ast-grep rules (`rules/`, `sgconfig.yml`)
+
+```sh
+ast-grep scan                                           # report for the project (from this directory)
+ast-grep scan --filter '^fix-divider$' --update-all     # apply the Divider fix
 ```
 
-Les sorties sont comparées après `oxfmt` des deux côtés (binaire `oxfmt` requis dans le PATH).
-Les attendus viennent du moteur jscodeshift/recast d'origine (capture avant migration) ;
-seule exception, `jsx-strings.output.tsx` garde l'espace significatif que recast perdait.
+| Rule                    | Kind            | Effect                                                     |
+| ----------------------- | --------------- | ---------------------------------------------------------- |
+| `detect-mui-imports`    | report, warning | Every `@mui/material` import (root and sub-paths).         |
+| `detect-gap-components` | report, error   | Gap components without an `md-*` equivalent.               |
+| `detect-sx-prop`        | report, warning | `sx` props to convert.                                     |
+| `fix-divider`           | fixable         | `<Divider .../>` to `<md-divider ...>` (the import stays). |
 
-### État vérifié (dernière exécution)
+The rules do not choose variants or manage imports; use the transforms for a real migration.
 
-- `bun test ./test` → 11 fixtures + scanner + rejet TSX invalide, 0 échec.
-- `bun check --noEmit -p tsconfig.json` → 0 erreur.
-- `ast-grep scan` sur fichier d'épreuve → 4 règles déclenchées (2 imports, 1 gap, 1 sx, 2 divider).
+## Fixtures
 
----
-
-## Arborescence
-
-```
-codemods/
-├── README.md                      ← ce fichier
-├── package.json
-├── sgconfig.yml                   ← config ast-grep
-├── lib/
-│   ├── mapping.ts                 ← table MUI→wrappers (source : 00-CONVENTIONS.md §3/§4)
-│   ├── tsx-scan.ts                ← scanner TSX (imports, directives, arbre JSX)
-│   ├── edits.ts                   ← éditions de texte positionnées + validation Bun.Transpiler
-│   ├── imports.ts                 ← filtrage/insertion d'imports
-│   ├── jsx-helpers.ts             ← utilitaires JSX (slots, TODO, props)
-│   └── engine.ts                  ← moteur partagé (imports + JSX + props)
-├── transforms/
-│   ├── orchestrator.ts            ← tout-en-un (recommandé)
-│   ├── mui-imports.ts             ← imports génériques (= orchestrateur)
-│   ├── button.ts                  ← dédié Button/IconButton/Fab (variant-aware)
-│   ├── fields.ts                  ← dédié TextField/Select/NativeSelect
-│   └── icons.ts                   ← dédié @mui/icons-material → <md-icon>
-├── rules/
-│   ├── detect-mui-imports.yml
-│   ├── detect-gap-components.yml
-│   ├── detect-sx-prop.yml
-│   └── fix-divider.yml
-├── scripts/
-│   ├── codemod.ts                 ← CLI d'application des transforms
-│   ├── fixtures.ts                ← découverte + exécution des fixtures
-│   └── run-fixtures.ts            ← test rapide avant/après
-├── test/fixtures.test.ts
-└── __testfixtures__/              ← *.input.tsx / *.output.tsx
-```
+Before/after fixtures live in `__testfixtures__/` (prefix `icons-` runs the `icons` transform, others the orchestrator).
+`bun scripts/run-fixtures.ts` compares them (`--update` regenerates the expected outputs after an intended change).

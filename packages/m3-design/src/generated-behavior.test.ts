@@ -64,7 +64,7 @@ beforeAll(async () => {
         types: ["react", "react-dom"],
         typeRoots: [...new Set([reactTypes, reactDomTypes].map(dir => resolvePath(dir, "..")))],
         paths: {
-          "@aphrody/m3-react": [join(checkout, "packages/m3-react/index.ts")],
+          "@aphrody/m3-react": [join(checkout, "packages/m3-react/src/index.ts")],
           react: [join(reactTypes, "index.d.ts")],
           "react/jsx-runtime": [join(reactTypes, "jsx-runtime.d.ts")],
         },
@@ -93,7 +93,7 @@ beforeAll(async () => {
         name: "browser-consumer-dependencies",
         setup(builder) {
           builder.onResolve({ filter: /^@aphrody\/m3-react$/ }, () => ({
-            path: join(checkout, "packages/m3-react/index.ts"),
+            path: join(checkout, "packages/m3-react/src/index.ts"),
           }));
           builder.onResolve({ filter: /^react(?:\/.*)?$/ }, ({ path }) => ({
             path: Bun.resolveSync(path, checkout),
@@ -116,7 +116,7 @@ beforeAll(async () => {
           // The compiler package does not depend on React wrappers; consumers do.
           // Bind its generated import to the real local consumer package.
           builder.onResolve({ filter: /^@aphrody\/m3-react$/ }, () => ({
-            path: join(checkout, "packages/m3-react/index.ts"),
+            path: join(checkout, "packages/m3-react/src/index.ts"),
           }));
           // Use the renderer's React instance while executing browser bundles in Bun.
           builder.onResolve({ filter: /^react(?:\/.*)?$/ }, ({ path }) => ({

@@ -2,11 +2,21 @@
 
 # @aphrody/m3-theme
 
-Canonical **Material 3 fusion** tokens — one generated stylesheet
-(`tokens.css`), light and dark, that maps the **shadcn/ui** and **Tailwind v4**
-colour aliases onto the Material 3 system roles (`--md-sys-color-*`) emitted by
-[`@aphrody/material-web`](https://www.npmjs.com/package/@aphrody/material-web). Import it once and style with
-either vocabulary; no app hand-rolls colour values.
+One generated Material 3 stylesheet (`tokens.css`, light and dark) that maps the shadcn/ui and Tailwind v4 colour aliases
+onto the `--md-sys-color-*` roles.
+
+```sh
+bun add @aphrody/m3-theme
+```
+
+```ts
+import "@aphrody/m3-theme/tokens.css"; // Bun bundles the CSS into the page
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+The roles are the ones [`@aphrody/material-web`](https://www.npmjs.com/package/@aphrody/material-web) reads. Import the
+sheet once and style with either vocabulary; no app hand-rolls colour values.
 
 ## What's in `tokens.css`
 
@@ -21,11 +31,6 @@ Because the shadcn and Tailwind aliases reference `var(--md-sys-color-*)`, the
 dark theme only re-declares the M3 palette — the aliases follow automatically.
 
 ## Use
-
-```ts
-// In any Bun/web app — Bun bundles the CSS into the page.
-import "@aphrody/m3-theme/tokens.css";
-```
 
 ```html
 <!-- force the dark theme regardless of the OS preference -->

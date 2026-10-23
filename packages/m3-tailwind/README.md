@@ -1,10 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-tailwind`
+# @aphrody/m3-tailwind
 
-Tailwind v4 CSS-first preset for Material 3. `preset.css` is generated from `@aphrody/m3-tokens` (roles, corner scale,
-type, breakpoints, springs and directional shapes from the TypeScript tables; durations, easings, elevation and state
-layers from `m3-tokens.css`). It is one `@import`: no JS plugin, no config file.
+Tailwind v4 CSS-first preset for Material 3: one `@import`, no JS plugin, no config file.
+
+```sh
+bun add @aphrody/m3-tailwind @aphrody/m3-tokens tailwindcss
+```
 
 ```css
 @import "tailwindcss";
@@ -12,6 +14,11 @@ layers from `m3-tokens.css`). It is one `@import`: no JS plugin, no config file.
 @import "@aphrody/m3-tokens/expressive.css";
 @import "@aphrody/m3-tailwind/preset.css";
 ```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+`preset.css` is generated from `@aphrody/m3-tokens` (roles, corner scale, type, breakpoints, springs and directional
+shapes from the TypeScript tables; durations, easings, elevation and state layers from `m3-tokens.css`).
 
 Colour values are set at runtime (`applyDynamicColor`, `<m3-theme>`, `M3Html` in `@aphrody/m3-next`).
 

@@ -1,8 +1,28 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/m3-mcp
 
-The design/UI tool host of aphrody-m3: packages, M3 tokens, docs, research links, templates,
-Material Symbols and desktop icons, served from this repository's files. It is not an MCP server:
-the single `aphrody-mcp` hosts these tools (`aphrody mcp-server`, alias `m3-mcp`).
+MCP-shaped design/UI tools (packages, M3 tokens, docs, templates, Material Symbols, desktop icons) for a host MCP server; it is not a server itself.
+
+```sh
+bun add @aphrody/m3-mcp
+```
+
+```ts
+import { callM3Tool, listM3Tools } from "@aphrody/m3-mcp";
+
+console.log(listM3Tools().map(tool => tool.name));
+const result = await callM3Tool("m3_token_lookup", { query: "primary" });
+console.log(result.content[0]?.text);
+```
+
+File-backed tools read an M3 source root: set `APHRODY_M3_ROOT` to a checkout that contains `packages/m3-tokens`.
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+## Tools
+
+The single `aphrody-mcp` hosts these tools (`aphrody mcp-server`, alias `m3-mcp`). From a checkout:
 
 ```sh
 bun src/tool-host.ts list                          # tool definitions (JSON)

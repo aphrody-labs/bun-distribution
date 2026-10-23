@@ -1,37 +1,44 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-baseui`
+# @aphrody/m3-baseui
 
-Material 3 for [Base UI](https://base-ui.com) (`@base-ui/react` from the root catalog; pinned upstream sources live in `vendor/base-ui`). Base UI
-keeps behaviour, accessibility and the `data-*` state attributes; this package adds the M3 classes and the stylesheets that
-paint them from the `--md-sys-*` tokens. Every Base UI primitive is wrapped: 38 components, 0 CSS-in-JS, no MUI.
+Material 3 classes and stylesheets for every [Base UI](https://base-ui.com) primitive (`@base-ui/react`), painted from the `--md-sys-*` tokens.
+
+```sh
+bun add @aphrody/m3-baseui @aphrody/m3-tokens react react-dom
+```
 
 ```tsx
 import "@aphrody/m3-tokens/m3-tokens.css";
 import "@aphrody/m3-tokens/expressive.css";
 import "@aphrody/m3-baseui/m3-baseui.css"; // or core.css + the sheets you use, below
-import { M3Button, M3Dialog, M3Select, M3Switch } from "@aphrody/m3-baseui";
+import { M3Button, M3Dialog } from "@aphrody/m3-baseui";
 
-<M3Button variant="tonal" size="md">
-  Save
-</M3Button>;
-
-<M3Dialog.Root>
-  <M3Dialog.Trigger render={<M3Button variant="text" />}>
-    Delete
-  </M3Dialog.Trigger>
-  <M3Dialog.Portal>
-    <M3Dialog.Backdrop />
-    <M3Dialog.Popup>
-      <M3Dialog.Title>Delete the file?</M3Dialog.Title>
-      <M3Dialog.Description>It cannot be undone.</M3Dialog.Description>
-      <M3Dialog.Close render={<M3Button variant="text" />}>
-        Cancel
-      </M3Dialog.Close>
-    </M3Dialog.Popup>
-  </M3Dialog.Portal>
-</M3Dialog.Root>;
+export function DeleteFile() {
+  return (
+    <M3Dialog.Root>
+      <M3Dialog.Trigger render={<M3Button variant="text" />}>
+        Delete
+      </M3Dialog.Trigger>
+      <M3Dialog.Portal>
+        <M3Dialog.Backdrop />
+        <M3Dialog.Popup>
+          <M3Dialog.Title>Delete the file?</M3Dialog.Title>
+          <M3Dialog.Description>It cannot be undone.</M3Dialog.Description>
+          <M3Dialog.Close render={<M3Button variant="text" />}>
+            Cancel
+          </M3Dialog.Close>
+        </M3Dialog.Popup>
+      </M3Dialog.Portal>
+    </M3Dialog.Root>
+  );
+}
 ```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+Base UI keeps behaviour, accessibility and the `data-*` state attributes; this package adds the M3 classes and the sheets.
+Every Base UI primitive is wrapped: 38 components, no CSS-in-JS, no MUI. Peers: `react` and `react-dom` 19.
 
 ## Shape of the API
 

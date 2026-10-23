@@ -30,15 +30,16 @@ Run every check and paste the results into `deploy.md`:
 
 ```bash
 npx playwright test                                                  # replica-test
-python3 ../replica-diff/parity.py replica/features.csv               # must-haves done
-python3 ../replica-brand/sweep.py . --config replica/brand.json      # exit 0: clean
-python3 ../replica-launch/listing.py replica/launch/listing.json     # if shipping to stores
+m3-design parity replica/features.csv                               # must-haves done
+bun ../replica-brand/sweep.ts . --config replica/brand.json         # exit 0: clean
+bun ../replica-launch/listing.ts replica/launch/listing.json        # if shipping to stores
 npm run build                                                        # production build passes
 ```
 
-(Paths are relative to wherever the pack is installed. Under
-`~/.Codex/skills/` that is `~/.Codex/skills/replica-diff/parity.py` and so
-on.)
+(Script paths are relative to this skill's folder, wherever the pack is
+installed: `../replica-brand/sweep.ts` sits next to this folder. `m3-design` is
+the Bun OS design CLI: `bun run bunos design` from a Bun OS checkout root, or
+`bunx @aphrody/m3-design` elsewhere.)
 
 Plus by hand: no open S1 or S2 bugs, privacy policy and terms pages live
 (listing every processor), cookie banner if you use non-essential cookies in

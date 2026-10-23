@@ -3,8 +3,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { Fade, Collapse } from "../transitions/index.ts";
-import { useTransitionState } from "../transitions/use-transition-state.ts";
+import { Fade, Collapse } from "../src/transitions/index.ts";
+import { useTransitionState } from "../src/transitions/use-transition-state.ts";
 
 let root: Root | undefined;
 let host: HTMLElement | undefined;

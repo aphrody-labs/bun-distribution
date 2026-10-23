@@ -2,68 +2,63 @@
 
 # @aphrody/eslint-plugin-m3
 
-Règles de lint pour les sites qui **consomment** material-web
-(`@aphrody/m3-react` + Material Symbols). Écrit avec l'API ESLint-compatible :
-tourne **sous `bun lint`** (champ `jsPlugins` de `.oxlintrc.json`),
-sans transpilation (ESM pur).
+Lint rules for code that consumes material-web (`@aphrody/m3-react` `Md*` wrappers, `md-*` elements, Material Symbols), for `bun lint` (`jsPlugins`) or ESLint-compatible hosts.
 
-Cible les composants `Md*` (wrappers React) et `md-*` (custom elements). Pensé en
-binôme avec le kit de migration MUI→M3 (`migration/`) : ce que les codemods
-laissent en `MIGRATION-TODO`, ce plugin l'attrape ensuite en continu.
-
-## Règles (8)
-
-| Règle                          | Type  | Fix  | Attrape                                                                                                                                                                                                                                                                          |
-| ------------------------------ | ----- | :--: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m3/valid-icon-name`           | error | auto | Le texte d'un `<md-icon>`/`<MdIcon>` doit être un glyphe Material Symbols valide (snake_case). Détecte les restes PascalCase MUI (`Delete` → `delete`) et les noms introuvables — validé contre les **4253** glyphes officiels. Autofix quand le snake_case est un glyphe connu. |
-| `m3/valid-color-role`          | error |  —   | Un `var(--md-sys-color-<rôle>)` doit référencer un des **~49 rôles** réellement émis par material-web. Attrape les typos (`primry` → suggère `primary`), rôles MUI/Tailwind, casse — sinon la couleur résout en `unset` silencieux.                                              |
-| `m3/no-sx-prop`                | error |  —   | Le prop `sx` (MUI/Emotion) n'a **aucun effet** sur un `md-*` → `className`/Tailwind + tokens `--md-sys-*`.                                                                                                                                                                       |
-| `m3/no-mui-prop-on-md`         | error | auto | Noms de props MUI laissés sur un wrapper (`checked`→`selected`, `title`→`text`, `open`→`opened`, `value`→`activeTabIndex`). Autofix : renomme l'attribut.                                                                                                                        |
-| `m3/no-mui-import`             | warn  |  —   | Imports `@mui/material` / `@mui/icons-material` / `@mui/x-*` résiduels (mélange de systèmes, double bundle).                                                                                                                                                                     |
-| `m3/prefer-icon-token`         | warn  |  —   | `fontVariationSettings` inline sur une icône → tokens `--md-icon-fill/wght/grad/opsz` (héritables, animables).                                                                                                                                                                   |
-| `m3/require-icon-button-label` | warn  |  —   | Un bouton-icône (`md-*-icon-button`/`MdIconButton`) sans nom accessible (`aria-label`/`aria-labelledby`/`title`) — a11y, WCAG 4.1.2.                                                                                                                                             |
-| `m3/no-hardcoded-color`        | warn  |  —   | Couleur en dur (`#hex`/`rgb()`) dans `style`/`sx` d'un `md-*` → rôle `var(--md-sys-color-*)` (suit le thème + dark + dynamic-color).                                                                                                                                             |
-
-Deux règles sont **auto-corrigeables** (`bun lint --fix`) : `valid-icon-name` et `no-mui-prop-on-md` — idéal pour finir un port MUI→M3 en un passage.
-
-## Installation
-
-```bash
-bun add -D @aphrody/eslint-plugin-m3
+```sh
+bun add -d @aphrody/eslint-plugin-m3
 ```
-
-## Usage — `bun lint`
-
-`.oxlintrc.json` :
 
 ```json
 {
   "jsPlugins": ["./node_modules/@aphrody/eslint-plugin-m3/index.js"],
   "rules": {
     "m3/valid-icon-name": "error",
+    "m3/valid-color-role": "error",
     "m3/no-sx-prop": "error",
     "m3/no-mui-prop-on-md": "error",
     "m3/no-mui-import": "warn",
     "m3/prefer-icon-token": "warn",
+    "m3/require-icon-button-label": "warn",
     "m3/no-hardcoded-color": "warn"
   }
 }
 ```
 
-> Le chemin de `jsPlugins` est résolu **relativement au fichier `.oxlintrc.json`**.
+That is `.oxlintrc.json` for `bun lint`; the `jsPlugins` path is relative to that file. Plain ESM, no transpilation.
 
-## Presets
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
-- `m3.configs.recommended` — règles structurelles en `error`, suggestions en `warn`.
-- `m3.configs.strict` — **tout** en `error` (utile pour clôturer un port MUI→M3).
+It pairs with `@aphrody/m3-codemods`: what the codemods leave as `MIGRATION-TODO`, these rules keep catching.
 
-## Développement
+## Rules (8)
 
-```bash
-bun test/run.ts          # lance bun lint sur les fixtures (8/8 sur bad, 0 sur good)
-bun scripts/sync-symbol-names.ts   # régénère data/material-symbols-names.js
+| Rule                           | Level | Fix  | Catches                                                                                                                                      |
+| ------------------------------ | ----- | :--: | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `m3/valid-icon-name`           | error | auto | `<md-icon>` / `<MdIcon>` text that is not a Material Symbols glyph (checked against 4253 glyphs); fixes MUI PascalCase leftovers (`Delete`). |
+| `m3/valid-color-role`          | error |  -   | `var(--md-sys-color-<role>)` with a role material-web does not emit (typos, MUI or Tailwind names); suggests the closest role.               |
+| `m3/no-sx-prop`                | error |  -   | `sx` on an `md-*` element, where it has no effect; use `className` and `--md-sys-*` tokens.                                                  |
+| `m3/no-mui-prop-on-md`         | error | auto | MUI prop names left on a wrapper (`checked` to `selected`, `title` to `text`, `open` to `opened`, `value` to `activeTabIndex`).              |
+| `m3/no-mui-import`             | warn  |  -   | Remaining `@mui/material`, `@mui/icons-material` or `@mui/x-*` imports.                                                                      |
+| `m3/prefer-icon-token`         | warn  |  -   | Inline `fontVariationSettings` on an icon; use `--md-icon-fill`, `--md-icon-wght`, `--md-icon-grad`, `--md-icon-opsz`.                       |
+| `m3/require-icon-button-label` | warn  |  -   | Icon buttons without an accessible name (`aria-label`, `aria-labelledby`, `title`); WCAG 4.1.2.                                              |
+| `m3/no-hardcoded-color`        | warn  |  -   | Hard-coded `#hex` / `rgb()` in `style` or `sx` of an `md-*` element; use a `var(--md-sys-color-*)` role.                                     |
+
+`bun lint --fix` applies the two autofixes (`valid-icon-name`, `no-mui-prop-on-md`).
+
+## Presets (ESLint flat config)
+
+```js
+import m3 from "@aphrody/eslint-plugin-m3";
+
+export default [m3.configs.recommended]; // or m3.configs.strict: every rule as an error
 ```
 
-La liste des glyphes (`data/material-symbols-names.js`) est synchronisée depuis
-`migration/codemods/data/material-symbols-names.json` (source : codepoints
-officiels Google `google/material-design-icons`, Apache-2.0).
+## Development
+
+```sh
+bun test/run.ts                    # bun lint over the fixtures (every rule fires on bad, none on good)
+bun scripts/sync-symbol-names.ts   # regenerate data/material-symbols-names.js
+```
+
+The glyph list (`data/material-symbols-names.js`) is generated from `../m3-codemods/data/material-symbols-names.json`
+(official codepoints of `google/material-design-icons`, Apache-2.0); `prepack` runs the sync.

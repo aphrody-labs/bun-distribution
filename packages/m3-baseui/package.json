@@ -3,12 +3,16 @@
   "version": "1.4.4",
   "description": "Base UI with Material 3 styling: every Base UI primitive wrapped with M3 token classes; pinned upstream sources in vendor/base-ui, consumer uses the root catalog package.",
   "license": "Apache-2.0",
-  "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
     "directory": "packages/m3-baseui"
   },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-baseui#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
+  "author": "aphrody-code",
   "files": [
     "src",
     "css",
@@ -52,6 +56,6 @@
     "react-dom": ">=19.0.0"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

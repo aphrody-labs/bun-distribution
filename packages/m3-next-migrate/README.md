@@ -2,18 +2,27 @@
 
 # @aphrody/m3-next-migrate
 
-High-performance migration engine, AST codemod and runtime shims to migrate **Next.js 16** UI and React components to **Tauri v2** desktop applications or **Bun / Vite** web SPAs.
+Codemods that move a Next 14/15, MUI or Tailwind v3 app to Next.js 16 with M3, plus the analysis, scaffolding and runtime shims that take a Next 16 app to Tauri or a native Bun web app.
+
+```sh
+bun add -d @aphrody/m3-next-migrate   # use bun add (not -d) when the migrated app imports the shims
+```
+
+```sh
+bunx --bun next-migrate codemod --list
+bunx --bun next-migrate codemod next16 ./my-app          # report only
+bunx --bun next-migrate codemod all ./my-app --apply     # write
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 ## Codemods: to the Next 16 + M3 stack
 
-Two directions. The codemods below take an existing Next 14/15, MUI or Tailwind v3 app **to** Next.js 16, Base UI with M3 and
-Tailwind v4 (the stack of `@aphrody/m3-next`, `@aphrody/m3-baseui` and `@aphrody/m3-tailwind`); the rest of this README takes a Next 16
-app out to Tauri or Vite. Without `--apply` nothing is written: you get a report of what would change and what needs a human.
+The codemods take an existing app **to** Next.js 16, Base UI with M3 and Tailwind v4 (the stack of `@aphrody/m3-next`,
+`@aphrody/m3-baseui` and `@aphrody/m3-tailwind`); the rest of this README takes a Next 16 app out to Tauri or Vite. Without
+`--apply` nothing is written: you get a report of what would change and what needs a human.
 
 ```sh
-next-migrate codemod --list
-next-migrate codemod next16 ./my-app            # report
-next-migrate codemod all ./my-app --apply       # write
 next-migrate pages-hints ./my-app               # Pages Router -> App Router plan, nothing rewritten
 ```
 

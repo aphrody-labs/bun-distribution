@@ -17,8 +17,12 @@ Reads `replica/recon.md` and the screenshots in `replica/screens/`. Writes
 Tailwind mapping, and `replica/design/components.md`.
 
 ```bash
-python3 contrast.py replica/design/tokens.json     # every text pair, WCAG ratio
+m3-design contrast replica/design/tokens.json     # every text pair, WCAG ratio
 ```
+
+`m3-design` is the Bun OS design CLI (`@aphrody/m3-design`): run it as `bun run bunos design` from a
+Bun OS checkout root, or `bunx @aphrody/m3-design` elsewhere. The original standard-library Python
+tools stay in this folder as the upstream reference.
 
 ## The rules
 
@@ -60,7 +64,7 @@ Add a `pairs` list for every text and background combination the app uses,
 then:
 
 ```bash
-python3 contrast.py replica/design/tokens.json
+m3-design contrast replica/design/tokens.json
 ```
 
 AA is the floor: 4.5:1 for body text, 3:1 for large text and for input

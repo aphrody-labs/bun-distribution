@@ -4,7 +4,7 @@ description: >-
   Compares an app clone against the original: a feature parity score from the
   feature matrix (weighted by must, should, could) with the missing list in
   build order, plus a screenshot layout diff that ignores colour so a rebrand
-  does not count against you. Two standard-library Python tools. Use when the
+  does not count against you. Two Bun-native tools. Use when the
   user says "how close is my clone", "compare it to the original", "what's
   missing", "parity check", "diff the screens", "is it ready", or after
   /replica-test.
@@ -12,14 +12,18 @@ description: >-
 
 # replica-diff
 
-Two tools in this folder, both standard-library Python, no installs:
+Two tools, shipped with the Bun OS design CLI, no installs:
 
 ```bash
-python3 parity.py replica/features.csv                         # feature parity + missing list
-python3 imgdiff.py replica/screens/S07.png replica/clone-screens/S07.png --out diff-S07.png
-python3 imgdiff.py a.png b.png --json > replica/diffs/S07.json # for parity.py --visual
-python3 parity.py replica/features.csv --visual replica/diffs/*.json --markdown > replica/parity.md
+m3-design parity replica/features.csv                         # feature parity + missing list
+m3-design imgdiff replica/screens/S07.png replica/clone-screens/S07.png --out diff-S07.png
+m3-design imgdiff a.png b.png --json > replica/diffs/S07.json # for parity --visual
+m3-design parity replica/features.csv --visual replica/diffs/*.json --markdown > replica/parity.md
 ```
+
+`m3-design` is the Bun OS design CLI (`@aphrody/m3-design`): run it as `bun run bunos design` from a
+Bun OS checkout root, or `bunx @aphrody/m3-design` elsewhere. The original standard-library Python
+tools stay in this folder as the upstream reference.
 
 ## What parity means here
 
@@ -37,7 +41,7 @@ Make sure `replica/features.csv` is current: every row's `clone` column is
 `yes`, `partial` (with a note), `no`, or `skip` (with a reason). Then:
 
 ```bash
-python3 parity.py replica/features.csv
+m3-design parity replica/features.csv
 ```
 
 It weights must 3, should 2, could 1, counts partial as half, leaves out
@@ -54,7 +58,7 @@ user's own account, saved in `replica/screens/`. The clone's go in
 `replica/clone-screens/`.
 
 ```bash
-python3 imgdiff.py replica/screens/S07.png replica/clone-screens/S07.png --out replica/diffs/S07.png
+m3-design imgdiff replica/screens/S07.png replica/clone-screens/S07.png --out replica/diffs/S07.png
 ```
 
 Layout mode (default) turns both into edge maps, cuts them into a grid, and

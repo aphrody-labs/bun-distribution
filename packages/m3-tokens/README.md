@@ -1,8 +1,25 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-tokens`
+# @aphrody/m3-tokens
 
-Material 3 design tokens as Bun-native TypeScript and CSS. Private, consumed through the workspace.
+Material 3 design tokens (`--md-sys-*`) as Bun-native TypeScript and CSS, with seed-based dynamic colour.
+
+```sh
+bun add @aphrody/m3-tokens
+```
+
+```ts
+import "@aphrody/m3-tokens/m3-tokens.css";
+import {
+  applyDynamicColor,
+  cssFromSeed,
+} from "@aphrody/m3-tokens/dynamic-color";
+
+applyDynamicColor("#6750a4"); // sets the --md-sys-color-* roles on <html>
+const sheet = cssFromSeed("#6750a4"); // light and dark role sheet, e.g. for SSR
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 | Export                               | What                                                                                                                                                                                                             |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -21,5 +38,5 @@ State layers: focus and pressed stay at `0.10` (Compose); Material Web v0_192 us
 ```sh
 bun test test/      # tokens, contrast, variants, breakpoints, expressive
 bun run typecheck
-bun run build       # tsup + declarations
+bun run build       # build.ts (Bun.build) + bun check -p tsconfig.build.json
 ```

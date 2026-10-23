@@ -11,17 +11,17 @@
     "material-web",
     "oxlint"
   ],
-  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/eslint-plugin-m3#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/eslint-plugin-m3"
+  },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/eslint-plugin-m3#readme",
   "bugs": {
-    "url": "https://github.com/aphrody-code/material-web/issues"
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
   },
   "license": "Apache-2.0",
   "author": "aphrody-code",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aphrody-code/material-web.git",
-    "directory": "packages/eslint-plugin-m3"
-  },
   "files": [
     "index.js",
     "index.d.ts",
@@ -54,6 +54,6 @@
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

@@ -1,23 +1,42 @@
+<!-- SPDX-License-Identifier: Apache-2.0 AND MIT -->
+
 # @aphrody/m3-ai
 
-Material Design 3 components for agent interfaces: tool-call cards, markdown, chat bubbles, the
-chat composer, model selector, worker and branch cards, and the task board. They are the SpaceUI
-`@spacedrive/ai` set, rebuilt on `@aphrody/m3-primitives`, the M3 color roles, typescale, shapes
-and motion of Aphrody OS, and Material Symbols icons.
-
-## Install
+Material Design 3 React components for agent interfaces (tool-call cards, markdown, chat bubbles and composer, model selector, task board) and a streaming client for OpenAI-compatible chat servers, rebuilt from SpaceUI's `@spacedrive/ai`.
 
 ```sh
-bun add @aphrody/m3-ai @aphrody/m3-primitives @aphrody/m3-motion
+bun add @aphrody/m3-ai @aphrody/m3-primitives @aphrody/m3-motion react react-dom tailwindcss
 ```
 
-Peers: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
+```tsx
+import { useState } from "react";
+import { ChatComposer, MessageBubble } from "@aphrody/m3-ai";
+
+export function Chat() {
+  const [draft, setDraft] = useState("");
+  return (
+    <>
+      <MessageBubble content="Hello" isUser />
+      <ChatComposer
+        draft={draft}
+        onDraftChange={setDraft}
+        onSend={() => setDraft("")}
+      />
+    </>
+  );
+}
+```
+
+License: Apache-2.0 AND MIT (`LICENSE`, `LICENSE.spaceui`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+Built on `@aphrody/m3-primitives`, the M3 colour roles, typescale, shapes and motion, and Material Symbols icons. Peers:
+`react` and `react-dom` 18 or 19, `tailwindcss` 4.1+. `@aphrody/m3-ai/ag-ui` holds the AG-UI protocol bindings.
 
 ## CSS setup
 
 The components ship Tailwind class names that use the M3 utilities of `@aphrody/m3-theme`. Import
 the tokens, a palette sheet and the M3 utilities, then let Tailwind scan the package output. The
-full recipe is in [`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md),
+full recipe is in [SPACEUI-M3-FUSION.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md),
 section "Integration":
 
 ```css
@@ -30,7 +49,7 @@ section "Integration":
 @source "../node_modules/@aphrody/m3-ai/dist";
 ```
 
-Register the Material Symbols font once, for example with `ensureMaterialSymbols()` from
+Load the Material Symbols font once: import `@aphrody/m3-fonts/fonts-symbols.css`, or call `ensureMaterialSymbols()` from
 `@aphrody/material-web/icon/material-symbols.js`.
 
 ## Usage

@@ -1,10 +1,26 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-bun`
+# @aphrody/m3-bun
 
-The one Bun-native tool for M3 apps: a single Bun plugin and the `m3-bun` CLI. It builds, minifies, serves with HMR,
-compiles to one executable, packages and generates deploy configs. One Bun file server serves the UI files and the API
-from the same process. Full guide: `docs/guides/M3-BUN.md`.
+One Bun plugin and the `m3-bun` CLI that build, serve (HMR), compile, package and generate deploy configs for M3 apps.
+
+Status: this package depends on `@aphrody/m3`, which is private in this repository; npm only has the older
+`@aphrody/m3@3.3.10`, so `bun add @aphrody/m3-bun` from npm cannot resolve `@aphrody/m3@1.4.4` today. Inside this
+workspace it works through `workspace:*`.
+
+```sh
+bun add -d @aphrody/m3-bun
+```
+
+```sh
+m3-bun create web my-app       # starter from @aphrody/scaffold (templates: web, app, example)
+cd my-app && m3-bun dev        # HMR dev server: UI and API in one process
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+Full guide: [M3-BUN.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/guides/M3-BUN.md).
+
+## Commands
 
 ```sh
 m3-bun dev                     # HMR dev server: UI and API in one process (bunfig [serve.static] plugins)
@@ -35,6 +51,9 @@ plugins = ["@aphrody/m3-bun/plugin"]
 
 ```ts
 // m3.config.ts
+import { defineM3Config } from "@aphrody/m3/config";
+import { defineM3Bun } from "@aphrody/m3-bun/config";
+
 export default defineM3Config({
   entry: "src/index.html",
   theme: { seed: "#6750a4" },

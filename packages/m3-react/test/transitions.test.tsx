@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { Collapse, Fade, Grow, Slide, Zoom } from "../transitions/index.js";
-import { isVisible, resolveTimeout } from "../transitions/use-transition-state.js";
+import { Collapse, Fade, Grow, Slide, Zoom } from "../src/transitions/index.js";
+import { isVisible, resolveTimeout } from "../src/transitions/use-transition-state.js";
 
 // --- Pure helpers (no DOM) -------------------------------------------------
 

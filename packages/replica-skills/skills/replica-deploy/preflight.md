@@ -7,8 +7,8 @@ Date: {{YYYY-MM-DD}}  Commit: {{sha}}  Go from user: {{yes / not yet}}
 - [ ] e2e suite green: {{n passed / n}}
 - [ ] no open S1 or S2 bugs
 - [ ] parity: all must-haves done ({{n/n}}), feature score {{n}}
-- [ ] rebrand sweep clean (`sweep.py` exit 0)
-- [ ] store listing passes (`listing.py` exit 0), if shipping to stores
+- [ ] rebrand sweep clean (`sweep.ts` exit 0)
+- [ ] store listing passes (`listing.ts` exit 0), if shipping to stores
 - [ ] production build passes
 - [ ] privacy policy and terms live, every processor listed
 - [ ] account deletion works

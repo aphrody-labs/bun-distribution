@@ -13,11 +13,11 @@ import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { flushSync } from "react-dom";
 
-import { MdFilledButton } from "../wrappers/button.js";
-import { MdCheckbox } from "../wrappers/checkbox.js";
-import { MdIcon } from "../wrappers/icon.js";
-import { MdCard } from "../wrappers/card.js";
-import { MdOutlinedTextField } from "../wrappers/textfield.js";
+import { MdFilledButton } from "../src/wrappers/button.js";
+import { MdCheckbox } from "../src/wrappers/checkbox.js";
+import { MdIcon } from "../src/wrappers/icon.js";
+import { MdCard } from "../src/wrappers/card.js";
+import { MdOutlinedTextField } from "../src/wrappers/textfield.js";
 
 let root: Root | undefined;
 let host: HTMLElement | undefined;

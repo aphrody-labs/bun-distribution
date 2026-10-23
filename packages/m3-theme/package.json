@@ -10,17 +10,17 @@
     "spaceui",
     "tailwind"
   ],
-  "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/m3-theme"
+  },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-theme#readme",
   "bugs": {
-    "url": "https://github.com/aphrody-code/material-web/issues"
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
   },
   "license": "Apache-2.0",
   "author": "aphrody-code",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aphrody-code/material-web.git",
-    "directory": "packages/m3-theme"
-  },
   "files": [
     "dist",
     "tokens.css",
@@ -68,7 +68,8 @@
     "generate:fusion": "bun run generate",
     "test": "APHRODY_FFI_DEV=1 bun test",
     "fixture:mcu": "bun run scripts/mcu-fixture.ts",
-    "fixture:mcu-fidelity": "bun run scripts/mcu-fidelity-fixture.ts"
+    "fixture:mcu-fidelity": "bun run scripts/mcu-fidelity-fixture.ts",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*"
@@ -82,6 +83,6 @@
     "react": ">=18.0.0"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

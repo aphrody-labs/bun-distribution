@@ -3,12 +3,16 @@
   "version": "1.4.4",
   "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
   "license": "Apache-2.0",
-  "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
     "directory": "packages/m3-front"
   },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-front#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
+  "author": "aphrody-code",
   "files": [
     "src"
   ],
@@ -34,14 +38,17 @@
     "lint": "bun lint src test"
   },
   "dependencies": {
-    "@aphrody/m3-tokens": "workspace:*",
-    "@aphrody/material-web": "catalog:"
+    "@aphrody/m3-tokens": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/bun": "^3.3.0",
-    "@aphrody/m3-config": "workspace:*"
+    "@aphrody/m3-config": "workspace:*",
+    "@aphrody/material-web": "catalog:"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
+  },
+  "peerDependencies": {
+    "@aphrody/material-web": "^3.3.3"
   }
 }

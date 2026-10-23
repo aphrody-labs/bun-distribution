@@ -10,6 +10,15 @@
     "tailwind"
   ],
   "license": "Apache-2.0 AND MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/m3-explorer"
+  },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-explorer#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
   "author": "aphrody-code",
   "files": [
     "dist",
@@ -36,7 +45,8 @@
     "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-explorer",
     "typecheck": "bun check --noEmit",
     "typecheck:fast": "bun check --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@aphrody/m3-primitives": "workspace:*",
@@ -51,6 +61,6 @@
     "tailwindcss": ">=4.1.0"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

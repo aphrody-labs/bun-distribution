@@ -18,12 +18,12 @@ between "a clone" and "your app".
 Tool in this folder:
 
 ```bash
-python3 sweep.py . --avoid "Original Name,Its Company" --domains original.com --colors "#006bff"
-python3 sweep.py . --config replica/brand.json        # same, from the brand file
+bun sweep.ts . --avoid "Original Name,Its Company" --domains original.com --colors "#006bff"
+bun sweep.ts . --config replica/brand.json        # same, from the brand file
 ```
 
 Writes `replica/brand.md` and `replica/brand.json` (`avoid`, `domains`,
-`colors`, used by `sweep.py`, `listing.py` and replica-deploy).
+`colors`, used by `sweep.ts`, `listing.ts` and replica-deploy).
 
 ## Step 1: the name
 
@@ -63,7 +63,7 @@ Pick a primary brand hue from a different family than the original's (if
 theirs is blue, yours is not a nearby blue). Then:
 
 ```bash
-python3 ../replica-design/contrast.py replica/design/tokens.json
+m3-design contrast replica/design/tokens.json   # bun run bunos design contrast, or bunx @aphrody/m3-design contrast
 ```
 
 Zero AA failures. Add the original's brand colours to `brand.json` so the
@@ -94,7 +94,7 @@ error) in that voice. All fresh, none echoing the original's phrasing.
 Replace every placeholder name, colour and string. Then:
 
 ```bash
-python3 sweep.py . --config replica/brand.json
+bun sweep.ts . --config replica/brand.json
 ```
 
 It searches file contents and file names for the original's name (also inside

@@ -1,10 +1,29 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-next`
+# @aphrody/m3-next
 
-Next.js 16 for the M3 stack: App Router, Cache Components, `proxy.ts`, React Compiler, typed routes, Tailwind v4 and Base UI,
-run on Bun with no Node. `apps/m3-next-example` is a working app (build and serve through m3-next), `apps/m3-next-tauri-example` the static export a
-Tauri webview loads.
+Next.js 16 App Router integration for the M3 stack (config, server and client theme components, proxy, CSS) with the `m3-next` runner that runs Next on Bun.
+
+```sh
+bun add @aphrody/m3-next next react react-dom tailwindcss
+```
+
+```ts
+// next.config.ts
+import { withM3 } from "@aphrody/m3-next";
+
+export default withM3({}, { cacheComponents: true, typedRoutes: true }); // reactCompiler: true needs babel-plugin-react-compiler
+```
+
+```sh
+m3-next dev        # or build, start: the app's Next.js on Bun
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+App Router, Cache Components, `proxy.ts`, React Compiler, typed routes, Tailwind v4 and Base UI, run on Bun with no Node.
+In this repository `apps/m3-next-example` is a working app and `apps/m3-next-tauri-example` the static export a Tauri
+webview loads.
 
 | Import                    | Runtime                            | Contents                                                                                                                                          |
 | ------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,14 +36,7 @@ Tauri webview loads.
 
 ## Set up
 
-```ts
-// next.config.ts
-import { withM3 } from "@aphrody/m3-next";
-export default withM3(
-  {},
-  { reactCompiler: true, cacheComponents: true, typedRoutes: true },
-);
-```
+The `next.config.ts` above is the whole config step.
 
 `withM3` transpiles the M3 packages (including `@aphrody/m3-baseui`, which ships source), keeps `@aphrody/bun` external on the
 server, rewrites barrel imports and keeps strict mode on. Options never override a key the config sets.

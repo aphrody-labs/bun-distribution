@@ -2,7 +2,24 @@
 
 # @aphrody/m3-reader
 
-Material 3 React readers for paged and vertical manga and illustrated books. This package owns the reader UI, paging, virtual scrolling, zoom, fullscreen, thumbnails, keyboard controls, and lightbox focus. It does not own an asset server, editorial API, persistence, or OCR policy.
+Material 3 React readers for paged and vertical manga and illustrated books.
+
+```sh
+bun add @aphrody/m3-reader react react-dom tailwindcss
+```
+
+```tsx
+import "@aphrody/m3-reader/styles.css";
+import { MangaReader } from "@aphrody/m3-reader";
+
+export function Chapter({ pages }: { pages: string[] }) {
+  return <MangaReader title="Chapter 1" pages={pages} direction="rtl" />;
+}
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+This package owns the reader UI, paging, virtual scrolling, zoom, fullscreen, thumbnails, keyboard controls, and lightbox focus. It does not own an asset server, editorial API, persistence, or OCR policy.
 
 Import `@aphrody/m3-reader/styles.css` once in the host stylesheet. The host must load Tailwind 4 and scan the package's `dist` directory with `@source`, as with other Aphrody M3 component packages. CSS colors use Material 3 `--md-sys-color-*` roles, with readable fallbacks. The reader can also be themed through `--reader-surface`, `--reader-on-surface`, `--reader-accent`, `--reader-on-accent`, and `--reader-outline`.
 

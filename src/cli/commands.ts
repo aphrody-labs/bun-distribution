@@ -84,9 +84,9 @@ define(
     run: (args) => spawn([process.execPath, "mcp", ...args], {
       env: {
         BUN_MCP_SKILLS_PATH: [
-          abs("vendor/rea/plugin/skills"),
           abs("packages/m3-design/intelligence"),
           abs("packages/replica-skills/skills"),
+          abs("vendor/rea/plugin/skills"),
         ].join(process.platform === "win32" ? ";" : ":"),
       },
     }),

@@ -1,18 +1,22 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # @aphrody/m3-motion
 
-High-fidelity React animation components for Material Design 3 (M3) motion specifications, powered by [Motion](https://motion.dev/) (formerly Framer Motion).
+React components and hooks for the Material 3 motion patterns (container transform, shared axis, fade through, collapse,
+fade) on [Motion](https://motion.dev/), with the M3 spring, easing and duration tokens.
 
-This package implements the core Material Design 3 motion patterns—including **Container Transform**, **Shared Axis**, **Fade Through**, **Collapse**, and **Fade**—using Google's official spring, easing, and duration tokens.
-
----
-
-## Installation
-
-```bash
-bun add @aphrody/m3-motion motion
+```sh
+bun add @aphrody/m3-motion motion react
 ```
 
-Ensure you have `react` (>= 18.0.0) and `motion` (>= 12.0.0) installed in your project.
+```tsx
+import { M3Fade, M3FadeThrough } from "@aphrody/m3-motion";
+
+<M3Fade in={open}>Details</M3Fade>;
+<M3FadeThrough stateKey={tab}>{panel}</M3FadeThrough>;
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 ---
 

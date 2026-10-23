@@ -2,8 +2,22 @@
 
 # @aphrody/m3-icons
 
-Material Symbols as inline SVG, generated from the `aphrody-bun` icons module (variable-font
-outlines). No icon font is shipped at runtime.
+Material Symbols as inline SVG, rendered by the `@aphrody/bun` icons module from the variable-font outlines; no icon
+font ships at runtime.
+
+```sh
+bun add @aphrody/m3-icons react
+```
+
+```tsx
+import { m3Icon } from "@aphrody/m3-icons"; // Bun / server: native binding
+import { M3IconSvg } from "@aphrody/m3-icons/browser"; // browser-safe
+
+const home = m3Icon({ name: "home", fill: 1 });
+<M3IconSvg svg={home} title="Home" />;
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 | Entry                           | Runs in               | Native binding                                                                      |
 | ------------------------------- | --------------------- | ----------------------------------------------------------------------------------- |

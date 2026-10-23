@@ -10,14 +10,17 @@
     "react-server-components",
     "tailwind"
   ],
-  "homepage": "https://github.com/aphrody-labs/aphrody-m3/tree/main/packages/m3-next#readme",
-  "license": "Apache-2.0",
-  "author": "aphrody-code",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aphrody-labs/aphrody-m3.git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
     "directory": "packages/m3-next"
   },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-next#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "aphrody-code",
   "bin": {
     "m3-next": "./bin/m3-next.ts"
   },
@@ -64,7 +67,8 @@
   "scripts": {
     "build": "bun ../../scripts/m3/build.ts build --only @aphrody/m3-next",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
+    "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0",
@@ -94,6 +98,6 @@
     }
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

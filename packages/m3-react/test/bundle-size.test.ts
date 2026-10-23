@@ -20,7 +20,7 @@ import { resolve } from "node:path";
 
 async function gzipBytes(entry: string): Promise<number> {
   const result = await Bun.build({
-    entrypoints: [resolve(import.meta.dir, "..", entry)],
+    entrypoints: [resolve(import.meta.dir, "../src", entry)],
     external: EXTERNAL,
     minify: true,
     target: "browser",

@@ -9,17 +9,6 @@
     "noUnusedParameters": false,
     "types": ["react", "react-dom"]
   },
-  "include": [
-    "index.ts",
-    "wrappers/**/*.ts",
-    "transitions/**/*.ts",
-    "transitions/**/*.tsx",
-    "adaptive/**/*.ts",
-    "state/**/*.ts",
-    "data/**/*.ts",
-    "data/**/*.tsx",
-    "*.ts",
-    "*.d.ts"
-  ],
-  "exclude": ["node_modules", "dist", "generate.ts", "tsup.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts"],
+  "exclude": ["node_modules", "dist", "generate.ts"]
 }

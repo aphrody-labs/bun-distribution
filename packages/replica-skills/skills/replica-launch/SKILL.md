@@ -17,7 +17,7 @@ and `replica/brand.json`. Writes `replica/launch/`: `landing.md`,
 `pricing.md`, `listing.json`, `launch-plan.md`.
 
 ```bash
-python3 listing.py replica/launch/listing.json      # limits, claims, the original's name
+bun listing.ts replica/launch/listing.json      # limits, claims, the original's name
 ```
 
 Start from `listing.example.json` in this folder.
@@ -68,7 +68,7 @@ Copy in the brand voice. Run replica-design's contrast check on the page.
 Fill `listing.json`, then:
 
 ```bash
-python3 listing.py replica/launch/listing.json
+bun listing.ts replica/launch/listing.json
 ```
 
 It checks App Store limits (name 30, subtitle 30, promotional text 170,
@@ -96,5 +96,5 @@ leads with the fix, and the first 10 users to talk to by hand.
 
 ## Output
 
-`replica/launch/` complete, the landing page built, `listing.py` passing.
+`replica/launch/` complete, the landing page built, `listing.ts` passing.
 Next: `/replica-deploy`.

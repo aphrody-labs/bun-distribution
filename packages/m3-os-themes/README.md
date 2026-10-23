@@ -1,14 +1,23 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-os-themes`
+# @aphrody/m3-os-themes
 
-Generates and installs Material 3 OS themes from a seed colour. Colour roles come from
-`@aphrody/m3-tokens/dynamic-color` (light and dark), so the OS matches the web UI.
-
-In the Aphrody checkout (the npm bin `m3-os-themes` takes the same arguments):
+Generates and installs Material 3 OS themes (Windows 11, GNOME Shell, COSMIC, Chromium browsers) from a seed colour, with the colour roles of `@aphrody/m3-tokens/dynamic-color`.
 
 ```sh
-yolo m3 os-themes <install|generate|uninstall> \
+bun add -d @aphrody/m3-os-themes
+```
+
+```sh
+bunx --bun m3-os-themes generate --target all --seed '#6750a4' --mode auto --out ./m3-os-themes-out
+```
+
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+Full usage (in the Aphrody checkout `yolo m3 os-themes` takes the same arguments):
+
+```sh
+m3-os-themes <install|generate|uninstall> \
   --target windows|gnome|cosmic|chromium|all --seed '#6750a4' --mode light|dark|auto \
   [--name Aphrody] [--variant tonalSpot] [--out dir] [--icons dir] [--dry-run] [--apply]
 ```
@@ -33,7 +42,7 @@ Tests generate everything in memory or in a temp directory and never touch the s
 `bun test test/`. The COSMIC key layout and the GNOME Shell selectors follow the upstream formats and
 were not exercised on a live COSMIC or GNOME session.
 
-Pending (chantier C1): once the Bun fork ships `bun:cosmic` (cosmic-config read/write), replace the hand-written
+Pending (work item C1): once the Bun fork ships `bun:cosmic` (cosmic-config read/write), replace the hand-written
 cosmic-config writes in `src/cosmic.ts`/`install-cosmic.sh` and validate the keys through it. Same candidate on the
 Rust side: the hand-rolled `.desktop` parser in `crates/ui/drive/src/file_opening/linux.rs` (vs
 `freedesktop-desktop-entry`).

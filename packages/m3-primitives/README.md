@@ -1,27 +1,50 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-License-Identifier: Apache-2.0 AND MIT -->
 
 # @aphrody/m3-primitives
 
-Material Design 3 React primitives. This is the SpaceUI component set (`@spacedrive/primitives`,
-MIT, © Spacedrive, vendored in `packages/aphrody-spaceui`) rebuilt on the aphrody M3 system: M3 color
-roles and state layers, the 10-step shape scale, the M3 typescale, the M3 focus ring, elevation,
-Material Symbols and the M3 easings of `@aphrody/m3-motion`. [Base UI](https://base-ui.com)
-(`@base-ui/react`) is the headless layer: it owns behavior, keyboard interaction, focus
-management and accessibility, and drives the M3 enter / exit motion through its
-`data-starting-style` / `data-ending-style` attributes. Every upstream export and prop still
-works; the Radix-era props (`asChild`, `checked="indeterminate"`, `delayDuration`,
-`forceMount`, `onSelect`, array slider values) are mapped onto Base UI, and Base UI props are
-accepted as well.
-
-Fusion rules, token mapping and the Material Web equivalents of each component:
-[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
-
-## Install
+Material Design 3 React primitives (buttons, fields, menus, dialogs, cards, toasts) on Base UI, rebuilt from SpaceUI's `@spacedrive/primitives`.
 
 ```sh
-bun add @aphrody/m3-primitives @aphrody/m3-theme @aphrody/m3-tokens
+bun add @aphrody/m3-primitives @aphrody/m3-theme @aphrody/m3-tokens react react-dom tailwindcss
 ```
 
+```tsx
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@aphrody/m3-primitives";
+
+export function Welcome() {
+  return (
+    <Card variant="elevated">
+      <CardHeader>
+        <CardTitle>Welcome</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Your name" icon="person" />
+        <Button variant="filled">Get started</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+License: Apache-2.0 AND MIT (`LICENSE`, `LICENSE.spaceui`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+The SpaceUI set (MIT, (c) Spacedrive) is rebuilt on the M3 system: colour roles and state layers, the 10-step shape scale,
+the typescale, the focus ring, elevation, Material Symbols and the easings of `@aphrody/m3-motion`.
+[Base UI](https://base-ui.com) (`@base-ui/react`) is the headless layer: it owns behaviour, keyboard interaction, focus
+management and accessibility, and drives the M3 enter / exit motion through its `data-starting-style` /
+`data-ending-style` attributes. Every upstream export and prop still works; the Radix-era props (`asChild`,
+`checked="indeterminate"`, `delayDuration`, `forceMount`, `onSelect`, array slider values) are mapped onto Base UI, and
+Base UI props are accepted as well.
+
+Fusion rules, token mapping and the Material Web equivalents of each component:
+[SPACEUI-M3-FUSION.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md).
 Peers: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
 
 ## Styles
@@ -38,7 +61,8 @@ compiles them with Tailwind v4:
 @source "../node_modules/@aphrody/m3-primitives/dist";
 ```
 
-Icons use the Material Symbols font; register it once:
+Icons use the Material Symbols font: import `@aphrody/m3-fonts/fonts-symbols.css`, or, with `@aphrody/material-web`
+installed, register it once:
 
 ```ts
 import { ensureMaterialSymbols } from "@aphrody/material-web/icon/material-symbols.js";
@@ -105,10 +129,5 @@ to opt out).
 ```sh
 bun run typecheck
 bun test          # happy-dom preloaded by bunfig.toml
-bun run build     # tsup + declarations
+bun run build     # Bun.build + declarations
 ```
-
-## Licence
-
-Apache-2.0 AND MIT: aphrody changes under Apache-2.0, SpaceUI-derived code under MIT
-(`LICENSE.spaceui`).

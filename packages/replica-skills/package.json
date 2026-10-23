@@ -3,9 +3,11 @@
   "version": "1.4.4",
   "private": true,
   "description": "Replica product workflows for Bun OS and Aphrody Labs",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
+    "LICENSE",
     "README.md",
+    "UPSTREAM.md",
     "skills"
   ],
   "type": "module"

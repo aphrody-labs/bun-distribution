@@ -10,6 +10,15 @@
     "material-symbols"
   ],
   "license": "Apache-2.0 AND OFL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aphrody-labs/bun-distribution.git",
+    "directory": "packages/m3-fonts"
+  },
+  "homepage": "https://github.com/aphrody-labs/bun-distribution/tree/os/packages/m3-fonts#readme",
+  "bugs": {
+    "url": "https://github.com/aphrody-labs/bun-distribution/issues"
+  },
   "author": "aphrody-code",
   "files": [
     "README.md",
@@ -36,12 +45,13 @@
     "gen": "bun scripts/generate.ts",
     "subset": "bun scripts/subset.ts",
     "typecheck": "bun check -p tsconfig.json --noEmit",
-    "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test src"
+    "test": "bun ../../scripts/m3/fonts-sync.ts --quiet && bun test src",
+    "prepack": "bun ../../scripts/m3/fonts-sync.ts --quiet"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*"
   },
   "engines": {
-    "bun": "=1.4.4"
+    "bun": ">=1.4.4"
   }
 }

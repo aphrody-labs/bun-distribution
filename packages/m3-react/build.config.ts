@@ -2,12 +2,12 @@ import { m3Package } from "@aphrody/m3-config/bun-build";
 
 export default m3Package({
   entry: [
-    "index.ts",
-    "transitions/index.ts",
-    "adaptive/index.ts",
-    "state/index.ts",
-    "adapters/tanstack.ts",
-    "data/index.ts",
-    "wrappers/*.ts",
+    "src/index.ts",
+    "src/transitions/index.ts",
+    "src/adaptive/index.ts",
+    "src/state/index.ts",
+    "src/adapters/tanstack.ts",
+    "src/data/index.ts",
+    "src/wrappers/*.ts",
   ],
 });

@@ -342,6 +342,14 @@ The bundled scripts run with [Bun](https://bun.sh) 1.4.4 or newer (the Aphrody r
 bun --version
 ```
 
+Commands below run from this skill's directory (`packages/m3-design/intelligence/ui-ux-pro-max`
+in a Bun OS checkout). They are the Bun-native port of the upstream Python `search.py` and read
+the same `data/*.csv` catalogs. The same search is shipped as the `@aphrody/m3-design` CLI:
+`bun run bunos design search <query> [options]` from the Bun OS checkout root, and
+`bun run bunos design system <product query> [-p "Name"]` as a shorthand for `--design-system`.
+The M3 tool host (`@aphrody/m3-mcp`) exposes it as the `m3_design_search` and
+`m3_design_system` tools.
+
 If Bun is not installed, **do not install it yourself**. Stop and ask the user to install it (Aphrody runtime: `powershell -c "irm aphrody.app/install.ps1|iex"` on Windows, `curl -fsSL https://aphrody.app/install | bash` elsewhere), then continue once it is available. Never run package-manager or system-modifying commands (`sudo`, `brew`, `apt`, `winget`, etc.) on the user's machine for this skill.
 
 If the user prefers not to install Bun, skip the CLI searches and rely on the Quick Reference sections above.
@@ -403,7 +411,7 @@ Extract key information from user request:
 Use `--design-system` when the task needs a coherent product-wide visual direction:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<product_type> <industry> <keywords>" --design-system [-p "Project Name"]
+bun scripts/search.ts "<product_type> <industry> <keywords>" --design-system [-p "Project Name"]
 ```
 
 This command:
@@ -414,7 +422,7 @@ This command:
 
 **Example:**
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "beauty spa wellness service" --design-system -p "Serenity Spa"
+bun scripts/search.ts "beauty spa wellness service" --design-system -p "Serenity Spa"
 ```
 
 ### Step 2b: Persist Design System (Master + Overrides Pattern)
@@ -422,7 +430,7 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "beauty spa wellness service
 After verifying the design system, save it for **hierarchical retrieval across sessions** with `--persist` and an explicit project root:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<query>" --design-system --persist -p "Project Name" --output-dir "<project-root>"
+bun scripts/search.ts "<query>" --design-system --persist -p "Project Name" --output-dir "<project-root>"
 ```
 
 This creates:
@@ -431,7 +439,7 @@ This creates:
 
 **With page-specific override:**
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<query>" --design-system --persist -p "Project Name" --page "dashboard" --output-dir "<project-root>"
+bun scripts/search.ts "<query>" --design-system --persist -p "Project Name" --page "dashboard" --output-dir "<project-root>"
 ```
 
 This also creates:
@@ -458,7 +466,7 @@ Now, generate the code...
 Three optional 1-10 sliders that tune `--design-system` output without changing your query. Add any combination of them to the same command:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<query>" --design-system --variance <1-10> --motion <1-10> --density <1-10>
+bun scripts/search.ts "<query>" --design-system --variance <1-10> --motion <1-10> --density <1-10>
 ```
 
 | Dial | Low (1-3) | Mid (4-7) | High (8-10) |
@@ -473,7 +481,7 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<query>" --design-system --
 
 **Example:**
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "internal analytics dashboard" --design-system --variance 8 --motion 7 --density 8 -p "Ops Console"
+bun scripts/search.ts "internal analytics dashboard" --design-system --variance 8 --motion 7 --density 8 -p "Ops Console"
 ```
 
 ### Step 3: Supplement with Detailed Searches (as needed)
@@ -481,7 +489,7 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "internal analytics dashboar
 After getting the design system, use domain searches to get additional details:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<keyword>" --domain <domain> [-n <max_results>]
+bun scripts/search.ts "<keyword>" --domain <domain> [-n <max_results>]
 ```
 
 **When to use detailed searches:**
@@ -507,13 +515,13 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<keyword>" --domain <domain
 Get implementation-specific best practices for the user's stack:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "<keyword>" --stack <stack>
+bun scripts/search.ts "<keyword>" --stack <stack>
 ```
 
 Example for a known React Native implementation concern:
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "virtualized list" --stack react-native
+bun scripts/search.ts "virtualized list" --stack react-native
 ```
 
 ---
@@ -547,8 +555,8 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "virtualized list" --stack r
 **JavaFX enterprise examples:**
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "atlantafx primer enterprise theme" --stack javafx
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "enterprise tableview density permission" --stack javafx
+bun scripts/search.ts "atlantafx primer enterprise theme" --stack javafx
+bun scripts/search.ts "enterprise tableview density permission" --stack javafx
 ```
 
 ---
@@ -566,7 +574,7 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "enterprise tableview densit
 ### Step 2: Generate Design System
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "AI search tool modern minimal" --design-system -p "AI Search"
+bun scripts/search.ts "AI search tool modern minimal" --design-system -p "AI Search"
 ```
 
 **Output:** Complete design system with pattern, style, colors, typography, effects, and anti-patterns.
@@ -575,16 +583,16 @@ bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "AI search tool modern minim
 
 ```bash
 # Get style options for a modern tool product
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "minimalism dark mode" --domain style
+bun scripts/search.ts "minimalism dark mode" --domain style
 
 # Get UX best practices for search interaction and loading
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "search loading animation" --domain ux
+bun scripts/search.ts "search loading animation" --domain ux
 ```
 
 ### Step 4: Stack Guidelines
 
 ```bash
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "streaming suspense" --stack nextjs
+bun scripts/search.ts "streaming suspense" --stack nextjs
 ```
 
 **Then:** Synthesize design system + detailed searches and implement the design.
@@ -597,10 +605,10 @@ The `--design-system` flag supports two output formats:
 
 ```bash
 # ASCII box (default) - best for terminal display
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "fintech crypto" --design-system
+bun scripts/search.ts "fintech crypto" --design-system
 
 # Markdown - best for documentation
-bun ~/.Codex/skills/ui-ux-pro-max/scripts/search.ts "fintech crypto" --design-system -f markdown
+bun scripts/search.ts "fintech crypto" --design-system -f markdown
 ```
 
 ---

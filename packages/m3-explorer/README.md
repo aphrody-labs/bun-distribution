@@ -2,28 +2,43 @@
 
 # @aphrody/m3-explorer
 
-Material Design 3 file-management components for React: a tag chip, an inline rename field, a file
-thumbnail and a selectable grid tile. They are presentational: props in, callbacks out, no data
-fetching, no context. Consumers wire their own state.
-
-This is SpaceUI's `@spacedrive/explorer` rebuilt on Material Design 3. The upstream source lives in
-`packages/aphrody-spaceui/packages/explorer`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
-
-## Install
+Presentational Material Design 3 file-management components for React (tag chip, inline rename field, file thumbnail, grid tile), rebuilt from SpaceUI's `@spacedrive/explorer`.
 
 ```sh
-bun add @aphrody/m3-explorer @aphrody/m3-primitives
-bun add @aphrody/assets   # optional: file-kind icons and extension badges
+bun add @aphrody/m3-explorer @aphrody/m3-primitives react react-dom tailwindcss
 ```
 
-Peer dependencies: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+.
+```tsx
+import { RenameInput, TagPill } from "@aphrody/m3-explorer";
+
+export function Example() {
+  return (
+    <>
+      <TagPill color="#ef4444" onRemove={() => console.log("remove")}>
+        Important
+      </TagPill>
+      <RenameInput
+        name="report"
+        extension="pdf"
+        onSave={async next => console.log(next)}
+        onCancel={() => {}}
+      />
+    </>
+  );
+}
+```
+
+License: Apache-2.0 AND MIT (`LICENSE`, `LICENSE.spaceui`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+Props in, callbacks out: no data fetching, no context; consumers wire their own state. `@aphrody/assets` is optional
+(file-kind icons and extension badges). Peers: `react` and `react-dom` 18 or 19, `tailwindcss` 4.1+. Fusion rules:
+[SPACEUI-M3-FUSION.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md).
 
 ## CSS setup
 
 The components use the M3 Tailwind utilities. Import the token sheets and let Tailwind scan the
 package, as described in
-[`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/design/SPACEUI-M3-FUSION.md#integration):
+[`SPACEUI-M3-FUSION.md` → Integration](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md#integration):
 
 ```css
 @import "tailwindcss";
@@ -35,8 +50,9 @@ package, as described in
 @source "../node_modules/@aphrody/m3-explorer/dist";
 ```
 
-`TagPill`'s remove button is a Material Symbols `close` glyph: register the font once with
-`ensureMaterialSymbols()` from `@aphrody/material-web/icon/material-symbols.js`.
+`TagPill`'s remove button is a Material Symbols `close` glyph: import
+`@aphrody/m3-fonts/fonts-symbols.css`, or register the font once with `ensureMaterialSymbols()` from
+`@aphrody/material-web/icon/material-symbols.js`.
 
 ## Components
 

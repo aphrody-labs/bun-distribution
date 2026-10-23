@@ -1,6 +1,19 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-License-Identifier: Apache-2.0 AND MIT -->
 
 # @aphrody/m3-design
+
+Design compiler and design-intelligence CLI: turns a natural-language brief into an M3 React scaffold, HCT theme and design tokens.
+
+```sh
+bun add -d @aphrody/m3-design
+```
+
+```sh
+m3-design compile --prompt "Responsive M3 monitoring dashboard" --color "#6750a4"
+m3-design search "minimalism dark mode" --domain style
+```
+
+License: Apache-2.0 AND MIT (`LICENSE`, `LICENSES/`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
 ## Product design intelligence
 
@@ -10,17 +23,36 @@ UI. The bundled `intelligence/ui-ux-pro-max` skill adds searchable design,
 accessibility, responsive-layout and interaction guidance, with M3 selected as
 the default product implementation stack. Its searchable data and references
 ship with this package and are exposed through `bunos mcp` as the
-`ui-ux-pro-max` skill. The source skill and supporting files are retained,
-with a product-specific M3 design contract appended to the skill. The local
-source did not include a license or upstream repository metadata.
+`ui-ux-pro-max` skill. The skill comes from UI/UX Pro Max by Next Level
+Builder (https://github.com/nextlevelbuilder/ui-ux-pro-max-skill, MIT); its
+`LICENSE` and `UPSTREAM.md` sit in `intelligence/ui-ux-pro-max`. Its search
+scripts are a Bun-native port of the upstream Python and read the same CSV
+catalogs, and a product-specific M3 design contract is prepended to the skill.
 
-Run the MCP server from a Bun OS checkout with `bunos mcp`. To search the
-bundled design guidance directly, run:
+The CLI also ships the design tools of the Replica skills
+(https://github.com/Jakeschincariol/replica-skill, MIT; notice in
+`LICENSES/replica-skill-MIT.txt`): a WCAG contrast check of design tokens, a
+feature parity score and a layout or pixel screenshot diff. Those three
+modules (`src/contrast.ts`, `src/parity.ts`, `src/imgdiff.ts`) are MIT; the
+rest of the package is Apache-2.0.
+
+Run the MCP server from a Bun OS checkout with `bunos mcp`. From the checkout
+root, `bun run bunos design` runs this CLI (`m3-design` once installed):
 
 ```sh
-bunos design --help
-bunos design compile --prompt "Responsive M3 monitoring dashboard for an operator"
+bun run bunos design search "minimalism dark mode" --domain style
+bun run bunos design search "virtualized list" --stack react-native
+bun run bunos design system "fintech crypto" -p "Ledger" -f markdown
+bun run bunos design compile --prompt "Responsive M3 monitoring dashboard for an operator"
+bun run bunos design contrast replica/design/tokens.json   # or two hex colours
+bun run bunos design parity replica/features.csv --visual replica/diffs/*.json
+bun run bunos design imgdiff original.png clone.png --out diff.png --json
 ```
+
+`contrast`, `parity` and `imgdiff` exit 1 when the gate fails (a pair under
+AA, a score under `--fail-under`) and 2 on unreadable input. The M3 tool host
+(`@aphrody/m3-mcp`) serves the same commands as `m3_design_search`,
+`m3_design_system`, `m3_contrast`, `m3_parity` and `m3_imgdiff`.
 
 The design engine below generates artifacts against the same M3 component and
 token system; do not introduce a parallel product palette when extending it.

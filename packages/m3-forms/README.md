@@ -2,28 +2,40 @@
 
 # @aphrody/m3-forms
 
-Material Design 3 form fields for React, wired to [react-hook-form](https://react-hook-form.com).
-Each field composes a control from `@aphrody/m3-primitives` with the M3 text-field anatomy: a label,
-the control, then supporting text (or error text) 4dp below it.
-
-This is SpaceUI's `@spacedrive/forms` rebuilt on Material Design 3. The upstream source lives in
-`packages/aphrody-spaceui/packages/forms`; the fusion rules are in
-[`docs/design/SPACEUI-M3-FUSION.md`](../../docs/architecture/design/SPACEUI-M3-FUSION.md).
-
-## Install
+Material Design 3 form fields for React on react-hook-form, composed from `@aphrody/m3-primitives` controls (rebuilt from SpaceUI's `@spacedrive/forms`).
 
 ```sh
-bun add @aphrody/m3-forms @aphrody/m3-primitives react-hook-form zod @hookform/resolvers
+bun add @aphrody/m3-forms @aphrody/m3-primitives react-hook-form react react-dom tailwindcss
 ```
 
-Peer dependencies: `react` and `react-dom` 18 or 19, `react-hook-form` 7, `zod` (3 or 4),
-`tailwindcss` 4.1+.
+```tsx
+import { useForm } from "react-hook-form";
+import { Form, InputField } from "@aphrody/m3-forms";
+
+export function NameForm() {
+  const form = useForm({ defaultValues: { name: "" } });
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(console.log)}>
+        <InputField name="name" label="Full name" required />
+      </form>
+    </Form>
+  );
+}
+```
+
+License: Apache-2.0 AND MIT (`LICENSE`, `LICENSE.spaceui`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
+
+Each field follows the M3 text-field anatomy: a label, the control, then supporting text (or error text) 4dp below it.
+Peers: `react` and `react-dom` 18 or 19, `react-hook-form` 7, `tailwindcss` 4.1+. Schema validation is optional
+(`zod` with `@hookform/resolvers`, below). Fusion rules:
+[SPACEUI-M3-FUSION.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md).
 
 ## CSS setup
 
 The components use the M3 Tailwind utilities (`text-body-small`, `text-error`,
 `bg-surface-container-highest`, …). Import the token sheets and let Tailwind scan the package, as
-described in [`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/design/SPACEUI-M3-FUSION.md#integration):
+described in [`SPACEUI-M3-FUSION.md` → Integration](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/architecture/design/SPACEUI-M3-FUSION.md#integration):
 
 ```css
 @import "tailwindcss";
@@ -35,10 +47,15 @@ described in [`SPACEUI-M3-FUSION.md` → Integration](../../docs/architecture/de
 @source "../node_modules/@aphrody/m3-forms/dist";
 ```
 
-Error messages carry a Material Symbols `error` glyph: register the font once with
-`ensureMaterialSymbols()` from `@aphrody/material-web/icon/material-symbols.js`.
+Error messages carry a Material Symbols `error` glyph: import
+`@aphrody/m3-fonts/fonts-symbols.css`, or register the font once with `ensureMaterialSymbols()` from
+`@aphrody/material-web/icon/material-symbols.js`.
 
 ## Example (zod 4 + react-hook-form)
+
+```sh
+bun add zod @hookform/resolvers
+```
 
 ```tsx
 import { zodResolver } from "@hookform/resolvers/zod";

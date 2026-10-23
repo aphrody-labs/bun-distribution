@@ -1,157 +1,124 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 
-# `@aphrody/m3-react`
+# @aphrody/m3-react
 
-Wrappers React **par élément `md-*`** du fork aphrody `@material/web` (v2.4.1, 119 éléments),
-générés avec [`@lit/react`](https://www.npmjs.com/package/@lit/react) `createComponent`.
+Typed React components for every `md-*` element of `@aphrody/material-web`, generated with `@lit/react` `createComponent`.
 
-Ce package réalise le plan que le fork prévoit (`apps/m3-react`) mais ne livre pas sur disque
-(cf. `migration/00-CONVENTIONS.md` §0). Il expose un composant React typé pour chacun des
-**119 tags** listés dans `migration/scripts/md-elements.txt`.
-
-- **Statut compilation : 119 / 119 wrappers générés, `bun check --noEmit` → 0 erreur.**
-- 1 wrapper React par élément `md-*`, nom = PascalCase du tag (CONVENTIONS §2).
-- Events natifs réels mappés par élément (vérifiés dans le code Lit, voir plus bas).
-
-## Install
-
-> **bun uniquement** (jamais npm/pnpm — CONVENTIONS §7.1).
-
-Le package est déjà installé dans ce dossier (`migration/wrappers/`) :
-
-```bash
-cd migration/wrappers
-bun install            # @lit/react + @material/web (file:../../material-web) + react/react-dom
-bun run typecheck      # bun check --noEmit → 0 erreur
-bun run generate       # régénère wrappers/ + index.ts depuis md-elements.txt
+```sh
+bun add @aphrody/m3-react @aphrody/material-web react react-dom
 ```
-
-Dans un projet consommateur :
-
-```jsonc
-// package.json
-{
-  "dependencies": {
-    "@aphrody/m3-react": "file:../migration/wrappers",
-    "react": "^19",
-    "react-dom": "^19",
-  },
-}
-```
-
-## Usage
-
-Importer un wrapper enregistre l'élément custom correspondant **comme effet de bord**
-(le wrapper importe le module `@material/web/...` qui appelle `customElements.define`).
-Aucun import side-effect supplémentaire n'est nécessaire.
 
 ```tsx
 import {
+  MdCheckbox,
   MdFilledButton,
   MdOutlinedTextField,
-  MdCheckbox,
 } from "@aphrody/m3-react";
 
-function LoginForm() {
-  const [email, setEmail] = React.useState("");
-  const [accept, setAccept] = React.useState(false);
-
+export function SignIn() {
   return (
     <form>
-      {/* controlled : la signature React change — e.target.value, PAS (e, value) */}
       <MdOutlinedTextField
         label="Email"
-        value={email}
-        onInput={e => setEmail((e.target as HTMLInputElement).value)}
+        onInput={e => console.log((e.target as HTMLInputElement).value)}
       />
-
-      <label>
-        <MdCheckbox
-          checked={accept}
-          onChange={e => setAccept((e.target as HTMLInputElement).checked)}
-        />
-        J'accepte
-      </label>
-
-      <MdFilledButton onClick={() => console.log({ email, accept })}>
-        Valider
-      </MdFilledButton>
+      <MdCheckbox
+        onChange={e => console.log((e.target as HTMLInputElement).checked)}
+      />
+      <MdFilledButton type="submit">Sign in</MdFilledButton>
     </form>
   );
 }
 ```
 
-### Slots & icônes (CONVENTIONS §4)
+License: Apache-2.0 (`LICENSE`). Install guide: [docs/material/m3/INSTALL.md](https://github.com/aphrody-labs/bun-distribution/blob/os/docs/material/m3/INSTALL.md).
 
-Les sous-composants MUI (`DialogTitle`, `CardHeader`, `startIcon`…) deviennent du contenu slotté :
+One wrapper per tag (PascalCase of the tag name), with the element's real native events mapped to React props. Importing a
+wrapper registers its custom element as a side effect (the wrapper imports the `@aphrody/material-web` module that calls
+`customElements.define`); no other import is needed. The elements are Lit web components, so they render on the client;
+see [FRAMEWORKS.md](FRAMEWORKS.md) for SSR and RSC setups.
+
+| Import                                | Contents                                           |
+| ------------------------------------- | -------------------------------------------------- |
+| `@aphrody/m3-react`                   | All wrappers (`MdFilledButton`, `MdDialog`, ...)   |
+| `@aphrody/m3-react/<group>`           | One wrapper group, e.g. `@aphrody/m3-react/button` |
+| `@aphrody/m3-react/transitions`       | `Collapse`, `Fade`, `Grow`, `Slide`, `Zoom`        |
+| `@aphrody/m3-react/adaptive`          | Window size class hooks (SSR-safe)                 |
+| `@aphrody/m3-react/state`             | `useTextFieldState`, `bindTextFieldState`          |
+| `@aphrody/m3-react/data`              | `DataTable`, `VirtualList`                         |
+| `@aphrody/m3-react/adapters/tanstack` | TanStack Table adapter                             |
+
+Controlled inputs read `e.target.value` / `e.target.checked`; the handler receives the DOM event, not `(event, value)`.
+
+## Slots and icons
+
+Sub-parts are slotted content:
 
 ```tsx
 import {
   MdDialog,
   MdFilledButton,
-  MdTextButton,
   MdIcon,
+  MdTextButton,
 } from "@aphrody/m3-react";
 
-<MdDialog open onClosed={e => console.log((e.target as any).returnValue)}>
-  <div slot="headline">Supprimer ?</div>
+<MdDialog
+  open
+  onClosed={e => console.log((e.target as HTMLDialogElement).returnValue)}
+>
+  <div slot="headline">Delete?</div>
   <form slot="content" method="dialog">
-    Cette action est irréversible.
+    This cannot be undone.
   </form>
   <div slot="actions">
-    <MdTextButton value="cancel">Annuler</MdTextButton>
+    <MdTextButton value="cancel">Cancel</MdTextButton>
     <MdFilledButton value="delete">
       <MdIcon slot="icon">delete</MdIcon>
-      Supprimer
+      Delete
     </MdFilledButton>
   </div>
 </MdDialog>;
 ```
 
-> **`MdIcon` exige la police Material Symbols.** La lib ne la charge pas. Une fois,
-> au démarrage de l'app :
->
-> ```ts
-> import { ensureMaterialSymbols } from "@aphrody/material-web/icon/material-symbols.js";
-> ensureMaterialSymbols(); // ou { iconNames: ["delete", "search", …] } pour subseter
-> ```
->
-> Le texte enfant est le **nom du glyphe** (snake_case Material Symbols). Les axes
-> variables se pilotent par token : `--md-icon-fill` (0..1), `--md-icon-wght`
-> (100..700), `--md-icon-grad`, `--md-icon-opsz`. Migration depuis
-> `@mui/icons-material` : codemod `migration/codemods/transforms/icons.ts` (96 % auto).
+`MdIcon` needs the Material Symbols font, which the library does not load. Load it once at startup:
 
-## Architecture
+```ts
+import { ensureMaterialSymbols } from "@aphrody/material-web/icon/material-symbols.js";
+ensureMaterialSymbols(); // or { iconNames: ["delete", "search"] } to subset
+```
 
-- `index.ts` — réexporte les 119 wrappers (un `export *` par catégorie).
-- `wrappers/<categorie>.ts` — 45 fichiers groupés par dossier source de `material-web/`
-  (`button.ts`, `select.ts`, `labs.ts`, …). Chaque export :
+The child text is the glyph name (Material Symbols snake_case). Variable axes are tokens: `--md-icon-fill` (0..1),
+`--md-icon-wght` (100..700), `--md-icon-grad`, `--md-icon-opsz`.
+
+## Layout
+
+- `src/index.ts`: re-exports every wrapper (one `export *` per group).
+- `src/wrappers/<group>.ts`: one file per `material-web` source folder (`button.ts`, `select.ts`, `labs.ts`, ...). Each
+  export:
 
   ```ts
   export const MdFilledButton = createComponent({
     react: React,
     tagName: "md-filled-button",
-    elementClass: MdFilledButtonElement, // importé depuis @material/web/button/filled-button.js
-    events: {}, // events natifs réels (voir tableau)
+    elementClass: MdFilledButtonElement, // from @aphrody/material-web/button/filled-button.js
+    events: {}, // real native events (see the table below)
   });
   ```
 
-- `generate.ts` — générateur **bun** : lit `md-elements.txt`, scanne `material-web/` pour
-  résoudre chaque tag → `{fichier d'entrée, classe exportée}` via le motif
-  `@customElement('md-x') export class Foo`, applique la table d'events vérifiés, et émet
-  les fichiers. Préfère le chemin canonique (bundlé par `all.ts` / `aphrody-components.ts` /
-  `aphrody-labs.ts`), puis non-`labs/gb`, sinon `labs/gb` (pour les tags `md-button`,
-  `md-card`, `md-menu-group`, `md-split-button` qui n'existent que là).
-- `material-web-shims.d.ts` — voir « Détail compilation ».
+- `generate.ts`: reads `md-elements.txt`, scans a `material-web` source checkout (`--source <dir>`) to resolve each tag to
+  its entry file and exported class (`@customElement('md-x') export class Foo`), applies the verified event table and
+  writes `src/wrappers/`, `src/index.ts`, `.manifest.json` and the last section of this README. It prefers the canonical
+  path (bundled by `all.ts`, `aphrody-components.ts` or `aphrody-labs.ts`), then non-`labs/gb`, then `labs/gb` (the only
+  home of `md-button`, `md-card`, `md-menu-group` and `md-split-button`, whose classes are re-aliased to `Md*`).
+- `src/material-web-shims.d.ts`: ambient `*.cssresult.js` and `*.css` modules, see below.
 
-## Événements mappés (vérifiés dans le code Lit)
+## Mapped events (verified in the Lit sources)
 
-Noms d'events extraits par grep de `@fires` / `new (Custom)?Event('…')` dans
-`material-web/<dir>/internal/*.ts`. Les composants **upstream** utilisent des noms simples
-(`input`, `change`, `opening`…) ; les composants **fork** namespacent les leurs
-(`paginator:page`, `table:sort`, `side-sheet:opening`, `tree:select`…).
+Event names come from `@fires` and `new (Custom)?Event('...')` in `material-web/<dir>/internal/*.ts`. Upstream components
+use plain names (`input`, `change`, `opening`, ...); fork components namespace theirs (`paginator:page`, `table:sort`,
+`side-sheet:opening`, `tree:select`, ...).
 
-| Élément                                                         | Events React → event natif                                                |
+| Element                                                         | React prop to native event                                                |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `MdCheckbox`, `MdRadio`, `MdSwitch`, `MdSlider`, `Md*TextField` | `onChange:change`, `onInput:input`                                        |
 | `MdFilledSelect`, `MdOutlinedSelect`                            | `+onOpening/onOpened/onClosing/onClosed`                                  |
@@ -159,7 +126,7 @@ Noms d'events extraits par grep de `@fires` / `new (Custom)?Event('…')` dans
 | `MdMenu`, `MdSubMenu`                                           | `onOpening/onOpened/onClosing/onClosed`                                   |
 | `MdMenuItem`                                                    | `onCloseMenu:close-menu`                                                  |
 | `MdSnackbar`                                                    | `onOpening/onOpened/onClosing/onClosed` (bare)                            |
-| `MdBottomSheet` / `MdSideSheet`                                 | `onOpening:bottom-sheet:opening` … (fork, namespacés)                     |
+| `MdBottomSheet` / `MdSideSheet`                                 | `onOpening:bottom-sheet:opening` ... (fork, namespaced)                   |
 | `MdSearchBar`                                                   | `onInput`, `onSearch:search`, `onSearchOpen/onSearchClose`                |
 | `MdAutocomplete`                                                | `onInput`, `onSelect:autocomplete:select`                                 |
 | `MdNavigationBar`                                               | `onActivated:navigation-bar-activated`                                    |
@@ -178,44 +145,28 @@ Noms d'events extraits par grep de `@fires` / `new (Custom)?Event('…')` dans
 | `MdTooltip`                                                     | `onShow:tooltip-show`, `onHide:tooltip-hide`                              |
 | `MdTabs`                                                        | `onChange:change`                                                         |
 
-Les éléments purement présentationnels (`md-icon`, `md-divider`, `md-elevation`, `md-ripple`,
-`md-focus-ring`, chips assist/filter/suggestion, cards, fab, boutons, `md-item`, `md-toolbar`,
-`md-carousel`, `md-accordion`, `md-loading-indicator`, panes/scaffold…) n'émettent pas d'event
-documenté : `events: {}`.
+Presentational elements (`md-icon`, `md-divider`, `md-elevation`, `md-ripple`, `md-focus-ring`, assist/filter/suggestion
+chips, cards, fab, buttons, `md-item`, `md-toolbar`, `md-carousel`, `md-accordion`, `md-loading-indicator`, panes and
+scaffold) emit no documented event: `events: {}`.
 
-## Détail compilation
+## Type checking
 
-`bun check --noEmit` vérifie **toute la chaîne** (les wrappers _et_ les sources `.ts` de
-`material-web/` qu'ils importent). Trois ajustements ont été nécessaires côté `tsconfig.json` /
-shims, **sans toucher** à `material-web/src` :
+`bun check --noEmit` checks the wrappers and the `material-web` sources they import. The package `tsconfig.json` sets:
 
-1. **`experimentalDecorators: true` + `useDefineForClassFields: false`** — les éléments Lit du
-   fork utilisent les décorateurs _expérimentaux_ (`@property()`, `@customElement()`).
-2. **`material-web-shims.d.ts`** — déclare `*.cssresult.js` et `*.css` comme modules ambiants.
-   Ces fichiers de styles sont des **artefacts du build SASS** (`build:sass` → `build:css-to-ts`)
-   **absents de ce checkout source** du fork. Le wrapper React ne touche jamais ces valeurs
-   (les styles voyagent avec l'élément au runtime), d'où un typage `any` — qui évite aussi le
-   conflit nominal entre le `lit@2.8.0` imbriqué de `material-web` et le `lit@3.3.3` du package.
-3. **`moduleResolution: bundler`** — résout les imports bare `@material/web/x/y.js` vers les
-   sources `.ts` (le fork n'a pas de `.js`/`.d.ts` compilés ni de champ `exports`).
+1. `experimentalDecorators: true` and `useDefineForClassFields: false`: the fork's Lit elements use legacy decorators.
+2. `src/material-web-shims.d.ts`: declares `*.cssresult.js` and `*.css` as ambient modules. They are Sass build artifacts
+   absent from a source checkout; the wrappers never touch them, so they are typed `any` (which also avoids the nominal
+   clash between `material-web`'s nested `lit@2` and this package's `lit@3`).
+3. `moduleResolution: bundler`: resolves bare `@aphrody/material-web/x/y.js` imports.
 
-> En contexte de **build réel** du fork (`material-web` buildé : `*.cssresult.js` et `*.css`
-> présents), les shims deviennent inutiles ; ils ne servent qu'à faire compiler le wrapper
-> contre les **sources** du fork tel que livré ici.
+Against a built `material-web` (with `*.cssresult.js` and `*.css` present) the shims are unnecessary. All 119 tags of
+`md-elements.txt` resolve to a real entry file with an exported class.
 
-### Blocages réels
+## All wrappers (119)
 
-**Aucun.** Les 119 éléments de `md-elements.txt` résolvent vers un fichier d'entrée réel avec
-classe exportée, et compilent. Les 4 tags `md-button`, `md-card`, `md-menu-group`,
-`md-split-button` n'existent que sous `labs/gb/components/` (composants « Google Sans » du fork) :
-leurs classes exportées ne suivent pas la convention `Md*` (`Button`, `Card`, `MenuGroup`,
-`SplitButton`) — le wrapper les ré-alias correctement (`MdButton`, `MdCard`, …).
+> Regenerated by `generate.ts` (`.manifest.json`). 0 unresolved.
 
-## Liste complète des wrappers (119)
-
-> Régénérée par `generate.ts` (`.manifest.json`). 0 non résolu(s).
-
-| Wrapper                        | Tag                                | Import élément                                                                   | # events |
+| Wrapper                        | Tag                                | Element import                                                                   | # events |
 | ------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------- | -------- |
 | `Md3dCanvas`                   | `md-3d-canvas`                     | `@aphrody/material-web/canvas3d/canvas-3d.js`                                    | —        |
 | `Md3dCard`                     | `md-3d-card`                       | `@aphrody/material-web/card3d/card-3d.js`                                        | —        |
