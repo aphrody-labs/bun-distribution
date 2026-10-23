@@ -20,7 +20,8 @@
   "type": "module",
   "sideEffects": [
     "./dist/index.js",
-    "./dist/**/*.js"
+    "./dist/**/*.js",
+    "./src/video/video.css"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -44,6 +45,13 @@
       "import": "./src/adaptive/index.ts",
       "default": "./dist/adaptive/index.js"
     },
+    "./video": {
+      "bun": "./src/video/index.ts",
+      "types": "./dist/video/index.d.ts",
+      "import": "./src/video/index.ts",
+      "default": "./dist/video/index.js"
+    },
+    "./video.css": "./src/video/video.css",
     "./state": {
       "bun": "./src/state/index.ts",
       "types": "./dist/state/index.d.ts",
