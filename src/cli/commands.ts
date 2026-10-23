@@ -52,10 +52,14 @@ define(
     run: args =>
       spawn([process.execPath, "mcp", ...args], {
         env: {
+          // A later root replaces an earlier skill of the same name (toolchains/bun src/mcp/tools/skills.rs).
+          // vendor/rea/plugin/skills stays for the reverse-engineering skills only REA ships, but the REA
+          // submodule also carries an older copy of the Replica skills: the canonical
+          // packages/replica-skills/skills comes after it so its replica-* skills win.
           BUN_MCP_SKILLS_PATH: [
+            abs("vendor/rea/plugin/skills"),
             abs("packages/m3-design/intelligence"),
             abs("packages/replica-skills/skills"),
-            abs("vendor/rea/plugin/skills"),
           ].join(process.platform === "win32" ? ";" : ":"),
         },
       }),

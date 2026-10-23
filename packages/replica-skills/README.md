@@ -10,6 +10,14 @@ The skills come from Replica by Jake Schincariol
 keeps the upstream notice and `UPSTREAM.md` records the compared commit and
 the Bun OS changes. Retain both when moving or redistributing these files.
 
+This is the canonical copy. The REA submodule (`vendor/rea/plugin/skills`)
+still carries an older copy of the same eleven skills next to the
+reverse-engineering skills that only REA ships, so its skill root stays on
+`BUN_MCP_SKILLS_PATH`. Bun MCP lets a later root replace an earlier skill of
+the same name; `bunos mcp` (`src/cli/commands.ts`) and the product
+qualification (`factory/product-qualification.ts`) list this package after
+REA, so these skills win. Edit them here, not in the submodule.
+
 ## Bun-native tools
 
 The skills call Bun, not Python. The original standard-library Python tools
