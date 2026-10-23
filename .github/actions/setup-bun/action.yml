@@ -38,5 +38,10 @@ runs:
           unzip -qjo "$tmp/$asset" "*/$exe" -d "$HOME/.bun/bin"
           chmod +x "$HOME/.bun/bin/$exe"
         fi
-        echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+        # Native tools see Windows paths: a /c/Users/... entry is not one, and the workspace scripts that spawn a
+        # separate Bun (resolveBunExecutable) did not find it on the Windows runner. Hand them the executable directly.
+        bin="$HOME/.bun/bin" path="$HOME/.bun/bin/$exe"
+        if command -v cygpath >/dev/null; then bin="$(cygpath -w "$bin")" path="$(cygpath -w "$path")"; fi
+        echo "$bin" >> "$GITHUB_PATH"
+        echo "APHRODY_BUN_BINARY=$path" >> "$GITHUB_ENV"
         "$HOME/.bun/bin/$exe" --version
