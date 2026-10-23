@@ -13,6 +13,8 @@ const FORMAT_IGNORE = [
   "**/.clang-*",
   "factory/bunos/pkgbuilds/**",
   "packages/re/**",
+  // Byte copies of the @napi-rs/canvas npm files, checked against the registry by the canvas prepack.
+  "packages/canvas/vendor/**",
   "packages/iecode-cpp/**",
   "packages/niepy/**",
   "packages/nie-blender/**",
