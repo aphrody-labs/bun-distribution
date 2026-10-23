@@ -1,28 +1,68 @@
 # syntax=docker/dockerfile:1.7
 # SPDX-License-Identifier: MIT
-# bunos-disk: rootfs for the bootable Bun OS disk image (see docs/bun-os/REAL-OS.md).
-# Base: the imported Omarchy 4.0.4 Arch rootfs (Hyprland, uwsm, NetworkManager, linux 7.2.x).
-# Adds gamescope + the Bun Engine frontend session, btrfs/vfat tooling, a bootable initramfs and the
-# display-manager-free session unit. Built by build.sh; assembled into a disk by assemble.sh.
+# bunos-disk: rootfs for the bootable Bun OS disk image (see docs/bun-os/REAL-OS.md and
+# docs/bun-os/ABSORBED-UPSTREAM.md).
+# Base: the imported Omarchy 4.0.4 Arch rootfs (Hyprland, uwsm, NetworkManager).
+# Takes from upstream instead of rewriting: the CachyOS repositories and linux-cachyos kernel, sched-ext
+# (scx-scheds, scx-tools), Limine + limine-mkinitcpio-hook + limine-snapper-sync + snap-pac (Omarchy and
+# CachyOS rollback stack), hhd + InputPlumber (handheld layer), cachyos-gaming-meta and
+# cachyos-gaming-applications (Steam, Proton, Heroic, Lutris, gamescope, MangoHud), the ChimeraOS
+# gamescope-session-plus wrapper and a few reviewed Bazzite udev/sysctl/limits files.
+# Build context: build.sh stages this directory plus ../../upstream and the package lists.
 ARG BASE=bunos-omarchy:imported-rootfs
 FROM ${BASE}
-RUN pacman --disable-sandbox --noconfirm -Syu \
- && pacman --disable-sandbox --noconfirm --needed -S gamescope xorg-xwayland vulkan-swrast vulkan-virtio vulkan-tools \
-      btrfs-progs dosfstools mtools snapper efibootmgr sudo \
+# 1. CachyOS repositories (upstream install-repo.awk) and package lists.
+COPY upstream/cachyos-repo/install-repo.awk /usr/share/bun-os/cachyos-repo/install-repo.awk
+COPY cachyos-repo.sh /usr/local/sbin/bunos-cachyos-repo
+COPY packages/ /usr/share/bun-os/packages/
+COPY install-packages.sh /usr/local/sbin/bunos-install-packages
+RUN pacman --disable-sandbox --noconfirm --needed -S gawk curl \
+ && bash /usr/local/sbin/bunos-cachyos-repo \
+ && pacman --disable-sandbox --noconfirm -Syu \
  && rm -rf /var/cache/pacman/pkg/*
+# 2. Kernel and boot stack first (the stock Arch kernel is removed), then handheld, desktop-session tools
+#    and the gaming stack. install-packages.sh refuses the image if any package is missing from the repos.
+RUN pacman --disable-sandbox --noconfirm -Rns linux linux-headers \
+ && sed -i 's/|| pacman -S /|| pacman --disable-sandbox -S /' /usr/local/sbin/bunos-install-packages \
+ && bunos-install-packages /usr/share/bun-os/packages/bootable.packages /usr/share/bun-os/packages/handheld.packages \
+ && rm -rf /var/cache/pacman/pkg/*
+RUN pacman --disable-sandbox --noconfirm --needed -S supergfxctl gamescope xorg-xwayland vulkan-swrast vulkan-virtio vulkan-tools \
+      mtools sudo \
+ && bunos-install-packages /usr/share/bun-os/packages/gaming.packages \
+ && rm -rf /var/cache/pacman/pkg/*
+# 3. Reviewed upstream files, verbatim (provenance: factory/upstream/PROVENANCE.md).
+COPY upstream/chimeraos-gamescope-session/usr/ /usr/
+COPY upstream/bazzite/usr/ /usr/
+COPY upstream/omarchy/etc/limine-entry-tool.d/omarchy-defaults.conf /etc/limine-entry-tool.d/omarchy-defaults.conf
+COPY upstream/omarchy/default/limine/default.conf /usr/share/bun-os/upstream/omarchy/limine-default.conf
+COPY upstream/omarchy/default/snapper/root /usr/share/bun-os/upstream/omarchy/snapper-root
+COPY upstream/omarchy/install/config/snapper.sh /usr/share/bun-os/upstream/omarchy/snapper.sh
 COPY overlay/ /
 COPY bun /usr/bin/bun
 COPY be/ /usr/share/bun-engine/
-RUN chmod 0440 /etc/sudoers.d/10-bunos-dev \
+RUN chmod 0755 /usr/bin/gamescope-session-plus /usr/share/gamescope-session-plus/gamescope-session-plus /usr/bin/export-gpu \
+ && chmod 0440 /etc/sudoers.d/10-bunos-dev \
  && printf '#!/bin/sh\nexec /usr/bin/bun /usr/share/bun-engine/cli.js "$@"\n' >/usr/bin/bun-engine && chmod +x /usr/bin/bun-engine \
  && ln -sf /usr/bin/bun /usr/bin/bunx \
  && useradd -m -u 1000 -G wheel,video,input,render,audio,seat -s /bin/bash bunos 2>/dev/null || usermod -aG wheel,video,input,render,audio bunos; \
-    echo 'bunos:bunos' | chpasswd; passwd -d root \
- && rm -f /etc/systemd/system/multi-user.target.wants/try-omarchy-* /etc/systemd/system/multi-user.target.wants/omarchy-provision-owner.service \
+    echo 'bunos:bunos' | chpasswd; passwd -d root
+# 4. Services: session, handheld (InputPlumber; hhd@ stays disabled, see the conflict drop-ins), sched-ext, snapper.
+RUN rm -f /etc/systemd/system/multi-user.target.wants/try-omarchy-* /etc/systemd/system/multi-user.target.wants/omarchy-provision-owner.service \
           /etc/systemd/system/multi-user.target.wants/mnt-host.mount /etc/systemd/system/display-manager.service \
- && systemctl enable bunos-session.service bunos-firstboot.service NetworkManager.service systemd-resolved.service seatd.service 2>&1 | tail -3; \
+ && systemctl enable bunos-session.service bunos-firstboot.service bunos-boot-setup.service NetworkManager.service \
+      systemd-resolved.service seatd.service inputplumber.service scx_loader.service power-profiles-daemon.service \
+      snapper-cleanup.timer limine-snapper-sync.service 2>&1 | tail -8; \
     systemctl set-default graphical.target; \
-    systemctl mask sddm.service 2>&1 | tail -1; \
+    systemctl mask sddm.service snapper-timeline.timer 2>&1 | tail -2; \
     echo bunos >/etc/hostname; \
-    printf 'LABEL=bunos-root / btrfs subvol=@,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /home btrfs subvol=@home,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /.snapshots btrfs subvol=@snapshots,noatime 0 0\nLABEL=BUNOS-ESP /boot vfat umask=0077 0 2\n' >/etc/fstab \
- && mkinitcpio -P 2>&1 | tail -5; ls -la /boot
+    printf 'LABEL=bunos-root / btrfs subvol=@,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /home btrfs subvol=@home,compress=zstd:3,noatime 0 0\nLABEL=bunos-root /.snapshots btrfs subvol=@snapshots,noatime 0 0\nLABEL=BUNOS-ESP /boot vfat umask=0077 0 2\n' >/etc/fstab
+# 5. Snapper configuration with the unmodified Omarchy script (config only: create-config needs a running
+#    btrfs root), Limine settings from Omarchy's default.conf template, then the initramfs of the installed
+#    kernel. /usr/bin/mkinitcpio is used directly: limine-mkinitcpio-hook wraps /usr/local/bin/mkinitcpio
+#    with an interactive prompt, and its hooks need the ESP mounted, which a container build does not have.
+RUN OMARCHY_SNAPPER_CONFIGURE_TEST=1 OMARCHY_SNAPPER_TEMPLATE=/usr/share/bun-os/upstream/omarchy/snapper-root \
+      bash /usr/share/bun-os/upstream/omarchy/snapper.sh \
+ && sed 's|@@CMDLINE@@|root=LABEL=bunos-root rootflags=subvol=@ rw|' /usr/share/bun-os/upstream/omarchy/limine-default.conf >/etc/default/limine \
+ && kver=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) \
+ && install -Dm644 /usr/lib/modules/$kver/vmlinuz /boot/vmlinuz-linux-cachyos \
+ && /usr/bin/mkinitcpio -k "$kver" -g /boot/initramfs-linux-cachyos.img 2>&1 | tail -5; ls -la /boot

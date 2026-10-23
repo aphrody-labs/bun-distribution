@@ -9,3 +9,5 @@ for d in hypr foot kitty btop starship.toml; do
 done
 chown -R bunos:bunos /home/bunos
 install -d /var/lib/bunos; date -u >/var/lib/bunos/firstboot.done
+# The filesystem is shrunk to its content when the image is built (mkfs.btrfs --shrink): grow it to the partition.
+btrfs filesystem resize max / >/dev/null 2>&1 || true

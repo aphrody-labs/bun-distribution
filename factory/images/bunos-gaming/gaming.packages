@@ -1,12 +1,20 @@
-# Gaming stack (CachyOS, Arch core/extra/multilib, AUR fallback)
+# Gaming stack from the configured CachyOS/Arch repositories and Bun OS repo.
+# Upstream first: CachyOS ships the gaming composition as two meta packages
+# (cachyos-gaming-meta: proton-cachyos-slr, wine-cachyos-opt, umu-launcher, winetricks,
+# protontricks, 32-bit audio/video libs; cachyos-gaming-applications: steam, gamescope,
+# mangohud, lutris, heroic-games-launcher, goverlay, faugus-launcher). Everything below is
+# verified present with `pacman -Si` against cachyos + core/extra/multilib (see
+# docs/bun-os/ABSORBED-UPSTREAM.md). Packages that exist only in the AUR (steamcmd,
+# proton-ge-custom-bin, dxvk-bin, vkd3d-proton-bin, logiops) are not listed: the image
+# build refuses missing packages and AUR is not a source owner. DXVK and vkd3d-proton
+# ship inside Proton.
+cachyos-gaming-meta
+cachyos-gaming-applications
 steam
-steamcmd
-proton-cachyos
-proton-ge-custom-bin
-wine-staging
+steam-devices
+proton-cachyos-slr
+wine-cachyos-opt
 winetricks
-dxvk-bin
-vkd3d-proton-bin
 mesa
 lib32-mesa
 vulkan-icd-loader
@@ -17,24 +25,29 @@ vulkan-intel
 lib32-vulkan-intel
 vulkan-tools
 gamescope
+lib32-gamescope
 gamemode
 lib32-gamemode
 mangohud
 lib32-mangohud
 lutris
-heroic-games-launcher-bin
+heroic-games-launcher
 umu-launcher
 # NVIDIA userspace (kernel modules only in the bootable target)
 nvidia-utils
 lib32-nvidia-utils
 nvidia-settings
-nvidia-container-toolkit
+# nvidia-container-toolkit: its CDI refresh unit fails on hosts without an NVIDIA GPU (seen at first boot); install it per host.
 # Logitech
 solaar
 piper
 libratbag
-logiops
 # ASUS
 asusctl
-supergfxctl
+# supergfxctl is only in the Omarchy repo; add it to the disk image list, not here.
 rog-control-center
+# Bazzite recipes that map to pacman packages (ujust: waydroid, distrobox, sunshine)
+waydroid
+distrobox
+sunshine
+flatpak

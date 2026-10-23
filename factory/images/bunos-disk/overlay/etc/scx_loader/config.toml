@@ -1,0 +1,5 @@
+# Bun OS: sched-ext scheduler started by scx_loader.service (package scx-tools, CachyOS).
+# scx_lavd is the latency-aware virtual-deadline scheduler used by Valve-style handheld gaming;
+# switch at runtime with `scxctl switch --sched bpfland` (or any scx_* in scx-scheds).
+default_sched = "scx_lavd"
+default_mode = "Gaming"

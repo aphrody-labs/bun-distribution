@@ -1,0 +1,15 @@
+{
+  "archinstall-language": "English",
+  "bootloader_config": { "bootloader": "Limine", "uki": false, "removable": false },
+  "kernels": ["linux"],
+  "hostname": "bunos",
+  "ntp": true,
+  "network_config": { "type": "nm" },
+  "parallel_downloads": 5,
+  "swap": { "enabled": true, "algorithm": "zstd" },
+  "packages": ["base-devel", "git", "curl", "gawk", "snapper", "snap-pac", "btrfs-progs", "efibootmgr", "sudo", "networkmanager"],
+  "services": ["NetworkManager"],
+  "custom_commands": [
+    "bunos-installer-post"
+  ]
+}

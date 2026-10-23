@@ -1,0 +1,12 @@
+[Unit]
+Description=Bun OS boot loader hand-over (limine-install, limine-mkinitcpio, limine-snapper-sync)
+ConditionPathExists=!/var/lib/bunos/boot-setup.done
+RequiresMountsFor=/boot /.snapshots
+After=local-fs.target bunos-firstboot.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=1800
+ExecStart=/usr/lib/bun-os/bunos-boot-setup
+[Install]
+WantedBy=multi-user.target

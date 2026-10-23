@@ -1,8 +1,24 @@
-# BLOCKED candidate list: the image contract has no selected, qualified kernel composition.
-# Container gaming continues to use the host kernel; this file is inert until that contract changes.
+# Kernel, boot and rollback packages of the bootable Bun OS image (factory/images/bunos-disk).
+# Requires the CachyOS repositories (factory/upstream/cachyos-repo, bunos-cachyos-repo). The
+# container targets (gaming, emulation) keep the host kernel and do not install this list.
+# Kernel: CachyOS (BORE/EEVDF, sched-ext, x86-64-v3 builds from cachyos-v3).
 linux-cachyos
 linux-cachyos-headers
 linux-cachyos-nvidia-open
 linux-firmware
 mkinitcpio
 systemd-ukify
+# sched-ext schedulers (scx_lavd, scx_bpfland, ...) and the scx_loader service (scxctl).
+scx-scheds
+scx-tools
+# Boot loader and rollback, as in Omarchy and CachyOS: Limine, kernel entries rebuilt by pacman
+# hooks (limine-mkinitcpio-hook), snapper snapshots before/after every pacman transaction
+# (snap-pac) and one Limine boot entry per snapshot (limine-snapper-sync).
+limine
+limine-mkinitcpio-hook
+limine-snapper-sync
+snapper
+snap-pac
+btrfs-progs
+dosfstools
+efibootmgr

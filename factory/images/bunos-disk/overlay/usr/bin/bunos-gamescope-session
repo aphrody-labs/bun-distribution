@@ -1,8 +1,9 @@
 #!/bin/sh
-# Bun OS gamescope session: the Bun Engine frontend as the only full-screen client.
-# Override gamescope's flags with BUNOS_GAMESCOPE_ARGS (output size, refresh, HDR, FSR).
+# SPDX-License-Identifier: MIT
+# Bun OS gaming session. The compositor setup is the unmodified ChimeraOS gamescope-session-plus
+# (wrapper, systemd user unit, device quirks: factory/upstream/chimeraos-gamescope-session, MIT);
+# Bun OS only supplies the session definition /usr/share/gamescope-session-plus/sessions.d/bunos
+# (the Bun Engine library as the client). Per-machine overrides: BUNOS_* in
+# /etc/gamescope-session-plus/sessions.d/bunos, gamescope flags via GAMESCOPECMD.
 export XDG_CURRENT_DESKTOP=gamescope
-export XDG_SESSION_TYPE=wayland
-export MOZ_ENABLE_WAYLAND=1
-# shellcheck disable=SC2086
-exec gamescope ${BUNOS_GAMESCOPE_ARGS:--e -f --adaptive-sync} -- bun-engine frontend --session
+exec /usr/bin/gamescope-session-plus bunos

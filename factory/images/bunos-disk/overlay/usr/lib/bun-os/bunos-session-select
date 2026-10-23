@@ -32,6 +32,9 @@ case $want in
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
     start=$(date +%s)
     /usr/bin/bunos-gamescope-session; rc=$?
+    # gamescope-session-plus reports success even when gamescope or the client died at once: a run shorter
+    # than 30 s is a failure whatever the exit code.
+    [ "$rc" -eq 0 ] && [ $(( $(date +%s) - start )) -lt 30 ] && rc=1
     # gamescope needs a real GPU (it refuses llvmpipe): after two quick failures start the desktop once.
     if [ "$rc" -ne 0 ] && [ $(( $(date +%s) - start )) -lt 30 ]; then
       n=$(( $(cat "$state/fails" 2>/dev/null || echo 0) + 1 )); echo "$n" >"$state/fails"

@@ -1,0 +1,14 @@
+# Handheld and controller layer, all from the configured CachyOS/Arch repositories.
+# hhd (Handheld Daemon, Bazzite/ChimeraOS ecosystem) and InputPlumber (ShadowBlip, used by
+# ChimeraOS) both ship their own udev rules, hwdb and systemd units; they are not
+# re-implemented here. They compete for the same input devices: the image enables
+# inputplumber.service and leaves hhd@ disabled (a unit drop-in makes them conflict).
+# FRZR (ChimeraOS atomic updater) is intentionally not installed.
+hhd
+inputplumber
+steamos-manager
+power-profiles-daemon
+iio-sensor-proxy
+cachyos-settings
+scx-scheds
+scx-tools

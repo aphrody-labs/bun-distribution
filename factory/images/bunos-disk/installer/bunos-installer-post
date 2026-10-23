@@ -1,0 +1,13 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Chroot step of the Bun OS install flow. archinstall (upstream, GPL-3.0) does partitioning, base system,
+# Limine and the user; this script only adds what archinstall cannot express: the CachyOS repositories (they
+# need CachyOS's pacman for x86_64_v3) and the Bun OS package lists from factory/images/bunos-gaming.
+# Expects /usr/share/bun-os/{cachyos-repo,packages} and bunos-cachyos-repo copied in by the installer medium.
+set -euo pipefail
+bunos-cachyos-repo
+pacman --noconfirm -Syu
+pacman --noconfirm -Rns linux linux-headers || true
+bunos-install-packages /usr/share/bun-os/packages/bootable.packages /usr/share/bun-os/packages/handheld.packages /usr/share/bun-os/packages/gaming.packages
+systemctl enable inputplumber.service scx_loader.service power-profiles-daemon.service snapper-cleanup.timer limine-snapper-sync.service
+limine-mkinitcpio

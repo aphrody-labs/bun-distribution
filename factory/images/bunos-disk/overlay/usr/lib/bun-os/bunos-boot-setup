@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# First-boot hand-over of /boot/limine.conf to the upstream Omarchy/CachyOS tooling: limine-install
+# (EFI binary + boot entry), limine-mkinitcpio (initramfs and entries for every installed kernel) and
+# limine-snapper-sync (one boot entry per snapper snapshot). Needs the ESP mounted on /boot, as fstab does.
+# Best effort: the bootstrap limine.conf written by assemble-inner.sh stays valid if a step fails.
+log=/var/log/bunos-boot-setup.log
+exec >>"$log" 2>&1
+echo "== $(date -u) bunos-boot-setup"
+mountpoint -q /boot || { echo "/boot is not a mount point"; exit 0; }
+snapper -c root create -d "bunos first boot" -c number || true
+limine-install || true
+limine-mkinitcpio || true
+limine-snapper-sync || true
+install -d /var/lib/bunos; date -u >/var/lib/bunos/boot-setup.done
