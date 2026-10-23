@@ -508,7 +508,10 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 )}
               >
                 <span
-                  className={clsx("material-symbol text-title-medium", isChatActive && !isSettingsActive && "font-bold")}
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isChatActive && !isSettingsActive && "font-bold",
+                  )}
                 >
                   chat
                 </span>

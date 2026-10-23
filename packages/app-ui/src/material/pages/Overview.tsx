@@ -88,23 +88,25 @@ export default function Overview({ adaptive, host = "bun", destinations = DESTIN
       </Section>
       <Section title="Explore" description="Each page imports and runs the packages it names.">
         <div className={`grid gap-3 ${columns}`} data-testid="destinations">
-          {destinations.filter(d => d.id !== "overview").map(d => (
-            <a
-              key={d.id}
-              href={host === "native" ? `/material-3/${d.id}` : `#/${d.id}`}
-              data-dpad
-              data-testid={`card-${d.id}`}
-              className="state-layer flex flex-col gap-2 rounded-large bg-surface-container p-4 text-left"
-            >
-              <span className="flex items-center gap-2 text-title-medium text-on-surface">
-                <Svg html={d.icon} className="text-primary" />
-                {d.label}
-                <Svg html={arrowIcon} className="ml-auto text-on-surface-variant" small />
-              </span>
-              <span className="text-body-small text-on-surface-variant">{d.summary}</span>
-              <Chips names={d.packages.slice(0, 3)} />
-            </a>
-          ))}
+          {destinations
+            .filter(d => d.id !== "overview")
+            .map(d => (
+              <a
+                key={d.id}
+                href={host === "native" ? `/material-3/${d.id}` : `#/${d.id}`}
+                data-dpad
+                data-testid={`card-${d.id}`}
+                className="state-layer flex flex-col gap-2 rounded-large bg-surface-container p-4 text-left"
+              >
+                <span className="flex items-center gap-2 text-title-medium text-on-surface">
+                  <Svg html={d.icon} className="text-primary" />
+                  {d.label}
+                  <Svg html={arrowIcon} className="ml-auto text-on-surface-variant" small />
+                </span>
+                <span className="text-body-small text-on-surface-variant">{d.summary}</span>
+                <Chips names={d.packages.slice(0, 3)} />
+              </a>
+            ))}
         </div>
       </Section>
     </Page>
