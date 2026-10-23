@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       crate-limit:
-        description: Maximum crates to publish in this run (crates.io rate limits new crates)
+        description: Maximum crates to publish in this run (crates.io rate limits new crates; a 429 waits for the time it names)
         type: string
         default: "5"
 
@@ -106,7 +106,7 @@ jobs:
       - name: Publish the unpublished crates in dependency order
         env:
           APPLY: ${{ (startsWith(github.ref, 'refs/tags/') || inputs.publish) && '--apply' || '' }}
-        run: bun scripts/release.ts crates $APPLY --limit "${{ inputs.crate-limit || '5' }}" --pause 600
+        run: bun scripts/release.ts crates $APPLY --limit "${{ inputs.crate-limit || '5' }}" --pause 0 --budget 290
 
   github-release:
     name: GitHub release

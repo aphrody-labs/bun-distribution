@@ -8,7 +8,7 @@
  *   bun scripts/release.ts verify                     # check, lint, format, docs, manifests
  *   bun scripts/release.ts plan                       # what npm and crates.io still miss
  *   bun scripts/release.ts npm    [--apply] [--only a,b]
- *   bun scripts/release.ts crates [--apply] [--only a,b] [--limit N]
+ *   bun scripts/release.ts crates [--apply] [--only a,b] [--limit N] [--budget MIN]
  *   bun scripts/release.ts all    [--apply]           # verify, npm, crates
  *
  * Credentials come from the environment only: NPM_CONFIG_TOKEN (or an .npmrc) and CARGO_REGISTRY_TOKEN.
@@ -29,6 +29,7 @@ const { positionals, values } = parseArgs({
     only: { type: "string" },
     limit: { type: "string" },
     pause: { type: "string", default: "0" },
+    budget: { type: "string" },
   },
 });
 const stage = positionals[0] ?? "plan";
@@ -47,6 +48,8 @@ type Crate = {
   version: string;
   manifest: string;
   deps: string[];
+  /** Path dependencies the published crate keeps: normal and build, not dev. */
+  needs: string[];
 };
 
 async function run(cmd: string[], cwd = ROOT): Promise<number> {
@@ -187,6 +190,7 @@ export async function cargoCrates(): Promise<Crate[]> {
       version: pkg.version,
       manifest: pkg.manifest_path,
       deps: pkg.dependencies.filter((dep: any) => dep.path).map((dep: any) => dep.name),
+      needs: pkg.dependencies.filter((dep: any) => dep.path && dep.kind !== "dev").map((dep: any) => dep.name),
     }));
   return order(crates);
 }
@@ -243,12 +247,43 @@ async function publishNpm(): Promise<void> {
   if (failed.length) throw new Error(`npm failed: ${failed.join(", ")}`);
 }
 
+/** Runs `cargo publish`, mirroring its stderr; returns the exit code and the stderr tail. */
+async function cargoPublish(cmd: string[]): Promise<{ code: number; stderr: string }> {
+  console.log(`$ ${cmd.join(" ")}`);
+  const proc = Bun.spawn(cmd, { cwd: ROOT, stdout: "inherit", stderr: "pipe" });
+  const decoder = new TextDecoder();
+  let stderr = "";
+  for await (const chunk of proc.stderr) {
+    process.stderr.write(chunk);
+    stderr = (stderr + decoder.decode(chunk, { stream: true })).slice(-65536);
+  }
+  return { code: await proc.exited, stderr };
+}
+
+/**
+ * Publishes the unpublished crates in dependency order. `--limit` counts crates actually published, `--budget`
+ * stops starting new crates after that many minutes, a crate whose path dependency is still unpublished is skipped
+ * without calling cargo, and a crates.io 429 waits for the time the registry names before retrying.
+ */
 async function publishCrates(): Promise<void> {
   const limit = values.limit ? Number(values.limit) : Infinity;
   const pause = Number(values.pause) * 1000;
-  const todo = (await missing(await cargoCrates(), cratePublished)).slice(0, limit);
+  const deadline = values.budget ? Date.now() + Number(values.budget) * 60_000 : Infinity;
+  const all = await cargoCrates();
+  const todo = await missing(all, cratePublished);
+  const unpublished = new Set(todo.map(crate => crate.name));
   const failed: string[] = [];
-  for (const crate of todo) {
+  const blocked: string[] = [];
+  let published = 0;
+  let index = 0;
+  for (; index < todo.length && published < limit && Date.now() < deadline; index++) {
+    const crate = todo[index];
+    const waiting = crate.needs.find(dep => unpublished.has(dep));
+    if (waiting) {
+      console.log(`skip: ${crate.name}@${crate.version} (depends on unpublished ${waiting})`);
+      blocked.push(`${crate.name}@${crate.version} (needs ${waiting})`);
+      continue;
+    }
     const cmd = [
       "cargo",
       "publish",
@@ -257,10 +292,28 @@ async function publishCrates(): Promise<void> {
       crate.manifest,
       ...(apply ? [] : ["--dry-run"]),
     ];
-    if ((await run(cmd)) !== 0) failed.push(`${crate.name}@${crate.version}`);
-    else if (apply && pause > 0) await Bun.sleep(pause);
+    let result = await cargoPublish(cmd);
+    for (let retry = 0; result.code !== 0 && retry < 3; retry++) {
+      const after = /429 Too Many Requests.*?try again after ([^.]+? GMT)/s.exec(result.stderr)?.[1];
+      if (!after) break;
+      const wait = Math.max(Date.parse(after) - Date.now(), 0) + 15_000;
+      console.log(`crates.io rate limit: waiting ${Math.round(wait / 1000)}s for ${crate.name}`);
+      await Bun.sleep(wait);
+      result = await cargoPublish(cmd);
+    }
+    if (result.code !== 0) {
+      failed.push(`${crate.name}@${crate.version}`);
+      continue;
+    }
+    unpublished.delete(crate.name);
+    published++;
+    if (apply && pause > 0) await Bun.sleep(pause);
   }
-  console.log(`crates.io: ${todo.length - failed.length}/${todo.length} ${apply ? "published" : "verified"}`);
+  const left = todo.length - index;
+  console.log(
+    `crates.io: ${published} ${apply ? "published" : "verified"}, ${failed.length} failed, ${blocked.length} blocked, ${left} not attempted`,
+  );
+  if (blocked.length) console.log(`blocked: ${blocked.join(", ")}`);
   if (failed.length) throw new Error(`crates failed: ${failed.join(", ")}`);
 }
 
