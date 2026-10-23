@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-next-example",
   "version": "1.4.4",
-  "private": true,
   "description": "Sample Next.js 16 app on the M3 stack: App Router, Cache Components, proxy.ts, React Compiler, typed routes, Tailwind v4 and Base UI, built and served on Bun through yolo.",
   "license": "Apache-2.0",
   "type": "module",

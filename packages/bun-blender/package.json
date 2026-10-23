@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-blender",
   "version": "1.4.4",
-  "private": true,
   "license": "MIT",
   "bin": {
     "bun-blender": "./src/cli.ts",

@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-engine",
   "version": "1.4.4",
-  "private": true,
   "license": "MIT",
   "bin": {
     "bep": "./src/bep.ts",

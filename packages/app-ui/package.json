@@ -47,7 +47,6 @@
   },
   "dependencies": {
     "@aphrody/assets": "workspace:*",
-    "@aphrody/bun-m3": "1.4.4",
     "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
     "@aphrody/canvas": "workspace:*",
     "@aphrody/drive-client": "workspace:*",

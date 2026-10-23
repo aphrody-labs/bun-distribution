@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-gamestream",
   "version": "1.4.4",
-  "private": true,
   "description": "Bun OS game streaming client: Bun.serve signalling, WebRTC receive, WebGPU FSR1 upscaling and input capture",
   "license": "MIT",
   "type": "module",

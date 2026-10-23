@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-steam",
   "version": "1.4.4",
-  "private": true,
   "description": "Bun OS Steam owner (Bun half): VDF text/binary/appinfo parser and writer, Steam client configuration, steamcmd with a cached session, libraries, Proton management and launch tuning, Remote Play state, the local Steam index and the bun-steam CLI.",
   "license": "Apache-2.0",
   "author": "aphrody-dev <contact@aphrody.com>",

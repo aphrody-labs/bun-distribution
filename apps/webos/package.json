@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/webos",
   "version": "1.4.4",
-  "private": true,
   "description": "aphrody.com: the Bun OS in the browser. One Cloudflare Worker serves the desktop shell (windows, launcher, file explorer, terminal, browser, Bun Engine) and the catalog of every app, package and crate of the workspace.",
   "license": "Apache-2.0",
   "author": "aphrody-dev <contact@aphrody.com>",

@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/android-web",
   "version": "1.4.4",
-  "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "bun run scripts/build.ts",

@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-artifacts",
   "version": "1.4.4",
-  "private": true,
   "description": "Independent Aphrody applications built with Bun",
   "license": "MIT",
   "bin": {

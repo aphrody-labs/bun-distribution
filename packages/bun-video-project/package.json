@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-video-project",
   "version": "1.4.4",
-  "private": true,
   "description": "Aphrody / Bun native video project bridge",
   "license": "MIT",
   "bin": {

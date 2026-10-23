@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/m3-showcase",
   "version": "1.4.4",
-  "private": true,
   "description": "Adaptive Bun OS M3 showcase for mobile, desktop and TV, with one Bun UI/API sidecar reused by the existing desktop owner.",
   "license": "Apache-2.0",
   "type": "module",

@@ -290,7 +290,6 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/assets": "workspace:*",
-        "@aphrody/bun-m3": "1.4.4",
         "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
         "@aphrody/canvas": "workspace:*",
         "@aphrody/drive-client": "workspace:*",
@@ -3405,7 +3404,7 @@
     },
     "packages/m3": {
       "name": "@aphrody/m3",
-      "version": "1.4.4",
+      "version": "3.4.0",
       "bin": {
         "m3": "./bin/m3.ts",
       },
@@ -3415,14 +3414,17 @@
         "@aphrody/m3-motion": "workspace:*",
         "@aphrody/m3-react": "workspace:*",
         "@aphrody/m3-theme": "workspace:*",
-        "@aphrody/material-web": "catalog:",
         "@aphrody/scaffold": "workspace:*",
         "@tailwindcss/node": "catalog:",
         "@tailwindcss/oxide": "catalog:",
         "motion": "catalog:",
       },
+      "devDependencies": {
+        "@aphrody/material-web": "catalog:",
+      },
       "peerDependencies": {
         "@aphrody/m3-bun": "workspace:*",
+        "@aphrody/material-web": "^3.3.3",
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
       },

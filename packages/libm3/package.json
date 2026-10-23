@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/libm3",
   "version": "1.4.4",
-  "private": true,
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

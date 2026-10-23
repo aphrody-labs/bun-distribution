@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-app-host",
   "version": "1.4.4",
-  "private": true,
   "license": "MIT",
   "bin": {
     "aphrody-server": "./src/cli.ts"

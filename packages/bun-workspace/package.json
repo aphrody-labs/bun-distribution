@@ -1,7 +1,6 @@
 {
   "name": "@aphrody/bun-workspace",
   "version": "1.4.4",
-  "private": true,
   "license": "MIT AND Apache-2.0",
   "bin": {
     "aphrody-bun": "./src/cli.ts"
