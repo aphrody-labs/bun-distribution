@@ -42,7 +42,7 @@ ignored = ["rustls"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 hf-hub = { version = "1.0.0" }
-aphrody-secrets = { path = "../aphrody-secrets", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.7", features = [] }
 dirs = { version = "7.0.0" }
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }

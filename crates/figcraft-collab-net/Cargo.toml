@@ -25,9 +25,9 @@ unreachable = "deny"
 [dependencies]
 base64 = "0.23"
 getrandom = "0.4"
-figcraft-engine = { path = "../figcraft-engine" }
-figcraft-collab = { path = "../figcraft-collab" }
-figcraft-doc = { path = "../figcraft-doc" }
+figcraft-engine = { path = "../figcraft-engine", version = "0.5.1" }
+figcraft-collab = { path = "../figcraft-collab", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
 log = "0.4"
 web-time = "1"
 

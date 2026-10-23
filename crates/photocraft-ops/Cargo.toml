@@ -12,4 +12,4 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
-photocraft-doc = { path = "../photocraft-doc" }
+photocraft-doc = { path = "../photocraft-doc", version = "0.8.2" }

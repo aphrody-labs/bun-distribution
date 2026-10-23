@@ -36,7 +36,7 @@ serde_json = "1.0.151"
 tracing = "0.1.44"
 rusqlite = { version = "0.40", features = ["bundled"], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
-aphrody-agent-home = { path = "../aphrody-agent-home", features = [], optional = true }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = [], optional = true }
 
 [dev-dependencies]
 tempfile = "3.27.0"

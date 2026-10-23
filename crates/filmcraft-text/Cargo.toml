@@ -17,7 +17,7 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-filmcraft-color = { path = "../filmcraft-color" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
 skrifa = { version = "0.44", default-features = false, features = ["std"] }
 harfrust = { version = "0.12", default-features = false, features = ["std"] }
 unicode-bidi = "0.3.18"

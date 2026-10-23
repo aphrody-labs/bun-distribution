@@ -93,6 +93,6 @@ edition = "2026_pre"
 root = "src"
 
 [package.metadata.wgsl-analyzer.dependencies]
-bevy_core_pipeline = { path = "../bevy_core_pipeline" }
-bevy_pbr = { path = "../bevy_pbr" }
-bevy_render = { path = "../bevy_render" }
+bevy_core_pipeline = { path = "../bevy_core_pipeline", version = "0.20.0" }
+bevy_pbr = { path = "../bevy_pbr", version = "0.20.0" }
+bevy_render = { path = "../bevy_render", version = "0.20.0" }

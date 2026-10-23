@@ -15,19 +15,19 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-gridcraft-core = { path = "../gridcraft-core" }
-gridcraft-numfmt = { path = "../gridcraft-numfmt" }
-gridcraft-formula = { path = "../gridcraft-formula" }
-gridcraft-functions = { path = "../gridcraft-functions" }
-gridcraft-model = { path = "../gridcraft-model" }
-gridcraft-calc = { path = "../gridcraft-calc" }
+gridcraft-core = { path = "../gridcraft-core", version = "0.6.1" }
+gridcraft-numfmt = { path = "../gridcraft-numfmt", version = "0.6.1" }
+gridcraft-formula = { path = "../gridcraft-formula", version = "0.6.1" }
+gridcraft-functions = { path = "../gridcraft-functions", version = "0.6.1" }
+gridcraft-model = { path = "../gridcraft-model", version = "0.6.1" }
+gridcraft-calc = { path = "../gridcraft-calc", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"
 log = "0.4"
-gridcraft-xlsx = { path = "../gridcraft-xlsx" }
-gridcraft-chart = { path = "../gridcraft-chart" }
-gridcraft-pdf = { path = "../gridcraft-pdf" }
+gridcraft-xlsx = { path = "../gridcraft-xlsx", version = "0.6.1" }
+gridcraft-chart = { path = "../gridcraft-chart", version = "0.6.1" }
+gridcraft-pdf = { path = "../gridcraft-pdf", version = "1.4.7" }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 
 [dev-dependencies]

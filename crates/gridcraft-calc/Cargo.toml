@@ -15,9 +15,9 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-gridcraft-core = { path = "../gridcraft-core" }
-gridcraft-formula = { path = "../gridcraft-formula" }
-gridcraft-functions = { path = "../gridcraft-functions" }
-gridcraft-numfmt = { path = "../gridcraft-numfmt" }
-gridcraft-model = { path = "../gridcraft-model" }
+gridcraft-core = { path = "../gridcraft-core", version = "0.6.1" }
+gridcraft-formula = { path = "../gridcraft-formula", version = "0.6.1" }
+gridcraft-functions = { path = "../gridcraft-functions", version = "0.6.1" }
+gridcraft-numfmt = { path = "../gridcraft-numfmt", version = "0.6.1" }
+gridcraft-model = { path = "../gridcraft-model", version = "0.6.1" }
 log = "0.4"

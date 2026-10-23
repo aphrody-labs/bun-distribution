@@ -18,8 +18,8 @@ large_enum_variant = "allow"
 result_large_err = "allow"
 
 [dependencies]
-deckcraft-geom = { path = "../deckcraft-geom" }
-deckcraft-color = { path = "../deckcraft-color" }
+deckcraft-geom = { path = "../deckcraft-geom", version = "0.6.1" }
+deckcraft-color = { path = "../deckcraft-color", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

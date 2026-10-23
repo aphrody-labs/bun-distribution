@@ -15,9 +15,9 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-craft-ui = { path = "../craft-ui" }
-gridcraft-engine = { path = "../gridcraft-engine" }
-gridcraft-chart = { path = "../gridcraft-chart" }
+craft-ui = { path = "../craft-ui", version = "1.4.7" }
+gridcraft-engine = { path = "../gridcraft-engine", version = "0.6.1" }
+gridcraft-chart = { path = "../gridcraft-chart", version = "0.6.1" }
 egui = "0.36"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

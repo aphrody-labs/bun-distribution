@@ -8612,7 +8612,7 @@ dependencies = [
 
 [[package]]
 name = "bun-re"
-version = "1.0.0-canary"
+version = "1.4.7"
 dependencies = [
  "aes 0.9.3",
  "anyhow",
@@ -8701,6 +8701,17 @@ dependencies = [
  "uiautomation",
  "vigem-rust",
  "windows 0.62.2",
+]
+
+[[package]]
+name = "bun_alloc"
+version = "1.4.7"
+dependencies = [
+ "allocator-api2",
+ "bun_mimalloc_sys",
+ "bun_opaque",
+ "bun_wyhash",
+ "libc",
 ]
 
 [[package]]
@@ -8887,6 +8898,7 @@ dependencies = [
  "bun_browser_dom",
  "bun_browser_net",
  "bun_browser_render",
+ "bun_core",
  "cbc 0.2.1",
  "ctr 0.10.1",
  "deno_core",
@@ -8914,6 +8926,7 @@ name = "bun_browser_layout"
 version = "1.4.7"
 dependencies = [
  "arrayvec",
+ "bun_core",
  "grid",
  "serde",
  "slotmap",
@@ -8971,6 +8984,7 @@ dependencies = [
  "bun_browser_dom",
  "bun_browser_layout",
  "bun_browser_ssrf",
+ "bun_core",
  "cssparser 0.37.0",
  "image",
  "resvg 0.48.1",
@@ -9002,6 +9016,49 @@ dependencies = [
 [[package]]
 name = "bun_browser_ssrf"
 version = "1.4.7"
+
+[[package]]
+name = "bun_core"
+version = "1.4.7"
+dependencies = [
+ "bstr",
+ "bun_alloc",
+ "bun_core_macros",
+ "bun_dispatch",
+ "bun_hash",
+ "bun_highway",
+ "bun_no_window",
+ "bun_opaque",
+ "bun_output_tags",
+ "bun_simdutf_sys",
+ "bun_windows_sys",
+ "bun_wyhash",
+ "bytemuck",
+ "const_format",
+ "itoa",
+ "libc",
+ "strum 0.28.0",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "bun_core_macros"
+version = "1.4.7"
+dependencies = [
+ "bun_output_tags",
+ "proc-macro2",
+ "quote 1.0.47",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "bun_dispatch"
+version = "1.4.7"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.47",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "bun_ecma_ast"
@@ -9166,6 +9223,7 @@ version = "1.4.7"
 dependencies = [
  "bun_browser",
  "bun_browser_dom",
+ "bun_core",
  "chrono",
  "regex",
  "reqwest 0.13.5",
@@ -9175,6 +9233,27 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "bun_hash"
+version = "1.4.7"
+dependencies = [
+ "bun_highway",
+]
+
+[[package]]
+name = "bun_highway"
+version = "1.4.7"
+dependencies = [
+ "bstr",
+]
+
+[[package]]
+name = "bun_mimalloc_sys"
+version = "1.4.7"
+dependencies = [
+ "bun_opaque",
 ]
 
 [[package]]
@@ -9189,6 +9268,14 @@ dependencies = [
 
 [[package]]
 name = "bun_no_window"
+version = "1.4.7"
+
+[[package]]
+name = "bun_opaque"
+version = "1.4.7"
+
+[[package]]
+name = "bun_output_tags"
 version = "1.4.7"
 
 [[package]]
@@ -9241,11 +9328,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bun_simdutf_sys"
+version = "1.4.7"
+
+[[package]]
 name = "bun_typed_index"
 version = "5.0.0"
 dependencies = [
  "nonmax",
  "serde",
+]
+
+[[package]]
+name = "bun_windows_sys"
+version = "1.4.7"
+
+[[package]]
+name = "bun_wyhash"
+version = "1.4.7"
+dependencies = [
+ "bstr",
 ]
 
 [[package]]

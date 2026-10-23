@@ -20,23 +20,23 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-craft-ui = { path = "../craft-ui", features = ["serde"] }
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-color = { path = "../vectorcraft-color" }
-vectorcraft-doc = { path = "../vectorcraft-doc" }
-vectorcraft-brush = { path = "../vectorcraft-brush" }
-vectorcraft-render = { path = "../vectorcraft-render" }
-vectorcraft-text = { path = "../vectorcraft-text" }
-vectorcraft-tools = { path = "../vectorcraft-tools" }
-vectorcraft-engine = { path = "../vectorcraft-engine" }
-vectorcraft-svg = { path = "../vectorcraft-svg" }
-vectorcraft-effects = { path = "../vectorcraft-effects" }
-vectorcraft-three-d = { path = "../vectorcraft-three-d" }
-vectorcraft-plugins = { path = "../vectorcraft-plugins" }
-vectorcraft-pdf = { path = "../vectorcraft-pdf" }
-vectorcraft-cad = { path = "../vectorcraft-cad" }
-vectorcraft-eps = { path = "../vectorcraft-eps" }
-vectorcraft-format = { path = "../vectorcraft-format" }
+craft-ui = { path = "../craft-ui", version = "1.4.7", features = ["serde"] }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-color = { path = "../vectorcraft-color", version = "0.10.0" }
+vectorcraft-doc = { path = "../vectorcraft-doc", version = "0.10.0" }
+vectorcraft-brush = { path = "../vectorcraft-brush", version = "0.10.0" }
+vectorcraft-render = { path = "../vectorcraft-render", version = "0.10.0" }
+vectorcraft-text = { path = "../vectorcraft-text", version = "0.10.0" }
+vectorcraft-tools = { path = "../vectorcraft-tools", version = "0.10.0" }
+vectorcraft-engine = { path = "../vectorcraft-engine", version = "0.10.0" }
+vectorcraft-svg = { path = "../vectorcraft-svg", version = "0.10.0" }
+vectorcraft-effects = { path = "../vectorcraft-effects", version = "0.10.0" }
+vectorcraft-three-d = { path = "../vectorcraft-three-d", version = "0.10.0" }
+vectorcraft-plugins = { path = "../vectorcraft-plugins", version = "0.10.0" }
+vectorcraft-pdf = { path = "../vectorcraft-pdf", version = "0.10.0" }
+vectorcraft-cad = { path = "../vectorcraft-cad", version = "0.10.0" }
+vectorcraft-eps = { path = "../vectorcraft-eps", version = "0.10.0" }
+vectorcraft-format = { path = "../vectorcraft-format", version = "0.10.0" }
 egui = "0.36"
 egui_extras = { version = "0.36", default-features = false, features = ["svg"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

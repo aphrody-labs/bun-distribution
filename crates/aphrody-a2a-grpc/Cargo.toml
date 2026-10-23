@@ -28,10 +28,10 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-a2a = { path = "../aphrody-a2a", features = [] }
-aphrody-a2a-client = { path = "../aphrody-a2a-client", default-features = false, features = [] }
-aphrody-a2a-server = { path = "../aphrody-a2a-server", default-features = false, features = [] }
-aphrody-a2a-pb = { path = "../aphrody-a2a-pb" }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.7", features = [] }
+aphrody-a2a-client = { path = "../aphrody-a2a-client", version = "1.4.7", default-features = false, features = [] }
+aphrody-a2a-server = { path = "../aphrody-a2a-server", version = "1.4.7", default-features = false, features = [] }
+aphrody-a2a-pb = { path = "../aphrody-a2a-pb", version = "1.4.7" }
 tonic = { version = "0.14", features = [] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 tokio-stream = { version = "0.1", features = ["net"] }

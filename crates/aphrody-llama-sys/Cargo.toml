@@ -16,7 +16,7 @@ libloading = "0.9.0"
 
 [build-dependencies]
 anyhow = "1.0.104"
-aphrody-bindgen = { path = "../aphrody-bindgen" }
+aphrody-bindgen = { path = "../aphrody-bindgen", version = "1.4.7" }
 
 [package.metadata.cargo-machete]
 ignored = ["anyhow", "aphrody-bindgen", "libc", "libloading"]

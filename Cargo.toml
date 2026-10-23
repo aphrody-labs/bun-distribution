@@ -755,43 +755,43 @@ pyo3 = { version = "0.29.3" }
 mimalloc = { version = "0.1", default-features = false, features = [] }
 aphrody-backend = { path = "crates/aphrody-backend", version = "1.4.7", features = [] }
 libm = { version = "0.2.16" }
-filmcraft-engine = { path = "crates/filmcraft-engine" }
-filmcraft-ui-egui = { path = "crates/filmcraft-ui-egui" }
-filmcraft-media = { path = "crates/filmcraft-media" }
-filmcraft-codecs = { path = "crates/filmcraft-codecs" }
-filmcraft-frame = { path = "crates/filmcraft-frame" }
-filmcraft-color = { path = "crates/filmcraft-color" }
-filmcraft-isobmff = { path = "crates/filmcraft-isobmff" }
-filmcraft-format = { path = "crates/filmcraft-format" }
-filmcraft-time = { path = "crates/filmcraft-time" }
-soundcraft-engine = { path = "crates/soundcraft-engine" }
-soundcraft-ui-egui = { path = "crates/soundcraft-ui-egui" }
-soundcraft-playback = { path = "crates/soundcraft-playback" }
-soundcraft-model = { path = "crates/soundcraft-model" }
+filmcraft-engine = { path = "crates/filmcraft-engine", version = "0.7.2" }
+filmcraft-ui-egui = { path = "crates/filmcraft-ui-egui", version = "0.7.2" }
+filmcraft-media = { path = "crates/filmcraft-media", version = "0.7.2" }
+filmcraft-codecs = { path = "crates/filmcraft-codecs", version = "0.7.2" }
+filmcraft-frame = { path = "crates/filmcraft-frame", version = "0.7.2" }
+filmcraft-color = { path = "crates/filmcraft-color", version = "0.7.2" }
+filmcraft-isobmff = { path = "crates/filmcraft-isobmff", version = "0.7.2" }
+filmcraft-format = { path = "crates/filmcraft-format", version = "0.7.2" }
+filmcraft-time = { path = "crates/filmcraft-time", version = "0.7.2" }
+soundcraft-engine = { path = "crates/soundcraft-engine", version = "0.6.1" }
+soundcraft-ui-egui = { path = "crates/soundcraft-ui-egui", version = "0.6.1" }
+soundcraft-playback = { path = "crates/soundcraft-playback", version = "0.6.1" }
+soundcraft-model = { path = "crates/soundcraft-model", version = "0.6.1" }
 aphrody-web-extract = { package = "bun_browser_extract", path = "toolchains/bun/src/browser/crates/extract" }
 aphrody-web-index = { package = "bun_browser_index", path = "toolchains/bun/src/browser/crates/index" }
-aphrody-gemini-web = { path = "crates/aphrody-gemini-web" }
-aphrody-site = { path = "crates/aphrody-site" }
-aphrody-webos-wasm = { path = "crates/aphrody-webos-wasm" }
-aphrody-shell-session = { path = "crates/aphrody-shell-session" }
-aphrody-shell-vfs = { path = "crates/aphrody-shell-vfs" }
-aphrody-terminal-core = { path = "crates/aphrody-terminal-core" }
-aphrody-shell-web = { path = "crates/aphrody-shell-web" }
-aphrody-google = { path = "crates/aphrody-google" }
+aphrody-gemini-web = { path = "crates/aphrody-gemini-web", version = "1.4.7" }
+aphrody-site = { path = "crates/aphrody-site", version = "1.4.7" }
+aphrody-webos-wasm = { path = "crates/aphrody-webos-wasm", version = "1.4.7" }
+aphrody-shell-session = { path = "crates/aphrody-shell-session", version = "1.4.7" }
+aphrody-shell-vfs = { path = "crates/aphrody-shell-vfs", version = "1.4.7" }
+aphrody-terminal-core = { path = "crates/aphrody-terminal-core", version = "1.4.7" }
+aphrody-shell-web = { path = "crates/aphrody-shell-web", version = "1.4.7" }
+aphrody-google = { path = "crates/aphrody-google", version = "1.4.7" }
 rio-vt = { path = "toolchains/bun/src/rio/rio-vt", default-features = false }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["cors"] }
-aphrody-gemini-runtime = { path = "crates/aphrody-gemini-runtime" }
-aphrody-antigravity = { path = "crates/aphrody-antigravity" }
-aphrody-model-antigravity = { path = "crates/aphrody-model-antigravity" }
-aphrody-boq = { path = "crates/aphrody-boq" }
+aphrody-gemini-runtime = { path = "crates/aphrody-gemini-runtime", version = "1.4.7" }
+aphrody-antigravity = { path = "crates/aphrody-antigravity", version = "1.4.7" }
+aphrody-model-antigravity = { path = "crates/aphrody-model-antigravity", version = "1.4.7" }
+aphrody-boq = { path = "crates/aphrody-boq", version = "1.4.7" }
 data-encoding = { version = "2.11.1" }
 prost = { version = "0.14.4" }
 tonic = { version = "0.14.6" }
 tonic-prost = { version = "0.14.6" }
 tonic-prost-build = { version = "0.14.6" }
 protoc-bin-vendored = { version = "3.2.0" }
-aphrody-mcp-client = { path = "crates/aphrody-mcp-client" }
+aphrody-mcp-client = { path = "crates/aphrody-mcp-client", version = "1.4.7" }
 aphrody-x = { package = "bun_x", path = "toolchains/bun/src/x" }
 obscura-dom = { package = "bun_browser_dom", path = "toolchains/bun/src/browser/crates/dom" }
 obscura-net = { package = "bun_browser_net", path = "toolchains/bun/src/browser/crates/net" }
@@ -889,7 +889,7 @@ unicode-bidi = "0.3.18"
 windows = { version = "0.62.2", default-features = false }
 winsafe = { version = "0.0.29", default-features = false }
 winresource = "0.1.31"
-winprint = { git = "https://github.com/storytold/winprint.rs", rev = "5f80b9baf6b58937c401656634e42d33f00ddf49", default-features = false }
+winprint = { git = "https://github.com/storytold/winprint.rs", rev = "5f80b9baf6b58937c401656634e42d33f00ddf49", version = "0.2.1", default-features = false }
 muda = { version = "0.21.2", default-features = false }
 winit = { version = "0.30.13", default-features = false }
 zbus = { version = "5.19.0", default-features = false }
@@ -931,15 +931,15 @@ twox-hash = { version = "2.1.2", default-features = false, features = ["std", "x
 zstd = "0.13.3"
 ahash = "0.8"
 crossbeam-channel = "0.5"
-aphrody-emu-utils = {  path = "crates/aphrody-emu-utils", features = ["triple-buffer", "app"] }
-aphrody-dust-core = {  path = "crates/aphrody-dust-core" }
+aphrody-emu-utils = {  path = "crates/aphrody-emu-utils", version = "0.0.1", features = ["triple-buffer", "app"] }
+aphrody-dust-core = {  path = "crates/aphrody-dust-core", version = "0.0.1" }
 bun-steam = { path = "crates/bun-steam", version = "1.4.7", default-features = false }
-bun-engine = { path = "crates/bun-engine-core", default-features = false }
-aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", features = ["webgpu"] }
-aphrody-wii = { path = "crates/aphrody-wii" }
-aphrody-wii-image = { path = "crates/aphrody-wii-image" }
-aphrody-switch = { path = "crates/aphrody-switch" }
-ghidra-decompiler = { path = "crates/ghidra-decompiler" }
+bun-engine = { path = "crates/bun-engine-core", version = "0.1.0", default-features = false }
+aphrody-gpu-backend = { path = "crates/aphrody-gpu-backend", version = "1.4.7", features = ["webgpu"] }
+aphrody-wii = { path = "crates/aphrody-wii", version = "0.1.1" }
+aphrody-wii-image = { path = "crates/aphrody-wii-image", version = "0.1.1" }
+aphrody-switch = { path = "crates/aphrody-switch", version = "0.1.1" }
+ghidra-decompiler = { path = "crates/ghidra-decompiler", version = "2.1.0" }
 parking_lot = "0.12.3"
 proc-bitfield = { version = "0.5" }
 bitfield-struct = "0.12"
@@ -1269,62 +1269,62 @@ globset = { version = "0.4" }
 grep-regex = { version = "0.1" }
 grep-searcher = { version = "0.1" }
 hmac = { version = "0.12" }
-aphrody-re = { package = "bun-re", path = "crates/re", version = "1.0.0-canary" }
+aphrody-re = { package = "bun-re", path = "crates/re", version = "1.4.7" }
 aphrody-web-crawl = "1.0.0"
-aphrody-os-re = { package = "bun-re", path = "crates/re", version = "1.0.0-canary" }
-aphrody-identity = { path = "crates/aphrody-identity" }
-aphrody-softraster = { path = "crates/aphrody-softraster" }
+aphrody-os-re = { package = "bun-re", path = "crates/re", version = "1.4.7" }
+aphrody-identity = { path = "crates/aphrody-identity", version = "1.4.7" }
+aphrody-softraster = { path = "crates/aphrody-softraster", version = "1.4.7" }
 aphrody-sprite-sheet = "1.0.0-canary"
-aphrody-nie-geom = { path = "crates/aphrody-nie-geom",  }
-aphrody-nie-video = { path = "crates/aphrody-nie-video",  }
-aphrody-nie-sql = { path = "crates/aphrody-nie-sql",  }
-aphrody-nie-tasks = { default-features = false, path = "crates/aphrody-nie-tasks",  }
-aphrody-nie-pe-inspect = { path = "crates/aphrody-nie-pe-inspect",  }
+aphrody-nie-geom = { path = "crates/aphrody-nie-geom", version = "1.4.7",  }
+aphrody-nie-video = { path = "crates/aphrody-nie-video", version = "1.4.7",  }
+aphrody-nie-sql = { path = "crates/aphrody-nie-sql", version = "1.4.7",  }
+aphrody-nie-tasks = { default-features = false, path = "crates/aphrody-nie-tasks", version = "1.4.7",  }
+aphrody-nie-pe-inspect = { path = "crates/aphrody-nie-pe-inspect", version = "1.4.7",  }
 ignore = { version = "0.4" }
 image_dds = { version = "0.7", default-features = false }
 memmap2 = { version = "0.9" }
 mlua = { version = "0.11" }
-aphrody-nie-identity-source = { path = "crates/aphrody-nie-identity-source",  }
-aphrody-nie-app = { default-features = false, path = "crates/aphrody-nie-app",  }
-aphrody-nie-asm = { default-features = false, path = "crates/aphrody-nie-asm",  }
-aphrody-nie-bench = { default-features = false, path = "crates/aphrody-nie-bench",  }
-aphrody-nie-bevy = { path = "crates/aphrody-nie-bevy",  }
-aphrody-nie-camera = { default-features = false, path = "crates/aphrody-nie-camera",  }
-aphrody-nie-cli = { path = "crates/aphrody-nie-cli",  }
-aphrody-nie-computer-use = { default-features = false, path = "crates/aphrody-nie-computer-use",  }
-aphrody-nie-core = { default-features = false, path = "crates/aphrody-nie-core",  }
-aphrody-nie-data = { path = "crates/aphrody-nie-data",  }
-aphrody-nie-editor = { default-features = false, path = "crates/aphrody-nie-editor",  }
-aphrody-nie-explore = { default-features = false, path = "crates/aphrody-nie-explore",  }
-aphrody-nie-ffi = { default-features = false, path = "crates/aphrody-nie-ffi",  }
-aphrody-nie-forge = { default-features = false, path = "crates/aphrody-nie-forge",  }
-aphrody-nie-formats = { default-features = false, path = "crates/aphrody-nie-formats",  }
-nie-formats = { package = "aphrody-nie-formats", path = "crates/aphrody-nie-formats",  }
-aphrody-nie-game = { path = "crates/aphrody-nie-game",  }
-aphrody-nie-headless = { default-features = false, path = "crates/aphrody-nie-headless",  }
-aphrody-nie-index = { default-features = false, path = "crates/aphrody-nie-index",  }
-aphrody-nie-launcher = { path = "crates/aphrody-nie-launcher",  }
-aphrody-nie-lua = { default-features = false, path = "crates/aphrody-nie-lua",  }
-aphrody-nie-lua-web = { path = "crates/aphrody-nie-lua-web",  }
-aphrody-nie-mcp = { path = "crates/aphrody-nie-mcp",  }
-aphrody-nie-model-serve = { default-features = false, path = "crates/aphrody-nie-model-serve",  }
-aphrody-nie-net = { default-features = false, path = "crates/aphrody-nie-net",  }
-aphrody-nie-ocgen = { path = "crates/aphrody-nie-ocgen",  }
-aphrody-nie-pe = { default-features = false, path = "crates/aphrody-nie-pe",  }
-aphrody-nie-pg = { path = "crates/aphrody-nie-pg",  }
-aphrody-nie-play = { path = "crates/aphrody-nie-play",  }
-aphrody-nie-queue = { default-features = false, path = "crates/aphrody-nie-queue",  }
-aphrody-nie-render = { path = "crates/aphrody-nie-render",  }
-aphrody-nie-render3d = { default-features = false, path = "crates/aphrody-nie-render3d",  }
-aphrody-nie-ui = { path = "crates/aphrody-nie-ui",  }
-aphrody-nie-runtime = { default-features = false, path = "crates/aphrody-nie-runtime",  }
-aphrody-nie-save = { default-features = false, path = "crates/aphrody-nie-save",  }
-aphrody-nie-seed = { default-features = false, path = "crates/aphrody-nie-seed",  }
-aphrody-nie-trace = { default-features = false, path = "crates/aphrody-nie-trace",  }
-aphrody-nie-viola = { path = "crates/aphrody-nie-viola",  }
-aphrody-nie-wasm = { path = "crates/aphrody-nie-wasm",  }
-aphrody-nie-wiki = { path = "crates/aphrody-nie-wiki",  }
-aphrody-nie-zukan = { default-features = false, path = "crates/aphrody-nie-zukan",  }
+aphrody-nie-identity-source = { path = "crates/aphrody-nie-identity-source", version = "1.4.7",  }
+aphrody-nie-app = { default-features = false, path = "crates/aphrody-nie-app", version = "1.4.7",  }
+aphrody-nie-asm = { default-features = false, path = "crates/aphrody-nie-asm", version = "1.4.7",  }
+aphrody-nie-bench = { default-features = false, path = "crates/aphrody-nie-bench", version = "1.4.7",  }
+aphrody-nie-bevy = { path = "crates/aphrody-nie-bevy", version = "1.4.7",  }
+aphrody-nie-camera = { default-features = false, path = "crates/aphrody-nie-camera", version = "1.4.7",  }
+aphrody-nie-cli = { path = "crates/aphrody-nie-cli", version = "1.4.7",  }
+aphrody-nie-computer-use = { default-features = false, path = "crates/aphrody-nie-computer-use", version = "1.4.7",  }
+aphrody-nie-core = { default-features = false, path = "crates/aphrody-nie-core", version = "1.4.7",  }
+aphrody-nie-data = { path = "crates/aphrody-nie-data", version = "1.4.7",  }
+aphrody-nie-editor = { default-features = false, path = "crates/aphrody-nie-editor", version = "1.4.7",  }
+aphrody-nie-explore = { default-features = false, path = "crates/aphrody-nie-explore", version = "1.4.7",  }
+aphrody-nie-ffi = { default-features = false, path = "crates/aphrody-nie-ffi", version = "1.4.7",  }
+aphrody-nie-forge = { default-features = false, path = "crates/aphrody-nie-forge", version = "1.4.7",  }
+aphrody-nie-formats = { default-features = false, path = "crates/aphrody-nie-formats", version = "1.4.7",  }
+nie-formats = { package = "aphrody-nie-formats", path = "crates/aphrody-nie-formats", version = "1.4.7",  }
+aphrody-nie-game = { path = "crates/aphrody-nie-game", version = "1.4.7",  }
+aphrody-nie-headless = { default-features = false, path = "crates/aphrody-nie-headless", version = "1.4.7",  }
+aphrody-nie-index = { default-features = false, path = "crates/aphrody-nie-index", version = "1.4.7",  }
+aphrody-nie-launcher = { path = "crates/aphrody-nie-launcher", version = "1.4.7",  }
+aphrody-nie-lua = { default-features = false, path = "crates/aphrody-nie-lua", version = "1.4.7",  }
+aphrody-nie-lua-web = { path = "crates/aphrody-nie-lua-web", version = "1.4.7",  }
+aphrody-nie-mcp = { path = "crates/aphrody-nie-mcp", version = "1.4.7",  }
+aphrody-nie-model-serve = { default-features = false, path = "crates/aphrody-nie-model-serve", version = "1.4.7",  }
+aphrody-nie-net = { default-features = false, path = "crates/aphrody-nie-net", version = "1.4.7",  }
+aphrody-nie-ocgen = { path = "crates/aphrody-nie-ocgen", version = "1.4.7",  }
+aphrody-nie-pe = { default-features = false, path = "crates/aphrody-nie-pe", version = "1.4.7",  }
+aphrody-nie-pg = { path = "crates/aphrody-nie-pg", version = "1.4.7",  }
+aphrody-nie-play = { path = "crates/aphrody-nie-play", version = "1.4.7",  }
+aphrody-nie-queue = { default-features = false, path = "crates/aphrody-nie-queue", version = "1.4.7",  }
+aphrody-nie-render = { path = "crates/aphrody-nie-render", version = "1.4.7",  }
+aphrody-nie-render3d = { default-features = false, path = "crates/aphrody-nie-render3d", version = "1.4.7",  }
+aphrody-nie-ui = { path = "crates/aphrody-nie-ui", version = "1.0.1",  }
+aphrody-nie-runtime = { default-features = false, path = "crates/aphrody-nie-runtime", version = "1.4.7",  }
+aphrody-nie-save = { default-features = false, path = "crates/aphrody-nie-save", version = "1.4.7",  }
+aphrody-nie-seed = { default-features = false, path = "crates/aphrody-nie-seed", version = "1.4.7",  }
+aphrody-nie-trace = { default-features = false, path = "crates/aphrody-nie-trace", version = "1.4.7",  }
+aphrody-nie-viola = { path = "crates/aphrody-nie-viola", version = "1.4.7",  }
+aphrody-nie-wasm = { path = "crates/aphrody-nie-wasm", version = "1.4.7",  }
+aphrody-nie-wiki = { path = "crates/aphrody-nie-wiki", version = "1.4.7",  }
+aphrody-nie-zukan = { default-features = false, path = "crates/aphrody-nie-zukan", version = "1.4.7",  }
 pbkdf2 = { version = "0.12" }
 percent-encoding = { version = "2" }
 r2d2 = { version = "0.8" }
@@ -1345,20 +1345,20 @@ candle-core = { version = "0.11", default-features = false }
 candle-nn = { version = "0.11", default-features = false }
 candle-transformers = { version = "0.11", default-features = false }
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
-aphrody-tauri-3d = { path = "crates/aphrody-tauri-3d" }
-rdynarmic = { path = "crates/rdynarmic" }
-common = { path = "crates/ruzu-common" }
-network = { path = "crates/ruzu-network" }
-web_service = { path = "crates/ruzu-web-service" }
-input_common = { path = "crates/ruzu-input-common" }
-video_core = { path = "crates/ruzu-video-core" }
-frontend_common = { path = "crates/ruzu-frontend-common" }
-shader_recompiler = { path = "crates/ruzu-shader-recompiler" }
+aphrody-tauri-3d = { path = "crates/aphrody-tauri-3d", version = "1.0.0-canary" }
+rdynarmic = { path = "crates/rdynarmic", version = "0.1.0" }
+common = { path = "crates/ruzu-common", version = "1.4.7" }
+network = { path = "crates/ruzu-network", version = "1.4.7" }
+web_service = { path = "crates/ruzu-web-service", version = "1.4.7" }
+input_common = { path = "crates/ruzu-input-common", version = "1.4.7" }
+video_core = { path = "crates/ruzu-video-core", version = "1.4.7" }
+frontend_common = { path = "crates/ruzu-frontend-common", version = "1.4.7" }
+shader_recompiler = { path = "crates/ruzu-shader-recompiler", version = "1.4.7" }
 tauri = { package = "aphrody-tauri", path = "packages/bun-tauri/crates/aphrody-tauri", version = "1.4.7", default-features = false }
 tauri-build = { package = "aphrody-tauri-build", path = "packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.7" }
 tauri-plugin = { package = "aphrody-tauri-plugin", path = "packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.7" }
-aphrody-render = { path = "crates/aphrody-render" }
-aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens" }
+aphrody-render = { path = "crates/aphrody-render", version = "1.4.7" }
+aphrody-m3-tokens = { path = "crates/aphrody-m3-tokens", version = "1.4.7" }
 cubeb = "0.34"
 cubeb-sys = "0.34"
 sdl3 = "0.20"

@@ -22,8 +22,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-config = { path = "../aphrody-config", features = [] }
-aphrody-model-client = { path = "../aphrody-model-client", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.7", features = [] }
+aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.7", features = [] }
 async-trait = "0.1.92"
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
 bytes = "1.12.1"

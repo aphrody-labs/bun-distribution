@@ -17,22 +17,22 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-craft-ui = { path = "../craft-ui", features = ["serde"] }
-filmcraft-time = { path = "../filmcraft-time" }
-filmcraft-geom = { path = "../filmcraft-geom" }
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-frame = { path = "../filmcraft-frame" }
-filmcraft-media = { path = "../filmcraft-media" }
-filmcraft-project = { path = "../filmcraft-project" }
-filmcraft-tts = { path = "../filmcraft-tts" }
-filmcraft-edit = { path = "../filmcraft-edit" }
-filmcraft-render = { path = "../filmcraft-render" }
-filmcraft-text = { path = "../filmcraft-text" }
-filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp" }
-filmcraft-engine = { path = "../filmcraft-engine" }
-filmcraft-export = { path = "../filmcraft-export" }
-filmcraft-gpu = { path = "../filmcraft-gpu" }
-filmcraft-scopes = { path = "../filmcraft-scopes" }
+craft-ui = { path = "../craft-ui", version = "1.4.7", features = ["serde"] }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
+filmcraft-geom = { path = "../filmcraft-geom", version = "0.7.2" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-frame = { path = "../filmcraft-frame", version = "0.7.2" }
+filmcraft-media = { path = "../filmcraft-media", version = "0.7.2" }
+filmcraft-project = { path = "../filmcraft-project", version = "0.7.2" }
+filmcraft-tts = { path = "../filmcraft-tts", version = "0.7.2" }
+filmcraft-edit = { path = "../filmcraft-edit", version = "0.7.2" }
+filmcraft-render = { path = "../filmcraft-render", version = "0.7.2" }
+filmcraft-text = { path = "../filmcraft-text", version = "0.7.2" }
+filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp", version = "0.7.2" }
+filmcraft-engine = { path = "../filmcraft-engine", version = "0.7.2" }
+filmcraft-export = { path = "../filmcraft-export", version = "0.7.2" }
+filmcraft-gpu = { path = "../filmcraft-gpu", version = "0.7.2" }
+filmcraft-scopes = { path = "../filmcraft-scopes", version = "0.7.2" }
 egui = "0.36"
 eframe = { version = "0.36", default-features = false, features = ["glow", "default_fonts", "wgpu", "accesskit"] }
 serde = { version = "1", features = ["derive", "rc"] }

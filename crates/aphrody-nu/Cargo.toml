@@ -20,8 +20,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
-aphrody-subsystem = { path = "../aphrody-subsystem" }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
+aphrody-subsystem = { path = "../aphrody-subsystem", version = "1.4.7" }
 async-trait = "0.1.92"
 serde_json = "1.0.151"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt"] }

@@ -22,8 +22,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
-aphrody-config = { path = "../aphrody-config", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.7", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.7", features = [] }
 async-trait = "0.1.92"
 base64 = "0.23.1"
 futures-util = { version = "0.3", features = [] }
@@ -39,7 +39,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
 aphrody-web-service = { path = "../../toolchains/bun/src/browser/crates/service", package = "bun_browser_service", features = ["render"] }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
 

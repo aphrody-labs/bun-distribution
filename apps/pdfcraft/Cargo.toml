@@ -24,8 +24,8 @@ ureq = { version = "3.4", default-features = false, features = [
   "_ring",
 ] }
 rustls-native-certs = "0.8"
-pdfcraft-ui-egui = { path = "../../crates/pdfcraft-ui-egui" }
-pdfcraft-engine = { path = "../../crates/pdfcraft-engine" }
+pdfcraft-ui-egui = { path = "../../crates/pdfcraft-ui-egui", version = "0.7.1" }
+pdfcraft-engine = { path = "../../crates/pdfcraft-engine", version = "0.7.1" }
 eframe = { version = "0.36", default-features = false, features = [
   "default_fonts",
   "wgpu",

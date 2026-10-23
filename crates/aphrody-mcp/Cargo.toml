@@ -85,19 +85,19 @@ perf = { level = "warn", priority = -1 }
 
 [dependencies]
 aphrody-jev = { path = "../aphrody-jev", version = "1.4.7", default-features = false, features = ["client"] }
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-config = { path = "../aphrody-config", features = [] }
-aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
-aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = ["builtins"] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.7", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.7", default-features = false, features = ["builtins"] }
 aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", package = "bun_browser_extract" }
 aphrody-web-detect = { path = "../../toolchains/bun/src/browser/crates/detect", package = "bun_browser_detect", features = ["fetch"] }
 aphrody-web-crawl = { path = "../../toolchains/bun/src/browser/crates/crawl", package = "bun_browser_crawl" }
 aphrody-x = { path = "../../toolchains/bun/src/x", package = "bun_x", features = [] }
 rmcp = { version = "3.5.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros", "schemars"] }
 tokio-postgres = { version = "0.7.18", features = ["with-serde_json-1"] }
-aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["postgres"] }
-aphrody-a2a = { path = "../aphrody-a2a", features = [] }
-aphrody-a2a-server = { path = "../aphrody-a2a-server", default-features = false, features = [] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.7", default-features = false, features = ["postgres"] }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.7", features = [] }
+aphrody-a2a-server = { path = "../aphrody-a2a-server", version = "1.4.7", default-features = false, features = [] }
 aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
 anyhow = "1.0.104"
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
@@ -110,17 +110,17 @@ reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "strea
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 schemars = { version = "1.2.2", features = ["derive", "chrono04", "indexmap2", "uuid1"] }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
-aphrody-http-error = { path = "../aphrody-http-error", features = [] }
-aphrody-mcp-client = { path = "../aphrody-mcp-client", features = [] }
-aphrody-secrets = { path = "../aphrody-secrets", features = [] }
+aphrody-http-error = { path = "../aphrody-http-error", version = "1.4.7", features = [] }
+aphrody-mcp-client = { path = "../aphrody-mcp-client", version = "1.4.7", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.7", features = [] }
 tokio-tungstenite = { version = "0.30", features = [] }
 futures-util = { version = "0.3", features = [] }
 sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
-aphrody-backend = { path = "../aphrody-backend", features = [] }
-aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", features = [] }
-aphrody-google = { path = "../aphrody-google", features = [] }
-aphrody-firefly = { path = "../aphrody-firefly", features = [] }
-aphrody-capture = { path = "../aphrody-capture", features = [] }
+aphrody-backend = { path = "../aphrody-backend", version = "1.4.7", features = [] }
+aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", version = "1.4.7", features = [] }
+aphrody-google = { path = "../aphrody-google", version = "1.4.7", features = [] }
+aphrody-firefly = { path = "../aphrody-firefly", version = "1.4.7", features = [] }
+aphrody-capture = { path = "../aphrody-capture", version = "1.4.7", features = [] }
 which = { version = "8", features = [] }
 aphrody-n2b-core = { version = "0.7.0", features = [] }
 aphrody-n2b-types = { version = "0.7.0", features = [] }
@@ -134,28 +134,28 @@ name    = "initialize_handshake"
 harness = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-site = { path = "../aphrody-site" }
-aphrody-remote-desktop = { path = "../aphrody-remote-desktop", features = ["vnc-client"] }
-aphrody-voice = { path = "../aphrody-voice", features = [] }
+aphrody-site = { path = "../aphrody-site", version = "1.4.7" }
+aphrody-remote-desktop = { path = "../aphrody-remote-desktop", version = "1.4.7", features = ["vnc-client"] }
+aphrody-voice = { path = "../aphrody-voice", version = "1.4.7", features = [] }
 base64 = { version = "0.23.1" }
-aphrody-re = { package = "bun-re", version = "1.0.0-canary", features = [] }
+aphrody-re = { package = "bun-re", version = "1.4.7", features = [] }
 dirs = { version = "7.0.0" }
-aphrody-gemini-web = { path = "../aphrody-gemini-web", features = [] }
-aphrody-llama-server = { path = "../aphrody-llama-server", features = [], optional = true }
+aphrody-gemini-web = { path = "../aphrody-gemini-web", version = "1.4.7", features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.7", features = [], optional = true }
 aphrody-web-service = { path = "../../toolchains/bun/src/browser/crates/service", package = "bun_browser_service", features = [] }
 regex = { version = "1.11", features = [] }
-aphrody-session = { path = "../aphrody-session", features = ["memory"] }
-aphrody-memory = { path = "../aphrody-memory", features = [] }
-aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", features = [], optional = true }
-aphrody-ocr-core = { path = "../aphrody-ocr-core", features = [], optional = true }
-aphrody-ocr = { path = "../aphrody-ocr", features = [], optional = true }
-aphrody-infer = { path = "../aphrody-infer", features = ["onnx"], optional = true }
-aphrody-vision = { path = "../aphrody-vision", features = [], optional = true }
-aphrody-jobs = { path = "../aphrody-jobs", features = [], optional = true }
+aphrody-session = { path = "../aphrody-session", version = "1.4.7", features = ["memory"] }
+aphrody-memory = { path = "../aphrody-memory", version = "1.4.7", features = [] }
+aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", version = "1.4.7", features = [], optional = true }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.7", features = [], optional = true }
+aphrody-ocr = { path = "../aphrody-ocr", version = "1.4.7", features = [], optional = true }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.7", features = ["onnx"], optional = true }
+aphrody-vision = { path = "../aphrody-vision", version = "1.4.7", features = [], optional = true }
+aphrody-jobs = { path = "../aphrody-jobs", version = "1.4.7", features = [], optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 tempfile = { version = "3.27.0", optional = true }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", features = [], optional = true }
-aphrody-rag = { path = "../aphrody-rag", features = [], optional = true }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", version = "1.4.7", features = [], optional = true }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.7", features = [], optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62.2", features = ["Foundation","Globalization","Graphics_Imaging","Media_Ocr","Media_SpeechSynthesis","Media_Core","Storage_Streams","Win32_Foundation","Win32_Media_Audio","Win32_Security","Win32_Graphics_Dwm","Win32_Graphics_Gdi","Win32_Storage_IndexServer","Win32_System_Com","Win32_System_Ole","Win32_System_Search","Win32_System_Threading","Win32_System_IO","Win32_System_Diagnostics_Debug","Win32_System_Memory","Win32_System_SystemInformation","Win32_System_Diagnostics_ToolHelp","Win32_System_Variant","Win32_UI_WindowsAndMessaging","Win32","Win32_System","Win32_System_Console"] }

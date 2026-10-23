@@ -11,9 +11,9 @@ threaded = []
 [dependencies]
 ahash = { workspace = true }
 crossbeam-channel = { workspace = true }
-aphrody-dust-core = { path = "../aphrody-dust-core", features = ["3d-hi-res-coords"] }
-aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base" }
-aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d" }
+aphrody-dust-core = { path = "../aphrody-dust-core", version = "0.0.1", features = ["3d-hi-res-coords"] }
+aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base", version = "0.0.1" }
+aphrody-dust-soft-3d = { path = "../aphrody-dust-soft-3d", version = "0.0.1" }
 aphrody-emu-utils = { workspace = true }
 aphrody-gpu-backend = { workspace = true }
 parking_lot = { workspace = true }

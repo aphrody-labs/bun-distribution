@@ -10,4 +10,4 @@ description = "Bounded scalar WASM API for portable Bun OS Material contracts"
 crate-type = ["cdylib"]
 
 [dependencies]
-libm3 = { path = "../libm3", default-features = false, features = ["std"] }
+libm3 = { path = "../libm3", version = "1.4.7", default-features = false, features = ["std"] }

@@ -32,10 +32,10 @@ default = []
 capture = ["dep:aphrody-capture", "dep:tempfile"]
 
 [dependencies]
-aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", features = [] }
-aphrody-ocr-core = { path = "../aphrody-ocr-core", features = [] }
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-capture = { path = "../aphrody-capture", features = [], optional = true }
+aphrody-ocr-vlm = { path = "../aphrody-ocr-vlm", version = "1.4.7", features = [] }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.7", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-capture = { path = "../aphrody-capture", version = "1.4.7", features = [], optional = true }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 tempfile = { version = "3.27.0", optional = true }

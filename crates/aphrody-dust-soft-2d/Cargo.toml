@@ -9,6 +9,6 @@ publish = true
 threaded = ["crossbeam-channel"]
 
 [dependencies]
-aphrody-dust-core = { path = "../aphrody-dust-core" }
-aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base" }
+aphrody-dust-core = { path = "../aphrody-dust-core", version = "0.0.1" }
+aphrody-dust-soft-2d-base = { path = "../aphrody-dust-soft-2d-base", version = "0.0.1" }
 crossbeam-channel = { workspace = true, optional = true }

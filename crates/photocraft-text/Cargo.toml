@@ -14,11 +14,11 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
-photocraft-geom = { path = "../photocraft-geom" }
-photocraft-color = { path = "../photocraft-color" }
-photocraft-raster = { path = "../photocraft-raster" }
-photocraft-doc = { path = "../photocraft-doc" }
-photocraft-psd = { path = "../photocraft-psd" }
+photocraft-geom = { path = "../photocraft-geom", version = "0.8.2" }
+photocraft-color = { path = "../photocraft-color", version = "0.8.2" }
+photocraft-raster = { path = "../photocraft-raster", version = "0.8.2" }
+photocraft-doc = { path = "../photocraft-doc", version = "0.8.2" }
+photocraft-psd = { path = "../photocraft-psd", version = "0.8.2" }
 parley = { version = "0.11", default-features = false, features = ["std"] }
 skrifa = "0.44"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }

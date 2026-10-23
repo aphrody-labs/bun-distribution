@@ -17,8 +17,8 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-lightcraft-color = { path = "../lightcraft-color" }
-lightcraft-raster = { path = "../lightcraft-raster" }
+lightcraft-color = { path = "../lightcraft-color", version = "0.7.1" }
+lightcraft-raster = { path = "../lightcraft-raster", version = "0.7.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 rayon = "1"
 

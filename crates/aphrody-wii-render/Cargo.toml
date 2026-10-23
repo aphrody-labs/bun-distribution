@@ -19,7 +19,7 @@ gx-stats = ["gecko/gx-stats"]
 [dependencies]
 wgpu.workspace = true
 bytemuck = { workspace = true, features = ["derive"] }
-gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", default-features = false }
+gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", version = "0.1.1", default-features = false }
 chapa.workspace = true
 wesl.workspace = true
 glam = { workspace = true, features = ["bytemuck", "i32", "u32"] }

@@ -8,5 +8,5 @@ publish = true
 [features]
 
 [dependencies]
-aphrody-dust-core = { path = "../aphrody-dust-core" }
+aphrody-dust-core = { path = "../aphrody-dust-core", version = "0.0.1" }
 proc-bitfield = { workspace = true }

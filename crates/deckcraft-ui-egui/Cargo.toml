@@ -19,15 +19,15 @@ result_large_err = "allow"
 
 [dependencies]
 craft-ui = { workspace = true }
-deckcraft-geom = { path = "../deckcraft-geom" }
-deckcraft-color = { path = "../deckcraft-color" }
-deckcraft-model = { path = "../deckcraft-model" }
-deckcraft-fonts = { path = "../deckcraft-fonts" }
-deckcraft-text = { path = "../deckcraft-text" }
-deckcraft-render = { path = "../deckcraft-render" }
-deckcraft-anim = { path = "../deckcraft-anim" }
-deckcraft-engine = { path = "../deckcraft-engine" }
-deckcraft-media = { path = "../deckcraft-media" }
+deckcraft-geom = { path = "../deckcraft-geom", version = "0.6.1" }
+deckcraft-color = { path = "../deckcraft-color", version = "0.6.1" }
+deckcraft-model = { path = "../deckcraft-model", version = "0.6.1" }
+deckcraft-fonts = { path = "../deckcraft-fonts", version = "0.6.1" }
+deckcraft-text = { path = "../deckcraft-text", version = "0.6.1" }
+deckcraft-render = { path = "../deckcraft-render", version = "0.6.1" }
+deckcraft-anim = { path = "../deckcraft-anim", version = "0.6.1" }
+deckcraft-engine = { path = "../deckcraft-engine", version = "0.6.1" }
+deckcraft-media = { path = "../deckcraft-media", version = "0.6.1" }
 egui = "0.36"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

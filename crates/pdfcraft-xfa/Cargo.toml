@@ -21,8 +21,8 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-pdfcraft-cos = { path = "../pdfcraft-cos" }
-pdfcraft-fonts = { path = "../pdfcraft-fonts" }
+pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.1" }
+pdfcraft-fonts = { path = "../pdfcraft-fonts", version = "0.7.1" }
 roxmltree = "0.20"
 base64 = "0.22"
 png = "0.18"

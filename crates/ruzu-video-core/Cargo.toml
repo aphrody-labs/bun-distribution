@@ -11,9 +11,9 @@ ffmpeg = []
 metal-spirv-validation = ["dep:spirv-cross2"]
 
 [dependencies]
-aphrody-switch = { path = "../aphrody-switch" }
+aphrody-switch = { path = "../aphrody-switch", version = "0.1.1" }
 common.workspace = true
-ruzu_core = { package = "core", path = "../ruzu-core", default-features = false }
+ruzu_core = { package = "core", path = "../ruzu-core", version = "1.4.7", default-features = false }
 shader_recompiler.workspace = true
 gl.workspace = true
 log = { workspace = true }

@@ -20,24 +20,24 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-color = { path = "../vectorcraft-color" }
-vectorcraft-doc = { path = "../vectorcraft-doc" }
-vectorcraft-tools = { path = "../vectorcraft-tools" }
-vectorcraft-text = { path = "../vectorcraft-text" }
-vectorcraft-render = { path = "../vectorcraft-render" }
-vectorcraft-pathops = { path = "../vectorcraft-pathops" }
-vectorcraft-brush = { path = "../vectorcraft-brush" }
-vectorcraft-trace = { path = "../vectorcraft-trace" }
-vectorcraft-svg = { path = "../vectorcraft-svg" }
-vectorcraft-format = { path = "../vectorcraft-format" }
-vectorcraft-pdf = { path = "../vectorcraft-pdf" }
-vectorcraft-cad = { path = "../vectorcraft-cad" }
-vectorcraft-eps = { path = "../vectorcraft-eps" }
-vectorcraft-metafile = { path = "../vectorcraft-metafile" }
-vectorcraft-plugins = { path = "../vectorcraft-plugins" }
-vectorcraft-affinity = { path = "../vectorcraft-affinity" }
-vectorcraft-scriptcheck = { path = "../vectorcraft-scriptcheck" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-color = { path = "../vectorcraft-color", version = "0.10.0" }
+vectorcraft-doc = { path = "../vectorcraft-doc", version = "0.10.0" }
+vectorcraft-tools = { path = "../vectorcraft-tools", version = "0.10.0" }
+vectorcraft-text = { path = "../vectorcraft-text", version = "0.10.0" }
+vectorcraft-render = { path = "../vectorcraft-render", version = "0.10.0" }
+vectorcraft-pathops = { path = "../vectorcraft-pathops", version = "0.10.0" }
+vectorcraft-brush = { path = "../vectorcraft-brush", version = "0.10.0" }
+vectorcraft-trace = { path = "../vectorcraft-trace", version = "0.10.0" }
+vectorcraft-svg = { path = "../vectorcraft-svg", version = "0.10.0" }
+vectorcraft-format = { path = "../vectorcraft-format", version = "0.10.0" }
+vectorcraft-pdf = { path = "../vectorcraft-pdf", version = "0.10.0" }
+vectorcraft-cad = { path = "../vectorcraft-cad", version = "0.10.0" }
+vectorcraft-eps = { path = "../vectorcraft-eps", version = "0.10.0" }
+vectorcraft-metafile = { path = "../vectorcraft-metafile", version = "0.10.0" }
+vectorcraft-plugins = { path = "../vectorcraft-plugins", version = "0.10.0" }
+vectorcraft-affinity = { path = "../vectorcraft-affinity", version = "0.10.0" }
+vectorcraft-scriptcheck = { path = "../vectorcraft-scriptcheck", version = "0.10.0" }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 kurbo = { version = "0.13", features = ["serde"] }

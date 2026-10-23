@@ -17,8 +17,8 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-lightcraft-engine = { path = "../lightcraft-engine" }
-lightcraft-codecs = { path = "../lightcraft-codecs" }
-lightcraft-raster = { path = "../lightcraft-raster" }
+lightcraft-engine = { path = "../lightcraft-engine", version = "0.7.1" }
+lightcraft-codecs = { path = "../lightcraft-codecs", version = "0.7.1" }
+lightcraft-raster = { path = "../lightcraft-raster", version = "0.7.1" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 log = "0.4"

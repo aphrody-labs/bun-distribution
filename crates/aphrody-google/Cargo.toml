@@ -12,14 +12,14 @@ description = "Aphrody OS Google facade: the Bun Google SDK (bun_google) with th
 
 [dependencies]
 bun_google = { path = "../../toolchains/bun/src/google" }
-aphrody-antigravity = { path = "../aphrody-antigravity" }
-aphrody-gemini-web = { path = "../aphrody-gemini-web" }
+aphrody-antigravity = { path = "../aphrody-antigravity", version = "1.4.7" }
+aphrody-gemini-web = { path = "../aphrody-gemini-web", version = "1.4.7" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 bun_google = { path = "../../toolchains/bun/src/google", features = ["search", "search-cache", "browser-search"] }
-aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime" }
+aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", version = "1.4.7" }
 aphrody-model-client = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }

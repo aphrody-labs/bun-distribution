@@ -23,7 +23,7 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-doc = { path = "../figcraft-doc" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

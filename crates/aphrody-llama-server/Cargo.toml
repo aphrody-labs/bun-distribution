@@ -64,9 +64,9 @@ doc               = false
 required-features = ["test-support"]
 
 [dependencies]
-aphrody-gemini-web = { path = "../aphrody-gemini-web", features = [] }
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-gemini-web = { path = "../aphrody-gemini-web", version = "1.4.7", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
@@ -75,17 +75,17 @@ serde_json = "1.0.151"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full", "rt", "net"] }
 tracing = "0.1.44"
-aphrody-infer = { path = "../aphrody-infer", features = ["onnx"], optional = true }
-aphrody-model-client = { path = "../aphrody-model-client", features = [], optional = true }
-aphrody-toolcall-repair = { path = "../aphrody-toolcall-repair", features = [], optional = true }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.7", features = ["onnx"], optional = true }
+aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.7", features = [], optional = true }
+aphrody-toolcall-repair = { path = "../aphrody-toolcall-repair", version = "1.4.7", features = [], optional = true }
 async-trait = { version = "0.1.92", optional = true }
 base64 = { version = "0.23.1", optional = true }
 bytes = { version = "1.12.1", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 encoding_rs = { version = "0.8.41", optional = true }
 futures = { version = "0.3.34", optional = true }
-aphrody-llama = { path = "../aphrody-llama", optional = true }
-aphrody-ml-runtime = { path = "../aphrody-ml-runtime", optional = true }
+aphrody-llama = { path = "../aphrody-llama", version = "1.4.7", optional = true }
+aphrody-ml-runtime = { path = "../aphrody-ml-runtime", version = "1.4.7", optional = true }
 libloading = { version = "0.9.0", optional = true }
 minijinja = { version = "2.24.0", optional = true, features = ["json"] }
 minijinja-contrib = { version = "2.24.0", features = ["pycompat"], optional = true }

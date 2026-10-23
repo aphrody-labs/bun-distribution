@@ -17,7 +17,7 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
 rayon = "1"
 serde = { version = "1", features = ["derive", "rc"] }

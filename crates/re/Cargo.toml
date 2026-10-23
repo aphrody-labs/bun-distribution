@@ -7,7 +7,7 @@
 # through [patch.crates-io] and keep their `aphrody_re::` paths.
 [package]
 name = "bun-re"
-version = "1.0.0-canary"
+version = "1.4.7"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

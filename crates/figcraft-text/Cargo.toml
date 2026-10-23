@@ -23,8 +23,8 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-doc = { path = "../figcraft-doc" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
 skrifa = "0.47"
 harfrust = "0.13"
 unicode-bidi = "0.3"

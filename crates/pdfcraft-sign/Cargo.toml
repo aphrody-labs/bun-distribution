@@ -22,9 +22,9 @@ todo = "warn"
 
 [dependencies]
 getrandom = "0.4"
-pdfcraft-cos = { path = "../pdfcraft-cos" }
-pdfcraft-annot = { path = "../pdfcraft-annot" }
-pdfcraft-fonts = { path = "../pdfcraft-fonts" }
+pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.1" }
+pdfcraft-annot = { path = "../pdfcraft-annot", version = "0.7.1" }
+pdfcraft-fonts = { path = "../pdfcraft-fonts", version = "0.7.1" }
 thiserror = "2"
 base64 = "0.22"
 sha1 = "0.11"

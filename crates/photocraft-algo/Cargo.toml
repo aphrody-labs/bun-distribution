@@ -15,9 +15,9 @@ todo = "warn"
 
 [dependencies]
 rayon = "1"
-photocraft-geom = { path = "../photocraft-geom" }
-photocraft-color = { path = "../photocraft-color" }
-photocraft-raster = { path = "../photocraft-raster" }
+photocraft-geom = { path = "../photocraft-geom", version = "0.8.2" }
+photocraft-color = { path = "../photocraft-color", version = "0.8.2" }
+photocraft-raster = { path = "../photocraft-raster", version = "0.8.2" }
 serde = { version = "1", features = ["derive", "rc"] }
 rustfft = "6.4.1"
 

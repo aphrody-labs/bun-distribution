@@ -29,12 +29,12 @@ default = []
 registry = ["dep:aphrody-sql"]
 
 [dependencies]
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
-aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
-aphrody-rag-core = { path = "../aphrody-rag-core", features = [] }
-aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["postgres"], optional = true }
-aphrody-toolchains = { path = "../aphrody-toolchains", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = ["tokio"] }
+aphrody-rag-core = { path = "../aphrody-rag-core", version = "1.4.7", features = [] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.7", default-features = false, features = ["postgres"], optional = true }
+aphrody-toolchains = { path = "../aphrody-toolchains", version = "1.4.7", features = [] }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"

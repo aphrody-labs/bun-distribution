@@ -17,10 +17,10 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-filmcraft-time = { path = "../filmcraft-time" }
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-frame = { path = "../filmcraft-frame" }
-filmcraft-dng = { path = "../filmcraft-dng" }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-frame = { path = "../filmcraft-frame", version = "0.7.2" }
+filmcraft-dng = { path = "../filmcraft-dng", version = "0.7.2" }
 rayon = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"

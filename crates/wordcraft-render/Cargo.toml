@@ -15,11 +15,11 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-wordcraft-geom = { path = "../wordcraft-geom" }
-wordcraft-doc = { path = "../wordcraft-doc" }
-wordcraft-fonts = { path = "../wordcraft-fonts" }
-wordcraft-layout = { path = "../wordcraft-layout" }
-craft-metafile = { path = "../craft-metafile" }
+wordcraft-geom = { path = "../wordcraft-geom", version = "0.6.1" }
+wordcraft-doc = { path = "../wordcraft-doc", version = "0.6.1" }
+wordcraft-fonts = { path = "../wordcraft-fonts", version = "0.6.1" }
+wordcraft-layout = { path = "../wordcraft-layout", version = "0.6.1" }
+craft-metafile = { path = "../craft-metafile", version = "0.6.1" }
 vello_cpu = "0.2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
 log = "0.4"

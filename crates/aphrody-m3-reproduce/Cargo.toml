@@ -34,7 +34,7 @@ network = ["crawl", "dep:reqwest"]
 cli     = ["image", "crawl", "network", "dep:clap"]
 
 [dependencies]
-aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = [] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.7", features = [] }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"

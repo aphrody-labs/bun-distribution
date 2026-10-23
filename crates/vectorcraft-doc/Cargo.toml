@@ -20,8 +20,8 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-color = { path = "../vectorcraft-color" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-color = { path = "../vectorcraft-color", version = "0.10.0" }
 kurbo = { version = "0.13", features = ["serde"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }
 tiff = "0.11"

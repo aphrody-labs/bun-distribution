@@ -17,23 +17,23 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-filmcraft-time = { path = "../filmcraft-time" }
-filmcraft-frame = { path = "../filmcraft-frame" }
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-media = { path = "../filmcraft-media" }
-filmcraft-project = { path = "../filmcraft-project" }
-filmcraft-render = { path = "../filmcraft-render" }
-filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp" }
-filmcraft-geom = { path = "../filmcraft-geom" }
-filmcraft-text = { path = "../filmcraft-text" }
-filmcraft-isobmff = { path = "../filmcraft-isobmff" }
-filmcraft-prores = { path = "../filmcraft-prores" }
-filmcraft-dnx = { path = "../filmcraft-dnx" }
-filmcraft-apv = { path = "../filmcraft-apv" }
-filmcraft-mxf = { path = "../filmcraft-mxf" }
-filmcraft-aac = { path = "../filmcraft-aac" }
-filmcraft-flac = { path = "../filmcraft-flac" }
-filmcraft-h264enc = { path = "../filmcraft-h264enc" }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
+filmcraft-frame = { path = "../filmcraft-frame", version = "0.7.2" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-media = { path = "../filmcraft-media", version = "0.7.2" }
+filmcraft-project = { path = "../filmcraft-project", version = "0.7.2" }
+filmcraft-render = { path = "../filmcraft-render", version = "0.7.2" }
+filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp", version = "0.7.2" }
+filmcraft-geom = { path = "../filmcraft-geom", version = "0.7.2" }
+filmcraft-text = { path = "../filmcraft-text", version = "0.7.2" }
+filmcraft-isobmff = { path = "../filmcraft-isobmff", version = "0.7.2" }
+filmcraft-prores = { path = "../filmcraft-prores", version = "0.7.2" }
+filmcraft-dnx = { path = "../filmcraft-dnx", version = "0.7.2" }
+filmcraft-apv = { path = "../filmcraft-apv", version = "0.7.2" }
+filmcraft-mxf = { path = "../filmcraft-mxf", version = "0.7.2" }
+filmcraft-aac = { path = "../filmcraft-aac", version = "0.7.2" }
+filmcraft-flac = { path = "../filmcraft-flac", version = "0.7.2" }
+filmcraft-h264enc = { path = "../filmcraft-h264enc", version = "0.7.2" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 thiserror = "2"

@@ -20,7 +20,7 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
 kurbo = { version = "0.13", features = ["serde"] }
 thiserror = "2"
 linesweeper = "0.5"

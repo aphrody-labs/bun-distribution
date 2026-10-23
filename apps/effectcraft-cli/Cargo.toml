@@ -20,13 +20,13 @@ name = "effectcraft-cli"
 path = "src/main.rs"
 
 [dependencies]
-effectcraft-engine = { path = "../../crates/effectcraft-engine" }
-effectcraft-host = { path = "../../crates/effectcraft-host" }
-effectcraft-automation = { path = "../../crates/effectcraft-automation" }
-effectcraft-ui-egui = { path = "../../crates/effectcraft-ui-egui" }
-effectcraft-render = { path = "../../crates/effectcraft-render" }
-effectcraft-gpu = { path = "../../crates/effectcraft-gpu" }
-effectcraft-time = { path = "../../crates/effectcraft-time" }
+effectcraft-engine = { path = "../../crates/effectcraft-engine", version = "0.9.2" }
+effectcraft-host = { path = "../../crates/effectcraft-host", version = "0.9.2" }
+effectcraft-automation = { path = "../../crates/effectcraft-automation", version = "0.9.2" }
+effectcraft-ui-egui = { path = "../../crates/effectcraft-ui-egui", version = "0.9.2" }
+effectcraft-render = { path = "../../crates/effectcraft-render", version = "0.9.2" }
+effectcraft-gpu = { path = "../../crates/effectcraft-gpu", version = "0.9.2" }
+effectcraft-time = { path = "../../crates/effectcraft-time", version = "0.9.2" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 image = { version = "0.25", default-features = false, features = [
   "png",

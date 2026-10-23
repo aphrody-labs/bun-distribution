@@ -22,11 +22,11 @@ gpu = ["aphrody-render/gpu"]
 
 [dependencies]
 memchr = "2"
-aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = [] }
-aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", features = ["crawl", "network"] }
-aphrody-svg = { path = "../aphrody-svg", default-features = false, features = ["raster", "glyph", "m3", "symbols"] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.7", features = [] }
+aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", version = "1.4.7", features = ["crawl", "network"] }
+aphrody-svg = { path = "../aphrody-svg", version = "1.4.7", default-features = false, features = ["raster", "glyph", "m3", "symbols"] }
 base64 = "0.23.1"
-aphrody-render = { path = "../aphrody-render" }
+aphrody-render = { path = "../aphrody-render", version = "1.4.7" }
 grass = "0.13"
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"

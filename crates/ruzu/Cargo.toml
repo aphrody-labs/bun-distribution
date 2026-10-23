@@ -40,12 +40,12 @@ zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 
 # ruzu's data-directory resolver, for "Open ruzu Folder" (upstream uses
 # `Common::FS::GetYuzuPathString(YuzuPath::YuzuDir)`).
-common = { path = "../ruzu-common" }
+common = { path = "../ruzu-common", version = "1.4.7" }
 
 # Emulator core, for the in-process boot / EmuWindow (Phase 1). Renamed to
 # `ruzu_core` because the crate's package name `core` shadows the std `core`
 # crate — the same rename `ruzu_cmd` uses.
-ruzu_core = { package = "core", path = "../ruzu-core" }
+ruzu_core = { package = "core", path = "../ruzu-core", version = "1.4.7" }
 
 # Input drivers. Upstream's `GMainWindow` owns the `InputSubsystem` and hands
 # it to `GRenderWindow`, which forwards key events into it.
@@ -53,16 +53,16 @@ input_common = { workspace = true }
 
 # The emulated controller the Controls preview reads its live values from,
 # upstream's `Core::HID::EmulatedController`.
-hid_core = { path = "../ruzu-hid-core" }
+hid_core = { path = "../ruzu-hid-core", version = "1.4.7" }
 
 # Shared frontend helpers (content install / verification), the ruzu port of
 # upstream's `src/frontend_common`.
-frontend_common = { path = "../ruzu-frontend-common" }
+frontend_common = { path = "../ruzu-frontend-common", version = "1.4.7" }
 
 # Video/audio subsystems, created in the boot subsystem factory (Phase 1b),
 # mirroring `ruzu_cmd`'s Vulkan boot path.
 video_core = { workspace = true }
-audio_core = { path = "../ruzu-audio-core" }
+audio_core = { path = "../ruzu-audio-core", version = "1.4.7" }
 parking_lot = { workspace = true }
 network.workspace = true
 web_service.workspace = true

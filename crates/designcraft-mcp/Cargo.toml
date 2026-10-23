@@ -15,10 +15,10 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-designcraft-engine = { path = "../designcraft-engine" }
-designcraft-render = { path = "../designcraft-render" }
-designcraft-tools = { path = "../designcraft-tools" }
-designcraft-geom = { path = "../designcraft-geom" }
+designcraft-engine = { path = "../designcraft-engine", version = "0.7.1" }
+designcraft-render = { path = "../designcraft-render", version = "0.7.1" }
+designcraft-tools = { path = "../designcraft-tools", version = "0.7.1" }
+designcraft-geom = { path = "../designcraft-geom", version = "0.7.1" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 log = "0.4"
 

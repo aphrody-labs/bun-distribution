@@ -18,12 +18,12 @@ large_enum_variant = "allow"
 result_large_err = "allow"
 
 [dependencies]
-deckcraft-geom = { path = "../deckcraft-geom" }
-deckcraft-color = { path = "../deckcraft-color" }
-craft-metafile = { path = "../craft-metafile" }
-deckcraft-model = { path = "../deckcraft-model" }
-deckcraft-fonts = { path = "../deckcraft-fonts" }
-deckcraft-text = { path = "../deckcraft-text" }
+deckcraft-geom = { path = "../deckcraft-geom", version = "0.6.1" }
+deckcraft-color = { path = "../deckcraft-color", version = "0.6.1" }
+craft-metafile = { path = "../craft-metafile", version = "0.6.1" }
+deckcraft-model = { path = "../deckcraft-model", version = "0.6.1" }
+deckcraft-fonts = { path = "../deckcraft-fonts", version = "0.6.1" }
+deckcraft-text = { path = "../deckcraft-text", version = "0.6.1" }
 vello_cpu = "0.2"
 vello_common = { version = "0.2", default-features = false }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "tiff", "bmp"] }

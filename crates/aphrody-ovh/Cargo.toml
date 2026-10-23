@@ -9,7 +9,7 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management."
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
 anyhow = "1.0.104"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }

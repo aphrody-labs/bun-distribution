@@ -17,7 +17,7 @@ todo = "warn"
 
 [dependencies]
 aphrody-identity = { workspace = true, default-features = false }
-aphrody-m3 = { path = "../aphrody-m3", default-features = false }
+aphrody-m3 = { path = "../aphrody-m3", version = "1.4.7", default-features = false }
 aphrody-m3-tokens = { workspace = true }
 egui = { workspace = true }
 serde = { workspace = true, optional = true }

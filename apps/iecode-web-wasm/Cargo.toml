@@ -12,10 +12,10 @@ crate-type = ["cdylib", "rlib"]
 log = ["slog", "aphrody-dust-core/log"]
 
 [dependencies]
-aphrody-dust-core = { path = "../../crates/aphrody-dust-core" }
-aphrody-dust-soft-2d = { path = "../../crates/aphrody-dust-soft-2d" }
-aphrody-dust-soft-3d = { path = "../../crates/aphrody-dust-soft-3d" }
-aphrody-dust-wgpu = { path = "../../crates/aphrody-dust-wgpu" }
+aphrody-dust-core = { path = "../../crates/aphrody-dust-core", version = "0.0.1" }
+aphrody-dust-soft-2d = { path = "../../crates/aphrody-dust-soft-2d", version = "0.0.1" }
+aphrody-dust-soft-3d = { path = "../../crates/aphrody-dust-soft-3d", version = "0.0.1" }
+aphrody-dust-wgpu = { path = "../../crates/aphrody-dust-wgpu", version = "0.1.1" }
 bun-engine = { workspace = true, features = ["host"] }
 wasm-bindgen-futures = { workspace = true }
 wasm-bindgen = { workspace = true }

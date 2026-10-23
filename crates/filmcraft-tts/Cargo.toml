@@ -22,8 +22,8 @@ default = []
 kokoro = ["dep:candle-core", "dep:candle-nn", "dep:zip", "dep:serde_json", "dep:filmcraft-tts-text", "dep:filmcraft-audio-dsp"]
 
 [dependencies]
-filmcraft-tts-text = { path = "../filmcraft-tts-text", optional = true }
-filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp", optional = true }
+filmcraft-tts-text = { path = "../filmcraft-tts-text", version = "0.7.2", optional = true }
+filmcraft-audio-dsp = { path = "../filmcraft-audio-dsp", version = "0.7.2", optional = true }
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"
 candle-core = { workspace = true, optional = true }

@@ -23,11 +23,11 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-engine = { path = "../figcraft-engine" }
-figcraft-collab-net = { path = "../figcraft-collab-net" }
-figcraft-doc = { path = "../figcraft-doc" }
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-render = { path = "../figcraft-render" }
+figcraft-engine = { path = "../figcraft-engine", version = "0.5.1" }
+figcraft-collab-net = { path = "../figcraft-collab-net", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-render = { path = "../figcraft-render", version = "0.5.1" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 base64 = "0.22"
 log = "0.4"

@@ -20,9 +20,9 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-color = { path = "../vectorcraft-color" }
-vectorcraft-doc = { path = "../vectorcraft-doc" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-color = { path = "../vectorcraft-color", version = "0.10.0" }
+vectorcraft-doc = { path = "../vectorcraft-doc", version = "0.10.0" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

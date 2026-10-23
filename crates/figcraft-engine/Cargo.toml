@@ -23,18 +23,18 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-color = { path = "../figcraft-color" }
-figcraft-doc = { path = "../figcraft-doc" }
-figcraft-collab = { path = "../figcraft-collab" }
-figcraft-layout = { path = "../figcraft-layout" }
-figcraft-text = { path = "../figcraft-text" }
-figcraft-pathops = { path = "../figcraft-pathops" }
-figcraft-render = { path = "../figcraft-render" }
-figcraft-format = { path = "../figcraft-format" }
-figcraft-svg = { path = "../figcraft-svg" }
-figcraft-pdf = { path = "../figcraft-pdf" }
-figcraft-plugin = { path = "../figcraft-plugin" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-color = { path = "../figcraft-color", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
+figcraft-collab = { path = "../figcraft-collab", version = "0.5.1" }
+figcraft-layout = { path = "../figcraft-layout", version = "0.5.1" }
+figcraft-text = { path = "../figcraft-text", version = "0.5.1" }
+figcraft-pathops = { path = "../figcraft-pathops", version = "0.5.1" }
+figcraft-render = { path = "../figcraft-render", version = "0.5.1" }
+figcraft-format = { path = "../figcraft-format", version = "0.5.1" }
+figcraft-svg = { path = "../figcraft-svg", version = "0.5.1" }
+figcraft-pdf = { path = "../figcraft-pdf", version = "0.5.1" }
+figcraft-plugin = { path = "../figcraft-plugin", version = "0.5.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

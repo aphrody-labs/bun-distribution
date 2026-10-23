@@ -20,12 +20,12 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-three-d = { path = "../vectorcraft-three-d" }
-vectorcraft-doc = { path = "../vectorcraft-doc" }
-vectorcraft-pathops = { path = "../vectorcraft-pathops" }
-vectorcraft-text = { path = "../vectorcraft-text" }
-vectorcraft-plugins = { path = "../vectorcraft-plugins" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-three-d = { path = "../vectorcraft-three-d", version = "0.10.0" }
+vectorcraft-doc = { path = "../vectorcraft-doc", version = "0.10.0" }
+vectorcraft-pathops = { path = "../vectorcraft-pathops", version = "0.10.0" }
+vectorcraft-text = { path = "../vectorcraft-text", version = "0.10.0" }
+vectorcraft-plugins = { path = "../vectorcraft-plugins", version = "0.10.0" }
 kurbo = { version = "0.13", features = ["serde"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 

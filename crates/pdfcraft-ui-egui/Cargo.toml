@@ -20,13 +20,13 @@ todo = "warn"
 # every test binary (each UI test binary had a 500-600 MB PDB on Windows, #454).
 
 [dependencies]
-craft-ui = { path = "../craft-ui", features = ["serde"] }
-pdfcraft-fonts = { path = "../pdfcraft-fonts" }
-pdfcraft-engine = { path = "../pdfcraft-engine" }
-pdfcraft-cos = { path = "../pdfcraft-cos" }
-pdfcraft-render = { path = "../pdfcraft-render" }
-pdfcraft-model = { path = "../pdfcraft-model" }
-pdfcraft-platform = { path = "../pdfcraft-platform" }
+craft-ui = { path = "../craft-ui", version = "1.4.7", features = ["serde"] }
+pdfcraft-fonts = { path = "../pdfcraft-fonts", version = "0.7.1" }
+pdfcraft-engine = { path = "../pdfcraft-engine", version = "0.7.1" }
+pdfcraft-cos = { path = "../pdfcraft-cos", version = "0.7.1" }
+pdfcraft-render = { path = "../pdfcraft-render", version = "0.7.1" }
+pdfcraft-model = { path = "../pdfcraft-model", version = "0.7.1" }
+pdfcraft-platform = { path = "../pdfcraft-platform", version = "0.7.1" }
 egui = { version = "0.36", features = ["bytemuck"] }
 egui_extras = { version = "0.36", default-features = false, features = ["svg"] }
 eframe = { version = "0.36", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "persistence", "links"] }

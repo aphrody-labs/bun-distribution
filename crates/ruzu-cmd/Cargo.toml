@@ -18,9 +18,9 @@ path = "src/main.rs"
 
 [dependencies]
 common = { workspace = true }
-ruzu_core = { package = "core", path = "../ruzu-core" }
-audio_core = { path = "../ruzu-audio-core" }
-hid_core = { path = "../ruzu-hid-core" }
+ruzu_core = { package = "core", path = "../ruzu-core", version = "1.4.7" }
+audio_core = { path = "../ruzu-audio-core", version = "1.4.7" }
+hid_core = { path = "../ruzu-hid-core", version = "1.4.7" }
 video_core = { workspace = true }
 input_common = { workspace = true }
 frontend_common = { workspace = true }

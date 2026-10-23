@@ -31,7 +31,9 @@ tree-sitter = { workspace = true, optional = true }
 tree-sitter-lua = { workspace = true, optional = true }
 
 [dev-dependencies]
-aphrody-nie-formats = { workspace = true, default-features = true }
+# Path only, without a version: Cargo strips it from the published crate, which breaks the
+# dev-dependency cycle with aphrody-nie-formats (that crate depends on this one).
+aphrody-nie-formats = { path = "../aphrody-nie-formats", default-features = true }
 # Le relevé `menu_host_gap` a besoin de la liste des calques d'un écran, que `menu_setting`
 # décode. La prendre plutôt que la relire à la main : une seconde lecture du même fichier
 # dériverait de celle que le site et le navigateur emploient.

@@ -111,25 +111,25 @@ cartridge = ["aphrody-dust-core/nds-complete", "dep:serde_json"]
 [dependencies]
 aphrody-dust-core = { workspace = true }
 serde = { workspace = true, features = ["std", "derive"] }
-aphrody-nds-sdk = { path = "../aphrody-nds-sdk", default-features = false, optional = true }
+aphrody-nds-sdk = { path = "../aphrody-nds-sdk", version = "1.4.7", default-features = false, optional = true }
 # Bevy 0.20 (wgpu 30, absorbed in crates/bevy*), re-exported as `bun_engine::bevy`. The key must
 # stay `bevy`: Bevy's derive macros resolve `bevy::ecs` through the dependency named `bevy`.
 bevy = { workspace = true, optional = true }
-rdynarmic = { path = "../rdynarmic", optional = true }
+rdynarmic = { path = "../rdynarmic", version = "0.1.0", optional = true }
 tetanes-core = { path = "../../vendor/tetanes/tetanes-core", optional = true }
 starpsx-core = { path = "../../vendor/starpsx/core", optional = true }
-ruzu-core = { package = "core", path = "../ruzu-core", default-features = false, optional = true }
-ruzu-common = { package = "common", path = "../ruzu-common", optional = true }
-video_core = { path = "../ruzu-video-core", default-features = false, optional = true }
-hid_core = { path = "../ruzu-hid-core", optional = true }
+ruzu-core = { package = "core", path = "../ruzu-core", version = "1.4.7", default-features = false, optional = true }
+ruzu-common = { package = "common", path = "../ruzu-common", version = "1.4.7", optional = true }
+video_core = { path = "../ruzu-video-core", version = "1.4.7", default-features = false, optional = true }
+hid_core = { path = "../ruzu-hid-core", version = "1.4.7", optional = true }
 log = { workspace = true, optional = true }
 rustboyadvance-core = { path = "../../vendor/rustboyadvance-ng/core", default-features = false, optional = true }
-aphrody-wii-runtime = { path = "../aphrody-wii-runtime", optional = true }
-aphrody-wii-image = { path = "../aphrody-wii-image", default-features = false, optional = true }
+aphrody-wii-runtime = { path = "../aphrody-wii-runtime", version = "0.1.1", optional = true }
+aphrody-wii-image = { path = "../aphrody-wii-image", version = "0.1.1", default-features = false, optional = true }
 wgpu = { workspace = true, optional = true }
-aphrody-gpu-backend = { path = "../aphrody-gpu-backend", optional = true }
+aphrody-gpu-backend = { path = "../aphrody-gpu-backend", version = "1.4.7", optional = true }
 serde_json = { workspace = true, optional = true }
-bun-emu-host = { path = "../bun-emu-host", optional = true }
+bun-emu-host = { path = "../bun-emu-host", version = "0.1.0", optional = true }
 sha2 = { workspace = true, features = ["alloc"], optional = true }
 miniz_oxide = { workspace = true, optional = true }
 ruzstd = { version = "0.9.1", default-features = false, features = ["std"], optional = true }

@@ -18,8 +18,8 @@ excessive_precision = "allow"
 
 [dependencies]
 serde = { version = "1", features = ["derive", "rc"] }
-lightcraft-geom = { path = "../lightcraft-geom" }
-lightcraft-color = { path = "../lightcraft-color" }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
+lightcraft-color = { path = "../lightcraft-color", version = "0.7.1" }
 rayon = { version = "1", optional = true }
 
 [features]

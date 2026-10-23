@@ -14,10 +14,10 @@ description = "Canonical Bun Windows SDK for WinClean-compatible automation and 
 name = "bun_windows_winclean"
 
 [dependencies]
-aphrody-capture = { path = "../../crates/aphrody-capture" }
-aphrody-proc = { path = "../../crates/aphrody-proc" }
+aphrody-capture = { path = "../../crates/aphrody-capture", version = "1.4.7" }
+aphrody-proc = { path = "../../crates/aphrody-proc", version = "1.4.7" }
 bun-steam = { workspace = true }
-aphrody-re = { package = "bun-re", path = "../../crates/re", version = "1.0.0-canary" }
+aphrody-re = { package = "bun-re", path = "../../crates/re", version = "1.4.7" }
 base64 = "0.23.1"
 image = { version = "0.25.10", features = ["png", "bmp"] }
 serde = { version = "1.0.229", features = ["derive", "std"], default-features = false }

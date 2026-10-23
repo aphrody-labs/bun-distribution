@@ -22,15 +22,15 @@ undocumented_unsafe_blocks = "deny"
 
 [dependencies]
 libloading = "0.9"
-filmcraft-bitstream = { path = "../filmcraft-bitstream" }
-filmcraft-codecs = { path = "../filmcraft-codecs" }
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-export = { path = "../filmcraft-export" }
-filmcraft-frame = { path = "../filmcraft-frame" }
-filmcraft-h264 = { path = "../filmcraft-h264" }
-filmcraft-hevc = { path = "../filmcraft-hevc" }
-filmcraft-isobmff = { path = "../filmcraft-isobmff" }
-filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-bitstream = { path = "../filmcraft-bitstream", version = "0.7.2" }
+filmcraft-codecs = { path = "../filmcraft-codecs", version = "0.7.2" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-export = { path = "../filmcraft-export", version = "0.7.2" }
+filmcraft-frame = { path = "../filmcraft-frame", version = "0.7.2" }
+filmcraft-h264 = { path = "../filmcraft-h264", version = "0.7.2" }
+filmcraft-hevc = { path = "../filmcraft-hevc", version = "0.7.2" }
+filmcraft-isobmff = { path = "../filmcraft-isobmff", version = "0.7.2" }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
 log = "0.4"
 
 [dev-dependencies]

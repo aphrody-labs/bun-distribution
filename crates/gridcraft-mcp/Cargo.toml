@@ -15,6 +15,6 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-gridcraft-engine = { path = "../gridcraft-engine" }
+gridcraft-engine = { path = "../gridcraft-engine", version = "0.6.1" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 log = "0.4"

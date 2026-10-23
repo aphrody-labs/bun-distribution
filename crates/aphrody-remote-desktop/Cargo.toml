@@ -21,9 +21,9 @@ vnc = ["vnc-server", "vnc-client"]
 
 [dependencies]
 anyhow = "1.0.104"
-aphrody-capture = { path = "../aphrody-capture", features = [] }
-aphrody-secrets = { path = "../aphrody-secrets", features = [] }
-aphrody-wireguard = { path = "../aphrody-wireguard", features = [] }
+aphrody-capture = { path = "../aphrody-capture", version = "1.4.7", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.7", features = [] }
+aphrody-wireguard = { path = "../aphrody-wireguard", version = "1.4.7", features = [] }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2", "ws"] }
 getrandom = "0.4"
 ipnet = "2.12"

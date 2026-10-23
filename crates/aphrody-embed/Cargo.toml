@@ -47,7 +47,7 @@ candle      = ["native", "dep:candle-core", "dep:candle-nn", "dep:candle-transfo
 server      = ["native", "dep:axum", "dep:tokio", "dep:aphrody-http-error"]
 
 [dependencies]
-aphrody-models = { path = "../aphrody-models", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
 thiserror = "2.0.20"
 tracing = "0.1.44"
 dirs = "7.0.0"
@@ -65,7 +65,7 @@ candle-core = { workspace = true, optional = true }
 candle-nn = { workspace = true, optional = true }
 candle-transformers = { workspace = true, optional = true }
 axum = { version = "0.8", default-features = false, features = ["json", "query", "tokio", "http1", "http2"], optional = true }
-aphrody-http-error = { path = "../aphrody-http-error", features = [], optional = true }
+aphrody-http-error = { path = "../aphrody-http-error", version = "1.4.7", features = [], optional = true }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"], optional = true }
 
 [dev-dependencies]

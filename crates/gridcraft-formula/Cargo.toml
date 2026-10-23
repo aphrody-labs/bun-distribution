@@ -15,6 +15,6 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-gridcraft-core = { path = "../gridcraft-core" }
+gridcraft-core = { path = "../gridcraft-core", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 thiserror = "2"

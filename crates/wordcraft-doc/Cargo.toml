@@ -15,7 +15,7 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [dependencies]
-wordcraft-geom = { path = "../wordcraft-geom" }
+wordcraft-geom = { path = "../wordcraft-geom", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

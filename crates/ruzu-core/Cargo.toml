@@ -18,9 +18,9 @@ debug-logs = []
 step_tracer = []
 
 [dependencies]
-common = { path = "../ruzu-common" }
-hid_core = { path = "../ruzu-hid-core" }
-network = { path = "../ruzu-network" }
+common = { path = "../ruzu-common", version = "1.4.7" }
+hid_core = { path = "../ruzu-hid-core", version = "1.4.7" }
+network = { path = "../ruzu-network", version = "1.4.7" }
 aes.workspace = true
 bitflags.workspace = true
 cipher.workspace = true

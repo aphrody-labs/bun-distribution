@@ -55,23 +55,23 @@ custom-protocol = ["tauri/custom-protocol"]
 tauri-build = { package = "aphrody-tauri-build", path = "../../packages/bun-tauri/crates/aphrody-tauri-build" }
 
 [dependencies]
-aphrody-proc = { path = "../../crates/aphrody-proc", features = [] }
+aphrody-proc = { path = "../../crates/aphrody-proc", version = "1.4.7", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
-aphrody-app-server = { path = "../../crates/aphrody-app-server", features = [] }
-aphrody-capture = { path = "../../crates/aphrody-capture", features = [] }
-aphrody-diagnostics = { path = "../../crates/aphrody-diagnostics" }
-aphrody-drive = { path = "../../crates/aphrody-drive" }
-aphrody-fsindex = { path = "../../crates/aphrody-fsindex", features = [] }
-aphrody-shell-tauri = { path = "../../crates/aphrody-shell-tauri", features = [] }
-aphrody-identity = { path = "../../crates/aphrody-identity" }
-aphrody-kernel = { path = "../../crates/aphrody-kernel", default-features = false, features = ["builtins"] }
-aphrody-llama-server = { path = "../../crates/aphrody-llama-server", features = [] }
-aphrody-models = { path = "../../crates/aphrody-models", features = [] }
+aphrody-app-server = { path = "../../crates/aphrody-app-server", version = "1.4.7", features = [] }
+aphrody-capture = { path = "../../crates/aphrody-capture", version = "1.4.7", features = [] }
+aphrody-diagnostics = { path = "../../crates/aphrody-diagnostics", version = "1.4.7" }
+aphrody-drive = { path = "../../crates/aphrody-drive", version = "1.4.7" }
+aphrody-fsindex = { path = "../../crates/aphrody-fsindex", version = "1.4.7", features = [] }
+aphrody-shell-tauri = { path = "../../crates/aphrody-shell-tauri", version = "1.4.7", features = [] }
+aphrody-identity = { path = "../../crates/aphrody-identity", version = "1.4.7" }
+aphrody-kernel = { path = "../../crates/aphrody-kernel", version = "1.4.7", default-features = false, features = ["builtins"] }
+aphrody-llama-server = { path = "../../crates/aphrody-llama-server", version = "1.4.7", features = [] }
+aphrody-models = { path = "../../crates/aphrody-models", version = "1.4.7", features = [] }
 futures-util = { version = "0.3", features = [] }
 thiserror = "2.0.20"
 aphrody-native = { package = "bun_native", path = "../../toolchains/bun/src/bun-os/native" }
-aphrody-sprite-sheet = { path = "../../crates/aphrody-sprite-sheet" }
-aphrody-subsystem = { path = "../../crates/aphrody-subsystem" }
+aphrody-sprite-sheet = { path = "../../crates/aphrody-sprite-sheet", version = "1.4.7" }
+aphrody-subsystem = { path = "../../crates/aphrody-subsystem", version = "1.4.7" }
 async-trait = "0.1.92"
 yolo-core = "1.0.0"
 base64 = "0.23.1"

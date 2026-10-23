@@ -22,11 +22,11 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-agent-proto = { path = "../aphrody-agent-proto", features = [] }
-aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
-aphrody-model-client = { path = "../aphrody-model-client", features = [] }
-aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
-aphrody-rollout = { path = "../aphrody-rollout", features = [] }
+aphrody-agent-proto = { path = "../aphrody-agent-proto", version = "1.4.7", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = [] }
+aphrody-model-client = { path = "../aphrody-model-client", version = "1.4.7", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.7", features = [] }
+aphrody-rollout = { path = "../aphrody-rollout", version = "1.4.7", features = [] }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 thiserror = "2.0.20"

@@ -23,24 +23,24 @@ todo = "warn"
 resvg = "0.48"
 winit = { workspace = true, features = ["x11"] }
 futures-lite = "2"
-photocraft-cms = { path = "../../crates/photocraft-cms" }
+photocraft-cms = { path = "../../crates/photocraft-cms", version = "0.8.2" }
 async-io = "2"
 rfd = "0.17"
 arboard = "3"
 ron = "0.12"
 open = "5"
-photocraft-doc = { path = "../../crates/photocraft-doc" }
-photocraft-color = { path = "../../crates/photocraft-color" }
-photocraft-raster = { path = "../../crates/photocraft-raster" }
-photocraft-geom = { path = "../../crates/photocraft-geom" }
-photocraft-compose = { path = "../../crates/photocraft-compose" }
-photocraft-engine = { path = "../../crates/photocraft-engine" }
-photocraft-codecs = { path = "../../crates/photocraft-codecs" }
-photocraft-io = { path = "../../crates/photocraft-io" }
-photocraft-format = { path = "../../crates/photocraft-format" }
-photocraft-automation = { path = "../../crates/photocraft-automation" }
-photocraft-ui-egui = { path = "../../crates/photocraft-ui-egui" }
-photocraft-tablet = { path = "../../crates/photocraft-tablet" }
+photocraft-doc = { path = "../../crates/photocraft-doc", version = "0.8.2" }
+photocraft-color = { path = "../../crates/photocraft-color", version = "0.8.2" }
+photocraft-raster = { path = "../../crates/photocraft-raster", version = "0.8.2" }
+photocraft-geom = { path = "../../crates/photocraft-geom", version = "0.8.2" }
+photocraft-compose = { path = "../../crates/photocraft-compose", version = "0.8.2" }
+photocraft-engine = { path = "../../crates/photocraft-engine", version = "0.8.2" }
+photocraft-codecs = { path = "../../crates/photocraft-codecs", version = "0.8.2" }
+photocraft-io = { path = "../../crates/photocraft-io", version = "0.8.2" }
+photocraft-format = { path = "../../crates/photocraft-format", version = "0.8.2" }
+photocraft-automation = { path = "../../crates/photocraft-automation", version = "0.8.2" }
+photocraft-ui-egui = { path = "../../crates/photocraft-ui-egui", version = "0.8.2" }
+photocraft-tablet = { path = "../../crates/photocraft-tablet", version = "0.8.2" }
 eframe = { version = "0.36", default-features = false, features = [
   "wgpu",
   "accesskit",

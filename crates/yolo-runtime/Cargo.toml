@@ -28,7 +28,7 @@ cuda = ["gpu", "aphrody-gpu-backend/cuda"]
 [dependencies]
 obscura-browser = { path = "../../toolchains/bun/src/browser/crates/browser", package = "bun_browser_browser", features = ["render"], optional = true }
 obscura-net = { path = "../../toolchains/bun/src/browser/crates/net", package = "bun_browser_net", optional = true }
-aphrody-gpu-backend = { path = "../aphrody-gpu-backend", optional = true }
+aphrody-gpu-backend = { path = "../aphrody-gpu-backend", version = "1.4.7", optional = true }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"], optional = true }
 url = { version = "2.5.8", features = ["serde"], optional = true }
 base64 = { version = "0.23.1", optional = true }

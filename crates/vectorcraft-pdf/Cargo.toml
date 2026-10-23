@@ -20,12 +20,12 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-doc = { path = "../vectorcraft-doc" }
-vectorcraft-effects = { path = "../vectorcraft-effects" }
-vectorcraft-brush = { path = "../vectorcraft-brush" }
-vectorcraft-color = { path = "../vectorcraft-color" }
-vectorcraft-text = { path = "../vectorcraft-text" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-doc = { path = "../vectorcraft-doc", version = "0.10.0" }
+vectorcraft-effects = { path = "../vectorcraft-effects", version = "0.10.0" }
+vectorcraft-brush = { path = "../vectorcraft-brush", version = "0.10.0" }
+vectorcraft-color = { path = "../vectorcraft-color", version = "0.10.0" }
+vectorcraft-text = { path = "../vectorcraft-text", version = "0.10.0" }
 skrifa = "0.47"
 kurbo = { version = "0.13", features = ["serde"] }
 thiserror = "2"

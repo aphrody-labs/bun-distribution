@@ -22,7 +22,7 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.7", features = [] }
 async-trait = "0.1.92"
 futures = "0.3.34"
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }

@@ -23,11 +23,11 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-color = { path = "../figcraft-color" }
-figcraft-doc = { path = "../figcraft-doc" }
-figcraft-text = { path = "../figcraft-text" }
-figcraft-pathops = { path = "../figcraft-pathops" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-color = { path = "../figcraft-color", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
+figcraft-text = { path = "../figcraft-text", version = "0.5.1" }
+figcraft-pathops = { path = "../figcraft-pathops", version = "0.5.1" }
 tiny-skia = "0.12"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp", "tiff"] }
 moxcms = "0.8"

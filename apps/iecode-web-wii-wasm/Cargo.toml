@@ -15,11 +15,11 @@ default = []
 debug = ["dep:dbglib", "dep:egui-phosphor"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-gecko = { package = "aphrody-wii-runtime", path = "../../crates/aphrody-wii-runtime", default-features = false }
-image = { package = "aphrody-wii-image", path = "../../crates/aphrody-wii-image", default-features = false }
-backend-wgpu = { package = "aphrody-wii-render", path = "../../crates/aphrody-wii-render" }
+gecko = { package = "aphrody-wii-runtime", path = "../../crates/aphrody-wii-runtime", version = "0.1.1", default-features = false }
+image = { package = "aphrody-wii-image", path = "../../crates/aphrody-wii-image", version = "0.1.1", default-features = false }
+backend-wgpu = { package = "aphrody-wii-render", path = "../../crates/aphrody-wii-render", version = "0.1.1" }
 aphrody-wii.workspace = true
-dbglib = { package = "aphrody-wii-debug", path = "../../crates/aphrody-wii-debug", optional = true }
+dbglib = { package = "aphrody-wii-debug", path = "../../crates/aphrody-wii-debug", version = "0.1.1", optional = true }
 egui-phosphor = { workspace = true, optional = true, features = ["fill"] }
 wgpu.workspace = true
 winit = { workspace = true, features = ["rwh_06", "android-native-activity"] }

@@ -17,8 +17,8 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-lightcraft-tiff = { path = "../lightcraft-tiff" }
-lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-tiff = { path = "../lightcraft-tiff", version = "0.7.1" }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 quick-xml = "0.38"
 

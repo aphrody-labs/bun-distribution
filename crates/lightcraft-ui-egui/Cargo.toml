@@ -18,17 +18,17 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-craft-ui = { path = "../craft-ui", features = ["serde"] }
-lightcraft-geom = { path = "../lightcraft-geom" }
-lightcraft-meta = { path = "../lightcraft-meta" }
-lightcraft-color = { path = "../lightcraft-color" }
-lightcraft-raster = { path = "../lightcraft-raster" }
-lightcraft-develop = { path = "../lightcraft-develop" }
-lightcraft-pipeline = { path = "../lightcraft-pipeline" }
-lightcraft-catalog = { path = "../lightcraft-catalog" }
+craft-ui = { path = "../craft-ui", version = "1.4.7", features = ["serde"] }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
+lightcraft-meta = { path = "../lightcraft-meta", version = "0.7.1" }
+lightcraft-color = { path = "../lightcraft-color", version = "0.7.1" }
+lightcraft-raster = { path = "../lightcraft-raster", version = "0.7.1" }
+lightcraft-develop = { path = "../lightcraft-develop", version = "0.7.1" }
+lightcraft-pipeline = { path = "../lightcraft-pipeline", version = "0.7.1" }
+lightcraft-catalog = { path = "../lightcraft-catalog", version = "0.7.1" }
 web-time = "1"
-lightcraft-engine = { path = "../lightcraft-engine" }
-lightcraft-preview = { path = "../lightcraft-preview" }
+lightcraft-engine = { path = "../lightcraft-engine", version = "0.7.1" }
+lightcraft-preview = { path = "../lightcraft-preview", version = "0.7.1" }
 egui = "0.36"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

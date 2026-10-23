@@ -11,7 +11,7 @@ zip = { workspace = true, features = ["deflate-flate2-zlib-rs"] }
 # Upstream's `frontend_common/content_manager.h` includes
 # `core/crypto/key_manager.h` and `core/file_sys/registered_cache.h`; the same
 # dependency direction holds here (core does not depend on frontend_common).
-ruzu_core = { package = "core", path = "../ruzu-core" }
+ruzu_core = { package = "core", path = "../ruzu-core", version = "1.4.7" }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -23,12 +23,12 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-color = { path = "../figcraft-color" }
-figcraft-doc = { path = "../figcraft-doc" }
-figcraft-text = { path = "../figcraft-text" }
-figcraft-render = { path = "../figcraft-render" }
-figcraft-pathops = { path = "../figcraft-pathops" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-color = { path = "../figcraft-color", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
+figcraft-text = { path = "../figcraft-text", version = "0.5.1" }
+figcraft-render = { path = "../figcraft-render", version = "0.5.1" }
+figcraft-pathops = { path = "../figcraft-pathops", version = "0.5.1" }
 krilla = "0.8"
 tiny-skia = "0.12"
 thiserror = "2"

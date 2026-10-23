@@ -14,13 +14,13 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
-photocraft-geom = { path = "../photocraft-geom" }
-photocraft-doc = { path = "../photocraft-doc" }
-photocraft-compose = { path = "../photocraft-compose" }
-photocraft-codecs = { path = "../photocraft-codecs" }
-photocraft-io = { path = "../photocraft-io" }
-photocraft-format = { path = "../photocraft-format" }
-photocraft-engine = { path = "../photocraft-engine" }
+photocraft-geom = { path = "../photocraft-geom", version = "0.8.2" }
+photocraft-doc = { path = "../photocraft-doc", version = "0.8.2" }
+photocraft-compose = { path = "../photocraft-compose", version = "0.8.2" }
+photocraft-codecs = { path = "../photocraft-codecs", version = "0.8.2" }
+photocraft-io = { path = "../photocraft-io", version = "0.8.2" }
+photocraft-format = { path = "../photocraft-format", version = "0.8.2" }
+photocraft-engine = { path = "../photocraft-engine", version = "0.8.2" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 thiserror = "2"

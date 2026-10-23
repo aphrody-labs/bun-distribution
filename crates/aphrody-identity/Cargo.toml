@@ -22,7 +22,7 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-sprite-sheet = { path = "../aphrody-sprite-sheet" }
+aphrody-sprite-sheet = { path = "../aphrody-sprite-sheet", version = "1.4.7" }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 sha2 = "0.11.0"
@@ -30,9 +30,9 @@ png = "0.18"
 image = { version = "0.25.10", features = ["png", "jpeg", "webp", "gif"] }
 image-compare = "0.5"
 palette = { version = "0.7", default-features = false, features = ["std"] }
-aphrody-svg = { path = "../aphrody-svg", default-features = false, features = ["raster", "glyph", "symbols"] }
+aphrody-svg = { path = "../aphrody-svg", version = "1.4.7", default-features = false, features = ["raster", "glyph", "symbols"] }
 ureq = { version = "3", default-features = false, features = ["rustls"], optional = true }
-aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = ["serde"] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.7", features = ["serde"] }
 base64 = "0.23.1"
 ico = "0.5"
 thiserror = "2.0.20"

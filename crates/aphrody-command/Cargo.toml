@@ -93,7 +93,7 @@ clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 clap_complete = { version = "4", features = [] }
 miette = { version = "7", features = ["fancy"] }
 async-trait = "0.1.92"
-aphrody-command-pure = { path = "../aphrody-command-pure", features = [] }
+aphrody-command-pure = { path = "../aphrody-command-pure", version = "1.4.7", features = [] }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 chrono = { version = "0.4", features = ["serde"] }
@@ -104,12 +104,12 @@ ignored = ["ort"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 aphrody-pkg-cli = { package = "bun_pkg_cli", path = "../../toolchains/bun/src/bun-os/pkg/cli" }
-aphrody-site = { path = "../aphrody-site" }
+aphrody-site = { path = "../aphrody-site", version = "1.4.7" }
 toml_edit = { version = "0.25.15", features = [] }
 tempfile = { version = "3.27.0" }
 tokio = { version = "1.53.1", features = ["process","rt-multi-thread","macros","time","signal","sync","fs","io-util","full"] }
 aphrody-git = { package = "bun_git", path = "../../toolchains/bun/src/bun-os/git" }
-aphrody-ssh = { path = "../aphrody-ssh", features = [] }
+aphrody-ssh = { path = "../aphrody-ssh", version = "1.4.7", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider","json","stream","form","query","charset","http2","system-proxy","blocking","cookies","gzip","brotli","deflate","socks","multipart"], default-features = false }
 regex = { version = "1.11", features = [] }
 which = { version = "8", features = [] }
@@ -126,67 +126,67 @@ obscura-dom = { path = "../../toolchains/bun/src/browser/crates/dom", package = 
 obscura-browser = { path = "../../toolchains/bun/src/browser/crates/browser", package = "bun_browser_browser", features = [] }
 obscura-net = { path = "../../toolchains/bun/src/browser/crates/net", package = "bun_browser_net", features = [] }
 aphrody-n2b = { version = "0.7.0", features = [] }
-aphrody-translate = { path = "../aphrody-translate", features = [] }
-aphrody-backend = { path = "../aphrody-backend", features = [] }
-aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
+aphrody-translate = { path = "../aphrody-translate", version = "1.4.7", features = [] }
+aphrody-backend = { path = "../aphrody-backend", version = "1.4.7", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring","std","tls12"] }
 aphrody-native = { package = "bun_native", path = "../../toolchains/bun/src/bun-os/native" }
-aphrody-discord = { path = "../aphrody-discord", features = [] }
-aphrody-terminal-backend = { path = "../aphrody-terminal-backend", features = [] }
-aphrody-term = { path = "../aphrody-term", features = [] }
-aphrody-a2a = { path = "../aphrody-a2a", features = [] }
-aphrody-a2a-client = { path = "../aphrody-a2a-client", default-features = false, features = [] }
-aphrody-a2a-coord = { path = "../aphrody-a2a-coord", features = [] }
+aphrody-discord = { path = "../aphrody-discord", version = "1.4.7", features = [] }
+aphrody-terminal-backend = { path = "../aphrody-terminal-backend", version = "1.4.7", features = [] }
+aphrody-term = { path = "../aphrody-term", version = "1.4.7", features = [] }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.7", features = [] }
+aphrody-a2a-client = { path = "../aphrody-a2a-client", version = "1.4.7", default-features = false, features = [] }
+aphrody-a2a-coord = { path = "../aphrody-a2a-coord", version = "1.4.7", features = [] }
 futures = { version = "0.3.34" }
 thiserror = { version = "2.0.20" }
-aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", features = [] }
-aphrody-kernel = { path = "../aphrody-kernel", default-features = false, features = ["builtins"] }
-aphrody-infra = { path = "../aphrody-infra" }
-aphrody-yolo = { path = "../aphrody-yolo" }
-aphrody-mcp = { path = "../aphrody-mcp" }
+aphrody-winclean = { package = "bun-windows-winclean", path = "../../packages/bun-windows-winclean", version = "1.4.7", features = [] }
+aphrody-kernel = { path = "../aphrody-kernel", version = "1.4.7", default-features = false, features = ["builtins"] }
+aphrody-infra = { path = "../aphrody-infra", version = "1.4.7" }
+aphrody-yolo = { path = "../aphrody-yolo", version = "1.4.7" }
+aphrody-mcp = { path = "../aphrody-mcp", version = "1.4.7" }
 aphrody-web-engine = { path = "../../toolchains/bun/src/browser/crates/engine", package = "bun_browser_engine", features = [] }
-aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", features = ["cli"] }
-aphrody-render = { path = "../aphrody-render" }
-aphrody-bindgen = { path = "../aphrody-bindgen" }
-aphrody-rag-eval = { path = "../aphrody-rag-eval", features = [] }
+aphrody-m3-reproduce = { path = "../aphrody-m3-reproduce", version = "1.4.7", features = ["cli"] }
+aphrody-render = { path = "../aphrody-render", version = "1.4.7" }
+aphrody-bindgen = { path = "../aphrody-bindgen", version = "1.4.7" }
+aphrody-rag-eval = { path = "../aphrody-rag-eval", version = "1.4.7", features = [] }
 tauri-cli = { path = "../../packages/bun-tauri/crates/aphrody-tauri-cli", package = "aphrody-tauri-cli" }
 create-tauri-app = { path = "../../packages/bun-tauri/crates/aphrody-create-tauri-app", package = "aphrody-create-tauri-app" }
-aphrody-embed = { path = "../aphrody-embed", default-features = false, features = ["server"] }
+aphrody-embed = { path = "../aphrody-embed", version = "1.4.7", default-features = false, features = ["server"] }
 aphrody-oxc-bridge = { version = "0.2.0" }
-aphrody-voice = { path = "../aphrody-voice", features = [] }
+aphrody-voice = { path = "../aphrody-voice", version = "1.4.7", features = [] }
 walkdir = { version = "2.5.0" }
 ignore = { version = "0.4", features = [] }
 rayon = { version = "1.12.0" }
-aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", features = [] }
-aphrody-re = { package = "bun-re", version = "1.0.0-canary", features = [] }
+aphrody-gemini-runtime = { path = "../aphrody-gemini-runtime", version = "1.4.7", features = [] }
+aphrody-re = { package = "bun-re", version = "1.4.7", features = [] }
 ort = { version = "2.0.0-rc.12", optional = true }
 rusqlite = { version = "0.40", features = ["bundled"], optional = true }
-aphrody-fsindex = { path = "../aphrody-fsindex", features = [], optional = true }
+aphrody-fsindex = { path = "../aphrody-fsindex", version = "1.4.7", features = [], optional = true }
 sha2 = { version = "0.11.0" }
 hex = { version = "0.4", features = [], optional = true }
-aphrody-identity = { path = "../aphrody-identity", features = ["net"] }
-aphrody-m3-tokens = { path = "../aphrody-m3-tokens", features = ["serde"] }
-aphrody-memory = { path = "../aphrody-memory", features = [] }
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-secrets = { path = "../aphrody-secrets", features = [] }
-aphrody-infer = { path = "../aphrody-infer", features = ["onnx"], optional = true }
-aphrody-ocr = { path = "../aphrody-ocr", features = [], optional = true }
-aphrody-jobs = { path = "../aphrody-jobs", features = [], optional = true }
+aphrody-identity = { path = "../aphrody-identity", version = "1.4.7", features = ["net"] }
+aphrody-m3-tokens = { path = "../aphrody-m3-tokens", version = "1.4.7", features = ["serde"] }
+aphrody-memory = { path = "../aphrody-memory", version = "1.4.7", features = [] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-secrets = { path = "../aphrody-secrets", version = "1.4.7", features = [] }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.7", features = ["onnx"], optional = true }
+aphrody-ocr = { path = "../aphrody-ocr", version = "1.4.7", features = [], optional = true }
+aphrody-jobs = { path = "../aphrody-jobs", version = "1.4.7", features = [], optional = true }
 dirs = { version = "7.0.0" }
-aphrody-antigravity = { path = "../aphrody-antigravity", features = [] }
-aphrody-google = { path = "../aphrody-google", features = [] }
-aphrody-agent-home = { path = "../aphrody-agent-home", features = ["git"] }
-aphrody-agent-runtime = { path = "../aphrody-agent-runtime", features = [] }
-aphrody-config = { path = "../aphrody-config", features = [] }
-aphrody-diagnostics = { path = "../aphrody-diagnostics" }
-aphrody-toolcall = { path = "../aphrody-toolcall", features = [] }
+aphrody-antigravity = { path = "../aphrody-antigravity", version = "1.4.7", features = [] }
+aphrody-google = { path = "../aphrody-google", version = "1.4.7", features = [] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = ["git"] }
+aphrody-agent-runtime = { path = "../aphrody-agent-runtime", version = "1.4.7", features = [] }
+aphrody-config = { path = "../aphrody-config", version = "1.4.7", features = [] }
+aphrody-diagnostics = { path = "../aphrody-diagnostics", version = "1.4.7" }
+aphrody-toolcall = { path = "../aphrody-toolcall", version = "1.4.7", features = [] }
 toml = { version = "1.1.5" }
-aphrody-rag = { path = "../aphrody-rag", features = [] }
-aphrody-code-graph = { path = "../aphrody-code-graph", features = [] }
-aphrody-llama-server = { path = "../aphrody-llama-server", features = [] }
-aphrody-train = { path = "../aphrody-train", features = [] }
-aphrody-app-server = { path = "../aphrody-app-server", features = ["site"] }
-aphrody-gateway = { path = "../aphrody-gateway", features = [] }
+aphrody-rag = { path = "../aphrody-rag", version = "1.4.7", features = [] }
+aphrody-code-graph = { path = "../aphrody-code-graph", version = "1.4.7", features = [] }
+aphrody-llama-server = { path = "../aphrody-llama-server", version = "1.4.7", features = [] }
+aphrody-train = { path = "../aphrody-train", version = "1.4.7", features = [] }
+aphrody-app-server = { path = "../aphrody-app-server", version = "1.4.7", features = ["site"] }
+aphrody-gateway = { path = "../aphrody-gateway", version = "1.4.7", features = [] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 serde_json = { version = "1.0.151" }

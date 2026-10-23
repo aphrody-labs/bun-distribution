@@ -94,4 +94,4 @@ edition = "2026_pre"
 root = "src"
 
 [package.metadata.wgsl-analyzer.dependencies]
-bevy_render = { path = "../bevy_render" }
+bevy_render = { path = "../bevy_render", version = "0.20.0" }

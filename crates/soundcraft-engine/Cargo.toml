@@ -8,16 +8,16 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/soundcraft"
 
 [dependencies]
-soundcraft-time = { path = "../soundcraft-time" }
-soundcraft-audio-io = { path = "../soundcraft-audio-io" }
-soundcraft-midi = { path = "../soundcraft-midi" }
-soundcraft-dsp = { path = "../soundcraft-dsp" }
-soundcraft-clap-host = { path = "../soundcraft-clap-host" }
-soundcraft-vst3-host = { path = "../soundcraft-vst3-host" }
-soundcraft-au-host = { path = "../soundcraft-au-host" }
-soundcraft-model = { path = "../soundcraft-model" }
-soundcraft-mix = { path = "../soundcraft-mix" }
-soundcraft-video = { path = "../soundcraft-video" }
+soundcraft-time = { path = "../soundcraft-time", version = "0.6.1" }
+soundcraft-audio-io = { path = "../soundcraft-audio-io", version = "0.6.1" }
+soundcraft-midi = { path = "../soundcraft-midi", version = "0.6.1" }
+soundcraft-dsp = { path = "../soundcraft-dsp", version = "0.6.1" }
+soundcraft-clap-host = { path = "../soundcraft-clap-host", version = "0.6.1" }
+soundcraft-vst3-host = { path = "../soundcraft-vst3-host", version = "0.6.1" }
+soundcraft-au-host = { path = "../soundcraft-au-host", version = "0.6.1" }
+soundcraft-model = { path = "../soundcraft-model", version = "0.6.1" }
+soundcraft-mix = { path = "../soundcraft-mix", version = "0.6.1" }
+soundcraft-video = { path = "../soundcraft-video", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

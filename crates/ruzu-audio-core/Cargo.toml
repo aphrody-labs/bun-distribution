@@ -8,8 +8,8 @@ license = "GPL-3.0-or-later"
 pkg-config = { workspace = true }
 
 [dependencies]
-common = { path = "../ruzu-common" }
-ruzu_core = { package = "core", path = "../ruzu-core" }
+common = { path = "../ruzu-common", version = "1.4.7" }
+ruzu_core = { package = "core", path = "../ruzu-core", version = "1.4.7" }
 cubeb.workspace = true
 log = { workspace = true }
 parking_lot.workspace = true

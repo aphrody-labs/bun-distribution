@@ -9,7 +9,7 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native Mullvad VPN controller and auto-proxy/geo-unblock driver for Aphrody and agy."
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = ["tokio"] }
 tokio = { version = "1.53.1", features = ["process", "rt-multi-thread", "macros", "time", "signal", "sync", "fs", "io-util", "full"] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }

@@ -23,7 +23,7 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
 serde_json = "1.0.151"
 anyhow = "1.0.104"
 tracing = "0.1.44"

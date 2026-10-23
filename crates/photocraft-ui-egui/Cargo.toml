@@ -12,23 +12,23 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
-craft-ui = { path = "../craft-ui", features = ["serde"] }
-photocraft-geom = { path = "../photocraft-geom" }
-photocraft-color = { path = "../photocraft-color" }
-photocraft-cms = { path = "../photocraft-cms" }
-photocraft-raster = { path = "../photocraft-raster" }
-photocraft-doc = { path = "../photocraft-doc" }
-photocraft-compose = { path = "../photocraft-compose" }
-photocraft-gpu = { path = "../photocraft-gpu" }
-photocraft-engine = { path = "../photocraft-engine" }
-photocraft-io = { path = "../photocraft-io" }
-photocraft-plugins = { path = "../photocraft-plugins" }
-photocraft-algo = { path = "../photocraft-algo" }
-photocraft-text = { path = "../photocraft-text" }
-photocraft-vector = { path = "../photocraft-vector" }
-photocraft-paint = { path = "../photocraft-paint" }
-photocraft-format = { path = "../photocraft-format" }
-photocraft-codecs = { path = "../photocraft-codecs" }
+craft-ui = { path = "../craft-ui", version = "1.4.7", features = ["serde"] }
+photocraft-geom = { path = "../photocraft-geom", version = "0.8.2" }
+photocraft-color = { path = "../photocraft-color", version = "0.8.2" }
+photocraft-cms = { path = "../photocraft-cms", version = "0.8.2" }
+photocraft-raster = { path = "../photocraft-raster", version = "0.8.2" }
+photocraft-doc = { path = "../photocraft-doc", version = "0.8.2" }
+photocraft-compose = { path = "../photocraft-compose", version = "0.8.2" }
+photocraft-gpu = { path = "../photocraft-gpu", version = "0.8.2" }
+photocraft-engine = { path = "../photocraft-engine", version = "0.8.2" }
+photocraft-io = { path = "../photocraft-io", version = "0.8.2" }
+photocraft-plugins = { path = "../photocraft-plugins", version = "0.8.2" }
+photocraft-algo = { path = "../photocraft-algo", version = "0.8.2" }
+photocraft-text = { path = "../photocraft-text", version = "0.8.2" }
+photocraft-vector = { path = "../photocraft-vector", version = "0.8.2" }
+photocraft-paint = { path = "../photocraft-paint", version = "0.8.2" }
+photocraft-format = { path = "../photocraft-format", version = "0.8.2" }
+photocraft-codecs = { path = "../photocraft-codecs", version = "0.8.2" }
 egui = { version = "0.36", default-features = false }
 egui_extras = { version = "0.36", default-features = false, features = ["svg"] }
 eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit"] }

@@ -11,7 +11,7 @@ app = ["cocoa", "objc"]
 
 [dependencies]
 cfg-if = { workspace = true }
-aphrody-emu-utils-macros = { path = "../aphrody-emu-utils-macros" }
+aphrody-emu-utils-macros = { path = "../aphrody-emu-utils-macros", version = "0.0.1" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = { workspace = true, optional = true }

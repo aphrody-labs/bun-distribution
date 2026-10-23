@@ -12,5 +12,5 @@ dbg_macro = "warn"
 todo = "warn"
 
 [dependencies]
-photocraft-cms = { path = "../photocraft-cms" }
+photocraft-cms = { path = "../photocraft-cms", version = "0.8.2" }
 serde = { version = "1", features = ["derive", "rc"] }

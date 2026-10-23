@@ -18,7 +18,7 @@ large_enum_variant = "allow"
 result_large_err = "allow"
 
 [dependencies]
-deckcraft-engine = { path = "../deckcraft-engine" }
-deckcraft-render = { path = "../deckcraft-render" }
+deckcraft-engine = { path = "../deckcraft-engine", version = "0.6.1" }
+deckcraft-render = { path = "../deckcraft-render", version = "0.6.1" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 log = "0.4"

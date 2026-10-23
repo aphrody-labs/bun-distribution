@@ -8,9 +8,9 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/soundcraft"
 
 [dependencies]
-soundcraft-time = { path = "../soundcraft-time" }
-soundcraft-audio-io = { path = "../soundcraft-audio-io" }
-soundcraft-midi = { path = "../soundcraft-midi" }
+soundcraft-time = { path = "../soundcraft-time", version = "0.6.1" }
+soundcraft-audio-io = { path = "../soundcraft-audio-io", version = "0.6.1" }
+soundcraft-midi = { path = "../soundcraft-midi", version = "0.6.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"

@@ -8,11 +8,11 @@ rust-version = "1.90"
 repository = "https://github.com/storytold/soundcraft"
 
 [dependencies]
-soundcraft-time = { path = "../soundcraft-time" }
-soundcraft-audio-io = { path = "../soundcraft-audio-io" }
-soundcraft-model = { path = "../soundcraft-model" }
-soundcraft-mix = { path = "../soundcraft-mix" }
-soundcraft-dsp = { path = "../soundcraft-dsp" }
+soundcraft-time = { path = "../soundcraft-time", version = "0.6.1" }
+soundcraft-audio-io = { path = "../soundcraft-audio-io", version = "0.6.1" }
+soundcraft-model = { path = "../soundcraft-model", version = "0.6.1" }
+soundcraft-mix = { path = "../soundcraft-mix", version = "0.6.1" }
+soundcraft-dsp = { path = "../soundcraft-dsp", version = "0.6.1" }
 log = "0.4"
 
 [lints.rust]

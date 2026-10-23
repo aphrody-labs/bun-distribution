@@ -18,7 +18,7 @@ excessive_precision = "allow"
 
 [dependencies]
 serde = { version = "1", features = ["derive", "rc"] }
-lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
 
 [dev-dependencies]
 proptest = "1"

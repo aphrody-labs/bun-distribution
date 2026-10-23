@@ -34,8 +34,8 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-a2a = { path = "../aphrody-a2a", features = [] }
-aphrody-a2a-pb = { path = "../aphrody-a2a-pb" }
+aphrody-a2a = { path = "../aphrody-a2a", version = "1.4.7", features = [] }
+aphrody-a2a-pb = { path = "../aphrody-a2a-pb", version = "1.4.7" }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }
 serde_json = "1.0.151"
 futures = "0.3.34"

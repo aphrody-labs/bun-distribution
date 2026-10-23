@@ -24,14 +24,14 @@ unreachable = "deny"
 
 [dependencies]
 craft-ui = { workspace = true }
-figcraft-geom = { path = "../figcraft-geom" }
-figcraft-color = { path = "../figcraft-color" }
-figcraft-doc = { path = "../figcraft-doc" }
-figcraft-text = { path = "../figcraft-text" }
-figcraft-layout = { path = "../figcraft-layout" }
-figcraft-render = { path = "../figcraft-render" }
-figcraft-pathops = { path = "../figcraft-pathops" }
-figcraft-engine = { path = "../figcraft-engine" }
+figcraft-geom = { path = "../figcraft-geom", version = "0.5.1" }
+figcraft-color = { path = "../figcraft-color", version = "0.5.1" }
+figcraft-doc = { path = "../figcraft-doc", version = "0.5.1" }
+figcraft-text = { path = "../figcraft-text", version = "0.5.1" }
+figcraft-layout = { path = "../figcraft-layout", version = "0.5.1" }
+figcraft-render = { path = "../figcraft-render", version = "0.5.1" }
+figcraft-pathops = { path = "../figcraft-pathops", version = "0.5.1" }
+figcraft-engine = { path = "../figcraft-engine", version = "0.5.1" }
 egui = "0.36"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

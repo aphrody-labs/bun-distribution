@@ -27,8 +27,8 @@ default = []
 vec = ["aphrody-sql/vec"]
 
 [dependencies]
-aphrody-agent-home = { path = "../aphrody-agent-home", features = [] }
-aphrody-sql = { path = "../aphrody-sql", default-features = false, features = ["sqlite"] }
+aphrody-agent-home = { path = "../aphrody-agent-home", version = "1.4.7", features = [] }
+aphrody-sql = { path = "../aphrody-sql", version = "1.4.7", default-features = false, features = ["sqlite"] }
 blake3 = "1.8.7"
 clap = { version = "4.6.6", features = ["derive", "env", "color"] }
 ignore = { version = "0.4", features = [] }

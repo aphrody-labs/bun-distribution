@@ -10,9 +10,9 @@ license = "GPL-3.0-only"
 name = "dbglib"
 
 [dependencies]
-gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", default-features = false, features = ["hooks"] }
-disasm = { package = "aphrody-wii-disasm", path = "../aphrody-wii-disasm" }
-image = { package = "aphrody-wii-image", path = "../aphrody-wii-image", default-features = false }
+gecko = { package = "aphrody-wii-runtime", path = "../aphrody-wii-runtime", version = "0.1.1", default-features = false, features = ["hooks"] }
+disasm = { package = "aphrody-wii-disasm", path = "../aphrody-wii-disasm", version = "0.1.1" }
+image = { package = "aphrody-wii-image", path = "../aphrody-wii-image", version = "0.1.1", default-features = false }
 egui = { workspace = true }
 glam.workspace = true
 egui-phosphor = { workspace = true, features = ["fill"] }

@@ -25,10 +25,10 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
-aphrody-infer = { path = "../aphrody-infer", features = ["onnx"] }
-aphrody-models = { path = "../aphrody-models", features = [] }
-aphrody-ocr-core = { path = "../aphrody-ocr-core", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
+aphrody-infer = { path = "../aphrody-infer", version = "1.4.7", features = ["onnx"] }
+aphrody-models = { path = "../aphrody-models", version = "1.4.7", features = [] }
+aphrody-ocr-core = { path = "../aphrody-ocr-core", version = "1.4.7", features = [] }
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 serde = { version = "1.0.228", features = ["derive", "std"], default-features = false }

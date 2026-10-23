@@ -9,7 +9,7 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native WireGuard for Aphrody: keys, wg-quick configuration, Linux kernel/userspace and WireGuardNT backends, private tunnel inventory."
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = [] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = [] }
 base64 = "0.23.1"
 getrandom = "0.4"
 ipnet = { version = "2.12", features = ["serde"] }

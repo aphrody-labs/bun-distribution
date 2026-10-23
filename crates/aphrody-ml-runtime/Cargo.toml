@@ -18,7 +18,7 @@ dunce = "1.0.5"
 futures = "0.3.34"
 fs4 = "1.1.0"
 hf-hub = "1.0.0"
-aphrody-ml-config = { path = "../aphrody-ml-config" }
+aphrody-ml-config = { path = "../aphrody-ml-config", version = "1.4.7" }
 petgraph = "0.8.3"
 reqwest = { version = "0.13.5", features = ["rustls-no-provider", "json", "stream", "form", "query", "charset", "http2", "system-proxy", "blocking", "cookies", "gzip", "brotli", "deflate", "socks", "multipart"], default-features = false }
 reqwest-middleware = "0.5.2"

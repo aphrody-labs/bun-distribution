@@ -20,7 +20,7 @@ workspace = true
 
 [dependencies]
 # Triage, strings, headers and disassembly (re-exported).
-bun-re = { path = "../re", default-features = false }
+bun-re = { path = "../re", version = "1.4.7", default-features = false }
 # Multi-format binary parser (Apache-2.0/MIT) behind the PE inspector.
 goblin.workspace = true
 serde = { workspace = true, features = ["std", "derive"] }

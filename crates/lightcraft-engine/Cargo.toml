@@ -17,26 +17,26 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-lightcraft-geom = { path = "../lightcraft-geom" }
-lightcraft-color = { path = "../lightcraft-color" }
-lightcraft-raster = { path = "../lightcraft-raster" }
-lightcraft-develop = { path = "../lightcraft-develop" }
-lightcraft-scenes = { path = "../lightcraft-scenes" }
-lightcraft-pipeline = { path = "../lightcraft-pipeline" }
-lightcraft-gpu = { path = "../lightcraft-gpu" }
-lightcraft-catalog = { path = "../lightcraft-catalog" }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
+lightcraft-color = { path = "../lightcraft-color", version = "0.7.1" }
+lightcraft-raster = { path = "../lightcraft-raster", version = "0.7.1" }
+lightcraft-develop = { path = "../lightcraft-develop", version = "0.7.1" }
+lightcraft-scenes = { path = "../lightcraft-scenes", version = "0.7.1" }
+lightcraft-pipeline = { path = "../lightcraft-pipeline", version = "0.7.1" }
+lightcraft-gpu = { path = "../lightcraft-gpu", version = "0.7.1" }
+lightcraft-catalog = { path = "../lightcraft-catalog", version = "0.7.1" }
 web-time = "1"
-lightcraft-preview = { path = "../lightcraft-preview" }
-lightcraft-codecs = { path = "../lightcraft-codecs" }
-lightcraft-raw = { path = "../lightcraft-raw" }
-lightcraft-denoise-core = { path = "../lightcraft-denoise-core" }
-lightcraft-denoise = { path = "../lightcraft-denoise", default-features = false, optional = true }
-lightcraft-meta = { path = "../lightcraft-meta" }
-lightcraft-lensdb = { path = "../lightcraft-lensdb" }
-lightcraft-faces = { path = "../lightcraft-faces" }
+lightcraft-preview = { path = "../lightcraft-preview", version = "0.7.1" }
+lightcraft-codecs = { path = "../lightcraft-codecs", version = "0.7.1" }
+lightcraft-raw = { path = "../lightcraft-raw", version = "0.7.1" }
+lightcraft-denoise-core = { path = "../lightcraft-denoise-core", version = "0.7.1" }
+lightcraft-denoise = { path = "../lightcraft-denoise", version = "0.7.1", default-features = false, optional = true }
+lightcraft-meta = { path = "../lightcraft-meta", version = "0.7.1" }
+lightcraft-lensdb = { path = "../lightcraft-lensdb", version = "0.7.1" }
+lightcraft-faces = { path = "../lightcraft-faces", version = "0.7.1" }
 miniz_oxide = "0.8"
-lightcraft-merge = { path = "../lightcraft-merge" }
-lightcraft-geocode = { path = "../lightcraft-geocode" }
+lightcraft-merge = { path = "../lightcraft-merge", version = "0.7.1" }
+lightcraft-geocode = { path = "../lightcraft-geocode", version = "0.7.1" }
 rayon = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
@@ -45,7 +45,7 @@ log = "0.4"
 ab_glyph = { version = "0.2", default-features = false, features = ["std"] }
 harfrust = { version = "0.12", default-features = false, features = ["std"] }
 unicode-segmentation = "1.13"
-lightcraft-segment = { path = "../lightcraft-segment", optional = true }
+lightcraft-segment = { path = "../lightcraft-segment", version = "0.7.1", optional = true }
 
 [features]
 # AI masks with SAM 3 (Object / Describe). Off for the web and CLI builds.
@@ -60,4 +60,4 @@ libc = "0.2"
 lightcraft-tiff = { path = "../lightcraft-tiff" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-lightcraft-fetch = { path = "../lightcraft-fetch" }
+lightcraft-fetch = { path = "../lightcraft-fetch", version = "0.7.1" }

@@ -17,12 +17,12 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 
 [dependencies]
-filmcraft-color = { path = "../filmcraft-color" }
-filmcraft-frame = { path = "../filmcraft-frame" }
-filmcraft-geom = { path = "../filmcraft-geom" }
-filmcraft-project = { path = "../filmcraft-project" }
-filmcraft-render = { path = "../filmcraft-render" }
-filmcraft-time = { path = "../filmcraft-time" }
+filmcraft-color = { path = "../filmcraft-color", version = "0.7.2" }
+filmcraft-frame = { path = "../filmcraft-frame", version = "0.7.2" }
+filmcraft-geom = { path = "../filmcraft-geom", version = "0.7.2" }
+filmcraft-project = { path = "../filmcraft-project", version = "0.7.2" }
+filmcraft-render = { path = "../filmcraft-render", version = "0.7.2" }
+filmcraft-time = { path = "../filmcraft-time", version = "0.7.2" }
 wgpu = { version = "30", default-features = false, features = ["wgsl"] }
 log = "0.4"
 pollster = "0.4"

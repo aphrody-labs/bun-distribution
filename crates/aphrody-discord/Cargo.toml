@@ -9,7 +9,7 @@ repository = "https://github.com/aphrody-labs/aphrody"
 description = "Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts."
 
 [dependencies]
-aphrody-proc = { path = "../aphrody-proc", features = ["tokio"] }
+aphrody-proc = { path = "../aphrody-proc", version = "1.4.7", features = ["tokio"] }
 anyhow = "1.0.104"
 aphrody-web-extract = { path = "../../toolchains/bun/src/browser/crates/extract", package = "bun_browser_extract", optional = true }
 chrono = { version = "0.4", features = ["serde"] }

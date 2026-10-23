@@ -20,21 +20,21 @@ corpus = []
 heif = ["photocraft-codecs/heif"]
 
 [dependencies]
-photocraft-geom = { path = "../photocraft-geom" }
-photocraft-color = { path = "../photocraft-color" }
-photocraft-cms = { path = "../photocraft-cms" }
-photocraft-raster = { path = "../photocraft-raster" }
-photocraft-doc = { path = "../photocraft-doc" }
-photocraft-compose = { path = "../photocraft-compose" }
-photocraft-algo = { path = "../photocraft-algo" }
-photocraft-psd = { path = "../photocraft-psd" }
-photocraft-codecs = { path = "../photocraft-codecs" }
-photocraft-raw = { path = "../photocraft-raw" }
-photocraft-affinity = { path = "../photocraft-affinity" }
-photocraft-text = { path = "../photocraft-text" }
-photocraft-paint = { path = "../photocraft-paint" }
-photocraft-vector = { path = "../photocraft-vector" }
-photocraft-format = { path = "../photocraft-format" }
+photocraft-geom = { path = "../photocraft-geom", version = "0.8.2" }
+photocraft-color = { path = "../photocraft-color", version = "0.8.2" }
+photocraft-cms = { path = "../photocraft-cms", version = "0.8.2" }
+photocraft-raster = { path = "../photocraft-raster", version = "0.8.2" }
+photocraft-doc = { path = "../photocraft-doc", version = "0.8.2" }
+photocraft-compose = { path = "../photocraft-compose", version = "0.8.2" }
+photocraft-algo = { path = "../photocraft-algo", version = "0.8.2" }
+photocraft-psd = { path = "../photocraft-psd", version = "0.8.2" }
+photocraft-codecs = { path = "../photocraft-codecs", version = "0.8.2" }
+photocraft-raw = { path = "../photocraft-raw", version = "0.8.2" }
+photocraft-affinity = { path = "../photocraft-affinity", version = "0.8.2" }
+photocraft-text = { path = "../photocraft-text", version = "0.8.2" }
+photocraft-paint = { path = "../photocraft-paint", version = "0.8.2" }
+photocraft-vector = { path = "../photocraft-vector", version = "0.8.2" }
+photocraft-format = { path = "../photocraft-format", version = "0.8.2" }
 thiserror = "2"
 serde_json = "1"
 blake3 = { version = "1.8", default-features = false, features = ["pure"] }

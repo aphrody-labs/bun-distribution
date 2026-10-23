@@ -17,6 +17,6 @@ type_complexity = "allow"
 excessive_precision = "allow"
 
 [dependencies]
-lightcraft-develop = { path = "../lightcraft-develop" }
-lightcraft-geom = { path = "../lightcraft-geom" }
+lightcraft-develop = { path = "../lightcraft-develop", version = "0.7.1" }
+lightcraft-geom = { path = "../lightcraft-geom", version = "0.7.1" }
 quick-xml = "0.38"

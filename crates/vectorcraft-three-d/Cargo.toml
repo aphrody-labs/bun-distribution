@@ -20,5 +20,5 @@ unimplemented = "deny"
 unreachable = "deny"
 
 [dependencies]
-vectorcraft-geom = { path = "../vectorcraft-geom" }
-vectorcraft-pathops = { path = "../vectorcraft-pathops" }
+vectorcraft-geom = { path = "../vectorcraft-geom", version = "0.10.0" }
+vectorcraft-pathops = { path = "../vectorcraft-pathops", version = "0.10.0" }

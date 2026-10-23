@@ -17,19 +17,19 @@ type_complexity = "allow"
 [dependencies]
 tempfile = "3"
 craft-print = { workspace = true }
-designcraft-images = { path = "../designcraft-images" }
-designcraft-geom = { path = "../designcraft-geom" }
-designcraft-color = { path = "../designcraft-color" }
-designcraft-doc = { path = "../designcraft-doc" }
-designcraft-fonts = { path = "../designcraft-fonts" }
-designcraft-compose = { path = "../designcraft-compose" }
-designcraft-render = { path = "../designcraft-render" }
-designcraft-format = { path = "../designcraft-format" }
-designcraft-epub = { path = "../designcraft-epub" }
-designcraft-textimport = { path = "../designcraft-textimport" }
-designcraft-pdf = { path = "../designcraft-pdf" }
-designcraft-tools = { path = "../designcraft-tools" }
-designcraft-idml = { path = "../designcraft-idml" }
+designcraft-images = { path = "../designcraft-images", version = "0.7.1" }
+designcraft-geom = { path = "../designcraft-geom", version = "0.7.1" }
+designcraft-color = { path = "../designcraft-color", version = "0.7.1" }
+designcraft-doc = { path = "../designcraft-doc", version = "0.7.1" }
+designcraft-fonts = { path = "../designcraft-fonts", version = "0.7.1" }
+designcraft-compose = { path = "../designcraft-compose", version = "0.7.1" }
+designcraft-render = { path = "../designcraft-render", version = "0.7.1" }
+designcraft-format = { path = "../designcraft-format", version = "0.7.1" }
+designcraft-epub = { path = "../designcraft-epub", version = "0.7.1" }
+designcraft-textimport = { path = "../designcraft-textimport", version = "0.7.1" }
+designcraft-pdf = { path = "../designcraft-pdf", version = "0.7.1" }
+designcraft-tools = { path = "../designcraft-tools", version = "0.7.1" }
+designcraft-idml = { path = "../designcraft-idml", version = "0.7.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { workspace = true, features = ["float_roundtrip"] }
 thiserror = "2"
