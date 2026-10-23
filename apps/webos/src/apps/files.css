@@ -105,8 +105,12 @@
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 .fx-searchwrap:focus-within {
-  outline: 2px solid var(--md-sys-color-primary);
+  outline: 3px solid var(--md-sys-color-primary);
   border-color: transparent;
+}
+/* The scope chip only matters while searching. */
+.fx-searchwrap:not(:focus-within):has(.fx-search:placeholder-shown) .fx-chip {
+  display: none;
 }
 .fx-search {
   flex: 1;

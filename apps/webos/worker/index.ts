@@ -4,6 +4,7 @@ import { workspaceResponse } from "./workspace";
 import { gameContentResponse } from "./game-content";
 import { playRedirect, playResponse } from "./play";
 import catalog from "../../../infra/config/routes.catalog.json";
+import { ORIGIN, pathMeta } from "../paths";
 
 interface R2ObjectBodyLike {
   body: ReadableStream;
@@ -226,6 +227,31 @@ async function browse(request: Request): Promise<Response> {
   });
 }
 
+/** Per-path search metadata on the shell document, streamed through HTMLRewriter (no buffering). */
+function withPathMeta(res: Response, pathname: string): Response {
+  const meta = pathMeta(pathname);
+  if (!meta || !(res.headers.get("content-type") ?? "").includes("text/html"))
+    return res;
+  const url = `${ORIGIN}${pathname === "/" ? "/" : pathname.replace(/\/+$/, "")}`;
+  const attributes: [string, string, string][] = [
+    ['meta[name="description"]', "content", meta.description],
+    ['link[rel="canonical"]', "href", url],
+    ['meta[property="og:url"]', "content", url],
+    ['meta[property="og:title"]', "content", meta.title],
+    ['meta[property="og:description"]', "content", meta.description],
+    ['meta[name="twitter:title"]', "content", meta.title],
+    ['meta[name="twitter:description"]', "content", meta.description],
+  ];
+  let rewriter = new HTMLRewriter().on("title", {
+    element: (e) => void e.setInnerContent(meta.title),
+  });
+  for (const [selector, attr, value] of attributes)
+    rewriter = rewriter.on(selector, {
+      element: (e) => void e.setAttribute(attr, value),
+    });
+  return rewriter.transform(res);
+}
+
 /** Routes of the former aphrody.app Worker, now served under aphrody.com (same handler, same bindings). */
 const LEGACY_ROUTES = [
   "/api/site/",
@@ -340,7 +366,7 @@ export default {
       url.pathname === "/workspace" || url.pathname.startsWith("/workspace/");
     const res = workspace
       ? await workspaceResponse(request, env.ASSETS)
-      : await env.ASSETS.fetch(request);
+      : withPathMeta(await env.ASSETS.fetch(request), url.pathname);
     const out = new Response(res.body, res);
     out.headers.set(
       "content-security-policy",

@@ -3,6 +3,7 @@
 // (dist/a/<id>/index.html), the share image, the noscript fallback and the UI sounds.
 import { cp, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { PATHS } from "./paths";
 
 const ORIGIN = "https://aphrody.com";
 const root = resolve(import.meta.dir, "../..");
@@ -119,7 +120,7 @@ function landing(i: Item): string {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
-<meta name="theme-color" content="#6750a4">
+<meta name="theme-color" content="#11131d">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" type="image/png" sizes="32x32" href="/brand/32.png">
 <link rel="apple-touch-icon" href="/brand/256.png">
@@ -169,8 +170,10 @@ function noscript(items: Item[]): string {
   )}</main>`;
 }
 
-/** Use the real app icon as the share image; Bun 1.4.4 has no raw-RGBA terminal for compositing. */
+/** The 1200x630 share image is a committed desktop capture (public/og-image.png); the logo is the fallback. */
 async function ogImage(dist: string) {
+  if (await Bun.file(join(dist, "og-image.png")).exists())
+    return "desktop capture";
   const logo = join(root, "apps/aphrody-app/icons/icon.png");
   await cp(logo, join(dist, "og-image.png"));
   return "logo";
@@ -205,7 +208,13 @@ export async function buildSeo(dist: string, catalog: CatalogLike) {
     await Bun.write(join(dist, "a", i.id, "index.html"), landing(i));
   }
 
-  const urls = [`${ORIGIN}/`, ...items.map((i) => `${ORIGIN}/a/${i.id}/`)];
+  const urls = [
+    `${ORIGIN}/`,
+    ...Object.keys(PATHS)
+      .filter((path) => path !== "/")
+      .map((path) => `${ORIGIN}${path}`),
+    ...items.map((i) => `${ORIGIN}/a/${i.id}/`),
+  ];
   await Bun.write(
     join(dist, "sitemap.xml"),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls

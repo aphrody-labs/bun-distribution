@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 import routeCatalog from "../../../infra/config/routes.catalog.json";
-import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { activityApp } from "./apps/activity";
 import { appStore } from "./apps/appstore";
 import { calculatorApp } from "./apps/calculator";
@@ -33,6 +32,9 @@ import {
   type RegistryEntry,
 } from "./pkg";
 import { installKeys, shortcutsView } from "./keys";
+import { initSounds, setSoundsEnabled, soundsEnabled } from "./sounds";
+import { SEEDS, THEMES, themeCss } from "./themes";
+import { mountWallpaper } from "./wallpaper";
 import { WindowManager, type Layout } from "./wm";
 
 interface Builtin {
@@ -43,14 +45,15 @@ interface Builtin {
   group: "core" | "advanced";
   width?: number;
   height?: number;
+  /** Small tools float above tiled layouts. */
+  float?: boolean;
   mount(root: HTMLElement): void;
 }
 
 const desk = h("main", { class: "desk" });
-const wm = new WindowManager(desk);
+const wm = new WindowManager(desk, { defaultLayout: "dwindle" });
 const craftHosts = new Map<string, CraftHost>();
 const dock = h("nav", { class: "dock", "aria-label": "Dock" });
-const clock = h("time", { class: "clock" });
 const bar = h("header", { class: "topbar" });
 
 function loading(root: HTMLElement, task: Promise<unknown>) {
@@ -165,10 +168,11 @@ const builtins: Builtin[] = [
     id: "settings",
     name: "Settings",
     icon: "gear",
-    desc: "Theme and appearance",
+    desc: "Theme, colour, sounds and appearance",
     group: "core",
-    width: 520,
-    height: 520,
+    width: 720,
+    height: 620,
+    float: true,
     mount: (root) => settingsApp(root),
   },
   {
@@ -232,23 +236,20 @@ const builtins: Builtin[] = [
     mount: (root) =>
       loading(
         root,
-        storeApp(
-          root,
-          (kind, target) => {
-            if (kind === "app") {
-              const builtin = builtins.find((entry) => entry.id === target);
-              if (builtin) launchBuiltin(builtin);
-              return;
-            }
-            void window.open(
-              target.startsWith("http")
-                ? target
-                : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
-              "_blank",
-              "noopener",
-            );
-          },
-        ),
+        storeApp(root, (kind, target) => {
+          if (kind === "app") {
+            const builtin = builtins.find((entry) => entry.id === target);
+            if (builtin) launchBuiltin(builtin);
+            return;
+          }
+          void window.open(
+            target.startsWith("http")
+              ? target
+              : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
+            "_blank",
+            "noopener",
+          );
+        }),
       ),
   },
   {
@@ -279,6 +280,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 320,
     height: 480,
+    float: true,
     mount: (root) => calculatorApp(root),
   },
   {
@@ -309,6 +311,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 560,
     height: 560,
+    float: true,
     mount: (root) => root.append(shortcutsView()),
   },
   {
@@ -319,6 +322,7 @@ const builtins: Builtin[] = [
     group: "core",
     width: 520,
     height: 420,
+    float: true,
     mount: (root) => loading(root, aboutApp(root)),
   },
 ];
@@ -336,6 +340,7 @@ function launchBuiltin(b: Builtin) {
     icon: b.icon,
     width: b.width,
     height: b.height,
+    float: b.float,
     content,
   });
   if (!content.hasChildNodes()) b.mount(content);
@@ -454,7 +459,8 @@ async function saveCraftFile(
 }
 function refreshApps() {
   renderDock();
-  renderDesktopIcons();
+  renderHome();
+  if (launcher.open) renderLauncher();
 }
 
 async function aboutApp(root: HTMLElement) {
@@ -503,105 +509,263 @@ async function aboutApp(root: HTMLElement) {
   );
 }
 
-const SEEDS: [string, string][] = [
-  ["Violet", "#6750a4"],
-  ["Ocean", "#0b6bcb"],
-  ["Forest", "#2e7d32"],
-  ["Sunset", "#d84315"],
-  ["Rose", "#c2185b"],
-  ["Slate", "#455a64"],
-];
-function applyPrefs() {
-  const mode = localStorage.getItem("aph.mode") ?? "auto";
-  if (mode === "auto") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.dataset.theme = mode;
-  const seed = localStorage.getItem("aph.seed");
-  let style = document.getElementById("seed-css");
-  if (seed && seed !== "#6750a4") {
-    style ??= document.head.appendChild(h("style", { id: "seed-css" }));
-    style.textContent = cssFromSeed(seed, { variant: "expressive" });
-  } else style?.remove();
-}
-function settingsApp(root: HTMLElement) {
-  const set = (k: string, v: string) => {
-    localStorage.setItem(k, v);
-    applyPrefs();
+// Appearance --------------------------------------------------------------------------------------
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const narrow = matchMedia("(max-width: 599px)");
+let repaintWallpaper: () => void = () => {};
+
+const currentTheme = () =>
+  localStorage.getItem("aph.theme") ??
+  (localStorage.getItem("aph.seed") ? "seed" : "aphrody");
+const currentMode = () => localStorage.getItem("aph.mode") ?? "auto";
+
+function applyPrefs(animate = false) {
+  const run = () => {
+    const mode = currentMode();
+    if (mode === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.dataset.theme = mode;
+    const style =
+      document.getElementById("seed-css") ??
+      document.head.appendChild(h("style", { id: "seed-css" }));
+    const theme = currentTheme();
+    style.textContent = themeCss(
+      theme,
+      localStorage.getItem("aph.seed") ?? undefined,
+    );
+    // src/boot.ts replays this before first paint on the next visit.
+    try {
+      if (theme === "aphrody") localStorage.removeItem("aph.themecss");
+      else localStorage.setItem("aph.themecss", style.textContent);
+    } catch {}
+    repaintWallpaper();
+    for (const fn of prefListeners) fn();
   };
-  root.append(
-    h(
-      "div",
-      { class: "detail" },
+  if (animate && document.startViewTransition && !reduceMotion.matches)
+    document.startViewTransition(run);
+  else run();
+}
+const prefListeners = new Set<() => void>();
+function setPref(key: string, value: string | null) {
+  if (value === null) localStorage.removeItem(key);
+  else localStorage.setItem(key, value);
+  applyPrefs(true);
+}
+
+/** Material Symbols ligature by glyph name. */
+function sym(glyph: string) {
+  const s = h("span", {
+    class: "mi material-symbols-rounded",
+    "aria-hidden": "true",
+  });
+  s.textContent = glyph;
+  return s;
+}
+
+/** App icon tile, tinted by a role family so the grid reads by kind at a glance. */
+const TONES: Record<string, string> = {
+  files: "primary",
+  drive: "primary",
+  storage: "primary",
+  "aphrody-workspace": "primary",
+  browser: "secondary",
+  webapps: "secondary",
+  docs: "secondary",
+  apps: "tertiary",
+  creative: "tertiary",
+  media: "tertiary",
+};
+function toneOf(id: string) {
+  if (TONES[id]) return TONES[id]!;
+  if (id.startsWith("pkg:") || id.startsWith("web:")) return "tertiary";
+  return "neutral";
+}
+function appIcon(id: string, ic: string) {
+  return h(
+    "span",
+    { class: `appicon tone-${toneOf(id)}`, "aria-hidden": "true" },
+    icon(ic),
+  );
+}
+
+function themeSwatch(
+  theme: (typeof THEMES)[number],
+  onPick: () => void,
+  size = "",
+) {
+  const [bg, surface, a, b] = theme.preview;
+  return h("button", {
+    class: `theme-dot ${size}`.trim(),
+    "aria-label": `${theme.name} theme`,
+    "aria-pressed": String(currentTheme() === theme.id),
+    "data-tip": theme.name,
+    style: `--a:${a};--b:${b};--bg:${bg};--s:${surface}`,
+    onclick: onPick,
+  });
+}
+
+function settingsApp(root: HTMLElement) {
+  const view = h("div", { class: "settings" });
+  const render = () => {
+    const theme = currentTheme();
+    const mode = currentMode();
+    view.replaceChildren(
       h("h2", {}, "Appearance"),
       h(
+        "p",
+        { class: "muted" },
+        "Themes recolour every window, the bar, the dock and the wallpaper.",
+      ),
+      h(
         "div",
-        { class: "seg" },
-        ...["auto", "light", "dark"].map((m) =>
+        { class: "theme-cards", role: "radiogroup", "aria-label": "Theme" },
+        ...THEMES.map((t) => {
+          const [bg, surface, a, b] = t.preview;
+          return h(
+            "button",
+            {
+              class: "theme-card",
+              role: "radio",
+              "aria-checked": String(theme === t.id),
+              onclick: () => setPref("aph.theme", t.id),
+            },
+            h(
+              "span",
+              {
+                class: "theme-preview",
+                style: `--a:${a};--b:${b};--bg:${bg};--s:${surface}`,
+                "aria-hidden": "true",
+              },
+              h("span", { class: "tp-bar" }),
+              h("span", { class: "tp-win" }),
+              h("span", { class: "tp-win two" }),
+            ),
+            h("span", { class: "theme-name" }, t.name),
+            h("span", { class: "theme-mood" }, t.mood),
+          );
+        }),
+      ),
+      h("h3", {}, "Mode"),
+      h(
+        "div",
+        { class: "seg", role: "radiogroup", "aria-label": "Mode" },
+        ...(
+          [
+            ["auto", "Automatic", "brightness_auto"],
+            ["light", "Light", "light_mode"],
+            ["dark", "Dark", "dark_mode"],
+          ] as const
+        ).map(([m, label, glyph]) =>
           h(
             "button",
             {
               class: "segb",
-              "aria-selected": String(
-                (localStorage.getItem("aph.mode") ?? "auto") === m,
-              ),
-              onclick: (e: Event) => {
-                set("aph.mode", m);
-                for (const b of (e.currentTarget as HTMLElement).parentElement!
-                  .children)
-                  b.setAttribute(
-                    "aria-selected",
-                    String(b === e.currentTarget),
-                  );
-              },
+              role: "radio",
+              "aria-checked": String(mode === m),
+              "aria-selected": String(mode === m),
+              onclick: () => setPref("aph.mode", m === "auto" ? null : m),
             },
-            m[0]!.toUpperCase() + m.slice(1),
+            sym(glyph),
+            label,
           ),
         ),
       ),
-      h("h3", {}, "Colour"),
+      h("h3", {}, "Your colour"),
+      h(
+        "p",
+        { class: "muted" },
+        "Build a Material You scheme from one colour instead of a theme.",
+      ),
       h(
         "div",
         { class: "swatches" },
         ...SEEDS.map(([name, hex]) =>
           h("button", {
             class: "swatch",
-            title: name,
             "aria-label": name,
+            "data-tip": name,
+            "aria-pressed": String(
+              theme === "seed" && localStorage.getItem("aph.seed") === hex,
+            ),
             style: `background:${hex}`,
-            onclick: () => set("aph.seed", hex),
+            onclick: () => {
+              localStorage.setItem("aph.seed", hex);
+              setPref("aph.theme", "seed");
+            },
           }),
         ),
       ),
+      h("h3", {}, "Sounds"),
       h(
         "button",
         {
-          class: "btn tonal",
+          class: "switch-row",
+          role: "switch",
+          "aria-checked": String(soundsEnabled()),
           onclick: () => {
-            localStorage.removeItem("aph.seed");
-            localStorage.removeItem("aph.mode");
-            applyPrefs();
+            setSoundsEnabled(!soundsEnabled());
+            render();
+            renderStatus();
           },
         },
-        "Reset",
+        h(
+          "span",
+          {},
+          h("strong", {}, "System sounds"),
+          h(
+            "span",
+            { class: "muted" },
+            "A soft cue when windows open and close",
+          ),
+        ),
+        h("span", { class: "switch", "aria-hidden": "true" }),
       ),
-    ),
-  );
+      h(
+        "div",
+        { class: "row" },
+        h(
+          "button",
+          {
+            class: "btn tonal",
+            onclick: () => {
+              localStorage.removeItem("aph.seed");
+              localStorage.removeItem("aph.mode");
+              setPref("aph.theme", null);
+            },
+          },
+          "Restore defaults",
+        ),
+      ),
+    );
+  };
+  prefListeners.add(() => {
+    if (view.isConnected) render();
+  });
+  render();
+  root.append(view);
 }
 
-// Launcher: your apps first, then installed packages, then advanced tools.
-const launcher = h("div", {
+// Launcher: search-first, fuzzy, keyboard driven ---------------------------------------------------
+interface LaunchItem {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  section: string;
+  run(): void;
+}
+const launcher = h("dialog", {
   class: "launcher",
-  hidden: true,
-  role: "dialog",
-  "aria-modal": "true",
+  closedby: "any",
   "aria-label": "Applications",
-});
+}) as HTMLDialogElement;
 let launcherOpener: HTMLElement | null = null;
 const lsearch = h("input", {
   class: "lsearch",
   type: "search",
-  placeholder: "Search apps and the web",
-  "aria-label": "Search",
+  placeholder: "Search apps, tools and the web",
+  "aria-label": "Search apps",
   autocomplete: "off",
+  spellcheck: "false",
 });
 const lgrid = h("div", { class: "lgrid" });
 launcher.append(
@@ -609,47 +773,91 @@ launcher.append(
     "div",
     { class: "lbox" },
     h(
-      "div",
-      { class: "launcher-heading" },
-      h(
-        "div",
-        {},
-        h("strong", {}, "Aphrody"),
-        h("span", {}, "Your apps, one workspace."),
-      ),
-      h(
-        "button",
-        {
-          class: "tbtn",
-          "aria-label": "Close applications",
-          onclick: () => closeLauncher(),
-        },
-        icon("close"),
-      ),
+      "label",
+      { class: "lsearch-wrap" },
+      sym("search"),
+      lsearch,
+      h("kbd", { class: "lkbd" }, "Esc"),
     ),
-    lsearch,
     lgrid,
   ),
 );
+// Light dismiss where closedby is not supported yet.
+if (!("closedBy" in HTMLDialogElement.prototype))
+  launcher.addEventListener("click", (e) => {
+    if (e.target === launcher) launcher.close();
+  });
+
+function launchItems(): LaunchItem[] {
+  return [
+    ...builtins.map((b) => ({
+      id: b.id,
+      name: b.name,
+      icon: b.icon,
+      desc: b.desc,
+      section: b.group === "core" ? "Apps" : "Tools",
+      run: () => launchBuiltin(b),
+    })),
+    ...installedEntries().map((e) => ({
+      id: `pkg:${e.id}`,
+      name: e.name,
+      icon: e.category === "games" ? "game" : "app",
+      desc: e.description,
+      section: "Installed",
+      run: () => void launchPackage(e),
+    })),
+    ...webApps().map((a) => ({
+      id: `web:${a.url}`,
+      name: a.name,
+      icon: "globe",
+      desc: new URL(a.url).hostname,
+      section: "Web apps",
+      run: () => openWebApp(a),
+    })),
+  ];
+}
+
+/** Fuzzy score: prefix beats word start beats substring beats an in-order subsequence; -1 is no match. */
+function fuzzy(query: string, text: string): number {
+  const q = query.toLowerCase();
+  const t = text.toLowerCase();
+  if (t.startsWith(q)) return 120 - t.length * 0.1;
+  const at = t.indexOf(q);
+  if (at >= 0) return (/[\s\-_.]/.test(t[at - 1] ?? "") ? 90 : 70) - at * 0.1;
+  let score = 0;
+  let from = 0;
+  let last = -2;
+  for (const ch of q) {
+    if (ch === " ") continue;
+    const pos = t.indexOf(ch, from);
+    if (pos < 0) return -1;
+    score += pos === last + 1 ? 4 : 1;
+    if (pos === 0 || /[\s\-_.]/.test(t[pos - 1]!)) score += 3;
+    last = pos;
+    from = pos + 1;
+  }
+  return score;
+}
+
+function launchTile(item: LaunchItem) {
+  return h(
+    "button",
+    {
+      class: "ltile",
+      title: item.desc,
+      onclick: () => {
+        launcher.close();
+        item.run();
+      },
+    },
+    appIcon(item.id, item.icon),
+    h("span", { class: "lname" }, item.name),
+  );
+}
 
 function renderLauncher() {
-  const q = lsearch.value.trim().toLowerCase();
-  const match = (name: string, desc: string) =>
-    !q || name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
-  const tile = (name: string, ic: string, fn: () => void, sub = "") =>
-    h(
-      "button",
-      {
-        class: "ltile",
-        onclick: () => {
-          closeLauncher();
-          fn();
-        },
-      },
-      h("span", { class: "licon" }, icon(ic)),
-      h("span", { class: "lname" }, name),
-      sub ? h("span", { class: "lsub" }, sub) : null,
-    );
+  const raw = lsearch.value.trim();
+  const items = launchItems();
   const section = (title: string, tiles: HTMLElement[]) =>
     tiles.length
       ? [
@@ -657,302 +865,704 @@ function renderLauncher() {
           h("div", { class: "lsection" }, ...tiles),
         ]
       : [];
-  const core = builtins
-    .filter((b) => b.group === "core" && match(b.name, b.desc))
-    .map((b) => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
-  const pkgs = installedEntries()
-    .filter((e) => match(e.name, e.description))
-    .map((e) =>
-      tile(
-        e.name,
-        e.category === "games" ? "game" : "app",
-        () => launchPackage(e),
-        e.category,
+  if (!raw) {
+    const order = ["Apps", "Installed", "Web apps", "Tools"];
+    lgrid.replaceChildren(
+      ...order.flatMap((name) =>
+        section(name, items.filter((i) => i.section === name).map(launchTile)),
       ),
     );
-  const web = webApps()
-    .filter((a) => match(a.name, a.url))
-    .map((a) =>
-      tile(a.name, "globe", () => openWebApp(a), new URL(a.url).hostname),
-    );
-  const adv = builtins
-    .filter((b) => b.group === "advanced" && match(b.name, b.desc))
-    .map((b) => tile(b.name, b.icon, () => launchBuiltin(b), b.desc));
-  const search = q
-    ? [
-        tile(`Search the web for “${lsearch.value.trim()}”`, "globe", () => {
-          const content = h("div", { class: "fill" });
-          wm.open({
-            title: "Browser",
-            icon: "globe",
-            width: 1000,
-            height: 640,
-            content,
-          });
-          browserApp(content, lsearch.value.trim());
-        }),
-      ]
-    : [];
-  lgrid.replaceChildren(
-    ...section("Apps", core),
-    ...section("Installed", pkgs),
-    ...section("Web apps", web),
-    ...section("Advanced", adv),
-    ...section("Web", search),
+    return;
+  }
+  const ranked = items
+    .map((item) => ({
+      item,
+      score: Math.max(
+        fuzzy(raw, item.name),
+        item.desc.toLowerCase().includes(raw.toLowerCase()) ? 30 : -1,
+      ),
+    }))
+    .filter((r) => r.score >= 0)
+    .sort((a, b) => b.score - a.score)
+    .map((r) => launchTile(r.item));
+  const web = h(
+    "button",
+    {
+      class: "lweb",
+      onclick: () => {
+        launcher.close();
+        const content = h("div", { class: "fill" });
+        wm.open({
+          title: "Browser",
+          icon: "globe",
+          width: 1000,
+          height: 640,
+          content,
+        });
+        browserApp(content, raw);
+      },
+    },
+    sym("travel_explore"),
+    h("span", {}, "Search the web for ", h("strong", {}, raw)),
   );
+  lgrid.replaceChildren(
+    ...(ranked.length
+      ? section("Best matches", ranked)
+      : [h("p", { class: "lempty" }, `No app is called “${raw}”.`)]),
+    h("div", { class: "lwebrow" }, web),
+  );
+  ranked[0]?.classList.add("first");
 }
-function openLauncher() {
-  if (launcher.hidden)
+function openLauncher(query = "") {
+  if (!launcher.open) {
     launcherOpener =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-  launcher.hidden = false;
-  lsearch.value = "";
+    launcher.showModal();
+  }
+  lsearch.value = query;
   renderLauncher();
   lsearch.focus();
 }
 function closeLauncher() {
-  launcher.hidden = true;
-  if (launcherOpener?.isConnected) launcherOpener.focus();
-  else bar.querySelector<HTMLElement>(".brand")?.focus();
+  if (launcher.open) launcher.close();
 }
+function toggleLauncher() {
+  if (launcher.open) closeLauncher();
+  else openLauncher();
+}
+launcher.addEventListener("close", () => {
+  if (launcherOpener?.isConnected) launcherOpener.focus();
+  launcherOpener = null;
+});
 lsearch.addEventListener("input", renderLauncher);
-launcher.addEventListener("pointerdown", (e) => {
-  if (e.target === launcher) closeLauncher();
+
+/** Spatial arrow-key movement across the tiles of the launcher grid. */
+function moveInGrid(from: HTMLElement, key: string) {
+  const tiles = [...lgrid.querySelectorAll<HTMLElement>(".ltile, .lweb")];
+  const i = tiles.indexOf(from);
+  if (key === "ArrowRight") return tiles[i + 1]?.focus();
+  if (key === "ArrowLeft")
+    return i === 0 ? lsearch.focus() : tiles[i - 1]?.focus();
+  const r = from.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  let best: HTMLElement | undefined;
+  let bestScore = Infinity;
+  for (const t of tiles) {
+    if (t === from) continue;
+    const b = t.getBoundingClientRect();
+    const dy = key === "ArrowDown" ? b.top - r.bottom : r.top - b.bottom;
+    if (dy < -2) continue;
+    const score = dy * 4 + Math.abs(b.left + b.width / 2 - cx);
+    if (score < bestScore) {
+      bestScore = score;
+      best = t;
+    }
+  }
+  if (best) best.focus();
+  else if (key === "ArrowUp") lsearch.focus();
+}
+launcher.addEventListener("keydown", (e) => {
+  const active = document.activeElement as HTMLElement | null;
+  if (active === lsearch) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      lgrid.querySelector<HTMLElement>(".ltile, .lweb")?.click();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      lgrid.querySelector<HTMLElement>(".ltile, .lweb")?.focus();
+    }
+    return;
+  }
+  if (active && lgrid.contains(active)) {
+    if (e.key.startsWith("Arrow")) {
+      e.preventDefault();
+      moveInGrid(active, e.key);
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // Typing anywhere in the grid keeps searching.
+      lsearch.focus();
+    }
+  }
 });
 window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
     e.preventDefault();
-    if (launcher.hidden) openLauncher();
-    else closeLauncher();
-  }
-  if (e.key === "Escape" && !launcher.hidden) closeLauncher();
-  if (
-    e.key === "Enter" &&
-    !launcher.hidden &&
-    document.activeElement === lsearch
-  )
-    lgrid.querySelector<HTMLElement>(".ltile")?.click();
-  if (
-    !launcher.hidden &&
-    e.key === "ArrowDown" &&
-    document.activeElement === lsearch
-  ) {
-    e.preventDefault();
-    lgrid.querySelector<HTMLElement>(".ltile")?.focus();
-  }
-  if (!launcher.hidden && e.key === "Tab") {
-    const controls = [
-      ...launcher.querySelectorAll<HTMLElement>("button, input"),
-    ];
-    const first = controls[0];
-    const last = controls.at(-1);
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last?.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first?.focus();
-    }
+    toggleLauncher();
   }
 });
 
+// Dock ---------------------------------------------------------------------------------------------
+const PINNED = ["files", "browser", "terminal", "apps", "creative", "docs"];
+function dockButton(
+  id: string,
+  label: string,
+  ic: string,
+  onclick: () => void,
+) {
+  const w = wm.windows.get(id);
+  const state = w
+    ? wm.activeId() === id
+      ? " running current"
+      : " running"
+    : "";
+  return h(
+    "button",
+    {
+      class: `dbtn${state}`,
+      "aria-label": w ? `${label}, open` : label,
+      "data-tip": label,
+      onclick,
+    },
+    appIcon(id, ic),
+  );
+}
 function renderDock() {
-  const items: HTMLElement[] = [
-    h(
-      "button",
-      {
-        class: "dbtn launch",
-        title: "Launcher (Ctrl+K)",
-        "aria-label": "Open launcher",
-        onclick: openLauncher,
-      },
-      icon("grid"),
-    ),
-    h("span", { class: "dsep" }),
-  ];
   const toggle = (id: string) => {
     const w = wm.windows.get(id)!;
     if (w.minimized || wm.activeId() !== id) wm.restore(w);
     else wm.minimize(w);
   };
-  const pinned = ["files", "browser", "terminal", "linux", "apps"].map((id) =>
-    builtins.find((b) => b.id === id)!,
-  );
+  const items: HTMLElement[] = [
+    h(
+      "button",
+      {
+        class: "dbtn launch",
+        "aria-label": "Show all apps",
+        "data-tip": "All apps",
+        onclick: () => toggleLauncher(),
+      },
+      h("span", { class: "appicon" }, icon("grid")),
+    ),
+    h("span", { class: "dsep", "aria-hidden": "true" }),
+  ];
   const seen = new Set<string>();
-  for (const b of pinned) {
-    seen.add(b.id);
-    const w = wm.windows.get(b.id);
+  for (const id of PINNED) {
+    const b = builtins.find((entry) => entry.id === id)!;
+    seen.add(id);
     items.push(
-      h(
-        "button",
-        {
-          class: `dbtn${w ? " running" : ""}${w && wm.activeId() === b.id ? " current" : ""}`,
-          title: b.name,
-          "aria-label": b.name,
-          onclick: () => (w ? toggle(b.id) : launchBuiltin(b)),
-        },
-        icon(b.icon),
+      dockButton(id, b.name, b.icon, () =>
+        wm.windows.get(id) ? toggle(id) : launchBuiltin(b),
       ),
     );
   }
+  const extra: HTMLElement[] = [];
   for (const e of installedEntries()) {
     const id = `pkg:${e.id}`;
+    if (!wm.windows.get(id)) continue;
     seen.add(id);
-    const w = wm.windows.get(id);
-    items.push(
-      h(
-        "button",
-        {
-          class: `dbtn${w ? " running" : ""}${w && wm.activeId() === id ? " current" : ""}`,
-          title: e.name,
-          "aria-label": e.name,
-          onclick: () => (w ? toggle(id) : launchPackage(e)),
-        },
-        icon(e.category === "games" ? "game" : "app"),
+    extra.push(
+      dockButton(id, e.name, e.category === "games" ? "game" : "app", () =>
+        toggle(id),
       ),
     );
   }
   for (const [id, w] of wm.windows) {
     if (seen.has(id)) continue;
-    items.push(
-      h(
-        "button",
-        {
-          class: `dbtn running${wm.activeId() === id ? " current" : ""}`,
-          title: w.title,
-          "aria-label": w.title,
-          onclick: () => toggle(id),
-        },
-        icon(w.iconName),
-      ),
-    );
+    extra.push(dockButton(id, w.title, w.iconName, () => toggle(id)));
   }
+  if (extra.length)
+    items.push(h("span", { class: "dsep", "aria-hidden": "true" }), ...extra);
   dock.replaceChildren(...items);
 }
 wm.onChange(renderDock);
 
-const icons = h("div", { class: "icons" });
-function renderDesktopIcons() {
-  const tiles = [
-    ...builtins
-      .filter((b) => b.group === "core" && b.id !== "about")
-      .map((b) => ({ name: b.name, ic: b.icon, fn: () => launchBuiltin(b) })),
-    ...installedEntries().map((e) => ({
-      name: e.name,
-      ic: e.category === "games" ? "game" : "app",
-      fn: () => launchPackage(e),
-    })),
-  ];
-  icons.replaceChildren(
-    ...tiles.map((t) =>
+// Mobile home: on narrow screens the launcher grid is the desktop --------------------------------
+const home = h("section", { class: "home", "aria-label": "Home" });
+function renderHome() {
+  const now = new Date();
+  home.replaceChildren(
+    h(
+      "div",
+      { class: "home-head" },
       h(
-        "button",
-        {
-          class: "dicon",
-          onclick: (e: MouseEvent) => {
-            if (
-              e.detail === 0 ||
-              matchMedia("(pointer: coarse)").matches ||
-              e.detail >= 2
-            )
-              t.fn();
-          },
-        },
-        h("span", { class: "licon" }, icon(t.ic)),
-        h("span", {}, t.name),
+        "div",
+        { class: "home-time" },
+        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       ),
+      h(
+        "div",
+        { class: "home-date" },
+        now.toLocaleDateString([], {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        }),
+      ),
+    ),
+    h(
+      "button",
+      { class: "home-search", onclick: () => openLauncher() },
+      sym("search"),
+      "Search apps and the web",
+    ),
+    h(
+      "div",
+      { class: "home-grid" },
+      ...launchItems()
+        .filter((i) => i.section !== "Tools" && i.id !== "about")
+        .map((item) =>
+          h(
+            "button",
+            { class: "ltile", onclick: () => item.run() },
+            appIcon(item.id, item.icon),
+            h("span", { class: "lname" }, item.name),
+          ),
+        ),
     ),
   );
 }
-desk.append(icons);
+desk.append(home);
+
+// Welcome card: first visit only, centred, dismissible ----------------------------------------------
+function showWelcome() {
+  if (localStorage.getItem("aph.welcome") === "done" || narrow.matches) return;
+  const card = h("section", {
+    class: "welcome",
+    role: "dialog",
+    "aria-labelledby": "welcome-title",
+    tabindex: -1,
+  });
+  const dismiss = () => {
+    localStorage.setItem("aph.welcome", "done");
+    card.classList.add("leaving");
+    const done = () => card.remove();
+    if (reduceMotion.matches) done();
+    else card.addEventListener("animationend", done, { once: true });
+  };
+  const quick = ["files", "browser", "terminal", "apps", "creative", "docs"];
+  const swatches = h("div", { class: "welcome-themes" });
+  const paintSwatches = () =>
+    swatches.replaceChildren(
+      ...THEMES.map((t) => themeSwatch(t, () => setPref("aph.theme", t.id))),
+    );
+  prefListeners.add(() => {
+    if (card.isConnected) paintSwatches();
+  });
+  paintSwatches();
+  const kbd = (keys: string[], label: string) =>
+    h(
+      "span",
+      { class: "hint" },
+      ...keys.map((k) => h("kbd", {}, k)),
+      h("span", {}, label),
+    );
+  card.append(
+    h(
+      "div",
+      { class: "welcome-top" },
+      h("img", {
+        src: "/brand/64.png",
+        alt: "",
+        width: 44,
+        height: 44,
+        class: "welcome-logo",
+      }),
+      h(
+        "button",
+        {
+          class: "tbtn",
+          "aria-label": "Close welcome",
+          onclick: dismiss,
+        },
+        icon("close"),
+      ),
+    ),
+    h("h1", { id: "welcome-title" }, "Welcome to Bun OS"),
+    h(
+      "p",
+      { class: "welcome-lede" },
+      "A tiling desktop in your browser. Apps open side by side, and your files stay on this device.",
+    ),
+    h(
+      "button",
+      {
+        class: "welcome-search",
+        onclick: () => {
+          dismiss();
+          openLauncher();
+        },
+      },
+      sym("search"),
+      h("span", {}, "Search apps and the web"),
+      h("kbd", {}, "Alt"),
+      h("kbd", {}, "Space"),
+    ),
+    h(
+      "div",
+      { class: "welcome-apps" },
+      ...quick.map((id) => {
+        const b = builtins.find((entry) => entry.id === id)!;
+        return h(
+          "button",
+          {
+            class: "ltile",
+            onclick: () => {
+              dismiss();
+              launchBuiltin(b);
+            },
+          },
+          appIcon(b.id, b.icon),
+          h("span", { class: "lname" }, b.name),
+        );
+      }),
+    ),
+    h(
+      "div",
+      { class: "welcome-row" },
+      h("span", { class: "welcome-label" }, "Pick a look"),
+      swatches,
+    ),
+    h(
+      "div",
+      { class: "welcome-foot" },
+      h(
+        "div",
+        { class: "hints" },
+        kbd(["Alt", "Enter"], "Terminal"),
+        kbd(["Alt", "1–5"], "Workspaces"),
+        kbd(["Alt", "/"], "All shortcuts"),
+      ),
+      h("button", { class: "btn", onclick: dismiss }, "Start"),
+    ),
+  );
+  card.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") dismiss();
+  });
+  desk.append(card);
+  queueMicrotask(() => card.focus({ preventScroll: true }));
+}
+
+// Top bar: workspaces left, clock centre, status right (waybar layout) ------------------------------
+const wsBar = h("nav", { class: "wsbar", "aria-label": "Workspaces" });
+const activeApp = h("span", { class: "active-app", "aria-live": "polite" });
+const timeEl = h("time", { class: "bar-time" });
+const dateEl = h("span", { class: "bar-date" });
+const LAYOUT_GLYPH: Record<Layout, string> = {
+  dwindle: "dashboard",
+  scrolling: "view_column",
+  floating: "filter_none",
+};
+const LAYOUT_NAME: Record<Layout, string> = {
+  dwindle: "Tiled",
+  scrolling: "Scrolling columns",
+  floating: "Floating",
+};
+const layoutBtn = h("button", {
+  class: "tbtn",
+  onclick: () => wm.cycleLayout(),
+});
+const netIcon = sym("wifi");
+const volIcon = sym("volume_up");
+const batIcon = sym("battery_full");
+batIcon.hidden = true;
+const statusBtn = h(
+  "button",
+  {
+    class: "status",
+    popovertarget: "quick",
+    "aria-label": "Quick settings",
+    "data-tip": "Quick settings",
+  },
+  netIcon,
+  volIcon,
+  batIcon,
+);
+const quick = h("div", {
+  id: "quick",
+  class: "quick",
+  popover: "auto",
+  role: "dialog",
+  "aria-label": "Quick settings",
+});
+
+interface BatteryLike extends EventTarget {
+  level: number;
+  charging: boolean;
+}
+let battery: BatteryLike | undefined;
+const batteryGlyph = (b: BatteryLike) =>
+  b.charging
+    ? "battery_charging_full"
+    : b.level > 0.9
+      ? "battery_full"
+      : b.level > 0.6
+        ? "battery_5_bar"
+        : b.level > 0.3
+          ? "battery_3_bar"
+          : "battery_1_bar";
+
+function renderStatus() {
+  netIcon.textContent = navigator.onLine ? "wifi" : "wifi_off";
+  volIcon.textContent = soundsEnabled() ? "volume_up" : "volume_off";
+  if (battery) {
+    batIcon.hidden = false;
+    batIcon.textContent = batteryGlyph(battery);
+  }
+  statusBtn.setAttribute(
+    "aria-label",
+    `Quick settings. ${navigator.onLine ? "Online" : "Offline"}, sounds ${soundsEnabled() ? "on" : "off"}${battery ? `, battery ${Math.round(battery.level * 100)}%` : ""}`,
+  );
+}
+addEventListener("online", renderStatus);
+addEventListener("offline", renderStatus);
+(navigator as Navigator & { getBattery?: () => Promise<BatteryLike> })
+  .getBattery?.()
+  .then((b) => {
+    battery = b;
+    b.addEventListener("levelchange", renderStatus);
+    b.addEventListener("chargingchange", renderStatus);
+    renderStatus();
+  })
+  .catch(() => {});
+
+function renderQuick() {
+  const mode = currentMode();
+  const tile = (
+    glyph: string,
+    title: string,
+    sub: string,
+    on: boolean,
+    onclick?: () => void,
+  ) =>
+    h(
+      onclick ? "button" : "div",
+      {
+        class: `qtile${on ? " on" : ""}`,
+        ...(onclick
+          ? { onclick, role: "switch", "aria-checked": String(on) }
+          : {}),
+      },
+      sym(glyph),
+      h("span", {}, h("strong", {}, title), h("span", { class: "qsub" }, sub)),
+    );
+  const storage = h("div", { class: "qstorage" });
+  void navigator.storage?.estimate?.().then(({ usage = 0, quota = 0 }) => {
+    if (!quota) return;
+    const mb = (n: number) =>
+      n > 1e9
+        ? `${(n / 1e9).toFixed(1)} GB`
+        : `${Math.max(1, Math.round(n / 1e6))} MB`;
+    storage.replaceChildren(
+      h(
+        "div",
+        { class: "qstorage-label" },
+        sym("hard_drive"),
+        h("span", {}, `${mb(usage)} of ${mb(quota)} used on this device`),
+      ),
+      h("progress", { max: quota, value: usage, "aria-label": "Storage used" }),
+    );
+  });
+  quick.replaceChildren(
+    h(
+      "div",
+      { class: "qhead" },
+      h(
+        "div",
+        {},
+        h(
+          "strong",
+          {},
+          new Date().toLocaleDateString([], {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }),
+        ),
+        battery
+          ? h(
+              "span",
+              { class: "qsub" },
+              `Battery ${Math.round(battery.level * 100)}%${battery.charging ? ", charging" : ""}`,
+            )
+          : null,
+      ),
+      h(
+        "button",
+        {
+          class: "tbtn",
+          "aria-label": "All settings",
+          "data-tip": "All settings",
+          onclick: () => {
+            quick.hidePopover();
+            launchBuiltin(builtins.find((b) => b.id === "settings")!);
+          },
+        },
+        icon("gear"),
+      ),
+    ),
+    h(
+      "div",
+      { class: "qgrid" },
+      tile(
+        navigator.onLine ? "wifi" : "wifi_off",
+        "Network",
+        navigator.onLine ? "Online" : "Offline, apps keep working",
+        navigator.onLine,
+      ),
+      tile(
+        soundsEnabled() ? "volume_up" : "volume_off",
+        "Sounds",
+        soundsEnabled() ? "On" : "Off",
+        soundsEnabled(),
+        () => {
+          setSoundsEnabled(!soundsEnabled());
+          renderStatus();
+          renderQuick();
+        },
+      ),
+      tile(
+        mode === "dark"
+          ? "dark_mode"
+          : mode === "light"
+            ? "light_mode"
+            : "brightness_auto",
+        "Appearance",
+        mode === "auto" ? "Automatic" : mode === "dark" ? "Dark" : "Light",
+        mode !== "light",
+        () => {
+          const next =
+            mode === "auto" ? "dark" : mode === "dark" ? "light" : null;
+          setPref("aph.mode", next);
+        },
+      ),
+      tile(
+        LAYOUT_GLYPH[wm.layout()],
+        "Tiling",
+        LAYOUT_NAME[wm.layout()],
+        wm.layout() !== "floating",
+        () => wm.toggleTiled(),
+      ),
+    ),
+    h(
+      "div",
+      { class: "qthemes" },
+      ...THEMES.map((t) =>
+        themeSwatch(t, () => setPref("aph.theme", t.id), "lg"),
+      ),
+    ),
+    storage,
+  );
+}
+quick.addEventListener("beforetoggle", (e) => {
+  if ((e as ToggleEvent).newState === "open") renderQuick();
+});
+prefListeners.add(() => {
+  if (quick.matches(":popover-open")) renderQuick();
+});
+wm.onChange(() => {
+  if (quick.matches(":popover-open")) renderQuick();
+});
 
 function tick() {
   const d = new Date();
-  clock.textContent = d.toLocaleTimeString([], {
+  timeEl.textContent = d.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
-  clock.dateTime = d.toISOString();
+  timeEl.dateTime = d.toISOString();
+  dateEl.textContent = d.toLocaleDateString([], {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  if (narrow.matches) renderHome();
 }
 
-const wsBar = h("nav", { class: "wsbar", "aria-label": "Workspaces" });
-const workspaceStatus = h("button", {
-  class: "workspace-status",
-  "aria-label": "Switch workspace",
-  onclick: () => wm.cycleWorkspace(),
-});
-const activeApp = h("span", { class: "active-app", "aria-live": "polite" });
-const layoutBtn = h("button", {
-  class: "tbtn layout",
-  title: "Layout (Alt+L)",
-  "aria-label": "Cycle layout",
-  onclick: () => wm.cycleLayout(),
-});
-const MARK: Record<Layout, string> = {
-  dwindle: "■",
-  scrolling: "●",
-  floating: "▲",
-};
 function renderBar() {
-  workspaceStatus.textContent = `Space ${wm.workspace}`;
-  workspaceStatus.title = `Workspace ${wm.workspace}. Switch to the next workspace`;
-  activeApp.textContent = wm.active()?.title ?? "Desktop";
+  const active = wm.active();
+  activeApp.replaceChildren(
+    ...(active
+      ? [icon(active.iconName), h("span", {}, active.title)]
+      : [h("span", {}, "Desktop")]),
+  );
+  activeApp.classList.toggle("idle", !active);
   const occupied = wm.occupied();
+  const shown = Math.max(5, wm.workspace, ...occupied);
   wsBar.replaceChildren(
-    ...Array.from({ length: 10 }, (_, i) => {
+    ...Array.from({ length: shown }, (_, i) => {
       const n = i + 1;
+      const label = String(n === 10 ? 0 : n);
       return h(
         "button",
         {
           class: `ws${wm.workspace === n ? " cur" : ""}${occupied.has(n) ? " occ" : ""}`,
-          "aria-label": `Workspace ${n}`,
+          "aria-label": `Workspace ${label}${occupied.has(n) ? ", has windows" : ""}`,
           "aria-current": wm.workspace === n ? "true" : undefined,
+          "data-tip": `Workspace ${label}`,
           onclick: () => wm.goTo(n),
         },
-        String(n === 10 ? 0 : n),
+        h("span", { class: "ws-mark" }, wm.workspace === n ? label : ""),
       );
     }),
   );
-  layoutBtn.textContent = MARK[wm.layout()];
-  layoutBtn.setAttribute("aria-label", `Layout: ${wm.layout()}. Cycle layout`);
+  const layout = wm.layout();
+  layoutBtn.replaceChildren(sym(LAYOUT_GLYPH[layout]));
+  layoutBtn.setAttribute(
+    "aria-label",
+    `Layout: ${LAYOUT_NAME[layout]}. Change layout`,
+  );
+  layoutBtn.dataset.tip = `${LAYOUT_NAME[layout]} (Alt+L)`;
 }
 wm.onChange(renderBar);
+
 bar.append(
   h(
-    "button",
-    { class: "brand", onclick: openLauncher, "aria-label": "Open launcher" },
-    h("img", { src: "/brand/32.png", alt: "", width: 22, height: 22 }),
-    "Aphrody",
+    "div",
+    { class: "bar-left" },
+    h(
+      "button",
+      {
+        class: "brand",
+        onclick: () => toggleLauncher(),
+        "aria-label": "Show all apps",
+        "data-tip": "All apps (Alt+Space)",
+      },
+      h("img", { src: "/brand/32.png", alt: "", width: 22, height: 22 }),
+    ),
+    wsBar,
+    activeApp,
   ),
-  wsBar,
-  workspaceStatus,
-  activeApp,
-  h("span", { class: "grow" }),
-  layoutBtn,
   h(
     "button",
     {
-      class: "tbtn",
-      title: "Search (Ctrl+K)",
-      "aria-label": "Search",
-      onclick: openLauncher,
+      class: "bar-clock",
+      popovertarget: "quick",
+      "aria-label": "Date and quick settings",
     },
-    icon("search"),
+    timeEl,
+    dateEl,
   ),
-  clock,
   h(
-    "button",
-    {
-      class: "tbtn",
-      title: "Settings",
-      "aria-label": "Open settings",
-      onclick: () => launchBuiltin(builtins.find((b) => b.id === "settings")!),
-    },
-    icon("gear"),
+    "div",
+    { class: "bar-right" },
+    layoutBtn,
+    h(
+      "button",
+      {
+        class: "tbtn",
+        "aria-label": "Search",
+        "data-tip": "Search (Ctrl+K)",
+        onclick: () => openLauncher(),
+      },
+      icon("search"),
+    ),
+    statusBtn,
+    h(
+      "button",
+      {
+        class: "tbtn",
+        "aria-label": "Open settings",
+        "data-tip": "Settings",
+        onclick: () =>
+          launchBuiltin(builtins.find((b) => b.id === "settings")!),
+      },
+      icon("gear"),
+    ),
   ),
 );
+
+// Boot ---------------------------------------------------------------------------------------------
 desk.id = "desk";
 desk.tabIndex = -1;
 document.body.append(
@@ -961,14 +1571,18 @@ document.body.append(
   desk,
   dock,
   launcher,
+  quick,
 );
+repaintWallpaper = mountWallpaper();
 applyPrefs();
 tick();
 setInterval(tick, 15_000);
 refreshApps();
 renderBar();
+renderStatus();
+initSounds();
 installKeys(wm, {
-  launcher: () => (launcher.hidden ? openLauncher() : closeLauncher()),
+  launcher: toggleLauncher,
   launch: (id) => launchBuiltin(builtins.find((b) => b.id === id)!),
   help: () => launchBuiltin(builtins.find((b) => b.id === "keys")!),
   webHotkey: (code) => {
@@ -1000,6 +1614,7 @@ void reconcile()
   })
   .catch(() => {});
 
+// A requested app opens directly; a plain visit lands on a calm desktop (welcome card on the first one).
 const target = builtins.find((x) => x.id === wanted);
-if (target || !wanted || !wanted.includes("-"))
-  launchBuiltin(target ?? builtins.find((b) => b.id === "workspace")!);
+if (target) launchBuiltin(target);
+else if (!wanted) showWelcome();

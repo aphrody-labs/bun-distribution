@@ -2,7 +2,7 @@
 // Builds dist/: the bundled shell, the OPFS file-system wasm, the M3 tokens and the workspace catalog.
 import { cp, mkdir, readdir, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
+import { themeCss } from "./src/themes";
 import { buildPackages } from "./packages";
 import { buildSeo } from "./seo";
 import { stageVm } from "./vm";
@@ -144,11 +144,11 @@ const catalog = {
 await rm(dist, { recursive: true, force: true });
 await mkdir(join(dist, "wasm"), { recursive: true });
 
-const seed = "#6750a4";
+// The default desktop theme paints before the shell script runs; Settings swaps it at runtime.
 const tokens = [
   await Bun.file(join(root, "packages/m3-tokens/src/m3-tokens.css")).text(),
   await Bun.file(join(root, "packages/m3-tokens/src/expressive.css")).text(),
-  cssFromSeed(seed, { variant: "expressive" }),
+  themeCss("aphrody"),
 ].join("\n");
 await Bun.write(join(dist, "m3.css"), tokens);
 
@@ -156,6 +156,7 @@ const result = await Bun.build({
   entrypoints: [
     join(import.meta.dir, "src/main.ts"),
     join(import.meta.dir, "src/sw.ts"),
+    join(import.meta.dir, "src/boot.ts"),
   ],
   outdir: dist,
   target: "browser",
@@ -271,23 +272,71 @@ for (const name of FILE_ICONS)
     join(root, "packages/assets/icons", name + ".png"),
     join(dist, "icons", name + ".png"),
   );
+const shortcut = (name: string, app: string, description: string) => ({
+  name,
+  short_name: name,
+  description,
+  url: `/?app=${app}`,
+  icons: [{ src: "/brand/192.png", sizes: "192x192", type: "image/png" }],
+});
 await Bun.write(
   join(dist, "manifest.webmanifest"),
   JSON.stringify({
+    id: "/",
     name: "Aphrody Bun OS",
     short_name: "Bun OS",
-    description: "Bun OS in the browser",
+    description:
+      "A tiling desktop in your browser: files, terminal, browser, games and creative apps that work offline.",
+    lang: "en",
+    dir: "ltr",
     start_url: "/",
+    scope: "/",
     display: "standalone",
-    background_color: "#141218",
-    theme_color: "#6750a4",
+    display_override: ["standalone", "minimal-ui"],
+    orientation: "any",
+    background_color: "#11131d",
+    theme_color: "#11131d",
+    categories: ["productivity", "utilities", "developer"],
     icons: [
-      { src: "/brand/256.png", sizes: "256x256", type: "image/png" },
       {
-        src: "/brand/1024.png",
-        sizes: "1024x1024",
+        src: "/brand/192.png",
+        sizes: "192x192",
         type: "image/png",
-        purpose: "any maskable",
+        purpose: "any",
+      },
+      {
+        src: "/brand/512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/brand/512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+    shortcuts: [
+      shortcut("Files", "files", "Your files, saved in this browser"),
+      shortcut("Terminal", "terminal", "Command line in WebAssembly"),
+      shortcut("Browser", "browser", "Browse the web in tabs"),
+      shortcut("Apps", "apps", "Install games and creative apps"),
+    ],
+    screenshots: [
+      {
+        src: "/screens/wide.webp",
+        sizes: "1475x812",
+        type: "image/webp",
+        form_factor: "wide",
+        label: "Bun OS desktop with the welcome card, top bar and dock",
+      },
+      {
+        src: "/screens/narrow.webp",
+        sizes: "780x1688",
+        type: "image/webp",
+        form_factor: "narrow",
+        label: "Bun OS home screen on a phone",
       },
     ],
   }),

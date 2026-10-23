@@ -17,6 +17,8 @@ export interface AppWindow {
   ws: number;
   /** Lives in the scratchpad instead of a workspace. */
   scratch: boolean;
+  /** Stays floating above tiled layouts (dialogs, small tools), like a Hyprland float rule. */
+  floating: boolean;
   close(): void;
   focus(): void;
   setTitle(title: string): void;
@@ -30,10 +32,19 @@ export interface OpenOptions {
   height?: number;
   content: HTMLElement;
   onClose?: () => void;
+  /** Keep this window floating even when its workspace tiles. */
+  float?: boolean;
+}
+
+export interface WindowManagerOptions {
+  /** Layout of workspaces without a saved choice (default floating). */
+  defaultLayout?: Layout;
 }
 
 type Listener = () => void;
-const GAP = 8;
+const GAP = 10;
+/** Space kept free at the bottom of the desktop for the dock. */
+const DOCK = 84;
 const LAYOUT_KEY = "aph.layouts";
 
 interface Rect {
@@ -57,7 +68,12 @@ export class WindowManager {
   private listeners = new Set<Listener>();
   /** Window order per workspace, used by the tiled layouts. */
   private order = new Map<number, string[]>();
-  constructor(private readonly desk: HTMLElement) {
+  private readonly fallbackLayout: Layout;
+  constructor(
+    private readonly desk: HTMLElement,
+    options: WindowManagerOptions = {},
+  ) {
+    this.fallbackLayout = options.defaultLayout ?? "floating";
     this.layouts = {};
     try {
       const saved: unknown = JSON.parse(
@@ -89,7 +105,7 @@ export class WindowManager {
   }
 
   layout(ws = this.workspace): Layout {
-    return this.layouts[ws] ?? "floating";
+    return this.layouts[ws] ?? this.fallbackLayout;
   }
   setLayout(layout: Layout, ws = this.workspace) {
     this.layouts[ws] = layout;
@@ -142,15 +158,17 @@ export class WindowManager {
       body,
       h("div", { class: "win-resize", "aria-hidden": "true" }),
     );
-    const n = this.windows.size;
+    // Floating windows open centred on the free desktop, each new one stepped down and right.
+    const n = this.windows.size % 6;
     const dw = this.desk.clientWidth;
-    const dh = this.desk.clientHeight;
-    const w = Math.min(o.width ?? 880, dw - 24);
-    const hh = Math.min(o.height ?? 560, dh - 24);
+    const dh = this.desk.clientHeight - DOCK;
+    const w = Math.min(o.width ?? 880, dw - GAP * 2);
+    const hh = Math.min(o.height ?? 560, dh - GAP * 2);
     el.style.width = `${w}px`;
     el.style.height = `${hh}px`;
-    el.style.left = `${Math.max(8, Math.min(dw - w - 8, 56 + (n % 8) * 28))}px`;
-    el.style.top = `${Math.max(8, Math.min(dh - hh - 8, 36 + (n % 8) * 28))}px`;
+    el.style.left = `${Math.max(GAP, Math.min(dw - w - GAP, (dw - w) / 2 + n * 28))}px`;
+    el.style.top = `${Math.max(GAP, Math.min(dh - hh - GAP, (dh - hh) / 2 + n * 24))}px`;
+    if (o.float) el.classList.add("floating");
 
     const win: AppWindow = {
       id,
@@ -161,6 +179,7 @@ export class WindowManager {
       maximized: false,
       ws: this.workspace,
       scratch: false,
+      floating: !!o.float,
       close: () => {
         o.onClose?.();
         el.remove();
@@ -208,7 +227,8 @@ export class WindowManager {
   }
 
   focus(win: AppWindow) {
-    win.el.style.zIndex = String(++this.z);
+    // Floating windows stay above tiled ones, as Hyprland keeps floats on top.
+    win.el.style.zIndex = String(++this.z + (win.floating ? 100_000 : 0));
     for (const w of this.windows.values())
       w.el.classList.toggle("active", w === win);
     this.emit();
@@ -352,27 +372,27 @@ export class WindowManager {
         const height = this.desk.clientHeight;
         if (width <= 0 || height <= 0) continue;
         const availableWidth = Math.max(120, width - GAP * 2);
-        const availableHeight = Math.max(120, height - 84);
+        const availableHeight = Math.max(120, height - DOCK - GAP);
         const ww = Math.min(w.el.offsetWidth, availableWidth);
         const wh = Math.min(w.el.offsetHeight, availableHeight);
         Object.assign(w.el.style, {
           width: `${ww}px`,
           height: `${wh}px`,
           left: `${Math.max(0, Math.min(w.el.offsetLeft, width - ww))}px`,
-          top: `${Math.max(0, Math.min(w.el.offsetTop, height - wh - 76))}px`,
+          top: `${Math.max(0, Math.min(w.el.offsetTop, height - wh - DOCK))}px`,
         });
       }
       return;
     }
     const tiled = this.visibleWindows().filter(
-      (w) => !w.scratch && !w.maximized,
+      (w) => !w.scratch && !w.maximized && !w.floating,
     );
     for (const w of all) if (!tiled.includes(w)) this.unplace(w);
     const area: Rect = {
       x: GAP,
       y: GAP,
       w: this.desk.clientWidth - GAP * 2,
-      h: this.desk.clientHeight - GAP * 2 - 76,
+      h: this.desk.clientHeight - GAP - DOCK,
     };
     if (!tiled.length || area.w <= 0) return;
     if (layout === "dwindle") this.dwindle(tiled, area);
@@ -462,7 +482,7 @@ export class WindowManager {
   }
   private snap(w: AppWindow, dir: Direction) {
     const dw = this.desk.clientWidth;
-    const dh = this.desk.clientHeight - 76;
+    const dh = this.desk.clientHeight - DOCK;
     const r: Rect =
       dir === "left"
         ? { x: GAP, y: GAP, w: dw / 2 - GAP * 1.5, h: dh - GAP }
@@ -491,7 +511,7 @@ export class WindowManager {
   }
   private startMove(win: AppWindow, e: PointerEvent, target: HTMLElement) {
     const el = win.el;
-    if (el.classList.contains("tiled")) {
+    if (el.classList.contains("tiled") && !win.floating) {
       // Dragging a tiled window pops it out as floating, like Super+O.
       this.setLayout("floating");
     }

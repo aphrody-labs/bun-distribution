@@ -143,7 +143,7 @@ export async function filesApp(
   const crumbs = h("div", { class: "fx-crumbs", "aria-label": "Path" });
   const pathInput = h("input", { class: "fld fx-path", "aria-label": "Path", spellcheck: "false", hidden: true });
   const searchInput = h("input", { class: "fld fx-search", type: "search", placeholder: "Search files", "aria-label": "Search files" });
-  const scopeBtn = h("button", { class: "fx-chip", title: "Search scope" }, "Folder");
+  const scopeBtn = h("button", { class: "fx-chip", title: "Search scope" }, "This folder");
   const pane = h("div", { class: "fx-pane", tabindex: 0, role: "listbox", "aria-multiselectable": true, "aria-label": "Files" });
   const side = h("nav", { class: "fx-side", "aria-label": "Places" });
   const preview = h("aside", { class: "fx-preview", "aria-label": "Preview" });
@@ -272,7 +272,7 @@ export async function filesApp(
   scopeBtn.addEventListener("click", () => {
     const everywhere = !(search?.everywhere ?? scopeBtn.dataset.all === "1");
     scopeBtn.dataset.all = everywhere ? "1" : "0";
-    scopeBtn.textContent = everywhere ? "Everywhere" : "Folder";
+    scopeBtn.textContent = everywhere ? "Everywhere" : "This folder";
     if (search) search.everywhere = everywhere;
     void runSearch();
   });
