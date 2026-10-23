@@ -3,15 +3,13 @@ name: Aphrody Sites
 on:
   push:
     branches: [os]
-  schedule:
-    # Reconcile the public WebOS hosts hourly as well as immediately on every
-    # canonical source push. Concurrency below serializes overlapping runs.
-    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# No schedule: a pending run in the concurrency group is replaced by the newest
+# one, so an hourly cron kept cancelling the deploy queued by a push.
 concurrency:
   group: aphrody-sites-production
   cancel-in-progress: false
