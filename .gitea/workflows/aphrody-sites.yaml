@@ -22,6 +22,11 @@ jobs:
     env:
       GIT_SSH_COMMAND: ssh -F /run/aphrody/git-ssh/config
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # The build runs in one persistent workspace on the runner cache volume (host:
+      # ~/build/cache/gitea-runner/sites-ws): its 168 submodules, node_modules and Cargo target
+      # survive between runs, so a push only fetches what changed. The concurrency group above
+      # serializes the runs that use it.
+      SITES_WORKSPACE: /cache/sites-ws
     steps:
       - name: Validate checkout transport
         run: |
@@ -36,14 +41,21 @@ jobs:
           submodules: false
           fetch-depth: 1
           persist-credentials: false
-      - name: Fetch the submodules the Sites build needs
+      - name: Update the persistent Sites workspace
         run: |
-          # Submodule URLs resolve to the read-only host mirrors (runner GIT_CONFIG_SYSTEM); persist-credentials
-          # is false, so this step cannot fetch from origin again. Kernel, LLVM and Wine forks are distribution-only sources the Sites never build.
+          git config --global --add safe.directory '*'
+          sha="$(git rev-parse HEAD)"
+          test -d "$SITES_WORKSPACE/.git" || git clone --no-checkout --depth 1 "file://$PWD" "$SITES_WORKSPACE"
+          cd "$SITES_WORKSPACE"
+          git fetch --depth 1 "file://$GITHUB_WORKSPACE" "$sha"
+          git checkout -q -f --detach "$sha"
+          # The checkout dropped its credentials, so record the pushed commit as the published tip locally.
+          git update-ref refs/remotes/origin/os "$sha"
+          # Kernel, LLVM and Wine forks are distribution-only sources the Sites never build.
           for p in vendor/cachyos-linux vendor/ogc-linux vendor/linux-cachyos vendor/kernel-patches vendor/ogc-kernel-packages vendor/nvidia-kernels vendor/open-gpu-kernel-modules vendor/llvm vendor/proton vendor/proton-cachyos vendor/wine-cachyos packages/re/third_party/unblob; do
             git config "submodule.$p.update" none
           done
-          git submodule update --init --jobs 4 --depth 1
+          git submodule update --init --recursive --jobs 4 --depth 1
       - name: Select pinned Aphrody Bun runtime
         run: |
           test -x "$BUN_EXECUTABLE"
@@ -51,13 +63,17 @@ jobs:
           printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
       - name: Install workspace
         run: |
+          cd "$SITES_WORKSPACE"
           bun install --frozen-lockfile
           bun scripts/node-modules.ts
       - name: Require production credential
         run: test -n "$CLOUDFLARE_API_TOKEN"
       - name: Compile the complete installable Craft suite
         run: |
+          cd "$SITES_WORKSPACE"
           rustup target add wasm32-unknown-unknown
           CARGO_BUILD_JOBS=4 APHRODY_CARGO_JOBS=4 bun apps/webos/build-craft.ts
       - name: Build, deploy and verify all unified Worker hosts
-        run: bun apps/webos/deploy.ts
+        run: |
+          cd "$SITES_WORKSPACE"
+          bun apps/webos/deploy.ts
