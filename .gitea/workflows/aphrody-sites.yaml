@@ -55,7 +55,11 @@ jobs:
           for p in vendor/cachyos-linux vendor/ogc-linux vendor/linux-cachyos vendor/kernel-patches vendor/ogc-kernel-packages vendor/nvidia-kernels vendor/open-gpu-kernel-modules vendor/llvm vendor/proton vendor/proton-cachyos vendor/wine-cachyos packages/re/third_party/unblob; do
             git config "submodule.$p.update" none
           done
-          git submodule update --init --recursive --jobs 4 --depth 1
+          # Pins are not always branch tips, so no --depth. The Sites need the top-level submodules; nested
+          # ones already present in the workspace are refreshed on a best-effort basis (vendor/qemu and the
+          # like pin commits their upstreams no longer serve).
+          git submodule update --init --jobs 4
+          git submodule update --init --recursive --jobs 4 toolchains/bun || echo "nested submodules of toolchains/bun left as they are"
       - name: Select pinned Aphrody Bun runtime
         run: |
           test -x "$BUN_EXECUTABLE"
