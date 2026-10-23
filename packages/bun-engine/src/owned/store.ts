@@ -447,6 +447,17 @@ async function classify(path: string, name: string, digest: Digest, options: Ing
 
 // ---- ACLs -------------------------------------------------------------------------------------
 
+type Advapi32 = {
+  ConvertStringSecurityDescriptorToSecurityDescriptorW(
+    sddl: string,
+    revision: number,
+    descriptor: BigUint64Array,
+    size: null,
+  ): boolean;
+  SetFileSecurityW(path: string, information: number, descriptor: bigint): boolean;
+};
+type Kernel32 = { LocalFree(memory: bigint): bigint };
+
 /**
  * Owner-only access: a protected DACL (OWNER RIGHTS and SYSTEM) through bun:windows on Windows,
  * 0700/0600 elsewhere.
@@ -457,7 +468,7 @@ export async function restrict(path: string, directory: boolean): Promise<void> 
     return;
   }
   const windows = (await import("bun:windows")).default;
-  const advapi = windows.family("advapi32");
+  const advapi = windows.family("advapi32") as Advapi32;
   const descriptor = new BigUint64Array(1);
   const inherit = directory ? "OICI" : "";
   if (
@@ -481,7 +492,7 @@ export async function restrict(path: string, directory: boolean): Promise<void> 
     )
       throw new Error(`cannot restrict ${basename(path)} (Win32 error ${windows.win32.lastError()})`);
   } finally {
-    windows.family("kernel32").LocalFree(descriptor[0]);
+    (windows.family("kernel32") as Kernel32).LocalFree(descriptor[0]);
   }
 }
 
