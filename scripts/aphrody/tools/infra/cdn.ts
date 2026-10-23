@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-// The shared asset CDN (tools/config/asset-catalog.json).
+// The shared asset CDN (tools/aphrody/config/asset-catalog.json).
 //
-//   bun scripts/tools/infra/cdn.ts check               every source present, one owner per content
-//   bun scripts/tools/infra/cdn.ts build [--out dir]   release tree: s/<scope>/<path>, h/<hash>.<ext>, manifest
-//   bun scripts/tools/infra/cdn.ts publish --vps <ssh-host> [--dry-run]
+//   bun scripts/aphrody/tools/infra/cdn.ts check               every source present, one owner per content
+//   bun scripts/aphrody/tools/infra/cdn.ts build [--out dir]   release tree: s/<scope>/<path>, h/<hash>.<ext>, manifest
+//   bun scripts/aphrody/tools/infra/cdn.ts publish --vps <ssh-host|local> [--dry-run]
 //                                                  copy the release (rsync, or tar over ssh), then switch
-//                                                  `current` atomically
+//                                                  `current` atomically; `local` when run on the CDN host
 //   add --json for machine-readable output
 //
-// Sources are catalogued paths in the active monorepo, tracked files only
-// (`git ls-files`), so local scratch never reaches the CDN.
+// Sources are catalogued paths of this checkout, tracked files only (`git ls-files`), so local
+// scratch never reaches the CDN.
 
 import { $ } from "bun";
 import { createHash } from "node:crypto";
@@ -18,7 +18,7 @@ import { dirname, extname, join, resolve } from "node:path";
 
 export interface Source {
   scope: string;
-  repo: string;
+  /** Directory under the checkout root, `/`-separated. */
   path: string;
   /** Optional path prefix under the published scope. */
   mount?: string;
@@ -40,7 +40,7 @@ export interface Catalog {
 
 export interface Entry {
   scope: string;
-  /** Catalog source that owns the file content. */
+  /** Catalog source (its checkout path) that owns the file content. */
   source: string;
   /** Path under the source directory, `/`-separated. */
   path: string;
@@ -56,7 +56,7 @@ export interface Problem {
   message: string;
 }
 
-const INFRA_ROOT = resolve(import.meta.dir, "../../../../");
+const ROOT = resolve(import.meta.dir, "../../../../");
 
 const TYPES: Record<string, string> = {
   ".png": "image/png",
@@ -87,21 +87,20 @@ export function contentType(path: string): string {
   return TYPES[extname(path).toLowerCase()] ?? "application/octet-stream";
 }
 
-export async function loadCatalog(root = INFRA_ROOT): Promise<Catalog> {
-  return Bun.file(join(root, "tools/config/asset-catalog.json")).json();
+export async function loadCatalog(root = ROOT): Promise<Catalog> {
+  return Bun.file(join(root, "tools/aphrody/config/asset-catalog.json")).json();
 }
 
 function excluded(path: string, patterns: string[]): boolean {
   return patterns.some(pattern => new Bun.Glob(pattern).match(path));
 }
 
-/** Tracked files of one source, hashed. `workspace` contains the active repository. */
-export async function scanSource(source: Source, workspace: string): Promise<Entry[] | null> {
-  const repoRoot = join(workspace, source.repo);
-  const dir = join(repoRoot, source.path);
-  if ((await $`git -C ${repoRoot} rev-parse --git-dir`.quiet().nothrow()).exitCode !== 0) return null;
-  const listed = await $`git -C ${repoRoot} ls-files -z -- ${source.path}`.quiet().nothrow();
-  if (listed.exitCode !== 0) return null;
+/** Tracked files of one source, hashed. `root` is the checkout holding every source. */
+export async function scanSource(source: Source, root: string): Promise<Entry[] | null> {
+  const dir = join(root, source.path);
+  if ((await $`git -C ${root} rev-parse --git-dir`.quiet().nothrow()).exitCode !== 0) return null;
+  const listed = await $`git -C ${root} ls-files -z -- ${source.path}`.quiet().nothrow();
+  if (listed.exitCode !== 0 || !listed.stdout.toString()) return null;
   const prefix = `${source.path.replace(/\/$/, "")}/`;
   const paths = listed.stdout
     .toString()
@@ -118,7 +117,7 @@ export async function scanSource(source: Source, workspace: string): Promise<Ent
         const bytes = new Uint8Array(await handle.arrayBuffer());
         return {
           scope: source.scope,
-          source: `${source.repo}/${source.path}`,
+          source: source.path,
           path: source.mount ? `${source.mount}/${path}` : path,
           file,
           sha256: createHash("sha256").update(bytes).digest("hex"),
@@ -131,7 +130,7 @@ export async function scanSource(source: Source, workspace: string): Promise<Ent
 }
 
 /** Every source scanned, plus the contract violations. */
-export async function scan(catalog: Catalog, workspace = resolve(INFRA_ROOT, "..")) {
+export async function scan(catalog: Catalog, root = ROOT) {
   const problems: Problem[] = [];
   const entries: Entry[] = [];
   for (const source of catalog.sources) {
@@ -141,11 +140,11 @@ export async function scan(catalog: Catalog, workspace = resolve(INFRA_ROOT, "..
         message: `scope ${JSON.stringify(source.scope)} or mount ${JSON.stringify(source.mount)} is invalid`,
       });
     }
-    const found = await scanSource(source, workspace);
+    const found = await scanSource(source, root);
     if (found === null) {
       problems.push({
         kind: "missing-source",
-        message: `${source.repo}/${source.path}: checkout not found under ${workspace}`,
+        message: `${source.path}: no tracked file under ${root}`,
       });
       continue;
     }
@@ -244,7 +243,8 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
   const release = (await Bun.file(join(out, "RELEASE_SHA")).text()).trim();
   const root = safe(catalog.cdn.releaseRoot);
   const target = `${root}/releases/${safe(release)}`;
-  const ssh = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", safe(vps)];
+  const local = vps === "local";
+  const ssh = local ? ["sh", "-c"] : ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", safe(vps)];
   // On Windows rsync reads `C:/...` as a remote host `C`: a tar stream over ssh instead, with the
   // modes reset on the host.
   const copy: string[][] =
@@ -252,7 +252,14 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
       ? [
           // `--chmod`: a tree built on a Windows/DrvFs checkout reaches the host 0777 otherwise.
           // `-H`: `s/` and `h/` are hardlinks of the same bytes; without it the release doubles.
-          ["rsync", "-aH", "--chmod=D755,F644", "--delete", `${out.replaceAll("\\", "/")}/`, `${vps}:${target}/`],
+          [
+            "rsync",
+            "-aH",
+            "--chmod=D755,F644",
+            "--delete",
+            `${out.replaceAll("\\", "/")}/`,
+            local ? `${target}/` : `${vps}:${target}/`,
+          ],
         ]
       : [
           ["tar", "-C", out, "-cf", "-", "."],
@@ -313,7 +320,7 @@ if (import.meta.main) {
     for (const p of problems) console.error(`[${p.kind}] ${p.message}`);
     process.exit(1);
   }
-  const out = resolve(arg("--out") ?? join(INFRA_ROOT, "var/cdn/release"));
+  const out = resolve(arg("--out") ?? join(ROOT, "build/cdn/release"));
   if (command === "build" || command === "publish") {
     const manifest = await build(catalog, entries, out);
     const result: Record<string, unknown> = {

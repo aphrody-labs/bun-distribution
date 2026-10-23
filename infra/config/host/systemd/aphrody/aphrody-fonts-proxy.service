@@ -5,9 +5,9 @@
 # /home/ubuntu/apps/cdn/src/REVISION. Upgrade from the vps checkout with:
 #   bun build packages/google/src/fonts-serve.ts --target bun --outfile /home/ubuntu/apps/cdn/src/fonts-serve.js
 # Installed as /etc/systemd/system/aphrody-fonts-proxy.service on the vps. The cache lives in /home/ubuntu/apps/cdn/google. `--static` serves the asset CDN release tree
-# (`scripts/tools/infra/cdn.ts publish`, /home/ubuntu/apps/cdn/current) under /h/ and /s/<scope>/, then the
-# Material Symbols release (`bun run cdn publish` of aphrody-labs/material-design-icons, branch aphrody,
-# /home/ubuntu/apps/cdn/symbols/current, asset-catalog.json `releases`).
+# (`scripts/aphrody/tools/infra/cdn.ts publish`, /home/ubuntu/apps/cdn/current) under /h/ and /s/<scope>/, then the
+# Material Symbols release (`bun run cdn publish` of vendor/material-design-icons, aphrody-labs/material-design-icons branch aphrody,
+# /home/ubuntu/apps/cdn/symbols/current, tools/aphrody/config/asset-catalog.json `releases`).
 [Unit]
 Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
 After=network-online.target

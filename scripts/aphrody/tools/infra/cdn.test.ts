@@ -6,13 +6,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build, type Catalog, contentType, hashedName, loadCatalog, scan } from "./cdn.ts";
 
-async function repo(root: string, name: string, files: Record<string, string>) {
-  const dir = join(root, name);
-  for (const [path, body] of Object.entries(files)) await Bun.write(join(dir, path), body);
-  await $`git -C ${dir} init -q && git -C ${dir} add -A`.quiet();
+async function checkout(root: string, files: Record<string, string>) {
+  for (const [path, body] of Object.entries(files)) await Bun.write(join(root, path), body);
+  await $`git -C ${root} init -q && git -C ${root} add -A`.quiet();
 }
 
-// Every test spawns git (fixture repositories, `git ls-files` of the active monorepo) and
+// Every test spawns git (fixture checkouts, `git ls-files` of the active monorepo) and
 // hashes real assets; on a loaded Windows host that exceeds bun's 5 s default.
 const GIT_TIMEOUT_MS = 60_000;
 
@@ -30,28 +29,26 @@ const catalog = (sources: Catalog["sources"]): Catalog => ({
 
 describe("asset CDN", () => {
   test(
-    "one owner per content across repositories",
+    "one owner per content across sources",
     async () => {
       const root = await mkdtemp(join(tmpdir(), "cdn-"));
       try {
-        await repo(root, "a", {
-          "assets/logo.png": "LOGO",
-          "assets/art.psd": "PSD",
-        });
-        await repo(root, "b", {
-          "assets/copy/logo.png": "LOGO",
-          "assets/own.svg": "<svg/>",
+        await checkout(root, {
+          "a/assets/logo.png": "LOGO",
+          "a/assets/art.psd": "PSD",
+          "b/assets/copy/logo.png": "LOGO",
+          "b/assets/own.svg": "<svg/>",
         });
         const sources = [
-          { scope: "a", repo: "a", path: "assets", exclude: ["**/*.psd"] },
-          { scope: "b", repo: "b", path: "assets", exclude: [] },
+          { scope: "a", path: "a/assets", exclude: ["**/*.psd"] },
+          { scope: "b", path: "b/assets", exclude: [] },
         ];
         const { entries, problems } = await scan(catalog(sources), root);
         expect(entries.map(e => `${e.scope}:${e.path}`)).toEqual(["a:logo.png", "b:copy/logo.png", "b:own.svg"]);
         expect(problems.map(p => p.kind)).toEqual(["cross-source-duplicate"]);
 
         const missing = await scan(
-          catalog([...sources, { scope: "c", repo: "nope", path: "assets", exclude: [] }]),
+          catalog([...sources, { scope: "c", path: "nope/assets", exclude: [] }]),
           root,
         );
         expect(missing.problems.some(p => p.kind === "missing-source")).toBe(true);
@@ -67,15 +64,14 @@ describe("asset CDN", () => {
     async () => {
       const root = await mkdtemp(join(tmpdir(), "cdn-"));
       try {
-        await repo(root, "a", {
+        await checkout(root, {
           "assets/fonts/x.ttf": "FONT",
           "assets/ui/y.webp": "IMG",
         });
         const cat = catalog([
-          { scope: "os", repo: "a", path: "assets/ui", exclude: [] },
+          { scope: "os", path: "assets/ui", exclude: [] },
           {
             scope: "os",
-            repo: "a",
             path: "assets/fonts",
             mount: "fonts",
             exclude: [],
@@ -108,7 +104,6 @@ describe("asset CDN", () => {
     "the real catalog is clean",
     async () => {
       const cat = await loadCatalog();
-      expect(new Set(cat.sources.map(source => source.repo))).toEqual(new Set(["aphrody"]));
       const { entries, problems } = await scan(cat);
       expect(entries.length).toBeGreaterThan(0);
       expect(entries.some(entry => entry.path.startsWith("fonts/"))).toBe(true);

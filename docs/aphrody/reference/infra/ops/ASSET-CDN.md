@@ -54,15 +54,15 @@ Scopes come from [`tools/config/asset-catalog.json`](../../../../../tools/aphrod
 ## Operate
 
 ```sh
-bun scripts/tools/infra/cdn.ts check                    # sources present, no cross-source duplicate
-bun scripts/tools/infra/cdn.ts build                    # var/cdn/release: s/, h/, s/manifest.json, RELEASE_SHA
-bun scripts/tools/infra/cdn.ts publish --vps dbfr [--dry-run]
+bun scripts/aphrody/tools/infra/cdn.ts check            # sources present, no cross-source duplicate
+bun scripts/aphrody/tools/infra/cdn.ts build            # build/cdn/release: s/, h/, s/manifest.json, RELEASE_SHA
+bun scripts/aphrody/tools/infra/cdn.ts publish --vps vps [--dry-run]   # --vps local when run on the vps
 ```
 
 `publish` copies the release to `/home/ubuntu/apps/cdn/releases/<RELEASE_SHA>` (`rsync -aH`, which
 keeps the `s/`/`h/` hardlinks; from Windows a tar stream over ssh) and switches
 `/home/ubuntu/apps/cdn/current` atomically; the previous release stays for rollback (switch the link
-back). On a slow uplink, build and publish on dbfr itself from a checkout of the repository.
+back). Builds run on the vps: build and publish there from a checkout of the repository with `--vps local`.
 
 Serving on dbfr: `aphrody-fonts-proxy` (`tools/config/host/systemd/aphrody/aphrody-fonts-proxy.service`,
 `127.0.0.1:8796`) answers `/h/` and `/s/` from its `--static` roots (catalog release first, then
