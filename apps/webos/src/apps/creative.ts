@@ -2,9 +2,7 @@
 import { h } from "../dom";
 import { allAppCapabilities } from "@aphrody/bun-workspace/capabilities";
 import { catalog } from "../os";
-import routeCatalog from "../../../../infra/config/routes.catalog.json";
 import { appStore } from "./appstore";
-import { openWebApp } from "./webapps";
 import type { RegistryEntry } from "../pkg";
 
 /** Aphrody Creative: installable Rust-backed studio apps alongside Drive in the Web OS desktop. */
@@ -13,6 +11,7 @@ export async function creativeApp(
   onChange: () => void,
   launch: (entry: RegistryEntry) => void,
   openDrive: () => void,
+  open: (id: string) => void,
 ) {
   const apps = h("div", { class: "creative-apps" });
   root.append(
@@ -43,63 +42,51 @@ export async function creativeApp(
     apps,
   );
   await appStore(apps, onChange, launch, "create");
+  // Studios with no browser package of their own open their member window: native builds, docs, source.
   const hostedCatalog = await catalog().catch(() => undefined);
-  if (!hostedCatalog) return;
   const hostedCards = allAppCapabilities()
     .filter((entry) => !entry.webosPackageId)
-    .flatMap((entry) => {
-      const host = hostedCatalog.hosts[entry.libraryId];
-      if (!host) return [];
-      // The product hosts 301 to a path of the canonical origin (infra/config/routes.catalog.json).
-      const route = (
-        routeCatalog.hosts as Record<string, { path?: string }>
-      )[`${host.host}.aphrody.app`];
-      // A path that selects this very window has no browser build to open: say so instead of looping.
-      const selfPath =
-        !route?.path ||
-        (routeCatalog.apps as Record<string, string>)[route.path] ===
-          "creative";
-      return [
+    .map((entry) => {
+      const member = hostedCatalog?.apps.find(
+        (app) => app.id === entry.libraryId,
+      );
+      return h(
+        "article",
+        { class: "scard" },
         h(
-          "article",
-          { class: "scard" },
+          "div",
+          { class: "pkg-head" },
+          h("span", { class: "licon" }, entry.title.charAt(0)),
           h(
             "div",
-            { class: "pkg-head" },
-            h("span", { class: "licon" }, entry.title.charAt(0)),
+            {},
+            h("div", { class: "sname" }, entry.title),
             h(
               "div",
-              {},
-              h("div", { class: "sname" }, entry.title),
-              h("div", { class: "muted" }, "Hosted Aphrody studio"),
+              { class: "muted" },
+              member ? `apps/${member.id}` : entry.libraryId,
             ),
           ),
-          h("div", { class: "sdesc" }, entry.description),
+        ),
+        h("div", { class: "sdesc" }, entry.description),
+        h(
+          "div",
+          { class: "sact" },
+          h("span", { class: "muted" }, "Native studio: no browser build"),
           h(
-            "div",
-            { class: "sact" },
-            selfPath
-              ? h("span", { class: "muted" }, "No browser build is packaged yet")
-              : h(
-                  "button",
-                  {
-                    class: "btn",
-                    onclick: () =>
-                      openWebApp({
-                        id: entry.id,
-                        name: entry.title,
-                        url: `${routeCatalog.origin}${route!.path}`,
-                      }),
-                  },
-                  "Open studio",
-                ),
+            "button",
+            {
+              class: "btn tonal",
+              onclick: () => open(`src:${entry.libraryId}`),
+            },
+            "Details",
           ),
         ),
-      ];
+      );
     });
   if (hostedCards.length)
     apps.append(
-      h("h3", { class: "creative-hosted-title" }, "Hosted studios"),
+      h("h3", { class: "creative-hosted-title" }, "Native studios"),
       h("div", { class: "store-list" }, ...hostedCards),
     );
 }

@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-import routeCatalog from "../../../infra/config/routes.catalog.json";
 import { activityApp } from "./apps/activity";
+import { memberApp, memberKindLabel } from "./apps/member";
+import { showcaseApp } from "./apps/showcase";
+import { themeBuilderApp } from "./apps/themebuilder";
+import { videoApp } from "./apps/video";
+import {
+  ROUTES,
+  WORKSPACE_ROUTES,
+  appForPath,
+  ownHost,
+  type WorkspaceRoute,
+} from "./config";
 import { appStore } from "./apps/appstore";
 import { calculatorApp } from "./apps/calculator";
 import { creativeApp } from "./apps/creative";
@@ -19,12 +29,14 @@ import { terminalApp } from "./apps/terminal";
 import {
   attachCraftHost,
   craftHostForPackage,
+  craftHostForPath,
   type CraftHost,
   type CraftHostId,
 } from "./apps/craft-host";
 import { h, icon } from "./dom";
-import { catalog, HOME, webos } from "./os";
+import { catalog, HOME, webos, type CatalogApp } from "./os";
 import {
+  install,
   installed,
   reconcile,
   registerServiceWorker,
@@ -59,6 +71,8 @@ interface Builtin {
   icon: string;
   desc: string;
   group: "core" | "advanced";
+  /** Colour role family of the icon tile. */
+  tone?: "primary" | "secondary" | "tertiary";
   width?: number;
   height?: number;
   /** Small tools float above tiled layouts. */
@@ -103,6 +117,7 @@ function openEditor(path: string, text: string) {
 const builtins: Builtin[] = [
   {
     id: "aphrody-workspace",
+    tone: "primary",
     name: "Aphrody Workspace",
     icon: "app",
     desc: "Files, conversations, models and settings in your shared workspace",
@@ -122,25 +137,34 @@ const builtins: Builtin[] = [
   },
   {
     id: "files",
+    tone: "primary",
     name: "Files",
     icon: "folder",
     desc: "Your files, saved in this browser",
     group: "core",
     mount: (root) =>
-      loading(root, filesApp(root, openEditor, { openCraft: openCraftFile })),
+      loading(
+        root,
+        filesApp(root, openEditor, {
+          openCraft: openCraftFile,
+          openWith: openFileWith,
+        }),
+      ),
   },
   {
     id: "browser",
+    tone: "secondary",
     name: "Browser",
     icon: "globe",
     desc: "Browse the web in tabs",
     group: "core",
     width: 1000,
     height: 640,
-    mount: (root) => browserApp(root),
+    mount: (root) => browserApp(root, undefined, openOwnUrl),
   },
   {
     id: "apps",
+    tone: "tertiary",
     name: "Apps",
     icon: "store",
     desc: "Install games and creative apps",
@@ -151,6 +175,7 @@ const builtins: Builtin[] = [
   },
   {
     id: "creative",
+    tone: "tertiary",
     name: "Aphrody Creative",
     icon: "pen",
     desc: "Creative apps, projects and shared Drive files",
@@ -160,13 +185,18 @@ const builtins: Builtin[] = [
     mount: (root) =>
       loading(
         root,
-        creativeApp(root, refreshApps, launchPackage, () =>
-          launchBuiltin(builtins.find((entry) => entry.id === "drive")!),
+        creativeApp(
+          root,
+          refreshApps,
+          launchPackage,
+          () => openApp("drive"),
+          openApp,
         ),
       ),
   },
   {
     id: "drive",
+    tone: "primary",
     name: "Aphrody Drive",
     icon: "folder",
     desc: "Creative projects and assets in the shared WebOS workspace",
@@ -181,6 +211,7 @@ const builtins: Builtin[] = [
         filesApp(root, openEditor, {
           start: `${HOME}/Projects`,
           openCraft: openCraftFile,
+          openWith: openFileWith,
         }),
       ),
   },
@@ -207,6 +238,7 @@ const builtins: Builtin[] = [
   },
   {
     id: "docs",
+    tone: "secondary",
     name: "Docs",
     icon: "doc",
     desc: "Bun, the Bun fork and Bun OS documentation, searchable",
@@ -257,23 +289,14 @@ const builtins: Builtin[] = [
       loading(
         root,
         storeApp(root, (kind, target) => {
-          if (kind === "app") {
-            const builtin = builtins.find((entry) => entry.id === target);
-            if (builtin) launchBuiltin(builtin);
-            return;
-          }
-          void window.open(
-            target.startsWith("http")
-              ? target
-              : `https://github.com/aphrody-labs/bun-os/tree/os/apps/${target}`,
-            "_blank",
-            "noopener",
-          );
+          if (kind === "app") openApp(target);
+          else void window.open(target, "_blank", "noopener");
         }),
       ),
   },
   {
     id: "media",
+    tone: "tertiary",
     name: "Media",
     icon: "film",
     desc: "Play videos, music and pictures",
@@ -283,7 +306,40 @@ const builtins: Builtin[] = [
     mount: (root) => loading(root, mediaApp(root)),
   },
   {
+    id: "video",
+    tone: "tertiary",
+    name: "Video Studio",
+    icon: "film",
+    desc: "Compose clips, titles and music, export WebM",
+    group: "core",
+    width: 1100,
+    height: 700,
+    mount: (root) =>
+      loading(root, videoApp(root, { openFilm: () => openApp("craft-film") })),
+  },
+  {
+    id: "showcase",
+    name: "Material 3 components",
+    icon: "image",
+    desc: "Every Material 3 web component, live with its code",
+    group: "advanced",
+    width: 1040,
+    height: 700,
+    mount: (root) => showcaseApp(root),
+  },
+  {
+    id: "themebuilder",
+    name: "Theme builder",
+    icon: "pen",
+    desc: "Material 3 scheme from one colour: contrast and exports",
+    group: "advanced",
+    width: 1040,
+    height: 720,
+    mount: (root) => themeBuilderApp(root),
+  },
+  {
     id: "webapps",
+    tone: "secondary",
     name: "Web Apps",
     icon: "globe",
     desc: "Sites pinned as apps",
@@ -305,6 +361,7 @@ const builtins: Builtin[] = [
   },
   {
     id: "storage",
+    tone: "primary",
     name: "Disk Usage",
     icon: "folder",
     desc: "What takes space in your files",
@@ -366,7 +423,8 @@ function launchBuiltin(b: Builtin) {
   if (!content.hasChildNodes()) b.mount(content);
 }
 
-// Installed packages (from the package manager) behave like any other app.
+// Packages of the registry behave like any other app; opening one that is not installed yet installs it
+// (every file sha256-verified, cached for offline use) and then starts it in the same window.
 let registryEntries: RegistryEntry[] = [];
 const installedEntries = () => registryEntries.filter((e) => installed()[e.id]);
 interface PackageWindowOptions {
@@ -374,6 +432,7 @@ interface PackageWindowOptions {
   title?: string;
   documentPath?: string;
 }
+const megabytes = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
 function launchPackage(
   e: RegistryEntry,
   options: PackageWindowOptions = {},
@@ -399,7 +458,8 @@ function launchPackage(
       if (craftHosts.get(windowId) === craftHost) craftHosts.delete(windowId);
     },
   });
-  if (!content.hasChildNodes()) {
+  if (content.hasChildNodes()) return craftHost;
+  const mount = () => {
     const hostId = craftHostForPackage(e.id);
     const frame = h("iframe", {
       class: "appframe",
@@ -416,8 +476,227 @@ function launchPackage(
       craftHosts.set(windowId, craftHost);
     }
     content.append(frame);
+  };
+  if (installed()[e.id]) {
+    mount();
+    return craftHost;
   }
-  return craftHost;
+  const status = h("p", {}, `${megabytes(e.size)} to download and verify`);
+  const bar = document.createElement("md-linear-progress") as HTMLElement & {
+    value: number;
+  };
+  bar.value = 0;
+  const box = h(
+    "div",
+    { class: "pkg-install", role: "status", "aria-live": "polite" },
+    h("strong", {}, `Installing ${e.name}`),
+    status,
+    bar,
+  );
+  content.append(box);
+  install(e, (done, total) => {
+    bar.value = done / total;
+    status.textContent = `${megabytes(done)} of ${megabytes(total)} verified`;
+  }).then(
+    () => {
+      box.remove();
+      mount();
+      refreshApps();
+    },
+    (error: unknown) => {
+      bar.remove();
+      status.textContent = `${e.name} could not be installed: ${String((error as Error).message ?? error)}`;
+    },
+  );
+  return undefined;
+}
+
+// App UI routes (apps/webos/apps.json) open the shared Workspace at that route.
+function launchWorkspace(route: WorkspaceRoute) {
+  const windowId = `ws:${route.id}`;
+  const existing = wm.windows.get(windowId);
+  if (existing) {
+    wm.restore(existing);
+    return;
+  }
+  const content = h("div", { class: "fill" });
+  wm.open({
+    id: windowId,
+    title: route.name,
+    icon: route.icon,
+    width: 1100,
+    height: 720,
+    content,
+  });
+  if (!content.hasChildNodes())
+    content.append(
+      h("iframe", {
+        class: "appframe",
+        src: `/workspace/${route.route}`,
+        title: route.name,
+        allow:
+          "clipboard-read; clipboard-write; fullscreen; cross-origin-isolated",
+      }),
+    );
+}
+
+// Members of apps/ come from the catalog (build.ts); native ones open their member window.
+let members: CatalogApp[] = [];
+const membersReady = catalog().then(
+  (data) => {
+    members = data.apps;
+    refreshApps();
+  },
+  () => {},
+);
+const MEMBER_ICON: Record<CatalogApp["run"], string> = {
+  web: "globe",
+  native: "app",
+  cli: "terminal",
+  server: "globe",
+  android: "android",
+  library: "code",
+  example: "code",
+};
+function launchMember(member: CatalogApp, missing?: string) {
+  const windowId = `src:${member.id}`;
+  const existing = wm.windows.get(windowId);
+  if (existing) {
+    wm.restore(existing);
+    return;
+  }
+  const content = h("div", { class: "fill" });
+  wm.open({
+    id: windowId,
+    title: member.id,
+    icon: MEMBER_ICON[member.run],
+    width: 860,
+    height: 640,
+    content,
+  });
+  if (!content.hasChildNodes())
+    loading(
+      content,
+      memberApp(content, member, { open: openApp, label: appLabel, missing }),
+    );
+}
+
+/** Display name of any app id: desktop app, App UI route, package or member. */
+function appLabel(id: string): string {
+  return (
+    builtins.find((b) => b.id === id)?.name ??
+    WORKSPACE_ROUTES.find((r) => r.id === id)?.name ??
+    registryEntries.find((e) => e.id === id)?.name ??
+    (id.startsWith("src:") ? id.slice(4) : id)
+  );
+}
+
+/** Open any app by id; false when nothing of that id exists in this deployment. */
+function openApp(id: string): boolean {
+  const builtin = builtins.find((b) => b.id === id);
+  if (builtin) {
+    launchBuiltin(builtin);
+    return true;
+  }
+  const route = WORKSPACE_ROUTES.find((r) => r.id === id);
+  if (route) {
+    launchWorkspace(route);
+    return true;
+  }
+  if (id.startsWith("src:")) {
+    const member = members.find((m) => m.id === id.slice(4));
+    if (!member) return false;
+    if (member.opens && openApp(member.opens)) return true;
+    launchMember(
+      member,
+      member.opens
+        ? `${appLabel(member.opens)} is not in the package registry of this deployment, so its browser build cannot open.`
+        : undefined,
+    );
+    return true;
+  }
+  const entry = registryEntries.find((e) => e.id === id);
+  if (entry) {
+    launchPackage(entry);
+    return true;
+  }
+  // A package this deployment did not build: its owning member says so and offers what exists.
+  const owner =
+    members.find((m) => m.opens === id) ??
+    members.find((m) => m.related === id);
+  if (owner) {
+    launchMember(
+      owner,
+      `${id} is not in the package registry of this deployment, so its browser build cannot open.`,
+    );
+    return true;
+  }
+  return false;
+}
+
+/** An address of an Aphrody host that is an app of this desktop opens as a window (Browser, links). */
+function openOwnUrl(url: URL): boolean {
+  if (!ownHost(url.hostname)) return false;
+  const routed = ROUTES.hosts[url.hostname]?.path;
+  const id =
+    url.searchParams.get("app") ??
+    appForPath(
+      url.hostname === new URL(ROUTES.origin).hostname
+        ? url.pathname
+        : (routed ?? ""),
+    );
+  return id ? openApp(id) : false;
+}
+
+/** Files opens a file with its default app (Settings, files.openWith); false falls back to Files itself. */
+function openFileWith(
+  appId: string,
+  path: string,
+  name: string,
+  bytes: Uint8Array,
+): boolean {
+  if (appId === "media" || appId === "inspector") {
+    const app = builtins.find((b) => b.id === appId)!;
+    const windowId = `${appId}:${path}`;
+    const existing = wm.windows.get(windowId);
+    if (existing) {
+      wm.restore(existing);
+      return true;
+    }
+    const content = h("div", { class: "fill" });
+    wm.open({
+      id: windowId,
+      title: `${name} · ${app.name}`,
+      icon: app.icon,
+      width: app.width,
+      height: app.height,
+      content,
+    });
+    if (!content.hasChildNodes())
+      loading(
+        content,
+        appId === "media"
+          ? mediaApp(content, path)
+          : inspectorApp(content, path),
+      );
+    return true;
+  }
+  if (appId === "browser") {
+    // The viewer of the real browser (PDF, pictures) shows the bytes in a tab.
+    const type = name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "";
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return true;
+  }
+  const packageId = appId.replace(/^pkg:/, "");
+  const craft = craftHostForPath(path);
+  if (craft && packageId === `craft-${craft}`) {
+    openCraftFile(craft, path, name, bytes);
+    return true;
+  }
+  // Any other app opens; apps without a file protocol start empty.
+  return openApp(packageId) || openApp(appId);
 }
 
 function openCraftFile(
@@ -429,7 +708,8 @@ function openCraftFile(
   const packageId = `craft-${id}`;
   const entry = installedEntries().find((item) => item.id === packageId);
   if (!entry) {
-    launchBuiltin(builtins.find((item) => item.id === "apps")!);
+    // Not installed yet: its window installs it; the file opens from Files once it runs.
+    openApp(packageId);
     return false;
   }
   const documentPath = path.replaceAll("\\", "/");
@@ -573,21 +853,11 @@ function sym(glyph: string) {
 }
 
 /** App icon tile, tinted by a role family so the grid reads by kind at a glance. */
-const TONES: Record<string, string> = {
-  files: "primary",
-  drive: "primary",
-  storage: "primary",
-  "aphrody-workspace": "primary",
-  browser: "secondary",
-  webapps: "secondary",
-  docs: "secondary",
-  apps: "tertiary",
-  creative: "tertiary",
-  media: "tertiary",
-};
 function toneOf(id: string) {
-  if (TONES[id]) return TONES[id]!;
+  const own = builtins.find((b) => b.id === id)?.tone;
+  if (own) return own;
   if (id.startsWith("pkg:") || id.startsWith("web:")) return "tertiary";
+  if (id.startsWith("ws:")) return "secondary";
   return "neutral";
 }
 function appIcon(id: string, ic: string) {
@@ -620,6 +890,8 @@ interface LaunchItem {
   name: string;
   icon: string;
   desc: string;
+  /** Other names that find it in search (member ids, package ids). */
+  keys?: string[];
   section: string;
   run(): void;
 }
@@ -658,23 +930,52 @@ if (!("closedBy" in HTMLDialogElement.prototype))
     if (e.target === launcher) launcher.close();
   });
 
+const SECTION_OF: Record<RegistryEntry["category"], string> = {
+  create: "Create",
+  games: "Games",
+  tools: "Tools",
+};
+const LAUNCH_ORDER = [
+  "Apps",
+  "Create",
+  "Games",
+  "Workspace",
+  "Web apps",
+  "Tools",
+  "Desktop and command line",
+];
 function launchItems(): LaunchItem[] {
+  // Members that are a desktop app or package (pdfcraft-web is PDF) find it by their own name too.
+  const aliases = new Map<string, string[]>();
+  for (const m of members)
+    if (m.opens) aliases.set(m.opens, [...(aliases.get(m.opens) ?? []), m.id]);
   return [
     ...builtins.map((b) => ({
       id: b.id,
       name: b.name,
       icon: b.icon,
       desc: b.desc,
+      keys: aliases.get(b.id),
       section: b.group === "core" ? "Apps" : "Tools",
       run: () => launchBuiltin(b),
     })),
-    ...installedEntries().map((e) => ({
+    ...registryEntries.map((e) => ({
       id: `pkg:${e.id}`,
       name: e.name,
       icon: e.category === "games" ? "game" : "app",
-      desc: e.description,
-      section: "Installed",
+      desc: `${e.description}${installed()[e.id] ? "" : " (installs on first open)"}`,
+      keys: [e.id, ...(aliases.get(e.id) ?? [])],
+      section: SECTION_OF[e.category],
       run: () => void launchPackage(e),
+    })),
+    ...WORKSPACE_ROUTES.map((r) => ({
+      id: `ws:${r.id}`,
+      name: r.name,
+      icon: r.icon,
+      desc: r.desc,
+      keys: aliases.get(r.id),
+      section: "Workspace",
+      run: () => launchWorkspace(r),
     })),
     ...webApps().map((a) => ({
       id: `web:${a.url}`,
@@ -684,6 +985,16 @@ function launchItems(): LaunchItem[] {
       section: "Web apps",
       run: () => openWebApp(a),
     })),
+    ...members
+      .filter((m) => !m.opens)
+      .map((m) => ({
+        id: `src:${m.id}`,
+        name: m.id,
+        icon: MEMBER_ICON[m.run],
+        desc: `${memberKindLabel(m.run)}${m.d ? ` · ${m.d}` : ""}`,
+        section: "Desktop and command line",
+        run: () => launchMember(m),
+      })),
   ];
 }
 
@@ -736,9 +1047,8 @@ function renderLauncher() {
         ]
       : [];
   if (!raw) {
-    const order = ["Apps", "Installed", "Web apps", "Tools"];
     lgrid.replaceChildren(
-      ...order.flatMap((name) =>
+      ...LAUNCH_ORDER.flatMap((name) =>
         section(name, items.filter((i) => i.section === name).map(launchTile)),
       ),
     );
@@ -749,6 +1059,7 @@ function renderLauncher() {
       item,
       score: Math.max(
         fuzzy(raw, item.name),
+        ...(item.keys ?? []).map((key) => fuzzy(raw, key) - 10),
         item.desc.toLowerCase().includes(raw.toLowerCase()) ? 30 : -1,
       ),
     }))
@@ -769,7 +1080,7 @@ function renderLauncher() {
           height: 640,
           content,
         });
-        browserApp(content, raw);
+        browserApp(content, raw, openOwnUrl);
       },
     },
     sym("travel_explore"),
@@ -953,7 +1264,12 @@ function renderHome() {
       "div",
       { class: "home-grid" },
       ...launchItems()
-        .filter((i) => i.section !== "Tools" && i.id !== "about")
+        .filter(
+          (i) =>
+            i.section !== "Tools" &&
+            i.section !== "Desktop and command line" &&
+            i.id !== "about",
+        )
         .map((item) =>
           h(
             "button",
@@ -1588,31 +1904,28 @@ installKeys(wm, {
 });
 
 void registerServiceWorker();
-// /?app=<package> (legacy) or a catalog path such as /pdf both select the package to open.
+// /?app=<id> (legacy) or a catalog path (/pdf, /chat, /source/<member>) selects the app to open
+// (infra/config/routes.catalog.json).
 const wanted =
   new URLSearchParams(location.search).get("app") ??
-  (routeCatalog.apps as Record<string, string>)[
-    location.pathname.replace(/\/+$/, "")
-  ] ??
+  appForPath(location.pathname) ??
   null;
-void reconcile()
+const registryReady = reconcile()
   .then(registry)
   .then((entries) => {
     registryEntries = entries;
     refreshApps();
-    // Old product links (?app=craft-pdf): open the installed package, or the store to install it.
-    const entry = entries.find((e) => e.id === wanted);
-    if (entry) {
-      if (installed()[entry.id]) launchPackage(entry);
-      else launchBuiltin(builtins.find((b) => b.id === "apps")!);
-    }
   })
   .catch(() => {});
 
 // A requested app opens directly; a plain visit lands on a calm desktop (welcome card on the first one).
 const settingsPath = /^\/settings(?:\/([a-z]+))?\/?$/.exec(location.pathname);
-const target = builtins.find((x) => x.id === wanted);
 if (settingsPath)
   openSettings(isSection(settingsPath[1]) ? settingsPath[1] : "appearance");
-else if (target) launchBuiltin(target);
-else if (!wanted) showWelcome();
+else if (wanted) {
+  // Packages and members are known once the registry and the catalog have loaded.
+  if (!openApp(wanted))
+    void Promise.all([registryReady, membersReady]).then(() => {
+      if (!openApp(wanted)) showWelcome();
+    });
+} else showWelcome();

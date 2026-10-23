@@ -26,6 +26,7 @@ import {
 } from "@aphrody/m3-tokens/dynamic-color";
 import { parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 import { h, icon } from "../dom";
+import { prefs } from "../prefs";
 import css from "./themebuilder.css" with { type: "text" };
 import "@aphrody/material-web/button/elevated-button.js";
 import "@aphrody/material-web/button/outlined-button.js";
@@ -70,43 +71,30 @@ const KEBAB: Record<SchemeVariant, string> = {
   monochrome: "monochrome",
 };
 
-/** Persisted preferences (localStorage aph.seed / aph.mode / aph.variant / aph.contrast). */
+/** Current scheme of the desktop, from the preferences store (theme.seed / mode / variant / contrast). */
 export function readTheme(): ThemePrefs {
   let seed = DEFAULT_THEME.seed;
   try {
-    seed = normalizeSeedHex(localStorage.getItem("aph.seed") ?? seed);
+    seed = normalizeSeedHex(prefs.get("theme.seed"));
   } catch {}
-  const m = localStorage.getItem("aph.mode");
-  const v = localStorage.getItem("aph.variant") as SchemeVariant | null;
-  const c = Number(localStorage.getItem("aph.contrast") ?? 0);
+  const variant = prefs.get("theme.variant");
   return {
     seed,
-    mode: m === "light" || m === "dark" ? m : "auto",
-    variant: v && v in KEBAB ? v : DEFAULT_THEME.variant,
-    contrast: Number.isFinite(c) ? Math.max(-1, Math.min(1, c)) : 0,
+    mode: prefs.get("theme.mode"),
+    variant: variant in KEBAB ? variant : DEFAULT_THEME.variant,
+    contrast: prefs.get("theme.contrast"),
   };
 }
 
+/** Make this scheme the desktop theme; appearance.ts applies it live, every tab follows. */
 export function saveTheme(p: ThemePrefs) {
-  localStorage.setItem("aph.seed", p.seed);
-  localStorage.setItem("aph.mode", p.mode);
-  localStorage.setItem("aph.variant", p.variant);
-  localStorage.setItem("aph.contrast", String(p.contrast));
-}
-
-/** Apply the persisted theme to the whole document: data-theme plus the `#seed-css` stylesheet. */
-export function applyTheme(p: ThemePrefs = readTheme()): void {
-  const root = document.documentElement;
-  if (p.mode === "auto") root.removeAttribute("data-theme");
-  else root.dataset.theme = p.mode;
-  let style = document.getElementById("seed-css");
-  const baked =
-    p.seed === DEFAULT_THEME.seed && p.variant === DEFAULT_THEME.variant && p.contrast === DEFAULT_THEME.contrast;
-  if (baked) style?.remove();
-  else {
-    style ??= document.head.appendChild(h("style", { id: "seed-css" }));
-    style.textContent = cssFromSeed(p.seed, { variant: p.variant, contrastLevel: p.contrast });
-  }
+  prefs.setMany([
+    ["theme.id", "seed"],
+    ["theme.seed", p.seed],
+    ["theme.mode", p.mode],
+    ["theme.variant", p.variant],
+    ["theme.contrast", p.contrast],
+  ]);
 }
 
 // ---------------------------------------------------------------- colour helpers
@@ -537,13 +525,11 @@ export function themeBuilderApp(root: HTMLElement) {
 
   const applyOs = () => {
     saveTheme(state);
-    applyTheme(state);
     flash("Applied to the OS");
   };
   const reset = () => {
     Object.assign(state, DEFAULT_THEME);
     saveTheme(state);
-    applyTheme(state);
     schedule();
     flash("Reset to default");
   };

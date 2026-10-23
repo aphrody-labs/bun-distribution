@@ -4,6 +4,7 @@
 // crates/aphrody-webos-wasm/src/rpc.rs), the same envelopes as @aphrody/drive-client.
 import { ask, h, icon } from "../dom";
 import { HOME, webos } from "../os";
+import { defaultAppFor } from "../prefs";
 import {
   TRASH,
   type Entry,
@@ -32,6 +33,8 @@ import {
 
 export interface FilesAppOptions {
   start?: string;
+  /** Open a file with the app chosen in Settings (files.openWith); false when that app cannot take it. */
+  openWith?: (appId: string, path: string, name: string, bytes: Uint8Array) => boolean;
   openCraft?: (
     id: CraftHostId,
     path: string,
@@ -630,7 +633,10 @@ export async function filesApp(
   async function open(e: Entry) {
     if (e.kind === "dir") return go(e.path);
     try {
-      const craft = craftHostForPath(e.path);
+      // The default app of this file kind (Settings > Files) comes first; "editor" is the text path below.
+      const chosen = defaultAppFor(e.name);
+      if (chosen && chosen !== "editor" && options.openWith?.(chosen, e.path, e.name, os.fs.read(e.path))) return;
+      const craft = chosen === "editor" ? undefined : craftHostForPath(e.path);
       const openCraft = options.openCraft;
       if (craft && openCraft) {
         const maxFileBytes = craftHostMaxFileBytes(craft);

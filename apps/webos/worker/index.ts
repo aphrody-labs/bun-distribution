@@ -3,7 +3,8 @@
 import { workspaceResponse } from "./workspace";
 import { gameContentResponse } from "./game-content";
 import { playRedirect, playResponse } from "./play";
-import catalog from "../../../infra/config/routes.catalog.json";
+import { downloadsResponse } from "./downloads";
+import { ROUTES } from "../src/config";
 import { ORIGIN, pathMeta } from "../paths";
 
 interface R2ObjectBodyLike {
@@ -153,8 +154,7 @@ async function browse(request: Request): Promise<Response> {
     method: "GET",
     redirect: "follow",
     headers: {
-      "user-agent":
-        "Mozilla/5.0 (compatible; AphrodyBunBrowser/1.0; +https://aphrody.com)",
+      "user-agent": `Mozilla/5.0 (compatible; AphrodyBunBrowser/1.0; +${ROUTES.origin})`,
       accept: "text/html,image/*;q=0.8,*/*;q=0.1",
       "accept-language": request.headers.get("accept-language") ?? "en",
     },
@@ -264,19 +264,9 @@ const LEGACY_ROUTES = [
   "/health",
   "/healthz",
 ];
-const LEGACY_ORIGIN = "https://aphrody.app";
+/** Origin the legacy Worker answers on (its former apex host); the request goes through the service binding. */
+const LEGACY_ORIGIN = `https://${Object.keys(ROUTES.hosts).find((host) => ROUTES.hosts[host]!.kind === "legacy-apex")}`;
 
-interface RouteEntry {
-  kind: string;
-  path?: string;
-  keep: boolean;
-  passthrough?: boolean;
-}
-const ROUTES = catalog as {
-  origin: string;
-  hosts: Record<string, RouteEntry>;
-  apps: Record<string, string>;
-};
 const PATH_BY_PACKAGE = new Map(
   Object.entries(ROUTES.apps).map(([path, pkg]) => [pkg, path]),
 );
@@ -350,6 +340,7 @@ export default {
         { headers: { "cache-control": "no-store" } },
       );
     }
+    if (url.pathname === "/api/downloads") return downloadsResponse(request);
     if (url.pathname === "/api/browse") {
       if (request.method !== "GET")
         return new Response("Method not allowed", { status: 405 });

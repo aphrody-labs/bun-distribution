@@ -29,7 +29,8 @@ function render(value: unknown, depth = 0): HTMLElement {
 }
 
 /** Binary analysis (aphrody-re compiled to WebAssembly): format, sections, hashes and strings of any file. */
-export async function inspectorApp(root: HTMLElement) {
+/** `start` analyses that file of the VFS right away (Files > open with Inspector). */
+export async function inspectorApp(root: HTMLElement, start?: string) {
   const os = await webos();
   const out = h(
     "div",
@@ -68,4 +69,8 @@ export async function inspectorApp(root: HTMLElement) {
       out,
     ),
   );
+  if (start) {
+    path.value = start;
+    run(start);
+  }
 }

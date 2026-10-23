@@ -1,28 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Web apps (Omarchy 25-web-apps): sites pinned to the launcher that open in their own app window.
 import { ask, h } from "../dom";
+import { DEFAULT_WEBAPPS, type WebApp } from "../config";
 
-export interface WebApp {
-  id: string;
-  name: string;
-  url: string;
-  /** Alt+Shift+<letter> opens it (a KeyboardEvent.code). */
-  key?: string;
-}
+export type { WebApp };
 
 const KEY = "aph.webapps";
-export const DEFAULT_WEBAPPS: WebApp[] = [
-  { id: "chatgpt", name: "ChatGPT", url: "https://chatgpt.com", key: "KeyA" },
-  { id: "youtube", name: "YouTube", url: "https://www.youtube.com", key: "KeyY" },
-  { id: "x", name: "X", url: "https://x.com", key: "KeyX" },
-  { id: "photos", name: "Google Photos", url: "https://photos.google.com", key: "KeyP" },
-  { id: "maps", name: "Google Maps", url: "https://maps.google.com" },
-  { id: "whatsapp", name: "WhatsApp", url: "https://web.whatsapp.com" },
-  { id: "discord", name: "Discord", url: "https://discord.com/app" },
-  { id: "outlook", name: "Outlook", url: "https://outlook.office.com" },
-  { id: "word", name: "Word", url: "https://word.cloud.microsoft" },
-  { id: "teams", name: "Teams", url: "https://teams.microsoft.com" },
-];
+/** Default pins come from apps/webos/apps.json. */
+export { DEFAULT_WEBAPPS };
 
 export function webApps(): WebApp[] {
   try {

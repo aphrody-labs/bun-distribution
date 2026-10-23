@@ -3,9 +3,8 @@
 // (dist/a/<id>/index.html), the share image, the noscript fallback and the UI sounds.
 import { cp, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { PATHS } from "./paths";
+import { ORIGIN, PATHS } from "./paths";
 
-const ORIGIN = "https://aphrody.com";
 const root = resolve(import.meta.dir, "../..");
 const SITE = "Aphrody Bun OS";
 const TAGLINE =

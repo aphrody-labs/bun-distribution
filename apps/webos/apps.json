@@ -1,0 +1,195 @@
+{
+  "$comment": "WebOS app map. 'workspace' lists the App UI routes opened as windows (/workspace/<route>). 'members' declares how each apps/* member runs in the desktop when its name does not already tell (Craft families are derived from the capability catalog of @aphrody/bun-workspace): kind web opens 'opens' directly; other kinds open the member window (README, downloads from the downloads service, source) with 'related' as the in-browser counterpart. Deep-link paths live in infra/config/routes.catalog.json.",
+  "workspace": [
+    {
+      "id": "chat",
+      "route": "chat",
+      "name": "Chat",
+      "icon": "code",
+      "desc": "Aphrody assistant: conversations about your files and code"
+    },
+    {
+      "id": "models",
+      "route": "models",
+      "name": "Models",
+      "icon": "cube",
+      "desc": "Local and hosted AI models found on this workspace"
+    },
+    {
+      "id": "play",
+      "route": "games",
+      "name": "Play",
+      "icon": "game",
+      "desc": "Bun Engine game library and the qualified emulators"
+    },
+    {
+      "id": "studio",
+      "route": "studio",
+      "name": "Studio",
+      "icon": "bolt",
+      "desc": "Agent tools and Drive through the native Studio commands"
+    },
+    {
+      "id": "creator",
+      "route": "creator",
+      "name": "Creator tools",
+      "icon": "pen",
+      "desc": "Creator kit: wiki images, compression, subtitles, crash reports"
+    },
+    {
+      "id": "admin",
+      "route": "admin",
+      "name": "Administration",
+      "icon": "gear",
+      "desc": "Install, private tunnel, MCP and checks of your machines"
+    },
+    {
+      "id": "templates",
+      "route": "templates",
+      "name": "Templates",
+      "icon": "doc",
+      "desc": "Project and document templates"
+    },
+    {
+      "id": "material",
+      "route": "material-3",
+      "name": "Material 3",
+      "icon": "image",
+      "desc": "Material 3 guidelines and components of the App UI"
+    },
+    {
+      "id": "jobs",
+      "route": "jobs",
+      "name": "Jobs",
+      "icon": "table",
+      "desc": "Indexing, sync and copy jobs of your Drive"
+    }
+  ],
+  "members": {
+    "webos": { "kind": "web", "opens": "about" },
+    "webos-server": {
+      "kind": "server",
+      "related": "about",
+      "artifact": "webos-server"
+    },
+    "aphrody-app": {
+      "kind": "native",
+      "related": "aphrody-workspace",
+      "artifact": "aphrody-app"
+    },
+    "desktop": {
+      "kind": "native",
+      "desc": "Aphrody desktop: the native library capabilities in a Tauri v3 window, built by Bun",
+      "related": "aphrody-workspace",
+      "artifact": "aphrody-desktop"
+    },
+    "aphrody-drive": {
+      "kind": "server",
+      "desc": "Drive backend (Spacedrive-derived core, adapters and xtask), FSL-1.1-ALv2",
+      "related": "drive"
+    },
+    "aphrody-model-view": {
+      "kind": "native",
+      "related": "files"
+    },
+    "aphrody-examples": {
+      "kind": "example",
+      "desc": "Examples: Crystal Universe web map and a Rust extension on the prebuilt SDK"
+    },
+    "artcraft": { "kind": "native", "related": "creative" },
+    "artcraft_native": { "kind": "native", "related": "creative" },
+    "artcraft-web-app": {
+      "kind": "server",
+      "desc": "ArtCraft (Storyteller) React web app; needs the ArtCraft API backend",
+      "related": "creative"
+    },
+    "bun-android": {
+      "kind": "android",
+      "desc": "Bun OS for Android: the Gradle app around the Bun runtime",
+      "artifact": "bun-android"
+    },
+    "java-ffi": {
+      "kind": "library",
+      "desc": "Java bindings of the Bun runtime used by the Android app",
+      "related": "src:bun-android"
+    },
+    "iecode-web": {
+      "kind": "server",
+      "desc": "IECODE Web: the browser frontend of the IECODE consoles (webpack build)",
+      "related": "game-dust-nds"
+    },
+    "iecode-web-wasm": { "kind": "web", "opens": "game-dust-nds" },
+    "iecode-web-wii-wasm": { "kind": "library", "related": "src:iecode-web" },
+    "iecode-dotnet": {
+      "kind": "native",
+      "desc": "IECODE .NET: CLI, core, FFI and GUI of the IECODE tool set",
+      "artifact": "iecode-dotnet"
+    },
+    "m3-showcase": { "kind": "server", "related": "showcase" },
+    "m3-web": { "kind": "example", "related": "showcase" },
+    "m3-next-example": { "kind": "example", "related": "showcase" },
+    "m3-next-tauri-example": { "kind": "example", "related": "showcase" },
+    "m3-example-tauri": {
+      "kind": "example",
+      "desc": "Tauri examples: commands, multiwindow, multiwebview, streaming, isolation"
+    },
+    "m3-published-consumer": { "kind": "example", "related": "showcase" },
+    "play": { "kind": "server", "related": "play" },
+    "rg-website": {
+      "kind": "server",
+      "desc": "RG website (Next.js) and its static assets"
+    },
+    "designcraft": {
+      "desc": "DesignCraft desktop app"
+    },
+    "designcraft-cli": {
+      "desc": "DesignCraft command line"
+    },
+    "lightcraft": {
+      "desc": "LightCraft desktop app"
+    },
+    "vectorcraft": {
+      "desc": "VectorCraft desktop app"
+    }
+  },
+  "webapps": [
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "url": "https://chatgpt.com",
+      "key": "KeyA"
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "url": "https://www.youtube.com",
+      "key": "KeyY"
+    },
+    { "id": "x", "name": "X", "url": "https://x.com", "key": "KeyX" },
+    {
+      "id": "photos",
+      "name": "Google Photos",
+      "url": "https://photos.google.com",
+      "key": "KeyP"
+    },
+    { "id": "maps", "name": "Google Maps", "url": "https://maps.google.com" },
+    { "id": "whatsapp", "name": "WhatsApp", "url": "https://web.whatsapp.com" },
+    { "id": "discord", "name": "Discord", "url": "https://discord.com/app" },
+    { "id": "outlook", "name": "Outlook", "url": "https://outlook.office.com" },
+    { "id": "word", "name": "Word", "url": "https://word.cloud.microsoft" },
+    { "id": "teams", "name": "Teams", "url": "https://teams.microsoft.com" }
+  ],
+  "browser": {
+    "search": "https://html.duckduckgo.com/html/?q=",
+    "bookmarks": [
+      ["Bun", "https://bun.com/docs"],
+      ["Cloudflare docs", "https://developers.cloudflare.com"],
+      ["Material 3", "https://m3.material.io"],
+      ["MDN", "https://developer.mozilla.org"],
+      ["Rust docs", "https://doc.rust-lang.org"],
+      ["Wikipedia", "https://en.wikipedia.org"],
+      ["Hacker News", "https://news.ycombinator.com"],
+      ["Bun OS source", "https://github.com/aphrody-labs/bun-distribution"]
+    ]
+  }
+}

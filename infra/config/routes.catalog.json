@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for public host to path routing. keep=true hosts stay separate; keep=false hosts redirect (301) to origin+path. passthrough=true keeps a non-root request path as is. apps maps a path to the WebOS package opened there (legacy /?app=<package> redirects to that path).",
+  "$comment": "Single source of truth for public host to path routing. keep=true hosts stay separate; keep=false hosts redirect (301) to origin+path. passthrough=true keeps a non-root request path as is. apps maps a path to the WebOS app opened there: a desktop app id, an App UI route id (apps/webos/apps.json) or a package of the WebOS registry (legacy /?app=<id> redirects to that path). memberPath + <apps/* member> opens that monorepo member. source is the public browse URL of the repository tree.",
   "origin": "https://aphrody.com",
   "hosts": {
     "app-video.aphrody.app": {
@@ -203,6 +203,7 @@
     },
     "downloads.aphrody.com": {
       "kind": "service",
+      "role": "downloads",
       "keep": true
     },
     "cdn.aphrody.com": {
@@ -222,6 +223,8 @@
       "keep": true
     }
   },
+  "source": "https://github.com/aphrody-labs/bun-distribution/tree/os",
+  "memberPath": "/source/",
   "apps": {
     "/art": "creative",
     "/apps": "apps",
@@ -237,6 +240,36 @@
     "/cad": "craft-cad",
     "/deck": "craft-deck",
     "/grid": "craft-grid",
-    "/fig": "craft-fig"
+    "/fig": "craft-fig",
+    "/files": "files",
+    "/drive": "drive",
+    "/browser": "browser",
+    "/terminal": "terminal",
+    "/docs": "docs",
+    "/linux": "linux",
+    "/media": "media",
+    "/video": "video",
+    "/playground": "engine",
+    "/inspector": "inspector",
+    "/source": "workspace",
+    "/components": "showcase",
+    "/theme-builder": "themebuilder",
+    "/web-apps": "webapps",
+    "/calculator": "calculator",
+    "/storage": "storage",
+    "/activity": "activity",
+    "/keyboard": "keys",
+    "/about": "about",
+    "/settings": "settings",
+    "/chat": "chat",
+    "/models": "models",
+    "/play": "play",
+    "/studio": "studio",
+    "/creator": "creator",
+    "/admin": "admin",
+    "/templates": "templates",
+    "/material": "material",
+    "/jobs": "jobs",
+    "/ds": "game-dust-nds"
   }
 }

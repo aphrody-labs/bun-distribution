@@ -2,6 +2,7 @@
 import { h } from "../dom";
 import "../m3";
 import { catalog, type Catalog } from "../os";
+import { sourceUrl } from "../config";
 
 type Tab = "all" | "apps" | "packages" | "crates" | "wasm" | "ui";
 type Kind = "apps" | "packages" | "crates";
@@ -9,6 +10,8 @@ interface Row {
   id: string;
   d: string;
   kind: Kind;
+  /** Desktop app or package a member is (apps only). */
+  opens?: string;
 }
 const TABS: Tab[] = ["all", "apps", "packages", "crates", "wasm", "ui"];
 const WASM = /wasm|(^|[-_])web($|[-_])|wgpu|webgpu|webos|trunk/i;
@@ -74,29 +77,29 @@ export async function storeApp(
     );
     const shown = matches.slice(0, limit).map((r) => {
       const actions: HTMLElement[] = [];
-      const source = `https://github.com/aphrody-labs/bun-distribution/tree/os/${r.kind}/${encodeURIComponent(r.id)}`;
+      const source = sourceUrl(`${r.kind}/${r.id}`);
       actions.push(
         h(
           "button",
-          { class: "btn", onclick: () => launch("url", source) },
+          {
+            class: r.kind === "apps" ? "btn tonal" : "btn",
+            onclick: () => launch("url", source),
+          },
           "Source",
         ),
       );
       if (r.kind === "apps") {
-        const host =
-          data.hosts[r.id] ?? data.hosts[r.id.replace(/-web(?:-app)?$/, "")];
-        if (host)
-          actions.push(
-            h(
-              "button",
-              {
-                class: "btn tonal",
-                onclick: () =>
-                  launch("url", `https://${host.host}.aphrody.app`),
-              },
-              host.name,
-            ),
-          );
+        // Every app opens in the desktop: its browser build, or the member window of a native app.
+        actions.unshift(
+          h(
+            "button",
+            {
+              class: "btn",
+              onclick: () => launch("app", r.opens ?? `src:${r.id}`),
+            },
+            "Open",
+          ),
+        );
       }
       return h(
         "article",

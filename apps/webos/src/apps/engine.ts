@@ -151,7 +151,7 @@ const CAPABILITIES: Capability[] = [
     name: "Bun.semver, Bun.$ shell parser, Bun.markdown",
     status: "no",
     detail:
-      "Rust crate bun_wasm (C:\\bun\\src\\wasm) exports them, but no .wasm is built. Build: cargo build -p bun_wasm --target wasm32-wasip1-threads --profile wasm (or bun wasm build bun_wasm); needs WASI threads imports and shared memory.",
+      "The Rust crate bun_wasm (src/wasm of the Bun fork) exports them, but this desktop ships no bun_wasm build: it targets wasm32-wasip1-threads and needs WASI thread imports and shared memory.",
   },
   {
     name: "fmt, lint (bun_quality)",

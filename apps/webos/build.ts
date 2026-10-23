@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Builds dist/: the bundled shell, the OPFS file-system wasm, the M3 tokens and the workspace catalog.
 import { cp, mkdir, readdir, rm } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { themeCss } from "./src/themes";
 import { buildPackages } from "./packages";
 import { buildSeo } from "./seo";
@@ -9,6 +9,8 @@ import { stageVm } from "./vm";
 import { buildDocs } from "./docs";
 import { stageWorkspace } from "./workspace";
 import { stageGamesContent } from "./games-content";
+import { allAppCapabilities } from "@aphrody/bun-workspace/capabilities";
+import { APPS, ROUTES, appPath, type MemberKind } from "./src/config";
 
 const root = resolve(import.meta.dir, "../..");
 const dist = join(import.meta.dir, "dist");
@@ -17,6 +19,15 @@ interface Entry {
   id: string;
   d: string;
   k?: string;
+}
+
+/** How a monorepo app runs in the desktop (src/apps/member.ts renders the non-web kinds). */
+interface AppEntry extends Entry {
+  run: MemberKind;
+  opens?: string;
+  related?: string;
+  artifact?: string;
+  readme?: boolean;
 }
 
 const tomlDesc = (text: string) => {
@@ -61,18 +72,19 @@ async function scan(
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }
 
-const apps = await scan("apps", async (p) => {
+// Every tracked member of apps/ is an app of the desktop; its manifests only refine the description and kind.
+const capabilities = allAppCapabilities();
+/** Craft family of a member: pdfcraft, pdfcraft-web and pdfcraft-cli all belong to the pdfcraft capability. */
+const familyOf = (id: string) => {
+  const base = id.replace(/(-web-app|-web|-cli|-server|_native)$/, "");
+  return capabilities.find((capability) => capability.libraryId === base);
+};
+const readmes = new Map<string, string>();
+const scanned = await scan("apps", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
   const cargo = Bun.file(join(p, "Cargo.toml"));
   const html = Bun.file(join(p, "index.html"));
   const trunk = Bun.file(join(p, "Trunk.toml"));
-  if (
-    !(await pkg.exists()) &&
-    !(await cargo.exists()) &&
-    !(await html.exists()) &&
-    !(await trunk.exists())
-  )
-    return undefined;
   let d = "";
   if (await pkg.exists()) d = (await pkg.json()).description ?? "";
   if (!d && (await cargo.exists())) d = tomlDesc(await cargo.text());
@@ -81,9 +93,45 @@ const apps = await scan("apps", async (p) => {
       ? "web"
       : (await pkg.exists())
         ? "js"
-        : "native";
+        : (await cargo.exists())
+          ? "native"
+          : "source";
+  const readme = join(p, "README.md");
+  if (await Bun.file(readme).exists()) readmes.set(p, readme);
   return { d, k: kind };
 });
+const apps: AppEntry[] = scanned.map((entry) => {
+  const config = APPS.members[entry.id] ?? {};
+  const family = familyOf(entry.id);
+  const run: MemberKind =
+    config.kind ??
+    (entry.id.endsWith("-cli")
+      ? "cli"
+      : entry.id.endsWith("-server")
+        ? "server"
+        : entry.id.endsWith("-web") && family?.webosPackageId
+          ? "web"
+          : "native");
+  const opens =
+    config.opens ?? (run === "web" ? family?.webosPackageId : undefined);
+  const related =
+    config.related ??
+    (opens ? undefined : (family?.webosPackageId ?? (family && "creative")));
+  return {
+    ...entry,
+    d: config.desc ?? (entry.d || family?.description || ""),
+    run,
+    ...(opens ? { opens } : {}),
+    ...(related ? { related } : {}),
+    ...(config.artifact ? { artifact: config.artifact } : {}),
+    ...(readmes.has(join(root, "apps", entry.id)) ? { readme: true } : {}),
+  };
+});
+for (const id of Object.keys(APPS.members))
+  if (!apps.some((entry) => entry.id === id))
+    throw new Error(
+      `apps.json declares ${id}, which is not a tracked apps/ member`,
+    );
 
 const packages = await scan("packages", async (p) => {
   const pkg = Bun.file(join(p, "package.json"));
@@ -98,35 +146,30 @@ const crates = await scan("crates", async (p) => {
   return { d: tomlDesc(await cargo.text()) };
 });
 
-// Hostnames owned by Aphrody Infra (docs/APP-DOMAINS.md): canonical host and library alias per capability.
-const hosts: Record<string, { name: string; host: string; alias: string }> = {
-  filmcraft: { name: "Video", host: "app-video", alias: "filmcraft" },
-  artcraft: { name: "Generation", host: "app-generation", alias: "artcraft" },
-  photocraft: { name: "Images", host: "app-images", alias: "photocraft" },
-  vectorcraft: { name: "Vectors", host: "app-vectors", alias: "vectorcraft" },
-  effectcraft: {
-    name: "Compositing",
-    host: "app-compositing",
-    alias: "effectcraft",
-  },
-  lightcraft: {
-    name: "Photo processing",
-    host: "app-photo-processing",
-    alias: "lightcraft",
-  },
-  pdfcraft: { name: "PDF", host: "app-pdf", alias: "pdfcraft" },
-  wordcraft: { name: "Documents", host: "app-documents", alias: "wordcraft" },
-  soundcraft: { name: "Audio", host: "app-audio", alias: "soundcraft" },
-  designcraft: { name: "Layout", host: "app-layout", alias: "designcraft" },
-  cadcraft: { name: "CAD", host: "app-cad", alias: "cadcraft" },
-  deckcraft: { name: "Slides", host: "app-slides", alias: "deckcraft" },
-  gridcraft: { name: "Tables", host: "app-tables", alias: "gridcraft" },
-  figcraft: {
-    name: "Interface layouts",
-    host: "app-interface-layouts",
-    alias: "figcraft",
-  },
-};
+// Application identities (docs/APP-DOMAINS.md): canonical host, library alias and the aphrody.com path that
+// both redirect to, all derived from the capability catalog and infra/config/routes.catalog.json.
+const hosts: Record<
+  string,
+  { name: string; host: string; alias: string; path?: string; app?: string }
+> = {};
+for (const capability of capabilities) {
+  const host = `app-${capability.id}`;
+  const route = Object.entries(ROUTES.hosts).find(
+    ([name]) => name.split(".")[0] === host,
+  )?.[1];
+  const app = route?.path ? ROUTES.apps[route.path] : undefined;
+  hosts[capability.libraryId] = {
+    name: capability.title,
+    host,
+    alias: capability.libraryId,
+    ...(route?.path ? { path: route.path } : {}),
+    ...(app ? { app } : {}),
+  };
+  if (capability.webosPackageId && !appPath(capability.webosPackageId))
+    throw new Error(
+      `${capability.webosPackageId} has no deep-link path in routes.catalog.json`,
+    );
+}
 
 const catalog = {
   generated: new Date().toISOString(),
@@ -307,7 +350,7 @@ const shortcut = (name: string, app: string, description: string) => ({
   name,
   short_name: name,
   description,
-  url: `/?app=${app}`,
+  url: appPath(app) ?? `/?app=${app}`,
   icons: [{ src: "/brand/192.png", sizes: "192x192", type: "image/png" }],
 });
 await Bun.write(
@@ -390,6 +433,9 @@ await cp(join(import.meta.dir, "src/index.html"), join(dist, "index.html"));
 await cp(join(import.meta.dir, "public"), dist, { recursive: true });
 await stageWorkspace(dist, root);
 await Bun.write(join(dist, "catalog.json"), JSON.stringify(catalog));
+// Member READMEs for the member window (src/apps/member.ts); served from /readme/<member>.md.
+for (const [dir, file] of readmes)
+  await Bun.write(join(dist, "readme", `${basename(dir)}.md`), Bun.file(file));
 await stageVm(dist);
 const docs = await buildDocs(dist);
 console.log(

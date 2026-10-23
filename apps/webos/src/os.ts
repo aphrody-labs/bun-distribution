@@ -4,10 +4,24 @@ import { openWebOs, type WebOs } from "@aphrody/webos-wasm";
 export interface Catalog {
   generated: string;
   counts: { apps: number; packages: number; crates: number };
-  apps: { id: string; d: string; k?: string }[];
+  apps: CatalogApp[];
   packages: { id: string; d: string }[];
   crates: { id: string; d: string }[];
-  hosts: Record<string, { name: string; host: string; alias: string }>;
+  hosts: Record<string, { name: string; host: string; alias: string; path?: string; app?: string }>;
+}
+
+/** A member of apps/ and how it runs in the desktop (build.ts). */
+export interface CatalogApp {
+  id: string;
+  d: string;
+  k?: string;
+  run: import("./config").MemberKind;
+  /** Desktop app or package this member is (run "web"). */
+  opens?: string;
+  /** In-browser counterpart of a native member. */
+  related?: string;
+  artifact?: string;
+  readme?: boolean;
 }
 
 let osPromise: Promise<WebOs> | undefined;

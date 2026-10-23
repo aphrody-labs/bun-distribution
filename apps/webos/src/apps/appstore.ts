@@ -139,7 +139,13 @@ export async function appStore(
     grid.replaceChildren(
       ...(shown.length
         ? shown.map(card)
-        : [h("div", { class: "empty" }, "Nothing here yet.")]),
+        : [
+            h(
+              "div",
+              { class: "empty" },
+              "The package registry of this deployment has no app in this category.",
+            ),
+          ]),
     );
   }
   root.append(h("div", { class: "store" }, tabs, grid));

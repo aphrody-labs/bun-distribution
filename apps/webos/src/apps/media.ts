@@ -21,7 +21,8 @@ const MIME: Record<string, string> = {
 };
 
 /** Media player for files of the Rust file system or from your device (mpv in Omarchy). */
-export async function mediaApp(root: HTMLElement) {
+/** `start` plays that file of the VFS right away (Files > open with Media). */
+export async function mediaApp(root: HTMLElement, start?: string) {
   const os = await webos();
   const stage = h("div", { class: "media-stage" }, h("div", { class: "empty" }, "Choose a video, song or picture."));
   const path = h("input", { class: "fld grow", value: `${HOME}/`, "aria-label": "Path in Files" });
@@ -59,4 +60,8 @@ export async function mediaApp(root: HTMLElement) {
       stage,
     ),
   );
+  if (start) {
+    path.value = start;
+    open();
+  }
 }

@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { h, icon } from "../dom";
+import { APPS, ownHost } from "../config";
 
 const HOME_URL = "aphrody://home";
-const SEARCH = "https://html.duckduckgo.com/html/?q=";
-const BOOKMARKS: [string, string][] = [
-  ["Bun", "https://bun.com/docs"],
-  ["Cloudflare docs", "https://developers.cloudflare.com"],
-  ["Material 3", "https://m3.material.io"],
-  ["MDN", "https://developer.mozilla.org"],
-  ["Rust docs", "https://doc.rust-lang.org"],
-  ["Wikipedia", "https://en.wikipedia.org"],
-  ["Hacker News", "https://news.ycombinator.com"],
-  ["GitHub aphrody-labs", "https://github.com/aphrody-labs"],
-];
-/** Hosts of the Bun OS apps refuse framing, so they open in a real browser tab. */
-const APP_HOSTS = /(^|\.)aphrody\.(app|com)$/;
+const SEARCH = APPS.browser.search;
+const BOOKMARKS = APPS.browser.bookmarks;
 
 interface Tab {
   title: string;
@@ -35,7 +25,7 @@ export function normalize(input: string): string {
 }
 
 /** Tabbed browser. Pages load through /api/browse: scripts stripped, sandboxed, links routed back here. */
-export function browserApp(root: HTMLElement, start?: string) {
+export function browserApp(root: HTMLElement, start?: string, openOwn?: (url: URL) => boolean) {
   const tabs: Tab[] = [];
   let current: Tab | undefined;
   const tabStrip = h("div", { class: "btabs", role: "tablist" });
@@ -93,7 +83,9 @@ export function browserApp(root: HTMLElement, start?: string) {
   function navigate(input: string, tab = current, record = true) {
     if (!tab) return;
     const url = normalize(input);
-    if (url !== HOME_URL && APP_HOSTS.test(new URL(url).hostname)) {
+    // Aphrody hosts refuse framing: an address that is an app of this desktop opens in its own window.
+    if (url !== HOME_URL && ownHost(new URL(url).hostname)) {
+      if (openOwn?.(new URL(url))) return;
       window.open(url, "_blank", "noopener");
       status.textContent = "Aphrody apps cannot be framed; opened in a new browser tab.";
       return;
