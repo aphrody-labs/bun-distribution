@@ -33,9 +33,17 @@ jobs:
           test "$(stat -c %a /run/aphrody/git-ssh/identity)" = 600
       - uses: builtin:checkout
         with:
-          submodules: true
-          fetch-depth: 0
+          submodules: false
+          fetch-depth: 1
           persist-credentials: false
+      - name: Fetch the submodules the Sites build needs
+        run: |
+          git fetch --depth 1 origin "refs/heads/os:refs/remotes/origin/os"
+          # Kernel, LLVM and Wine forks are distribution-only sources the Sites never build.
+          for p in vendor/cachyos-linux vendor/ogc-linux vendor/linux-cachyos vendor/kernel-patches vendor/ogc-kernel-packages vendor/nvidia-kernels vendor/open-gpu-kernel-modules vendor/llvm vendor/proton vendor/proton-cachyos vendor/wine-cachyos packages/re/third_party/unblob; do
+            git config "submodule.$p.update" none
+          done
+          git submodule update --init --recursive --jobs 4 --depth 1
       - name: Select pinned Aphrody Bun runtime
         run: |
           test -x "$BUN_EXECUTABLE"
