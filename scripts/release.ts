@@ -301,7 +301,8 @@ async function publishCrates(): Promise<void> {
       await Bun.sleep(wait);
       result = await cargoPublish(cmd);
     }
-    if (result.code !== 0) {
+    // A crate the registry already lists (a retry after a lagging index, or a concurrent run) is published.
+    if (result.code !== 0 && !(await cratePublished(crate.name, crate.version))) {
       failed.push(`${crate.name}@${crate.version}`);
       continue;
     }
