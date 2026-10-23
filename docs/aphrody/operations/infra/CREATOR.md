@@ -3,11 +3,11 @@
 # creator.aphrody.com: creator-kit download and auto-update
 
 Owner order of 2026-10-06: a minimal Material 3 page with one download button and automatic updates for
-`packages/infra/product`. Static site, no application origin: nginx serves the `current` release tree.
+`packages/product`. Static site, no application origin: nginx serves the `current` release tree.
 
 | Path                           | Content                                                                                                                               |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `packages/infra/product/resources/creator/site/build.ts`                             |
+| `/`                            | page (Aphrody M3 tokens, Google Sans Flex, MAKIT logo and favicons), built by `packages/product/resources/creator/site/build.ts`                             |
 | `/download/windows`            | current Windows pack (`.zip`, stable name, never cached)                                                                              |
 | `/latest.json`                 | manifest read by the page and by `creator-kit self-update`: `version`, `artifacts[]` (`kind` pack or update, `url`, `sha256`, `size`) |
 | `/SHA256SUMS`, `/files/<file>` | checksums and immutable versioned archives                                                                                            |
@@ -16,15 +16,19 @@ Public and unauthenticated by design (published, checksummed release files only;
 
 ## Publish
 
+Builds run on the vps (cross-compiled Windows exe, rcedit under Wine), from a checkout of this repository there:
+
 ```sh
-bun run creator:publish plan
-bun run creator:publish stage      # build locally, upload nothing
-bun run creator:publish release    # build, scan, upload, sha256sum -c on the host, flip `current`
-bun run creator:publish verify     # public download and SHA-256 of every artifact
-bun run creator:publish host-apply --apply   # release root, certificate, vhost (first install or repair)
+bun scripts/aphrody/release/publish-creator.ts plan --host local
+bun scripts/aphrody/release/publish-creator.ts stage --host local     # build into build/creator, publish nothing
+bun scripts/aphrody/release/publish-creator.ts release --host local   # build, scan, publish, sha256sum -c, flip `current`
+bun scripts/aphrody/release/publish-creator.ts verify                 # public download and SHA-256 of every artifact
+bun scripts/aphrody/release/publish-creator.ts host-apply --apply --host local   # release root and vhost
 ```
 
-Bump `version` in `packages/infra/product/package.json` before a release: the updater installs a release only
+`--host <ssh-alias>` publishes to the vps over OpenSSH instead (default `vps`).
+
+Bump `version` in `packages/product/package.json` before a release: the updater installs a release only
 when its version is newer. The exe is compiled with `bun build --compile --target=bun-windows-x64`; its icon and
 version resources are set with the pinned rcedit (SHA-256 in the script) under Wine because `--windows-icon` only
 works when compiling on Windows. `release` refuses a pack that holds a denied file name or a token-shaped string.
@@ -39,8 +43,9 @@ hand. A `bun` source run never replaces itself.
 
 ## Host
 
-- DNS: `creator` CNAME `aphrody.com` (`aphrody ovh dns add`).
-- Certificate `creator.aphrody.com` (HTTP-01) by `scripts/tools/infra/issue-creator-certificate.sh`.
-- vhost `tools/config/host/nginx/aphrody/creator.aphrody.com.conf`; catalog service `aphrody-creator` (`nginx-static`),
-  route in `tools/config/host/nginx/routes.json`. Releases in `/home/ubuntu/apps/creator/releases/<id>`, last five kept.
+- DNS: `creator.aphrody.com` proxied by Cloudflare to the vps.
+- TLS: `/etc/letsencrypt/live/aphrody.com` (its SAN covers `creator.aphrody.com`).
+- vhost `infra/config/host/nginx/aphrody/creator.aphrody.com.conf`, installed as
+  `/etc/nginx/conf.d/creator.aphrody.com.conf` of the vps host nginx; catalog service `aphrody-creator`
+  (`nginx-static`), route in `infra/config/host/nginx/routes.json`. Releases in `/home/ubuntu/apps/creator/releases/<id>`, last five kept.
 - Rollback: repoint the `current` symlink to an older release, or remove the vhost and reload nginx.

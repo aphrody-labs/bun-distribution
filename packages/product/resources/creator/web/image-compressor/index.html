@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Compresseur d'images local</title>
+    <style>
+      :root {
+        --bg: #f6f6f8;
+        --card: #fff;
+        --text: #1b1b1f;
+        --muted: #5f6068;
+        --accent: #5b4bdb;
+        --line: #d8d8e0;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131316;
+          --card: #1c1c21;
+          --text: #ececf1;
+          --muted: #a0a0ab;
+          --accent: #9d93ff;
+          --line: #34343c;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 48px;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.5 system-ui,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 4px;
+      }
+      p.lead {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+      #drop {
+        border: 2px dashed var(--line);
+        border-radius: 16px;
+        padding: 32px 16px;
+        text-align: center;
+        background: var(--card);
+      }
+      #drop.over {
+        border-color: var(--accent);
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+        margin: 20px 0;
+      }
+      label {
+        display: grid;
+        gap: 4px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      select,
+      input[type="number"] {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+        color: var(--text);
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 8px;
+      }
+      li {
+        display: grid;
+        grid-template-columns: 56px 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      li img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: var(--line);
+      }
+      li div {
+        display: grid;
+        min-width: 0;
+      }
+      li strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      li span,
+      #note,
+      #summary {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      .bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 16px 0;
+      }
+      #summary {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Compresseur d'images local</h1>
+      <p class="lead">
+        Tout reste sur ton PC : aucune image n'est envoyée sur Internet. Fonctionne hors ligne.
+      </p>
+
+      <div id="drop">
+        <p>Glisse tes images ici, colle-les (Ctrl+V) ou</p>
+        <button id="pick" type="button">Choisir des images</button>
+        <input id="file" type="file" accept="image/*" multiple hidden />
+      </div>
+
+      <div class="options">
+        <label>
+          Format
+          <select id="format">
+            <option value="keep">Garder le format d'origine</option>
+            <option value="webp">WebP (le plus léger, très compatible)</option>
+            <option value="jpeg">JPEG</option>
+            <option value="avif">AVIF (très léger, récent)</option>
+            <option value="png">PNG (sans perte, peu de gain)</option>
+          </select>
+        </label>
+        <label>
+          Qualité : <span id="qualityValue">80</span>
+          <input id="quality" type="range" min="10" max="100" value="80" />
+        </label>
+        <label>
+          Taille max (px, 0 = inchangée)
+          <input id="maxSide" type="number" min="0" step="100" value="0" />
+        </label>
+      </div>
+      <p id="note"></p>
+
+      <div class="bar">
+        <span id="summary"></span>
+        <button id="zip" type="button" disabled>Tout télécharger (.zip)</button>
+        <button id="clear" type="button" class="secondary">Vider</button>
+      </div>
+      <ul id="results"></ul>
+    </main>
+    <script src="zip.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

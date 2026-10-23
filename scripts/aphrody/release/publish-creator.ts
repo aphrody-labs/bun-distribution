@@ -8,26 +8,36 @@
  *   release              build the Windows exe, stage the packs, upload, checksum on the host, flip `current`
  *   verify               download latest.json, both packs and check SHA-256
  *   host-plan | host-apply [--apply]
- *                        create the release root, issue the certificate, install the nginx vhost
+ *                        create the release root, install the nginx vhost in the vps host nginx conf.d
  *
- * Runbook: docs/operations/infra/CREATOR.md. Remote commands go through `aphrody infra ssh` only.
+ *   --host <ssh-host|local>  where the release lives (default vps); `local` on the vps itself, where the
+ *                            Windows exe is cross-compiled and branded under Wine
+ *
+ * Runbook: docs/aphrody/operations/infra/CREATOR.md. Remote commands go through OpenSSH in batch mode.
  */
 import { createHash } from "node:crypto";
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 
 export const SITE = {
   baseUrl: "https://creator.aphrody.com",
-  host: "dbfr",
+  host: "vps",
   root: "/home/ubuntu/apps/creator",
   keepReleases: 5,
-  vhost: "infra/config/host/nginx/shenron/zz-creator.aphrody.com.conf",
-  certScript: "scripts/tools/infra/issue-creator-certificate.sh",
+  vhost: "infra/config/host/nginx/aphrody/creator.aphrody.com.conf",
+  /** The vps host nginx loads every vhost from conf.d; TLS uses the aphrody.com certificate (SAN creator). */
+  vhostTarget: "/etc/nginx/conf.d/creator.aphrody.com.conf",
 };
 
 const repo = resolve(import.meta.dir, "../../../");
-const appDir = join(repo, "packages/infra/product");
+const appDir = join(repo, "packages/product");
+/** Release host: an ssh alias, or `local` when this process runs on it. */
+const HOST = (() => {
+  const i = Bun.argv.indexOf("--host");
+  const host = i >= 0 ? Bun.argv[i + 1] : SITE.host;
+  if (!host || !/^[A-Za-z0-9_.-]+$/.test(host)) throw new Error(`refused host: ${host}`);
+  return host;
+})();
 import { build as buildPage, SEED } from "@aphrody/product/creator/site";
 import { brandExe } from "./windows-exe.ts";
 const TARGET = {
@@ -91,11 +101,12 @@ export async function sha256File(path: string): Promise<string> {
   return hasher.digest("hex");
 }
 
-async function run(argv: string[], cwd = repo, env: Record<string, string> = {}) {
+async function run(argv: string[], cwd = repo, env: Record<string, string> = {}, timeoutSecs?: number) {
   const proc = Bun.spawn(argv, {
     windowsHide: true,
     cwd,
     env: { ...process.env, ...env },
+    timeout: timeoutSecs ? timeoutSecs * 1000 : undefined,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -108,24 +119,16 @@ async function run(argv: string[], cwd = repo, env: Record<string, string> = {})
   return stdout;
 }
 
+const SSH = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15"];
+
 async function remote(command: string, timeoutSecs = 120): Promise<string> {
-  const out = await run(["aphrody", "infra", "ssh", "exec", "--host", SITE.host, "--json", "-c", command], repo, {
-    APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs),
-  });
-  const parsed = JSON.parse(out) as {
-    exit_code?: number;
-    stdout?: string;
-    stderr?: string;
-  };
-  if ((parsed.exit_code ?? 1) !== 0)
-    throw new Error(
-      `remote failed (${parsed.exit_code}): ${command.slice(0, 160)}\n${parsed.stderr ?? ""}${parsed.stdout ?? ""}`,
-    );
-  return parsed.stdout ?? "";
+  const argv = HOST === "local" ? ["sh", "-c", command] : [...SSH, HOST, command];
+  return run(argv, repo, {}, timeoutSecs);
 }
 
 async function put(local: string, dest: string): Promise<void> {
-  await run(["aphrody", "infra", "ssh", "sftp", "--host", SITE.host, "--put", local, "--path", dest]);
+  if (HOST === "local") await run(["install", "-m", "0644", local, dest]);
+  else await run(["scp", "-q", "-o", "BatchMode=yes", local.replaceAll("\\", "/"), `${HOST}:${dest}`]);
 }
 
 async function* walk(dir: string): AsyncGenerator<string> {
@@ -181,11 +184,21 @@ async function stage(): Promise<{
 }> {
   const ver = await version();
   const commit = (await run(["git", "rev-parse", "--short=12", "HEAD"])).trim();
-  const dir = await mkdtemp(join(tmpdir(), "creator-release-"));
+  // Staging stays in the checkout's build tree (git-ignored), never in a shared /tmp.
+  await mkdir(join(repo, "build/creator"), { recursive: true });
+  const dir = await mkdtemp(join(repo, "build/creator/release-"));
   const pack = join(dir, "pack");
   await mkdir(pack, { recursive: true });
   await run(
-    ["bun", "build", "--compile", `--target=${TARGET.bunTarget}`, "src/cli.ts", "--outfile", join(pack, TARGET.exe)],
+    [
+      process.execPath,
+      "build",
+      "--compile",
+      `--target=${TARGET.bunTarget}`,
+      "src/cli.ts",
+      "--outfile",
+      join(pack, TARGET.exe),
+    ],
     appDir,
   );
   await brand(join(pack, TARGET.exe), ver);
@@ -198,8 +211,8 @@ async function stage(): Promise<{
   // Windows M3 theme (light and dark) from the logo source colour; installers are dry-run until -Apply and revert with -Uninstall.
   const themeOut = join(dir, "theme");
   await run([
-    "bun",
-    "../material/packages/m3-os-themes/src/cli.ts",
+    process.execPath,
+    "packages/m3-os-themes/src/cli.ts",
     "generate",
     "--target",
     "windows",
@@ -257,7 +270,7 @@ async function plan(): Promise<void> {
   console.log(`- bun build --compile --target=${TARGET.bunTarget} (${TARGET.exe}), pack: ${PACK_PATHS.length} paths`);
   console.log("- files: <pack>.zip (human), <pack>.update.tar.gz (self-update), latest.json, SHA256SUMS, index.html");
   console.log(
-    `- host ${SITE.host}: ${SITE.root}/releases/<id>, atomic symlink ${SITE.root}/current, keep ${SITE.keepReleases}`,
+    `- host ${HOST}: ${SITE.root}/releases/<id>, atomic symlink ${SITE.root}/current, keep ${SITE.keepReleases}`,
   );
 }
 
@@ -322,20 +335,28 @@ async function verify(): Promise<void> {
 
 async function hostCommands(apply: boolean): Promise<void> {
   const steps = [
-    `create ${SITE.root}/releases owned by ubuntu`,
-    `DNS creator.aphrody.com CNAME aphrody.com (aphrody ovh dns add, done separately with --apply)`,
-    `certificate creator.aphrody.com (HTTP-01) through ${SITE.certScript} when absent`,
-    `${SITE.vhost} ships with the Shenron gateway release (container aphrody-gateway-1): nginx -t, reload`,
+    `create ${SITE.root}/releases owned by ubuntu on ${HOST}`,
+    "DNS creator.aphrody.com: proxied by Cloudflare to the vps (Cloudflare MCP, done separately)",
+    "TLS: /etc/letsencrypt/live/aphrody.com, whose SAN covers creator.aphrody.com",
+    `${SITE.vhost} -> ${SITE.vhostTarget} (previous file kept as .bak-<date>), nginx -t, reload`,
   ];
   console.log(steps.map(s => `- ${s}`).join("\n"));
   if (!apply) return console.log("plan only: pass --apply to execute");
   await remote(`sudo install -d -o ubuntu -g ubuntu ${SITE.root} ${SITE.root}/releases`);
-  await put(join(repo, SITE.certScript), "/tmp/issue-creator-certificate.sh");
+  const staged = `${SITE.root}/.vhost.new`;
+  const target = SITE.vhostTarget;
+  await put(join(repo, SITE.vhost), staged);
   await remote(
-    "sudo test -d /etc/letsencrypt/live/creator.aphrody.com || sudo bash /tmp/issue-creator-certificate.sh",
-    300,
+    [
+      "set -e",
+      `backup=${target}.bak-$(date +%Y%m%d)`,
+      `if [ -f ${target} ]; then sudo cp -p ${target} "$backup"; fi`,
+      `sudo install -m 0644 -o root -g root ${staged} ${target}`,
+      `rm -f ${staged}`,
+      `if ! sudo nginx -t; then if [ -f "$backup" ]; then sudo cp -p "$backup" ${target}; fi; exit 1; fi`,
+      "sudo systemctl reload nginx",
+    ].join("\n"),
   );
-  await remote("sudo docker exec aphrody-gateway-1 nginx -t && sudo docker exec aphrody-gateway-1 nginx -s reload");
 }
 
 if (import.meta.main) {
@@ -363,7 +384,9 @@ if (import.meta.main) {
       await hostCommands(Bun.argv.includes("--apply"));
       break;
     default:
-      console.error("usage: publish-creator.ts plan|stage|release|verify|host-plan|host-apply [--apply]");
+      console.error(
+        "usage: publish-creator.ts plan|stage|release|verify|host-plan|host-apply [--apply] [--host <ssh-host|local>]",
+      );
       process.exit(2);
   }
 }
