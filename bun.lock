@@ -3629,11 +3629,14 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
-        "@aphrody/material-web": "catalog:",
       },
       "devDependencies": {
         "@aphrody/bun": "^3.3.0",
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/material-web": "catalog:",
+      },
+      "peerDependencies": {
+        "@aphrody/material-web": "^3.3.3",
       },
     },
     "packages/m3-icons": {
@@ -3770,15 +3773,16 @@
       "version": "1.4.4",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
-        "@aphrody/material-web": "catalog:",
         "@lit/react": "catalog:",
         "@tanstack/react-table": "catalog:",
         "@tanstack/react-virtual": "catalog:",
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+        "@aphrody/material-web": "catalog:",
       },
       "peerDependencies": {
+        "@aphrody/material-web": "^3.3.3",
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
       },
