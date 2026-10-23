@@ -1274,7 +1274,7 @@ aphrody-web-crawl = "1.0.0"
 aphrody-os-re = { package = "bun-re", path = "crates/re", version = "1.4.7" }
 aphrody-identity = { path = "crates/aphrody-identity", version = "1.4.7" }
 aphrody-softraster = { path = "crates/aphrody-softraster", version = "1.4.7" }
-aphrody-sprite-sheet = "1.0.0-canary"
+aphrody-sprite-sheet = { path = "crates/aphrody-sprite-sheet", version = "1.4.7" }
 aphrody-nie-geom = { path = "crates/aphrody-nie-geom", version = "1.4.7",  }
 aphrody-nie-video = { path = "crates/aphrody-nie-video", version = "1.4.7",  }
 aphrody-nie-sql = { path = "crates/aphrody-nie-sql", version = "1.4.7",  }
