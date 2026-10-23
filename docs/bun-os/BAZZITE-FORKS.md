@@ -38,11 +38,31 @@ The projects the image downloads at build or install time, forked so Bun OS can 
 | `RyzenAdj` | `FlyGoat/RyzenAdj` | AMD power limits |
 | `extest` | `ublue-os/extest` | Steam Input X11 shim |
 
+## Forked (2026-10-23): the kernel and gaming stack of the Open Gaming Collective
+
+Bazzite no longer builds `kernel-bazzite`: its Containerfile installs the `ogc` kernel flavor
+(`KERNEL_VERSION` 7.0.9-ogc3.2), whose RPMs `akmods/fetch-kernel.sh` copies from
+`ghcr.io/opengamingcollective/kernel-packages-fedora`. The Open Gaming Collective sources are forked:
+
+| Fork | Upstream | Role |
+| --- | --- | --- |
+| `ogc-linux` | `OpenGamingCollective/linux` | the kernel source |
+| `kernel-packages`, `kernel-configurator` | `OpenGamingCollective/...` | kernel RPM packaging and configuration |
+| `ogc-arch-packaging` | `OpenGamingCollective/ogc-arch-packaging` | the same stack packaged for Arch |
+| `ogc-gamescope`, `gamescope-builds`, `gamescope-session`, `gamescope-session-steam`, `ScopeBuddy` | `OpenGamingCollective/...` | Gamescope and the Steam session |
+| `mesa`, `wireplumber`, `uresourced-dmemcg` | `OpenGamingCollective/...` | graphics, audio and memory-cgroup patches |
+| `steamos-manager`, `asusctl`, `cardwire`, `linux-cec`, `xonedo`, `plasma-applet-tdp-control` | `OpenGamingCollective/...` | handheld, laptop, HDMI-CEC, controller and TDP tools |
+
+`ogc-gamescope` and `ogc-linux` carry the prefix because `aphrody-labs/gamescope` and `aphrody-labs/linux` already
+fork other upstreams.
+
 ## Not forked
 
 - `ublue-os/config` and `ublue-os/nvidia`: archived upstream.
-- `bazzite-org/kernel-bazzite` (named in the build files): not found under `bazzite-org`, `ublue-os` or `hhd-dev`
-  (re-checked 2026-10-23); private, removed or renamed. Re-check before building a kernel.
+- `bazzite-org/kernel-bazzite`: retired upstream (not found under `bazzite-org`, `ublue-os` or `hhd-dev`); the
+  Open Gaming Collective kernel above replaces it.
+- Open Gaming Collective organization repositories (`opengamingcollective.org`, `ogc-bot`, `ogc-vouch`,
+  `organization-governance`) and the development branch fork `linux-unstable`.
 - COPR repositories (`sentry/kernel-fsync`, `ublue-os/bazzite`, `ublue-os/staging`, ...): package repositories,
   not Git sources.
 
