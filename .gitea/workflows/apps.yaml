@@ -8,6 +8,11 @@ on:
         description: Build native applications after host admission
         type: boolean
         default: false
+# A push supersedes the native build of the previous commit on the same branch: without this, every push queued a
+# 12-hour build and the three runner slots starved the sites deploy.
+concurrency:
+  group: aphrody-bun-native-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   native:
     runs-on: aphrody-bun-linux
