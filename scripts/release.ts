@@ -35,8 +35,19 @@ const stage = positionals[0] ?? "plan";
 const only = values.only ? new Set(values.only.split(",")) : undefined;
 const apply = values.apply === true;
 
-type NpmPackage = { name: string; version: string; dir: string; deps: string[] };
-type Crate = { name: string; version: string; manifest: string; deps: string[] };
+type NpmPackage = {
+  name: string;
+  version: string;
+  dir: string;
+  deps: string[];
+  specs: Record<string, string>;
+};
+type Crate = {
+  name: string;
+  version: string;
+  manifest: string;
+  deps: string[];
+};
 
 async function run(cmd: string[], cwd = ROOT): Promise<number> {
   console.log(`$ ${cmd.join(" ")}`);
@@ -71,18 +82,78 @@ export function order<T extends { name: string; deps: string[] }>(items: T[]): T
 
 export async function npmPackages(): Promise<NpmPackage[]> {
   const found: NpmPackage[] = [];
-  for (const file of new Bun.Glob("{packages,apps}/*/package.json").scanSync({ cwd: ROOT })) {
+  for (const file of new Bun.Glob("{packages,apps}/*/package.json").scanSync({
+    cwd: ROOT,
+  })) {
     const manifest = await Bun.file(join(ROOT, file)).json();
     if (!manifest.name || !manifest.version || manifest.private) continue;
     if (!OWNED_SCOPES.has(manifest.name.split("/")[0])) continue;
-    const deps = Object.keys({
-      ...manifest.dependencies,
-      ...manifest.optionalDependencies,
+    const specs: Record<string, string> = {
       ...manifest.peerDependencies,
+      ...manifest.optionalDependencies,
+      ...manifest.dependencies,
+    };
+    const deps = Object.keys(specs);
+    found.push({
+      name: manifest.name,
+      version: manifest.version,
+      dir: dirname(join(ROOT, file)),
+      deps,
+      specs,
     });
-    found.push({ name: manifest.name, version: manifest.version, dir: dirname(join(ROOT, file)), deps });
   }
   return order(found);
+}
+
+const packuments = new Map<string, Promise<string[]>>();
+function npmVersions(name: string): Promise<string[]> {
+  let versions = packuments.get(name);
+  if (!versions) {
+    versions = fetch(`https://registry.npmjs.org/${name.replace("/", "%2F")}`, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "application/vnd.npm.install-v1+json",
+      },
+    }).then(async res => (res.ok ? Object.keys((await res.json()).versions ?? {}) : []));
+    packuments.set(name, versions);
+  }
+  return versions;
+}
+
+/**
+ * Packages that would install broken: an owned-scope dependency that is private, outside packages/ and apps/,
+ * a local file, or a range npm cannot satisfy (and this release does not publish), or a dependency on such a
+ * package. They are held back instead of published.
+ */
+async function heldBack(pkgs: NpmPackage[]): Promise<Map<string, string>> {
+  const catalog: Record<string, string> = (await Bun.file(join(ROOT, "package.json")).json()).catalog ?? {};
+  const byName = new Map(pkgs.map(pkg => [pkg.name, pkg]));
+  const held = new Map<string, string>();
+  for (const pkg of pkgs) {
+    for (const [dep, raw] of Object.entries(pkg.specs)) {
+      if (!OWNED_SCOPES.has(dep.split("/")[0])) continue;
+      let [name, spec] = [dep, raw === "catalog:" ? (catalog[dep] ?? raw) : raw];
+      if (spec.startsWith("npm:"))
+        [name, spec] = [spec.slice(4, spec.lastIndexOf("@")), spec.slice(spec.lastIndexOf("@") + 1)];
+      const local = byName.get(name);
+      let reason: string | undefined;
+      if (spec.startsWith("workspace:")) reason = local ? undefined : `${name} is private or not in packages/ or apps/`;
+      else if (/^(file|link|catalog):/.test(spec)) reason = `${name} is ${spec}`;
+      else if (local && Bun.semver.satisfies(local.version, spec)) reason = undefined;
+      else if (!(await npmVersions(name)).some(version => Bun.semver.satisfies(version, spec)))
+        reason = `${name}@${spec} is not on npm`;
+      if (reason) {
+        held.set(pkg.name, reason);
+        break;
+      }
+    }
+  }
+  // order() puts dependencies first, so one pass carries a hold to every dependent.
+  for (const pkg of pkgs) {
+    const blocked = pkg.deps.find(dep => held.has(dep));
+    if (!held.has(pkg.name) && blocked) held.set(pkg.name, `depends on held ${blocked}`);
+  }
+  return held;
 }
 
 async function npmPublished(name: string, version: string): Promise<boolean> {
@@ -139,11 +210,17 @@ async function plan(): Promise<void> {
   const [npm, crates] = await Promise.all([npmPackages(), cargoCrates()]);
   const [npmTodo, cratesTodo] = [await missing(npm, npmPublished), await missing(crates, cratePublished)];
   console.log(`npm: ${npmTodo.length} of ${npm.length} unpublished`);
+  for (const [name, reason] of await heldBack(npm)) console.log(`  held: ${name} (${reason})`);
   console.log(`crates.io: ${cratesTodo.length} of ${crates.length} unpublished`);
 }
 
 async function publishNpm(): Promise<void> {
-  const todo = await missing(await npmPackages(), npmPublished);
+  const all = await npmPackages();
+  const held = await heldBack(all);
+  const todo = (await missing(all, npmPublished)).filter(pkg => {
+    if (held.has(pkg.name)) console.log(`held: ${pkg.name}@${pkg.version} (${held.get(pkg.name)})`);
+    return !held.has(pkg.name);
+  });
   const failed: string[] = [];
   for (const pkg of todo) {
     const cmd = ["bun", "publish", "--access", "public", ...(apply ? [] : ["--dry-run"])];
