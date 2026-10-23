@@ -5,7 +5,7 @@
 //   bun build-craft.ts [id ...]
 import { cp } from "node:fs/promises";
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { loadConfig, runNative } from "@aphrody/bun-workspace";
 import { listLibraries } from "@aphrody/bun-workspace/libraries";
 
@@ -15,6 +15,14 @@ if (process.platform !== "linux")
 const root = resolve(import.meta.dir, "../..");
 const fontRoot = resolve(Bun.env.CRAFT_FONTS_DIR ?? root);
 const fontNotices = new Map<string, string>();
+/** Entries of fonts/manifest.txt, for the apps that fetch fonts at run time instead of embedding them. */
+const manifestFonts: {
+  family: string;
+  style: string;
+  path: string;
+  notice: string;
+  hash: string;
+}[] = [];
 for (const manifest of ["fonts/manifest.txt", "fonts/latin-manifest.txt"]) {
   const text = await Bun.file(join(fontRoot, manifest)).text();
   fontNotices.set(manifest, text);
@@ -31,6 +39,14 @@ for (const manifest of ["fonts/manifest.txt", "fonts/latin-manifest.txt"]) {
     if (new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !== hash)
       throw new Error(`${path}: font content does not match its manifest`);
     fontNotices.set(notice!, await Bun.file(join(fontRoot, notice!)).text());
+    if (manifest === "fonts/manifest.txt")
+      manifestFonts.push({
+        family: fields[0]!,
+        style: fields[1]!,
+        path: path!,
+        notice: notice!,
+        hash: hash!,
+      });
   }
 }
 const out = join(import.meta.dir, "out/craft");
@@ -47,6 +63,19 @@ interface Craft {
   glyph: string;
   /** Library crates ship their own static page in apps/<crate>/web/ instead of a Trunk index.html. */
   web?: boolean;
+  /**
+   * Fonts the page fetches next to itself: "manifest" serves fonts/manifest.txt and every file it
+   * lists (photocraft-web's served fonts); a single face is copied under the name the page requests
+   * (lightcraft-web, as crates/lightcraft-xtask/src/web.rs bundles it); a list file names the faces
+   * fetched from fonts/<first 16 hex digits of the sha256>/<file> with their notice beside them
+   * (vectorcraft-web, as `cargo xtask web-fonts` copies crates/vectorcraft-text/web-fonts.txt).
+   */
+  servedFonts?:
+    | "manifest"
+    | { list: string }
+    | { family: string; style: string; file: string; notice: string };
+  /** Other files of apps/<crate>/ the hand-written page loads (lightcraft-web's render worker). */
+  files?: string[];
 }
 const ALL: Craft[] = [
   {
@@ -73,11 +102,13 @@ const ALL: Craft[] = [
     id: "photo",
     crate: "photocraft-web",
     glyph: "Img",
+    servedFonts: "manifest",
   },
   {
     id: "vector",
     crate: "vectorcraft-web",
     glyph: "Vec",
+    servedFonts: { list: "crates/vectorcraft-text/web-fonts.txt" },
   },
   {
     id: "design",
@@ -115,6 +146,13 @@ const ALL: Craft[] = [
     id: "light",
     crate: "lightcraft-web",
     glyph: "Lgt",
+    files: ["worker.js"],
+    servedFonts: {
+      family: "Noto Sans CJK SC",
+      style: "Regular",
+      file: "lightcraft_zh_hans.otf",
+      notice: "OFL-noto-sans-cjk-sc.txt",
+    },
   },
 ];
 const wanted = Bun.argv.slice(2);
@@ -322,6 +360,8 @@ for (const app of apps) {
     );
     const web = join(root, "apps", app.crate, "web");
     if (existsSync(web)) await cp(web, dest, { recursive: true });
+    for (const file of app.files ?? [])
+      await cp(join(root, "apps", app.crate, file), join(dest, file));
   } else {
     // Trunk's <link data-trunk rel="rust"> becomes the module loader.
     const src = await Bun.file(
@@ -334,6 +374,69 @@ for (const app of apps) {
   await cp(join(shellDir, "aphrody-icon.png"), join(dest, "aphrody-icon.png"));
   for (const [path, text] of fontNotices)
     await Bun.write(join(dest, "licenses", path), text);
+  if (app.servedFonts === "manifest") {
+    await cp(
+      join(fontRoot, "fonts/manifest.txt"),
+      join(dest, "fonts/manifest.txt"),
+    );
+    for (const font of manifestFonts)
+      for (const path of [font.path, font.notice])
+        await cp(join(fontRoot, path), join(dest, path));
+  } else if (app.servedFonts && "list" in app.servedFonts) {
+    // Faces the checkout lacks stay out, as build.rs leaves them out of WEB_FONTS.
+    const list = await Bun.file(join(root, app.servedFonts.list)).text();
+    for (const line of list.split(/\r?\n/).map((entry) => entry.trim())) {
+      if (!line || line.startsWith("#")) continue;
+      const [, family, style] = line.split(" | ").map((field) => field.trim());
+      const font = manifestFonts.find(
+        (entry) => entry.family === family && entry.style === style,
+      );
+      if (!font) continue;
+      const folder = join(dest, "fonts", font.hash.slice(0, 16));
+      await cp(join(fontRoot, font.path), join(folder, basename(font.path)));
+      await cp(
+        join(fontRoot, font.notice),
+        join(folder, basename(font.notice)),
+      );
+    }
+  } else if (app.servedFonts) {
+    const { family, style, file, notice } = app.servedFonts;
+    const font = manifestFonts.find(
+      (entry) => entry.family === family && entry.style === style,
+    );
+    if (!font)
+      throw new Error(
+        `${app.crate}: fonts/manifest.txt lacks ${family} ${style}`,
+      );
+    await cp(join(fontRoot, font.path), join(dest, file));
+    await cp(join(fontRoot, font.notice), join(dest, notice));
+  }
+  // A page's service worker precaches the package: fill in its file list and a version hashed from
+  // the files, as the app's own `cargo xtask web` does (effectcraft-web's sw.js).
+  const worker = Bun.file(join(dest, "sw.js"));
+  if (
+    (await worker.exists()) &&
+    (await worker.text()).includes("__EC_FILES__")
+  ) {
+    const files = (
+      await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: dest }))
+    )
+      .map((file) => file.replaceAll("\\", "/"))
+      .filter((file) => file !== "sw.js")
+      .sort();
+    const version = new Bun.CryptoHasher("sha256");
+    for (const file of files)
+      version.update(file).update(await Bun.file(join(dest, file)).bytes());
+    await Bun.write(
+      worker,
+      (await worker.text())
+        .replace("__EC_VERSION__", version.digest("hex").slice(0, 16))
+        .replace(
+          "__EC_FILES__",
+          JSON.stringify(["./", ...files.map((file) => `./${file}`)]),
+        ),
+    );
+  }
   const cargo = await Bun.file(
     join(root, "apps", app.crate, "Cargo.toml"),
   ).text();

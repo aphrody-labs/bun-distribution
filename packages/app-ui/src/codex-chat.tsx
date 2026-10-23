@@ -2442,7 +2442,7 @@ export function CodexChatRoute() {
           role="alert"
           className="flex items-center justify-between gap-3 px-4 py-3 bg-error-container text-on-error-container"
         >
-          <span>Connexion au service indisponible.</span>
+          <span>{connectionError}</span>
           <Button
             aria-label="Réessayer"
             title="Réessayer"

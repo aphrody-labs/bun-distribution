@@ -30,7 +30,7 @@ function useInfo(enabled: boolean): { info?: Info; error?: string } {
   return state;
 }
 
-export default function Overview({ adaptive, host = "bun" }: PageProps) {
+export default function Overview({ adaptive, host = "bun", destinations = DESTINATIONS }: PageProps) {
   const { info, error } = useInfo(host === "bun");
   const inWorkspace = PACKAGES.filter(p => p.workspace).length;
   const columns =
@@ -74,7 +74,7 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
           {[
             [String(PACKAGES.length), "packages and apps"],
             [String(inWorkspace), "in the Bun workspace"],
-            [String(DESTINATIONS.length), "pages"],
+            [String(destinations.length), "pages"],
             host === "native"
               ? [String(PACKAGES.filter(entry => !entry.private).length), "reusable packages"]
               : [info ? `Bun ${info.bun}` : "…", "serving this page"],
@@ -88,7 +88,7 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
       </Section>
       <Section title="Explore" description="Each page imports and runs the packages it names.">
         <div className={`grid gap-3 ${columns}`} data-testid="destinations">
-          {DESTINATIONS.filter(d => d.id !== "overview").map(d => (
+          {destinations.filter(d => d.id !== "overview").map(d => (
             <a
               key={d.id}
               href={host === "native" ? `/material-3/${d.id}` : `#/${d.id}`}

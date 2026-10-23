@@ -10,9 +10,10 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlatform } from "../../contexts/PlatformContext";
 
 import { PAGES, type PageId } from "../../material/pages";
+import { usesBrowserBackend } from "../../tauri-bridge";
 import { useAdaptive } from "../../material/adaptive/window";
 import { PACKAGES } from "../../material/inventory";
-import { DESTINATIONS } from "../../material/nav";
+import { hostDestinations } from "../../material/nav";
 import { documentsFrom, templatesFrom, loadCatalog } from "./catalog";
 
 function ProductPage({ title, summary, children }: { title: string; summary: string; children: ReactNode }) {
@@ -237,8 +238,9 @@ export function MaterialRoute() {
   const navigate = useNavigate();
   const adaptive = useAdaptive();
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
-  const selected =
-    page === "buttons" ? "components" : page && Object.hasOwn(PAGES, page) ? (page as PageId) : "overview";
+  const destinations = hostDestinations("native", usesBrowserBackend());
+  const requested = page === "buttons" ? "components" : page;
+  const selected: PageId = destinations.find(({ id }) => id === requested)?.id ?? "overview";
   const Demo = PAGES[selected];
   return (
     <div ref={setTarget} className="product-material h-full overflow-auto bg-surface text-on-surface">
@@ -259,7 +261,7 @@ export function MaterialRoute() {
               value={selected}
               onChange={event => navigate(`/material-3/${event.target.value}`)}
             >
-              {DESTINATIONS.map(({ id, label }) => (
+              {destinations.map(({ id, label }) => (
                 <option key={id} value={id}>
                   {label}
                 </option>
@@ -271,7 +273,7 @@ export function MaterialRoute() {
           </div>
           <DemoBoundary key={selected}>
             <Suspense fallback={<output className="block p-6">Loading demonstration…</output>}>
-              <Demo adaptive={adaptive} host="native" />
+              <Demo adaptive={adaptive} host="native" destinations={destinations} />
             </Suspense>
           </DemoBoundary>
         </M3ThemeProvider>

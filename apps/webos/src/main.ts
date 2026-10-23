@@ -1904,7 +1904,7 @@ installKeys(wm, {
 });
 
 void registerServiceWorker();
-// /?app=<id> (legacy) or a catalog path (/pdf, /chat, /source/<member>) selects the app to open
+// /?app=<id> (legacy) or a catalog path (/pdf, /templates, /source/<member>) selects the app to open
 // (infra/config/routes.catalog.json).
 const wanted =
   new URLSearchParams(location.search).get("app") ??

@@ -26,7 +26,7 @@ import {
 import { getIcon } from "@aphrody/assets/util";
 import type { File, SdPath } from "@aphrody/drive-client";
 import { toast, Icon, Button } from "@aphrody/m3-primitives";
-import { askLocalAi } from "../../../tauri-bridge";
+import { askLocalAi, usesBrowserBackend } from "../../../tauri-bridge";
 import { isAudioVideoEligible } from "../../../routes/explorer/ai-helpers";
 import { useAskAphrody } from "../../../routes/explorer/hooks/useAskAphrody";
 import { clsx } from "clsx";
@@ -188,7 +188,10 @@ function FileQuickActions({ file }: { file: File }) {
   const isImage = getContentKind(file) === "image";
   const isVideo = getContentKind(file) === "video";
   const isAudio = getContentKind(file) === "audio";
-  const showJobsButton = isImage || isVideo || isAudio;
+  // Media jobs and Ask Aphrody run in the native Drive daemon and agent service; the in-browser
+  // backend serves neither, so their buttons appear only where those run.
+  const nativeServices = !usesBrowserBackend();
+  const showJobsButton = nativeServices && (isImage || isVideo || isAudio);
 
   // Get physical path for sharing
   const getPhysicalPath = (): string | null => {
@@ -283,14 +286,16 @@ function FileQuickActions({ file }: { file: File }) {
   return (
     <div className="flex items-center gap-1.5">
       {/* Demander à Aphrody */}
-      <button
-        type="button"
-        onClick={() => askAphrody([file])}
-        className="border-outline-variant/30 bg-surface-container/20 text-on-surface-variant hover:bg-surface-container/30 hover:text-on-surface flex size-7 items-center justify-center rounded-full border transition-all active:scale-95"
-        title="Demander à Aphrody"
-      >
-        <Icon name="auto_awesome" size={14} />
-      </button>
+      {nativeServices && (
+        <button
+          type="button"
+          onClick={() => askAphrody([file])}
+          className="border-outline-variant/30 bg-surface-container/20 text-on-surface-variant hover:bg-surface-container/30 hover:text-on-surface flex size-7 items-center justify-center rounded-full border transition-all active:scale-95"
+          title="Demander à Aphrody"
+        >
+          <Icon name="auto_awesome" size={14} />
+        </button>
+      )}
 
       {/* Quick Preview Button — spacebar isn't available on touch devices */}
       {explorer && (
@@ -863,41 +868,43 @@ function OverviewTab({ file }: { file: File }) {
                 </Tag>
               ))}
 
-            {/* Add Tag Button */}
-            <TagSelectorButton
-              onSelect={async tag => {
-                await applyTag.mutateAsync({
-                  targets: file.content_identity?.uuid
-                    ? {
-                        type: "Content",
-                        ids: [file.content_identity.uuid],
-                      }
-                    : {
-                        type: "EntryUuid",
-                        ids: [file.id],
-                      },
-                  tag_ids: [tag.id],
-                  source: "User",
-                  confidence: 1.0,
-                  applied_context: null,
-                  instance_attributes: null,
-                });
-              }}
-              contextTags={file.tags || []}
-              fileId={file.id}
-              contentId={file.content_identity?.uuid}
-              trigger={
-                <button className="bg-surface-container hover:bg-on-surface/8 border-outline-variant text-on-surface-variant hover:text-on-surface rounded-full border px-2 py-0.5 text-label-medium font-medium transition-colors">
-                  + Add tags
-                </button>
-              }
-            />
+            {!usesBrowserBackend() && (
+              /* Add Tag Button: tags live in the native Drive daemon */
+              <TagSelectorButton
+                onSelect={async tag => {
+                  await applyTag.mutateAsync({
+                    targets: file.content_identity?.uuid
+                      ? {
+                          type: "Content",
+                          ids: [file.content_identity.uuid],
+                        }
+                      : {
+                          type: "EntryUuid",
+                          ids: [file.id],
+                        },
+                    tag_ids: [tag.id],
+                    source: "User",
+                    confidence: 1.0,
+                    applied_context: null,
+                    instance_attributes: null,
+                  });
+                }}
+                contextTags={file.tags || []}
+                fileId={file.id}
+                contentId={file.content_identity?.uuid}
+                trigger={
+                  <button className="bg-surface-container hover:bg-on-surface/8 border-outline-variant text-on-surface-variant hover:text-on-surface rounded-full border px-2 py-0.5 text-label-medium font-medium transition-colors">
+                    + Add tags
+                  </button>
+                }
+              />
+            )}
           </div>
         )}
       </Section>
 
-      {/* AI Processing */}
-      {(isImage || isVideo || isAudio) && (
+      {/* AI Processing: media jobs of the native Drive daemon */}
+      {!usesBrowserBackend() && (isImage || isVideo || isAudio) && (
         <Section title="AI processing" icon={Sparkle}>
           <div className="flex flex-col gap-2">
             {/* Gaussian Splat for images */}

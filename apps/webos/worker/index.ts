@@ -4,6 +4,7 @@ import { workspaceResponse } from "./workspace";
 import { gameContentResponse } from "./game-content";
 import { playRedirect, playResponse } from "./play";
 import { downloadsResponse } from "./downloads";
+import { APP_SERVER_PATHS, appServerResponse } from "./app-server";
 import { ROUTES } from "../src/config";
 import { ORIGIN, pathMeta } from "../paths";
 
@@ -253,17 +254,7 @@ function withPathMeta(res: Response, pathname: string): Response {
 }
 
 /** Routes of the former aphrody.app Worker, now served under aphrody.com (same handler, same bindings). */
-const LEGACY_ROUTES = [
-  "/api/site/",
-  "/api/yolo/",
-  "/mcp",
-  "/v1/",
-  "/rpc",
-  "/events",
-  "/notifications",
-  "/health",
-  "/healthz",
-];
+const LEGACY_ROUTES = ["/api/site/", "/api/yolo/", "/mcp", "/v1/"];
 /** Origin the legacy Worker answers on (its former apex host); the request goes through the service binding. */
 const LEGACY_ORIGIN = `https://${Object.keys(ROUTES.hosts).find((host) => ROUTES.hosts[host]!.kind === "legacy-apex")}`;
 
@@ -299,6 +290,7 @@ export default {
     const url = new URL(request.url);
     const game = await gameContentResponse(request, env.ASSETS, env.VM);
     if (game) return game;
+    if (APP_SERVER_PATHS.has(url.pathname)) return appServerResponse(request);
     const legacyPath = LEGACY_ROUTES.some(
       (prefix) =>
         url.pathname === prefix ||
@@ -327,7 +319,25 @@ export default {
         new Request(new URL("/catalog.json", url), request),
       );
     }
-    if (url.pathname === "/api/health") {
+    // Read-only Workspace catalogs (Documentation, Templates), assembled by build.ts from their owners.
+    if (url.pathname === "/api/docs" || url.pathname === "/api/templates") {
+      if (request.method !== "GET" && request.method !== "HEAD")
+        return new Response("Method not allowed", {
+          status: 405,
+          headers: { allow: "GET, HEAD" },
+        });
+      const res = await env.ASSETS.fetch(
+        new Request(new URL(`${url.pathname}.json`, url), request),
+      );
+      const out = new Response(res.body, res);
+      out.headers.set("cache-control", "no-cache");
+      return out;
+    }
+    if (
+      url.pathname === "/api/health" ||
+      url.pathname === "/health" ||
+      url.pathname === "/healthz"
+    ) {
       const cf = (request as Request & { cf?: { colo?: string } }).cf;
       return Response.json(
         {

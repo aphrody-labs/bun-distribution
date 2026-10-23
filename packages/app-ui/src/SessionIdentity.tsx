@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@aphrody/m3-primitives";
-import { aphrodyRpc, ensureAphrodyInitialized } from "./tauri-bridge";
+import { aphrodyRpc, ensureAphrodyInitialized, usesBrowserBackend } from "./tauri-bridge";
 import { readSessionIdentity, type SessionIdentity as Identity } from "./session-identity";
 
-/** Identity is read from the actual session broker; it never opens a second notification consumer. */
+/**
+ * Session status of the agent service. The in-browser backend has no agent service (it is the native
+ * aphrody app-server), so there is no session to show there.
+ */
 export function SessionIdentity() {
+  return usesBrowserBackend() ? null : <BrokerSessionIdentity />;
+}
+
+/** Identity is read from the actual session broker; it never opens a second notification consumer. */
+function BrokerSessionIdentity() {
   const [identity, setIdentity] = useState<Identity>();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");

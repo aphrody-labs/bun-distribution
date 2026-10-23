@@ -7,7 +7,7 @@ import { buildPackages } from "./packages";
 import { buildSeo } from "./seo";
 import { stageVm } from "./vm";
 import { buildDocs } from "./docs";
-import { stageWorkspace } from "./workspace";
+import { stageWorkspace, stageWorkspaceCatalogs } from "./workspace";
 import { stageGamesContent } from "./games-content";
 import { allAppCapabilities } from "@aphrody/bun-workspace/capabilities";
 import { APPS, ROUTES, appPath, type MemberKind } from "./src/config";
@@ -433,6 +433,7 @@ await Bun.write(
 await cp(join(import.meta.dir, "src/index.html"), join(dist, "index.html"));
 await cp(join(import.meta.dir, "public"), dist, { recursive: true });
 await stageWorkspace(dist, root);
+await stageWorkspaceCatalogs(dist, root);
 await Bun.write(join(dist, "catalog.json"), JSON.stringify(catalog));
 // Member READMEs for the member window (src/apps/member.ts); served from /readme/<member>.md.
 for (const [dir, file] of readmes)

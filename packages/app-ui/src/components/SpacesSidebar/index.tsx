@@ -30,6 +30,7 @@ import { useI18n } from "../../i18n";
 import { browserOnlyRoutes, desktopRoutes } from "../../desktop-navigation";
 import { publicDestinations } from "../../public-navigation";
 import { useKitVisible } from "../../routes/kit/use-kit-visible";
+import { usesBrowserBackend } from "../../tauri-bridge";
 
 // Wrapper that adds a space-level drop zone before each group and makes it sortable
 function SpaceGroupWithDropZone({
@@ -426,6 +427,9 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
   const showCreator = useKitVisible("creator") || isCreatorActive;
   const showAdmin = useKitVisible("omar", true) || isAdminActive;
   const isSettingsActive = location.pathname.startsWith("/settings");
+  // Chat, Models, Studio, Drive jobs and sync drive the native agent service, desktop commands and
+  // Drive daemon; the in-browser backend has none of them, so they are listed only where those run.
+  const nativeServices = !usesBrowserBackend();
 
   // Active setting section
   const currentSettingsSection = searchParams.get("section") || "general";
@@ -492,23 +496,25 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => navigate(desktopRoutes.chat)}
-              className={clsx(
-                "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
-                isChatActive && !isSettingsActive
-                  ? "bg-secondary-container text-on-secondary-container font-semibold"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
-              )}
-            >
-              <span
-                className={clsx("material-symbol text-title-medium", isChatActive && !isSettingsActive && "font-bold")}
+            {nativeServices && (
+              <button
+                type="button"
+                onClick={() => navigate(desktopRoutes.chat)}
+                className={clsx(
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isChatActive && !isSettingsActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
+                )}
               >
-                chat
-              </span>
-              <span className="truncate">{language === "fr" ? "Chat" : "Chat"}</span>
-            </button>
+                <span
+                  className={clsx("material-symbol text-title-medium", isChatActive && !isSettingsActive && "font-bold")}
+                >
+                  chat
+                </span>
+                <span className="truncate">{language === "fr" ? "Chat" : "Chat"}</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -568,46 +574,50 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
                 <span className="truncate">{language === "fr" ? "Jeux" : "Games"}</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => navigate(desktopRoutes.models)}
-              className={clsx(
-                "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
-                isModelsActive && !isSettingsActive
-                  ? "bg-secondary-container text-on-secondary-container font-semibold"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
-              )}
-            >
-              <span
+            {nativeServices && (
+              <button
+                type="button"
+                onClick={() => navigate(desktopRoutes.models)}
                 className={clsx(
-                  "material-symbol text-title-medium",
-                  isModelsActive && !isSettingsActive && "font-bold",
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isModelsActive && !isSettingsActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                 )}
               >
-                model_training
-              </span>
-              <span className="truncate">{language === "fr" ? "Modèles" : "Models"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(desktopRoutes.studio)}
-              className={clsx(
-                "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
-                isStudioActive && !isSettingsActive
-                  ? "bg-secondary-container text-on-secondary-container font-semibold"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
-              )}
-            >
-              <span
+                <span
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isModelsActive && !isSettingsActive && "font-bold",
+                  )}
+                >
+                  model_training
+                </span>
+                <span className="truncate">{language === "fr" ? "Modèles" : "Models"}</span>
+              </button>
+            )}
+            {nativeServices && (
+              <button
+                type="button"
+                onClick={() => navigate(desktopRoutes.studio)}
                 className={clsx(
-                  "material-symbol text-title-medium",
-                  isStudioActive && !isSettingsActive && "font-bold",
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isStudioActive && !isSettingsActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
                 )}
               >
-                auto_stories
-              </span>
-              <span className="truncate">Studio</span>
-            </button>
+                <span
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isStudioActive && !isSettingsActive && "font-bold",
+                  )}
+                >
+                  auto_stories
+                </span>
+                <span className="truncate">Studio</span>
+              </button>
+            )}
             {showCreator && (
               <button
                 type="button"
@@ -900,17 +910,21 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
           {/* Pied de sidebar : Tâches (Jobs), Synchro, Paramètres (Settings) */}
           <div className="flex items-center justify-between border-t border-outline-variant/30 pt-2.5">
             <div className="flex items-center gap-2">
-              <JobsButton
-                activeJobCount={activeJobCount}
-                hasRunningJobs={hasRunningJobs}
-                jobs={jobs}
-                pause={pause}
-                resume={resume}
-                cancel={cancel}
-                getSpeedHistory={getSpeedHistory}
-                onOpenTasks={() => navigate("/jobs")}
-              />
-              <SyncButton />
+              {nativeServices && (
+                <>
+                  <JobsButton
+                    activeJobCount={activeJobCount}
+                    hasRunningJobs={hasRunningJobs}
+                    jobs={jobs}
+                    pause={pause}
+                    resume={resume}
+                    cancel={cancel}
+                    getSpeedHistory={getSpeedHistory}
+                    onOpenTasks={() => navigate("/jobs")}
+                  />
+                  <SyncButton />
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5">

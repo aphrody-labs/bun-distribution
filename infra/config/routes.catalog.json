@@ -261,15 +261,9 @@
     "/keyboard": "keys",
     "/about": "about",
     "/settings": "settings",
-    "/chat": "chat",
-    "/models": "models",
     "/play": "play",
-    "/studio": "studio",
-    "/creator": "creator",
-    "/admin": "admin",
     "/templates": "templates",
     "/material": "material",
-    "/jobs": "jobs",
     "/ds": "game-dust-nds"
   }
 }

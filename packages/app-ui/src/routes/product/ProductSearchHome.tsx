@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { searchGoogle, type GoogleSearchPage } from "../../google-search";
 import { useI18n } from "../../i18n";
-import { isTauri } from "../../tauri-bridge";
+import { isTauri, usesBrowserBackend } from "../../tauri-bridge";
 import { productSearchMessages } from "./product-search-messages";
 
 export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; assetBase?: string }) {
@@ -16,6 +16,9 @@ export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; asse
   const [page, setPage] = useState<GoogleSearchPage | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Web search runs through the native Google search owner behind /api/search; the in-browser
+  // backend has no such server, so the home offers the pages it can open instead.
+  const searchable = !usesBrowserBackend();
   async function run() {
     if (busy || !query.trim()) return;
     setBusy(true);
@@ -55,39 +58,43 @@ export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; asse
           </h1>
         </div>
         <p className="mb-8 text-body-large text-on-surface-variant">{text.intro}</p>
-        <search aria-label={text.searchLabel} className="w-full">
-          <form aria-label={text.searchLabel} onSubmit={submit} className="w-full">
-            <label htmlFor="aphrody-home-search" className="sr-only">
-              {text.search}
-            </label>
-            <div className="flex min-h-16 items-center gap-3 rounded-full bg-surface-container-high px-5 shadow-sm ring-1 ring-outline-variant focus-within:ring-2 focus-within:ring-primary">
-              <span className="material-symbol text-2xl text-on-surface-variant" aria-hidden="true">
-                search
-              </span>
-              <input
-                id="aphrody-home-search"
-                type="search"
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                required
-                placeholder={text.search}
-                autoComplete="off"
-                className="min-w-0 flex-1 bg-transparent py-4 text-body-large text-on-surface outline-none"
-              />
-              <button
-                type="submit"
-                disabled={busy}
-                aria-label={busy ? text.searching : text.action}
-                className="flex min-h-12 min-w-12 items-center justify-center rounded-full bg-primary text-on-primary disabled:opacity-50"
-              >
-                <span className="material-symbol" aria-hidden="true">
-                  {busy ? "hourglass_top" : "arrow_forward"}
-                </span>
-              </button>
-            </div>
-          </form>
-        </search>
-        <p className="mt-4 text-body-small text-on-surface-variant">{text.privacy}</p>
+        {searchable && (
+          <>
+            <search aria-label={text.searchLabel} className="w-full">
+              <form aria-label={text.searchLabel} onSubmit={submit} className="w-full">
+                <label htmlFor="aphrody-home-search" className="sr-only">
+                  {text.search}
+                </label>
+                <div className="flex min-h-16 items-center gap-3 rounded-full bg-surface-container-high px-5 shadow-sm ring-1 ring-outline-variant focus-within:ring-2 focus-within:ring-primary">
+                  <span className="material-symbol text-2xl text-on-surface-variant" aria-hidden="true">
+                    search
+                  </span>
+                  <input
+                    id="aphrody-home-search"
+                    type="search"
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    required
+                    placeholder={text.search}
+                    autoComplete="off"
+                    className="min-w-0 flex-1 bg-transparent py-4 text-body-large text-on-surface outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    aria-label={busy ? text.searching : text.action}
+                    className="flex min-h-12 min-w-12 items-center justify-center rounded-full bg-primary text-on-primary disabled:opacity-50"
+                  >
+                    <span className="material-symbol" aria-hidden="true">
+                      {busy ? "hourglass_top" : "arrow_forward"}
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </search>
+            <p className="mt-4 text-body-small text-on-surface-variant">{text.privacy}</p>
+          </>
+        )}
         <label className="mt-4 flex items-center gap-2 text-body-small">
           {text.language}
           <select
@@ -176,9 +183,11 @@ export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; asse
           <a className="min-h-12 content-center underline" href="https://downloads.aphrody.com/">
             {text.downloads}
           </a>
-          <Link className="min-h-12 content-center underline" to="/studio">
-            {text.studio}
-          </Link>
+          {!usesBrowserBackend() && (
+            <Link className="min-h-12 content-center underline" to="/studio">
+              {text.studio}
+            </Link>
+          )}
         </nav>
       </footer>
     </article>

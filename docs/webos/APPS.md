@@ -10,15 +10,17 @@ in-browser counterpart, published builds from the downloads service, README and 
 
 ## Where the data comes from
 
-| Data                                                                                               | Source                                                                                                       |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Deep-link paths, canonical origin, service hosts, repository browse URL                            | `infra/config/routes.catalog.json` (`apps`, `memberPath`, `source`, `hosts[*].role`)                         |
-| App UI routes opened as windows, run kind of monorepo members, default web apps, browser bookmarks | `apps/webos/apps.json`                                                                                       |
-| Monorepo members (every tracked `apps/*` directory), descriptions, READMEs                         | `apps/webos/build.ts`, written to `dist/catalog.json` and `dist/readme/<member>.md`                          |
-| Craft family of a member, package id, file bridges                                                 | `@aphrody/bun-workspace/capabilities`                                                                        |
-| Installable packages (Craft, Bun Engine emulators), sha256 per file                                | `apps/webos/packages.ts`, written to `dist/registry.json`                                                    |
-| Published native builds                                                                            | `GET /api/downloads` (Worker, `apps/webos/worker/downloads.ts`) reads `latest.json` of the downloads service |
-| Shell code that reads them                                                                         | `apps/webos/src/config.ts` (the one config module)                                                           |
+| Data                                                                                               | Source                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deep-link paths, canonical origin, service hosts, repository browse URL                            | `infra/config/routes.catalog.json` (`apps`, `memberPath`, `source`, `hosts[*].role`)                                                                  |
+| App UI routes opened as windows, run kind of monorepo members, default web apps, browser bookmarks | `apps/webos/apps.json`                                                                                                                                |
+| Monorepo members (every tracked `apps/*` directory), descriptions, READMEs                         | `apps/webos/build.ts`, written to `dist/catalog.json` and `dist/readme/<member>.md`                                                                   |
+| Craft family of a member, package id, file bridges                                                 | `@aphrody/bun-workspace/capabilities`                                                                                                                 |
+| Installable packages (Craft, Bun Engine emulators), sha256 per file                                | `apps/webos/packages.ts`, written to `dist/registry.json`                                                                                             |
+| Published native builds                                                                            | `GET /api/downloads` (Worker, `apps/webos/worker/downloads.ts`) reads `latest.json` of the downloads service                                          |
+| Workspace Documentation and Templates catalogs                                                     | `GET /api/docs`, `GET /api/templates` (Worker): `crates/aphrody-site/data/docs.json` and `packages/m3-templates`, staged by `apps/webos/workspace.ts` |
+| Workspace agent service transport (`/rpc`, `/events`, `/notifications`)                            | Answered by the Worker (`apps/webos/worker/app-server.ts`): the service is the private native `aphrody app-server`                                    |
+| Shell code that reads them                                                                         | `apps/webos/src/config.ts` (the one config module)                                                                                                    |
 
 Opening a package that is not installed installs it in its own window (every file sha256-verified and
 cached for offline use), then starts it. A package that this deployment did not build opens the member
@@ -63,22 +65,34 @@ window of its owner with that reason.
 
 ## App UI routes
 
-| App            | Path         | Route                   | Status                                                 |
-| -------------- | ------------ | ----------------------- | ------------------------------------------------------ |
-| Chat           | `/chat`      | `/workspace/chat`       | Runs; conversations need the API backend behind `/rpc` |
-| Models         | `/models`    | `/workspace/models`     | Runs                                                   |
-| Play           | `/play`      | `/workspace/games`      | Runs; lists the qualified emulator packages            |
-| Studio         | `/studio`    | `/workspace/studio`     | Runs; Studio commands need a native owner              |
-| Creator tools  | `/creator`   | `/workspace/creator`    | Runs; creator-kit commands need a native owner         |
-| Administration | `/admin`     | `/workspace/admin`      | Runs; machine actions need a native owner              |
-| Templates      | `/templates` | `/workspace/templates`  | Runs                                                   |
-| Material 3     | `/material`  | `/workspace/material-3` | Runs                                                   |
-| Jobs           | `/jobs`      | `/workspace/jobs`       | Runs                                                   |
+| App        | Path         | Route                   | Status                                                                          |
+| ---------- | ------------ | ----------------------- | ------------------------------------------------------------------------------- |
+| Play       | `/play`      | `/workspace/games`      | Runs; lists the qualified emulator packages                                     |
+| Templates  | `/templates` | `/workspace/templates`  | Runs; the `packages/m3-templates` templates with their files (`/api/templates`) |
+| Material 3 | `/material`  | `/workspace/material-3` | Runs; the pages this host can run (see below)                                   |
+
+The Workspace serves its Documentation from `/api/docs` and opens its in-browser Files and Terminal
+over the Rust WebAssembly backend. What needs a native owner is not offered in the browser:
+
+- Chat, Models, Studio, Creator tools, Administration and Jobs are not WebOS windows. They drive the
+  agent service (`crates/aphrody-app-server`, private per `infra/config/application-contracts.json`,
+  `aphrody.ai.publicProduct: false`), Tauri commands of `apps/aphrody-app` or the Drive daemon, and
+  open in the Aphrody desktop app. The Workspace sidebar lists them only where those run.
+- The session chip, the home web search (`/api/search`, native Google search owner), Drive jobs and
+  sync, Ask Aphrody, media jobs and tags in the inspector are hidden on the in-browser backend.
+- Material 3 drops Design, Next and System (standalone Bun host API) on every native host, and the
+  live Theme page (Rust scheme route `/api/m3/css`) in the browser; the desktop Theme builder
+  (`/theme-builder`) builds schemes in the browser.
+- The Worker still answers the agent service transport (`/rpc`, `/events`, `/notifications`) with a
+  JSON-RPC "method not found" carrying that reason, for clients that call it anyway.
 
 ## Packages (registry)
 
 The 13 Craft browser apps are compiled by `apps/webos/build-craft.ts` (wasm32, egui/eframe) on the VPS
-factory; `apps/webos/deploy.ts` refuses a deployment without all of them. The Bun Engine emulators come
+factory; `apps/webos/deploy.ts` refuses a deployment without all of them. Fonts the pages fetch at run
+time ship in the package: Images serves `fonts/manifest.txt` and every face it lists, Photo processing
+its Simplified Chinese face as `lightcraft_zh_hans.otf` (with the render `worker.js`), each with its
+OFL notice. Compositing starts on a blank project; `?demo` opens the demo project. The Bun Engine emulators come
 from `packages/bun-engine/web-emulation` and join the registry only with a valid qualification receipt.
 
 | App                | Path      | Package         | Source owner                                                    | Status                                                                                     |

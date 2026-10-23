@@ -281,9 +281,10 @@ pub async fn start(canvas_id: String) -> Result<(), JsValue> {
                 session.load_settings();
                 let recovery = session.begin_recovery();
                 // `?empty`: a blank project; `?demo`: the demo project; otherwise the last visit's
-                // project (the demo on a first visit).
-                let restored = !empty && !query_flag("demo") && persist::restore(&mut session);
-                if !restored && !empty {
+                // project (a blank one on a first visit).
+                let demo = query_flag("demo");
+                let restored = !empty && !demo && persist::restore(&mut session);
+                if demo && !empty {
                     let _ = session.execute("file.openDemoProject", json!({}));
                 }
                 api::set_info("restored", json!(restored));

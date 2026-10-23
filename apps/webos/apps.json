@@ -2,46 +2,11 @@
   "$comment": "WebOS app map. 'workspace' lists the App UI routes opened as windows (/workspace/<route>). 'members' declares how each apps/* member runs in the desktop when its name does not already tell (Craft families are derived from the capability catalog of @aphrody/bun-workspace): kind web opens 'opens' directly; other kinds open the member window (README, downloads from the downloads service, source) with 'related' as the in-browser counterpart. Deep-link paths live in infra/config/routes.catalog.json.",
   "workspace": [
     {
-      "id": "chat",
-      "route": "chat",
-      "name": "Chat",
-      "icon": "code",
-      "desc": "Aphrody assistant: conversations about your files and code"
-    },
-    {
-      "id": "models",
-      "route": "models",
-      "name": "Models",
-      "icon": "cube",
-      "desc": "Local and hosted AI models found on this workspace"
-    },
-    {
       "id": "play",
       "route": "games",
       "name": "Play",
       "icon": "game",
       "desc": "Bun Engine game library and the qualified emulators"
-    },
-    {
-      "id": "studio",
-      "route": "studio",
-      "name": "Studio",
-      "icon": "bolt",
-      "desc": "Agent tools and Drive through the native Studio commands"
-    },
-    {
-      "id": "creator",
-      "route": "creator",
-      "name": "Creator tools",
-      "icon": "pen",
-      "desc": "Creator kit: wiki images, compression, subtitles, crash reports"
-    },
-    {
-      "id": "admin",
-      "route": "admin",
-      "name": "Administration",
-      "icon": "gear",
-      "desc": "Install, private tunnel, MCP and checks of your machines"
     },
     {
       "id": "templates",
@@ -56,13 +21,6 @@
       "name": "Material 3",
       "icon": "image",
       "desc": "Material 3 guidelines and components of the App UI"
-    },
-    {
-      "id": "jobs",
-      "route": "jobs",
-      "name": "Jobs",
-      "icon": "table",
-      "desc": "Indexing, sync and copy jobs of your Drive"
     }
   ],
   "members": {

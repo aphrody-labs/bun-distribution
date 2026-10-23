@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { AdaptiveState } from "../adaptive/window.ts";
+import type { Destination } from "../nav.ts";
 export interface PageProps {
   adaptive: AdaptiveState;
   /** Public catalogs do not expose the standalone Bun host's process API. */
   host?: "native" | "bun";
+  /** Pages this host can run (material/nav.ts `hostDestinations`); every page by default. */
+  destinations?: readonly Destination[];
 }
 type PageComponent = LazyExoticComponent<ComponentType<PageProps>>;
 export const PAGES = {

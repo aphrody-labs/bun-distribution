@@ -34,6 +34,19 @@ import extensionFilled from "m3:icons/extension?fill=1";
 
 import type { PageId } from "./pages/index.ts";
 
+/** Pages calling the standalone Bun host's process API (POST /api/design, /api/next, /api/system). */
+export const BUN_HOST_PAGES: ReadonlySet<PageId> = new Set<PageId>(["design", "next", "system"]);
+/** Live seed, variant and contrast changes need the Rust scheme route (GET /api/m3/css). */
+export const SCHEME_ROUTE_PAGES: ReadonlySet<PageId> = new Set<PageId>(["theme"]);
+
+/** Destinations a host can run: native hosts lack the Bun process API; the browser backend also lacks the scheme route. */
+export function hostDestinations(host: "native" | "bun", browserBackend: boolean): readonly Destination[] {
+  if (host === "bun") return DESTINATIONS;
+  return DESTINATIONS.filter(
+    ({ id }) => !BUN_HOST_PAGES.has(id) && !(browserBackend && SCHEME_ROUTE_PAGES.has(id)),
+  );
+}
+
 export interface Destination {
   id: PageId;
   label: string;
