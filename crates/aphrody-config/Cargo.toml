@@ -25,7 +25,7 @@ perf = { level = "warn", priority = -1 }
 [dependencies]
 serde      = { workspace = true }
 serde_json = { workspace = true }
-thiserror  = { workspace = true }
+thiserror  = { workspace = true, features = ["std"] }
 toml       = { workspace = true, features = ["parse", "display", "serde"] }
 
 [dev-dependencies]

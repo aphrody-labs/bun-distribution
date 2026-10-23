@@ -35,7 +35,7 @@ default = ["host"]
 host = ["dep:libc", "dep:windows-sys"]
 
 [dependencies]
-thiserror = { workspace = true }
+thiserror = { workspace = true, features = ["std"] }
 # Steam app ids and the Steam compatibility environment of Proton launches.
 bun-steam = { workspace = true }
 

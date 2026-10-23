@@ -15,7 +15,7 @@ workspace = true
 # VM Lua 5.2 = celle exacte du moteur Level-5 « Lives » (PUC-Rio 5.2.4 vendored).
 # Charge directement le bytecode .lua.bin du jeu (mlua, MIT).
 mlua = { workspace = true, optional = true, features = ["lua52", "vendored"] }
-thiserror = { workspace = true }
+thiserror = { workspace = true, features = ["std"] }
 
 # Sérialisation des types de `bytecode` : un chunk décodé doit pouvoir sortir en
 # JSON (`nie decode` sur un `.lua.bin`), pas seulement en désassemblage texte.

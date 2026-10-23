@@ -50,7 +50,7 @@ windows = { workspace = true, features = [
 # multi-thread runtime: host-only (wasm32 keeps the Vfs model and an empty capture module).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tempfile           = { workspace = true }
-tokio              = { workspace = true }
+tokio              = { workspace = true, features = ["fs", "rt-multi-thread"] }
 reqwest            = { workspace = true }
 tracing-subscriber = { workspace = true }
 

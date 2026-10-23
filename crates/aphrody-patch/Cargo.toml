@@ -24,7 +24,7 @@ perf = { level = "warn", priority = -1 }
 
 [dependencies]
 similar   = { workspace = true, features = ["text"] }
-thiserror = { workspace = true }
+thiserror = { workspace = true, features = ["std"] }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

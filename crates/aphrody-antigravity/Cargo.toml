@@ -50,7 +50,7 @@ tracing       = { workspace = true }
 # data-encoding (base32) back the state.vscdb decoder (state_sync.rs).
 base64        = { workspace = true }
 sha2          = { workspace = true }
-rand          = { workspace = true }
+rand          = { workspace = true, features = ["thread_rng"] }
 data-encoding = { workspace = true }
 # Always-on: the SSE response parser (client.rs) is compiled on every target.
 futures       = { workspace = true }
@@ -58,7 +58,7 @@ bytes         = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio         = { workspace = true, features = ["macros", "rt", "net", "io-util", "time"] }
-reqwest       = { workspace = true, features = ["stream"] }
+reqwest       = { workspace = true, features = ["stream", "json", "form"] }
 # `state_sync::read_state_db` — reads ItemTable from state.vscdb read-only.
 # Shares the workspace-pinned rusqlite (bundled libsqlite3) with aphrody-memory;
 # same `links = "sqlite3"` instance so cargo-deny sees no duplicate.
