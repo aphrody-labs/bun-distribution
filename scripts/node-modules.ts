@@ -190,7 +190,7 @@ async function proveConsumer(member: string, lock: BunLockfile): Promise<Set<str
   const label = relative(root, member).replaceAll("\\", "/");
   const consumer = await Bun.file(join(member, "package.json")).json();
   const locked = lock.workspaces?.[label];
-  if (!locked || locked.name !== consumer.name || locked.version !== consumer.version || consumer.version !== "1.4.4")
+  if (!locked || locked.name !== consumer.name || locked.version !== consumer.version || consumer.version !== product.version)
     throw new Error("Consumer manifest is not aligned with the root lockfile.");
   const known = new Set<string>();
   for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const) {
@@ -204,7 +204,7 @@ async function proveConsumer(member: string, lock: BunLockfile): Promise<Set<str
       const expected = requested === "catalog:" ? product.catalog?.[name] : requested;
       if (typeof expected !== "string") throw new Error("Shared dependency catalog entry missing.");
       if (expected.startsWith("workspace:")) {
-        if (physical.version !== "1.4.4") throw new Error("Shared workspace dependency version differs.");
+        if (physical.version !== product.version) throw new Error("Shared workspace dependency version differs.");
       } else if (expected.startsWith("file:")) {
         const source = await Bun.file(join(root, expected.slice(5), "package.json")).json();
         if (source.name !== name || source.version !== physical.version)

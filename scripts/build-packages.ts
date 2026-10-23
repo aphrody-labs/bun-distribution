@@ -33,6 +33,8 @@ type PackagePlan = {
 const usage = `Usage: bun scripts/build-packages.ts <plan|build> --package <paths|ovh|kernel-client> [--package ...]
 Select every package explicitly. Outputs are written only to build/packages/<package>.
 Build records compiled JavaScript only; it never executes or deploys the output.`;
+/** The one product version every package, receipt and the root manifest carry. */
+const productVersion: unknown = (await Bun.file(join(repositoryRoot, "package.json")).json()).version;
 const maxSnapshotFileBytes = 50 * 1024 * 1024;
 const maxSnapshotBytes = 512 * 1024 * 1024;
 const excludedDirectories = new Set([".git", "node_modules", "dist", "build"]);
@@ -362,7 +364,7 @@ function validateReceipt(value: unknown, plan: PackagePlan): Receipt {
     ...(value.schemaVersion === 2 ? ["identity"] : []),
   ]);
   exact(value.package, ["id", "name", "version"]);
-  if (value.package.id !== plan.id || value.package.name !== plan.name || value.package.version !== "1.4.4")
+  if (value.package.id !== plan.id || value.package.name !== plan.name || value.package.version !== productVersion)
     throw new Error("Receipt belongs to another package owner.");
   exact(value.source, ["packagePath", "entries", "inputs"]);
   if (value.source.packagePath !== plan.packagePath) throw new Error("Receipt source owner differs.");
@@ -715,7 +717,7 @@ async function compilePackage(
 
   const receipt = {
     schemaVersion: 2,
-    package: { id: plan.id, name: plan.name, version: "1.4.4" },
+    package: { id: plan.id, name: plan.name, version: productVersion },
     source: {
       packagePath: plan.packagePath,
       entries: plan.entries.map(entry => ({
@@ -978,8 +980,8 @@ function parseArgs(args: string[]): {
 async function main(): Promise<number> {
   const root = await realpath(repositoryRoot);
   const rootPackage = await Bun.file(join(root, "package.json")).json();
-  if (!record(rootPackage) || rootPackage.version !== "1.4.4")
-    throw new Error("Root Bun package version must be 1.4.4.");
+  if (!record(rootPackage) || typeof rootPackage.version !== "string" || !/^d+.d+.d+$/.test(rootPackage.version))
+    throw new Error("Root Bun package version must be a release version.");
   if (Bun.argv[2] === "_compile-package") return compileWorker(root, Bun.argv.slice(3), rootPackage);
   const { action, packages } = parseArgs(Bun.argv.slice(2));
   const plans = await Promise.all(packages.map(id => packagePlan(root, rootPackage, id)));

@@ -13,7 +13,7 @@
  *
  * Credentials come from the environment only: NPM_CONFIG_TOKEN (or an .npmrc) and CARGO_REGISTRY_TOKEN.
  */
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -137,6 +137,11 @@ async function heldBack(pkgs: NpmPackage[]): Promise<Map<string, string>> {
   );
   const held = new Map<string, string>();
   for (const pkg of pkgs) {
+    // Outside the root workspaces, `bun publish` cannot resolve its catalog: and workspace: ranges.
+    if (!lock.workspaces[relative(ROOT, pkg.dir).replaceAll("\\", "/")]) {
+      held.set(pkg.name, "not a root workspace member");
+      continue;
+    }
     for (const [dep, raw] of Object.entries(pkg.specs)) {
       if (!OWNED_SCOPES.has(dep.split("/")[0])) continue;
       let [name, spec] = [dep, raw === "catalog:" ? (catalog[dep] ?? raw) : raw];
