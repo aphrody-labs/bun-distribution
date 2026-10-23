@@ -1518,7 +1518,7 @@ bar.append(
         "aria-label": "Show all apps",
         "data-tip": "All apps (Alt+Space)",
       },
-      h("img", { src: "/brand/32.png", alt: "", width: 22, height: 22 }),
+      h("img", { src: "/brand/64.png", alt: "", width: 22, height: 22 }),
     ),
     wsBar,
     activeApp,
@@ -1528,7 +1528,7 @@ bar.append(
     {
       class: "bar-clock",
       popovertarget: "quick",
-      "aria-label": "Date and quick settings",
+      title: "Date and quick settings",
     },
     timeEl,
     dateEl,
