@@ -230,7 +230,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-create-tauri-app"
-version = "1.4.4"
+version = "1.4.7"
 dependencies = [
  "anyhow",
  "ctrlc",

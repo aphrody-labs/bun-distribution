@@ -980,7 +980,7 @@ function parseArgs(args: string[]): {
 async function main(): Promise<number> {
   const root = await realpath(repositoryRoot);
   const rootPackage = await Bun.file(join(root, "package.json")).json();
-  if (!record(rootPackage) || typeof rootPackage.version !== "string" || !/^d+.d+.d+$/.test(rootPackage.version))
+  if (!record(rootPackage) || typeof rootPackage.version !== "string" || !/^\d+\.\d+\.\d+$/.test(rootPackage.version))
     throw new Error("Root Bun package version must be a release version.");
   if (Bun.argv[2] === "_compile-package") return compileWorker(root, Bun.argv.slice(3), rootPackage);
   const { action, packages } = parseArgs(Bun.argv.slice(2));
