@@ -19,12 +19,16 @@ runs:
       env:
         TOKEN: ${{ inputs.token }}
       run: git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
-    - name: Skip submodules whose test fixtures use names Windows cannot create
+    - name: Skip submodules Windows cannot or need not check out
       if: runner.os == 'Windows'
       shell: bash
       run: |
         git config --global core.longpaths true
         git config submodule.packages/re/third_party/unblob.update none
+        # Kernel, LLVM and Wine forks are Linux-only distribution sources: their checkout alone outlasts the setup deadline on NTFS.
+        for path in vendor/cachyos-linux vendor/ogc-linux vendor/linux-cachyos vendor/kernel-patches vendor/ogc-kernel-packages vendor/nvidia-kernels vendor/open-gpu-kernel-modules vendor/llvm vendor/proton vendor/proton-cachyos vendor/wine-cachyos; do
+          git config "submodule.$path.update" none
+        done
     - name: Cache Bun packages
       uses: actions/cache@v4
       with:
