@@ -1006,7 +1006,8 @@ export async function inspectCargoWorkspace(
     ["metadata", "--locked", "--no-deps", "--format-version", "1", "--manifest-path", join(root, "Cargo.toml")],
     root,
     root,
-    options.timeoutMs ?? shortDeadline,
+    // The first cargo call on a fresh runner installs the pinned nightly toolchain before it reads ~500 manifests.
+    options.timeoutMs ?? syncDeadline,
     true,
     options.runtimePolicy,
   );
