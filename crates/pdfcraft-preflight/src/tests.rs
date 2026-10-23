@@ -99,17 +99,27 @@ fn wordings_are_complete() {
     let source = include_str!("lib.rs");
     let mut said = Vec::new();
     let mut rest = source;
-    while let Some(at) = rest.find("issue(\"") {
-        rest = &rest[at + 7..];
+    // `issue("clause", "wording", ...)`, on one line or wrapped one argument per line by rustfmt.
+    while let Some(at) = rest.find("issue(") {
+        rest = &rest[at + 6..];
+        let Some(clause) = rest.trim_start().strip_prefix('"') else {
+            continue;
+        };
         // Step over the clause, then take the wording that follows it.
-        let Some(end) = rest.find('"') else { break };
-        rest = &rest[end + 1..];
-        let Some(text) = rest.strip_prefix(", \"") else {
+        let Some(end) = clause.find('"') else { break };
+        let after = &clause[end + 1..];
+        let Some(text) = after
+            .trim_start()
+            .strip_prefix(',')
+            .map(str::trim_start)
+            .and_then(|t| t.strip_prefix('"'))
+        else {
+            rest = after;
             continue;
         };
         let Some(end) = text.find('"') else { break };
         said.push(&text[..end]);
-        rest = text;
+        rest = &text[end + 1..];
     }
     assert!(
         said.len() >= 24,
@@ -371,4 +381,27 @@ fn device_colour_is_found_after_any_whitespace() {
             );
         }
     }
+}
+
+#[test]
+fn font_programs_and_cmaps_are_not_content() {
+    // A gray page whose font program and CIDToGIDMap hold `K`/`k` between NULs (PDF whitespace).
+    let doc = build(
+        &[
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 200 200] >>",
+            "<< /Type /Page /Parent 2 0 R /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            "<< /Length 30 >>\nstream\n0.5 g BT /F1 12 Tf (Hi) Tj ET\nendstream",
+            "<< /Type /Font /Subtype /Type0 /BaseFont /X /Encoding /Identity-H /DescendantFonts [6 0 R] >>",
+            "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /X /FontDescriptor 7 0 R /CIDToGIDMap 9 0 R >>",
+            "<< /Type /FontDescriptor /FontName /X /FontFile2 8 0 R >>",
+            "<< /Length 7 /Length1 7 >>\nstream\n\0K\0 \0k\0\nendstream",
+            "<< /Length 5 >>\nstream\n\0k\0K\0\nendstream",
+        ],
+        "",
+    );
+    let used = uses_device_colour(&doc, &objects(&doc));
+    assert!(used.gray);
+    assert!(!used.cmyk, "font data read as a CMYK operator");
+    assert!(!used.rgb);
 }
